@@ -1,0 +1,1 @@
+This is a repository made to track my progress on my Ph.D. project. The aim of the project is to produce a reliable program that simulates the affects of an organic molecule on the plasmonic response of a nanoparticle.
