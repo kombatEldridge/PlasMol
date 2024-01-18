@@ -16,7 +16,6 @@ charge 0
 spin 0
 basis 6-31g 
 diis true
-#so_scf
 e_convergence 1e-6
 d_convergence 1e-6
 maxiter 200
@@ -26,4 +25,4 @@ nocom
 guess_mos pyridine.mos
 noscf
 
-method rt-td-rks
+method rttddft
