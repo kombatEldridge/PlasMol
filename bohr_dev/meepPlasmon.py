@@ -3,6 +3,7 @@ import meep as mp
 import sys
 import time
 from meep.materials import Au_JC_visible as Au
+import eps_fit_lorentzian
 import bohr
 
 inputfile = sys.argv[1]
@@ -18,6 +19,7 @@ frq_max = 1/wvl_min
 frq_cen = 0.5*(frq_min+frq_max)
 dfrq = frq_max-frq_min
 nfrq = 50
+frq_range = mp.FreqRange(min=frq_min, max=frq_max)
 
 resolution = 1000
 
@@ -32,6 +34,10 @@ cell_size = mp.Vector3(s, s, s)
 
 half_frame = s*resolution/2
 
+dipArr = [0]
+
+chirp = lambda t: dipArr[t]
+
 # Gaussian-shaped planewave
 sources = [
     mp.Source(
@@ -39,6 +45,10 @@ sources = [
         center=mp.Vector3(-0.5*s+dpml),
         size=mp.Vector3(0, s, s),
         component=mp.Ez,
+    ), 
+    mp.Source(
+        mp.CustomSource(src_func=chirp),
+        center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z),
     )
 ]
 
@@ -50,30 +60,9 @@ mol_pos_z = 0
 mol_dim_x = 0.001
 mol_dim_y = 0.001
 
-# cadmium telluride (CdTe) from D.T.F. Marple, J. Applied Physics, Vol. 35, pp. 539-42 (1964)
-# ref: https://refractiveindex.info/?shelf=main&book=CdTe&page=Marple
-# wavelength range: 0.86 - 2.5 μm
-
-# CdTe_range = mp.FreqRange(min=um_scale / 2.5, max=um_scale / 0.86)
-
-# CdTe_frq1 = 1 / (0.6049793384901669 * um_scale)
-# CdTe_gam1 = 0
-# CdTe_sig1 = 1.53
-
-# CdTe_susc = [
-#     mp.LorentzianSusceptibility(frequency=CdTe_frq1, gamma=CdTe_gam1, sigma=CdTe_sig1)
-# ]
-
-# CdTe = mp.Medium(
-#     epsilon=5.68, E_susceptibilities=CdTe_susc, valid_freq_range=CdTe_range
-# )
-
 geometry = [mp.Sphere(radius=r,
                       center=mp.Vector3(),
-                      material=Au), 
-            mp.Sphere(radius=0.0005,
-                      center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z), 
-                      material=)]
+                      material=Au)]
 
 sim = mp.Simulation(
     resolution=resolution,
@@ -95,14 +84,17 @@ def getSlice(sim):
                           size=mp.Vector3(mol_dim_x, mol_dim_y))
     slice = np.mean(slice, axis=0)
     Ez_arr.append(slice)
+    dipArr.append(0)
     return 0
 
 def callRTTDDFT(sim):
     global Ez_arr
     print("Calling RT-TDDFT Code")
-    bohr.run(inputfile, Ez_arr)
+    dipArr[-1] = bohr.run(inputfile, Ez_arr)
     Ez_arr = []
     return 0
 
-sim.run(mp.at_every(0.1, getSlice), mp.at_every(0.3, callRTTDDFT), until_after_sources=50)
+sim.run(mp.at_every(0.1, getSlice), 
+        mp.at_every(0.3, callRTTDDFT), 
+        until_after_sources=50)
 
