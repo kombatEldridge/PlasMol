@@ -19,6 +19,7 @@ plt.rcParams['ytick.major.size'] = 6
 plt.rcParams['ytick.major.width'] = 2
 
 eField = []
+dtMEEP = 0
 
 def JK(wfn, D):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2.*D)
@@ -31,16 +32,18 @@ def ind_dipole(direction1, direction2, wfn):
     D_mo = wfn.C[0].T@wfn.S.T@D_ao@wfn.S@wfn.C[0]
 
     # RK4 method
-    dt = 0.1 # need to figure out time step units
-    t = i*dt
+    # If this is happening at the atomic scale, 
+    # one time unit here is 2.4188843265857E-17 s
+    # one time unit in meep is 3.33333333E-15 s or 333.33333E-17 s
+    dt = dtMEEP * (333.3333333333333/2.4188843265857)
 
-    Ft_ao = JK(wfn, D_ao) - wfn.mu[direction1]*eField[t]
+    Ft_ao = JK(wfn, D_ao) - wfn.mu[direction1]*eField[0]
     Ft_mo = wfn.C[0].T@Ft_ao@wfn.C[0]
     k1 = (-1j*(Ft_mo@D_mo - D_mo@Ft_mo))
     temp_D_mo = D_mo + 0.5*k1*dt
     temp_D_ao = wfn.C[0]@temp_D_mo@wfn.C[0].T
 
-    Ft_ao = JK(wfn, temp_D_ao) - wfn.mu[direction1]*eField[(0.5+i)*dt]
+    Ft_ao = JK(wfn, temp_D_ao) - wfn.mu[direction1]*eField[1]
     Ft_mo = wfn.C[0].T@Ft_ao@wfn.C[0]
     k2 = (-1j*(Ft_mo@temp_D_mo - temp_D_mo@Ft_mo))
     temp_D_mo = D_mo + 0.5*k2*dt
@@ -50,7 +53,7 @@ def ind_dipole(direction1, direction2, wfn):
     temp_D_mo = D_mo + k3*dt
     temp_D_ao = wfn.C[0]@temp_D_mo@wfn.C[0].T
 
-    Ft_ao = JK(wfn, temp_D_ao) - wfn.mu[direction1]*eField[(1+i)*dt]
+    Ft_ao = JK(wfn, temp_D_ao) - wfn.mu[direction1]*eField[2]
     Ft_mo = wfn.C[0].T@Ft_ao@wfn.C[0]
     k4 = (-1j*(Ft_mo@temp_D_mo - temp_D_mo@Ft_mo))
 
@@ -60,9 +63,12 @@ def ind_dipole(direction1, direction2, wfn):
     mu = np.trace(wfn.mu[direction2]@D_ao) - np.trace(wfn.mu[direction2]@D_ao_init)
     return mu
 
-def run(inputfile, eFieldAvg):
+def run(inputfile, eFieldAvg, dT):
     global eField 
+    global dtMEEP
+    import options
     eField = eFieldAvg
+    dtMEEP = dT
     options = options.OPTIONS()
 
     molecule, method, basis = input_parser.read_input(inputfile,options)
@@ -99,5 +105,4 @@ def run(inputfile, eFieldAvg):
     mu_zz = ind_dipole(2, 2, rks_wfn)
     ind_dipole_avg = (mu_xx + mu_yy + mu_zz)/3
 
-    # # Export the complex refractive index.
-    return ind_dipole_avg
+    return mu_zz

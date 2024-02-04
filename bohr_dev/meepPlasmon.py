@@ -1,9 +1,9 @@
+import os
 import numpy as np
 import meep as mp
 import sys
-import time
+from gif import make_gif
 from meep.materials import Au_JC_visible as Au
-import eps_fit_lorentzian
 import bohr
 
 inputfile = sys.argv[1]
@@ -34,23 +34,8 @@ cell_size = mp.Vector3(s, s, s)
 
 half_frame = s*resolution/2
 
-dipArr = [0]
-
-chirp = lambda t: dipArr[t]
-
-# Gaussian-shaped planewave
-sources = [
-    mp.Source(
-        mp.GaussianSource(frq_cen, fwidth=dfrq, is_integrated=True),
-        center=mp.Vector3(-0.5*s+dpml),
-        size=mp.Vector3(0, s, s),
-        component=mp.Ez,
-    ), 
-    mp.Source(
-        mp.CustomSource(src_func=chirp),
-        center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z),
-    )
-]
+# This gets called every half time step (FDTD nuance)
+chirp = lambda t: dipArr[str(round(t, decimals))]
 
 # We'll put mol at 0.005 um off NP surface in x dir
 mol_pos_x = r + 0.005
@@ -59,6 +44,28 @@ mol_pos_z = 0
 
 mol_dim_x = 0.001
 mol_dim_y = 0.001
+mol_dim_z = 0.001
+
+# Gaussian-shaped planewave
+sources = [
+    mp.Source(
+        mp.ContinuousSource(frequency=100, is_integrated=True), # freq=10 is 100nm
+        center=mp.Vector3(-0.5*s+dpml),
+        size=mp.Vector3(0, s, s),
+        component=mp.Ez
+    ),
+    # mp.Source(
+    #     mp.GaussianSource(frq_cen, fwidth=dfrq, is_integrated=True),
+    #     center=mp.Vector3(-0.5*s+dpml),
+    #     size=mp.Vector3(0, s, s),
+    #     component=mp.Ez,
+    # ), 
+    mp.Source(
+        mp.CustomSource(src_func=chirp),
+        center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z),
+        component=mp.Ez
+    )
+]
 
 geometry = [mp.Sphere(radius=r,
                       center=mp.Vector3(),
@@ -74,27 +81,67 @@ sim = mp.Simulation(
     default_material=mp.Medium(index=1.33)
 )
 
+# one time unit is 3.33 fs
+dT = sim.Courant/resolution
+
+initDIP = 0.0000001
+
+# init as dict
+dipArr = {}
+dipArr[str(0*dT)] = initDIP
+dipArr[str(0.5*dT)] = initDIP
+dipArr[str(1*dT)] = initDIP
+
+num1_str = str(dT/2)
+decimal_index = num1_str.find('.')
+decimals = len(num1_str) - decimal_index - 1
+
 Ez_arr = []
 
 def getSlice(sim):
     global Ez_arr
-    print("Getting slice")
+    print("Getting slice: ", sim.meep_time())
     slice = sim.get_array(component=mp.Ez, 
-                          center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z), 
-                          size=mp.Vector3(mol_dim_x, mol_dim_y))
-    slice = np.mean(slice, axis=0)
+                          center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z),
+                          size=mp.Vector3(1E-20, 1E-20, 1E-20))
+    slice = np.mean(slice)
     Ez_arr.append(slice)
-    dipArr.append(0)
+    dipArr[str(round(sim.meep_time() + (0.5*dT), decimals))] = initDIP
+    dipArr[str(round(sim.meep_time() + dT,       decimals))] = initDIP
     return 0
 
 def callRTTDDFT(sim):
     global Ez_arr
-    print("Calling RT-TDDFT Code")
-    dipArr[-1] = bohr.run(inputfile, Ez_arr)
+    print("Calling RT-TDDFT Code: ", sim.meep_time())
+    print(Ez_arr)
+    molResponse = bohr.run(inputfile, Ez_arr, dT)
+    dipArr[str(round(sim.meep_time() + (0.5*dT), decimals))] = molResponse
+    dipArr[str(round(sim.meep_time() + dT,       decimals))] = molResponse
     Ez_arr = []
     return 0
 
-sim.run(mp.at_every(0.1, getSlice), 
-        mp.at_every(0.3, callRTTDDFT), 
-        until_after_sources=50)
+script_name = "testingGifOutput"
+sim.use_output_directory(script_name)
+def clear_directory(directory_path):
+    try:
+        files = os.listdir(directory_path)
+
+        for file_name in files:
+            file_path = os.path.join(directory_path, file_name)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
+
+        print(f"All files in {directory_path} have been deleted.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+clear_directory(script_name)
+
+sim.run(
+    mp.at_every(dT, getSlice),
+    mp.at_every(3*dT, callRTTDDFT), 
+    mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -R -z {half_frame} -Zc RdBu")),
+    until=90*dT)
+
+make_gif(script_name)
 
