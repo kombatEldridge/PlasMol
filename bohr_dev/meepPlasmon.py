@@ -5,6 +5,7 @@ import sys
 from gif import make_gif
 from meep.materials import Au_JC_visible as Au
 import bohr
+from scipy import constants
 
 inputfile = sys.argv[1]
 
@@ -35,7 +36,13 @@ cell_size = mp.Vector3(s, s, s)
 half_frame = s*resolution/2
 
 # This gets called every half time step (FDTD nuance)
-chirp = lambda t: dipArr[str(round(t, decimals))]
+# chirp = lambda t: dipArr[str(round(t, decimals))]
+
+def chirp(t):
+    if(dipArr[str(round(t, decimals))] == 0):
+        return 0
+    else:
+        return dipArr[str(round(t, decimals))]
 
 # We'll put mol at 0.005 um off NP surface in x dir
 mol_pos_x = r + 0.005
@@ -84,7 +91,7 @@ sim = mp.Simulation(
 # one time unit is 3.33 fs
 dT = sim.Courant/resolution
 
-initDIP = 0.0000001
+initDIP = 0
 
 # init as dict
 dipArr = {}
@@ -100,7 +107,7 @@ Ez_arr = []
 
 def getSlice(sim):
     global Ez_arr
-    print("Getting slice: ", sim.meep_time())
+    print("Getting slice: ", sim.meep_time(), " meep time")
     slice = sim.get_array(component=mp.Ez, 
                           center=mp.Vector3(mol_pos_x, mol_pos_y, mol_pos_z),
                           size=mp.Vector3(1E-20, 1E-20, 1E-20))
@@ -112,9 +119,20 @@ def getSlice(sim):
 
 def callRTTDDFT(sim):
     global Ez_arr
-    print("Calling RT-TDDFT Code: ", sim.meep_time())
-    print(Ez_arr)
-    molResponse = bohr.run(inputfile, Ez_arr, dT)
+    # Convert Ez_arr values to SI
+    # one E field unit in meep is I (current) / a (length unit) / epsi_0 (vacuum permit) / c (speed of light) N/C
+    # one E field unit in bohr is 0.51422082E12 N/C
+    Ez_arr = np.array(Ez_arr) * (1 / 1e-6 / constants.epsilon_0 / constants.c) / 0.51422082e12
+
+    # If this is happening at the atomic scale, 
+    # one time unit in meep is 3.33333333E-15 s or 333.33333E-17 s
+    # one time unit in bohr is 2.4188843265857E-17 s
+    dTbohr = dT * (333.3333333333333/2.4188843265857)
+
+    print("Calling RT-TDDFT Code: ", sim.meep_time(), " meep time")
+    print("Ez_arr: ", Ez_arr)
+    molResponse = 0 if np.mean(Ez_arr) < 1e-9 else bohr.run(inputfile, Ez_arr, dTbohr)
+    print("molResponse: ", molResponse, "\n")
     dipArr[str(round(sim.meep_time() + (0.5*dT), decimals))] = molResponse
     dipArr[str(round(sim.meep_time() + dT,       decimals))] = molResponse
     Ez_arr = []
@@ -141,7 +159,7 @@ sim.run(
     mp.at_every(dT, getSlice),
     mp.at_every(3*dT, callRTTDDFT), 
     mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -R -z {half_frame} -Zc RdBu")),
-    until=90*dT)
+    until=900*dT)
 
 make_gif(script_name)
 

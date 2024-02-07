@@ -7,10 +7,10 @@ import relativistic
 import io_utils
 import constants
 
+# I replaced all prints with blanks to not clog up runtime messages.
 class RHF():
 
     def __init__(self,mol):
-      
       self.ints_factory = mol
       self.nbf          = mol.nao 
       self.nel          = mol.nelec #returns [nalpha, nbeta]
@@ -21,10 +21,11 @@ class RHF():
       self.reference    = "rhf"
       self.molden_reorder = tools.molden.order_ao_index(self.ints_factory)
       self.triplet      = False
+      self.verbose      = True
 
     def compute(self,options):
-      print("    Alpha electrons  : %4i"%(self.nel[0]))
-      print("    Beta  electrons  : %5i"%(self.nel[1]))
+      print("", end ="") # print("    Alpha electrons  : %4i"%(self.nel[0]))
+      print("", end ="") # print("    Beta  electrons  : %5i"%(self.nel[1]))
 
       self.options = options
       self.S   = self.ints_factory.intor('int1e_ovlp') 
@@ -63,7 +64,7 @@ class RHF():
       newD  = np.zeros((self.nbf,self.nbf))
 
       energy = 0.
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
       if options.diis is True:
         err_vec = np.zeros((1,1,1))
         Fdiis = np.zeros((1,1,1))
@@ -91,7 +92,7 @@ class RHF():
           energy = newE
           D = 1.*newD
           if it > 0:
-              print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,is_diis),flush=True)
+              print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,is_diis),flush=True)
 
           if (dE < options.e_conv) and (dD < options.d_conv):
             if self.options.relativistic == "zora":
@@ -108,44 +109,44 @@ class RHF():
             else:
               self.eps = evals
 
-              print("    Iterations have converged!")
-              print("")
-              print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-              print("    One-electron Energy:          %20.12f" %(oneE))
-              print("    Two-electron Energy:          %20.12f" %(twoE))
-              print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-              print("")
-              print("    Orbital Energies [Eh]")
-              print("    ---------------------")
-              print("")
-              print("    Alpha occupied:")
+              print("", end ="") # print("    Iterations have converged!")
+              print("", end ="") # print("")
+              print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+              print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+              print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
+              print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+              print("", end ="") # print("")
+              print("", end ="") # print("    Orbital Energies [Eh]")
+              print("", end ="") # print("    ---------------------")
+              print("", end ="") # print("")
+              print("", end ="") # print("    Alpha occupied:")
               for i in range(self.nel[0]):
-                  print("    %4i: %12.5f "%(i+1,self.eps[i]),end="")
-                  if (i+1)%3 == 0: print("")
-              print("")
-              print("    Alpha Virtual:")
+                  print("", end ="") # print("    %4i: %12.5f "%(i+1,self.eps[i]),end="")
+                  if (i+1)%3 == 0: print("", end ="") # print("")
+              print("", end ="") # print("")
+              print("", end ="") # print("    Alpha Virtual:")
               for a in range(self.nbf-self.nel[0]):
-                  print("    %4i: %12.5f "%(self.nel[0]+a+1,self.eps[self.nel[0]+a]),end="")
-                  if (a+1)%3 == 0: print("")
-              print("")
+                  print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,self.eps[self.nel[0]+a]),end="")
+                  if (a+1)%3 == 0: print("", end ="") # print("")
+              print("", end ="") # print("")
               break
           if (it == options.maxiter-1):
-              print("SCF iterations did not converge!")
+              print("", end ="") # print("SCF iterations did not converge!")
           it += 1
-      print("")
+      print("", end ="") # print("")
 
-      print("    Molecular Orbital Analysis")
-      print("    --------------------------\n")
+      print("", end ="") # print("    Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------\n")
   
       ao_labels = self.ints_factory.ao_labels()
       for p in range(self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),self.eps[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),self.eps[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(C.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],C[i][p]),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],C[i][p]),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
       self.F = [F]
       self.C = [C]
@@ -153,18 +154,18 @@ class RHF():
       self.eps = [self.eps]
       self.scf_energy = twoE + oneE + self.e_nuc
 
-      print("    == Energetics Summary ==")
-      print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-      print("    One-electron Energy:          %20.12f" %(oneE))
-      print("    Two-electron Energy:          %20.12f" %(twoE))
-      print("    @RHF Final Energy: %20.12f" %(self.scf_energy))
+      print("", end ="") # print("    == Energetics Summary ==")
+      print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+      print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+      print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
+      print("", end ="") # print("    @RHF Final Energy: %20.12f" %(self.scf_energy))
 
       #quick spin analysis 
       N = np.trace((D@self.S))
       self.S2 = N - np.trace((D@self.S)@(D@self.S))
-      print("")
-      print("    Computed <S2> : %12.8f "%(self.S2))
-      print("    Expected <S2> : %12.8f "%(0.0))
+      print("", end ="") # print("")
+      print("", end ="") # print("    Computed <S2> : %12.8f "%(self.S2))
+      print("", end ="") # print("    Expected <S2> : %12.8f "%(0.0))
            
 
       return self.scf_energy
@@ -185,8 +186,8 @@ class UHF():
 
    
     def compute(self,options):
-      print("    Alpha electrons  : %4i"%(self.nel[0]))
-      print("    Beta  electrons  : %5i"%(self.nel[1]))
+      print("", end ="") # print("    Alpha electrons  : %4i"%(self.nel[0]))
+      print("", end ="") # print("    Beta  electrons  : %5i"%(self.nel[1]))
 
       self.options = options
       self.S   = self.ints_factory.intor('int1e_ovlp')
@@ -210,7 +211,7 @@ class UHF():
       newE = np.einsum("mn,mn->",D[0],(Fa))
       newE += np.einsum("mn,mn->",D[1],(Fb))
       energy = 0
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ")
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ")
 
       if options.diis is True:
         err_veca = np.zeros((1,1,1))
@@ -257,57 +258,57 @@ class UHF():
         D[0] = 1.*newDa
         D[1] = 1.*newDb
         if it > -1:
-            print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,is_diis),flush=True)
+            print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,is_diis),flush=True)
         if (dE < options.e_conv) and (dD < options.d_conv):
-          print("    Iterations have converged!")
-          print("")
-          print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-          print("    One-electron Energy:          %20.12f" %(oneE))
-          print("    Two-electron Energy:          %20.12f" %(twoE))
-          print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-          print("")
-          print("    Orbital Energies [Eh]")
-          print("    ---------------------")
-          print("")
-          print("    Alpha occupied:")
+          print("", end ="") # print("    Iterations have converged!")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+          print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+          print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
+          print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+          print("", end ="") # print("")
+          print("", end ="") # print("    Orbital Energies [Eh]")
+          print("", end ="") # print("    ---------------------")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Alpha occupied:")
           for i in range(self.nel[0]):
-              print("    %4i: %12.5f "%(i+1,evals_a[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Alpha Virtual:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,evals_a[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Alpha Virtual:")
           for a in range(self.nbf-self.nel[0]):
-              print("    %4i: %12.5f "%(self.nel[0]+a+1,evals_a[self.nel[0]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
-          print("")
-          print("    Beta occupied:")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,evals_a[self.nel[0]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Beta occupied:")
           for i in range(self.nel[1]):
-              print("    %4i: %12.5f "%(i+1,evals_b[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Beta Virtual:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,evals_b[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Beta Virtual:")
           for a in range(self.nbf-self.nel[1]):
-              print("    %4i: %12.5f "%(self.nel[1]+a+1,evals_b[self.nel[1]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[1]+a+1,evals_b[self.nel[1]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
           break
         if (it == options.maxiter-1):
-            print("SCF iterations did not converge!")
+            print("", end ="") # print("SCF iterations did not converge!")
         it += 1
-      print("")
+      print("", end ="") # print("")
 
-      print("    Molecular Orbital Analysis")
-      print("    --------------------------\n")
+      print("", end ="") # print("    Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------\n")
 
       ao_labels = self.ints_factory.ao_labels()
       for p in range(self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),evals_a[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),evals_a[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(Cmo_a.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_a[i][p]),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_a[i][p]),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
       self.F = [Fa,Fb]
       self.C = [Cmo_a,Cmo_b]
@@ -316,18 +317,18 @@ class UHF():
       self.eps = [evals_a,evals_b]
       self.scf_energy = twoE + oneE + self.e_nuc
 
-      print("    @UHF Final Energy: %20.12f" %(self.scf_energy))
+      print("", end ="") # print("    @UHF Final Energy: %20.12f" %(self.scf_energy))
 
       #quick spin analysis
       Na = np.trace((D[0]@self.S))
       Nb = np.trace((D[1]@self.S))
       self.S2 = 0.5 * (Na+Nb) + 0.25*(Na-Nb)**2 - np.trace((D[0]@self.S)@(D[1]@self.S))
-      print("")
-      print("    Computed <S2> : %12.8f "%(self.S2))
+      print("", end ="") # print("")
+      print("", end ="") # print("    Computed <S2> : %12.8f "%(self.S2))
       if Nb > Na: 
-        print("    Expected <S2> : %12.8f "%((0.5*(Nb-Na))**2+(0.5*(Nb-Na))))
+        print("", end ="") # print("    Expected <S2> : %12.8f "%((0.5*(Nb-Na))**2+(0.5*(Nb-Na))))
       else: 
-        print("    Expected <S2> : %12.8f "%((0.5*(Na-Nb))**2+(0.5*(Na-Nb))))
+        print("", end ="") # print("    Expected <S2> : %12.8f "%((0.5*(Na-Nb))**2+(0.5*(Na-Nb))))
 
       return self.scf_energy
 
@@ -347,8 +348,8 @@ class RKS():
       self.triplet      = False
 
     def compute(self,options):
-      print("    Alpha electrons  : %4i"%(self.nel[0]),flush=True)
-      print("    Beta  electrons  : %5i"%(self.nel[1]),flush=True)
+      print("", end ="") # print("    Alpha electrons  : %4i"%(self.nel[0]),flush=True)
+      print("", end ="") # print("    Beta  electrons  : %5i"%(self.nel[1]),flush=True)
     
       self.options = options
 
@@ -359,9 +360,9 @@ class RKS():
 
       options.xctype  = dft.libxc.xc_type(self.options.xc)
       options.xcalpha = dft.libxc.hybrid_coeff(self.options.xc)
-      print("\n    Exchange-Correlation Functional:",options.xc)
-      print("\n    Exchange-Correlation Functional Type:",options.xctype)
-      print("\n    Hybrid alpha parameter: %f"%options.xcalpha)
+      print("", end ="") # print("\n    Exchange-Correlation Functional:",options.xc)
+      print("", end ="") # print("\n    Exchange-Correlation Functional Type:",options.xctype)
+      print("", end ="") # print("\n    Hybrid alpha parameter: %f"%options.xcalpha)
       #dft grid parameters
       self.jk    = dft.RKS(self.ints_factory,options.xc) #jk object from pyscf
       #self.jk.multiplicity=2
@@ -379,7 +380,7 @@ class RKS():
           exit("    CAN'T ADD H_SO TO RKS")
 
       if options.guess_mos_provided is True:
-        print("    Reading MOs from File...")
+        print("", end ="") # print("    Reading MOs from File...")
         Cmo, nel = io_utils.read_real_mos(options.guess_mos)
         #sanity check
         if Cmo.shape != (2,self.nbf,self.nbf):
@@ -393,7 +394,7 @@ class RKS():
         self.jk.verbose = 4
         energy_pyscf = self.jk.kernel()
         Cmo = np.zeros((self.nbf,self.nbf))
-        print("    Computing MOs from PySCF....")
+        print("", end ="") # print("    Computing MOs from PySCF....")
         #D =  self.jk.init_guess_by_atom()
         C =  self.jk.mo_coeff
         D = C[:,:self.nel[0]]@C.T[:self.nel[0],:]
@@ -409,10 +410,10 @@ class RKS():
       if self.options.cosmo is True: 
         cosmo = solvent.ddcosmo.DDCOSMO(self.ints_factory)
         cosmo.eps = self.options.cosmo_epsilon 
-        print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
+        print("", end ="") # print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
 
       energy = 0.
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
       if options.diis is True:
         diis = diis_routine.DIIS(self)
         err_vec = np.zeros((1,1,1))
@@ -435,7 +436,7 @@ class RKS():
           evals, evecs = sp.linalg.eigh(Faorth)
           C    = np.matmul(Shalf,evecs).real
           if options.noscf is True:
-            print("    NOSCF flag enabled. Guess orbitals will be used without optimization")
+            print("", end ="") # print("    NOSCF flag enabled. Guess orbitals will be used without optimization")
             dE = options.e_conv/10.
             dD = options.d_conv/10.
             oneE  = 2.*np.trace(np.matmul(D,self.T+self.Vne)) 
@@ -461,7 +462,7 @@ class RKS():
             energy = newE
             D = 1.*newD
             if it > 0:
-                print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,diis.is_diis),flush=True)
+                print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,diis.is_diis),flush=True)
 
           if (dE < options.e_conv) and (dD < options.d_conv):
             if self.options.relativistic == "zora":
@@ -478,45 +479,45 @@ class RKS():
             else:
               self.eps = evals  
 
-            print("    Iterations have converged!")
-            print("")
-            print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-            print("    One-electron Energy:          %20.12f" %(oneE))
-            print("    Two-electron Energy:          %20.12f" %(twoE))
-            print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-            print("")
-            print("    Orbital Energies [Eh]")
-            print("    ---------------------")
-            print("")
-            print("    Alpha occupied:")
+            print("", end ="") # print("    Iterations have converged!")
+            print("", end ="") # print("")
+            print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+            print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+            print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
+            print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+            print("", end ="") # print("")
+            print("", end ="") # print("    Orbital Energies [Eh]")
+            print("", end ="") # print("    ---------------------")
+            print("", end ="") # print("")
+            print("", end ="") # print("    Alpha occupied:")
             for i in range(self.nel[0]):
-                print("    %4i: %12.5f "%(i+1,self.eps[i]),end="")
-                if (i+1)%3 == 0: print("")
-            print("")
-            print("    Alpha Virtual:")
+                print("", end ="") # print("    %4i: %12.5f "%(i+1,self.eps[i]),end="")
+                if (i+1)%3 == 0: print("", end ="") # print("")
+            print("", end ="") # print("")
+            print("", end ="") # print("    Alpha Virtual:")
             for a in range(self.nbf-self.nel[0]):
-                print("    %4i: %12.5f "%(self.nel[0]+a+1,self.eps[self.nel[0]+a]),end="")
-                if (a+1)%3 == 0: print("")
-            print("")
+                print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,self.eps[self.nel[0]+a]),end="")
+                if (a+1)%3 == 0: print("", end ="") # print("")
+            print("", end ="") # print("")
             break
           if (it == options.maxiter-1):
-              print("SCF iterations did not converge!")
+              print("", end ="") # print("SCF iterations did not converge!")
               exit(0)
           it += 1
-      print("")
+      print("", end ="") # print("")
 
-      print("    Molecular Orbital Analysis")
-      print("    --------------------------\n")
+      print("", end ="") # print("    Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------\n")
   
       ao_labels = self.ints_factory.ao_labels()
       for p in range(self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),self.eps[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (2 if p < self.nel[0] else 0),self.eps[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(C.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],C[i][p]),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],C[i][p]),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
       self.F = [F,F]
       self.C = [C,C]
@@ -528,9 +529,9 @@ class RKS():
       filename = self.options.inputfile.split(".")[0]
       io_utils.write_molden(self,filename)
 
-      print("\n")
-      print("    Mulliken Population Analysis (q_A = Z_A - Q_A)")
-      print("    --------------------------------------------\n")
+      print("", end ="") # print("\n")
+      print("", end ="") # print("    Mulliken Population Analysis (q_A = Z_A - Q_A)")
+      print("", end ="") # print("    --------------------------------------------\n")
       Q = 2.*np.diag(D@self.S)
       natoms = int(ao_labels[-1].split()[0])+1
       qA = np.zeros(natoms)
@@ -545,21 +546,21 @@ class RKS():
           QA[int(atom_index)] += Q[p] 
           A[int(atom_index)] = atom_index + " " + atom_label
       for a in range(natoms):
-          print("    %-12s: % 8.5f "%(A[a],ZA[a]-QA[a]))
-      print("\n")
-      print("\n    Energetics Summary")
-      print("    ------------------\n")
-      print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-      print("    One-electron Energy:          %20.12f" %(oneE))
-      print("    Two-electron Energy:          %20.12f" %(twoE))
-      print("    @RKS Final Energy:            %20.12f" %(self.scf_energy))
+          print("", end ="") # print("    %-12s: % 8.5f "%(A[a],ZA[a]-QA[a]))
+      print("", end ="") # print("\n")
+      print("", end ="") # print("\n    Energetics Summary")
+      print("", end ="") # print("    ------------------\n")
+      print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+      print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+      print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
+      print("", end ="") # print("    @RKS Final Energy:            %20.12f" %(self.scf_energy))
 
       #quick spin analysis 
       N = np.trace((D@self.S))
       self.S2 = N - np.trace((D@self.S)@(D@self.S))
-      print("")
-      print("    Computed <S2> : %12.8f "%(self.S2))
-      print("    Expected <S2> : %12.8f "%(0.0))
+      print("", end ="") # print("")
+      print("", end ="") # print("    Computed <S2> : %12.8f "%(self.S2))
+      print("", end ="") # print("    Expected <S2> : %12.8f "%(0.0))
            
 
       return self.scf_energy
@@ -579,8 +580,8 @@ class UKS():
       self.reference    = "uks"
       
     def compute(self,options):
-      print("    Alpha electrons  : %4i"%(self.nel[0]),flush=True)
-      print("    Beta  electrons  : %5i"%(self.nel[1]),flush=True)
+      print("", end ="") # print("    Alpha electrons  : %4i"%(self.nel[0]),flush=True)
+      print("", end ="") # print("    Beta  electrons  : %5i"%(self.nel[1]),flush=True)
 
       self.options = options
       self.S   = self.ints_factory.intor('int1e_ovlp')
@@ -591,9 +592,9 @@ class UKS():
  
       options.xctype  = dft.libxc.xc_type(self.options.xc)
       options.xcalpha = dft.libxc.hybrid_coeff(self.options.xc)
-      print("\n    Exchange-Correlation Functional:",options.xc)
-      print("\n    Exchange-Correlation Functional Type:",options.xctype)
-      print("\n    Hybrid alpha parameter: %f"%options.xcalpha,flush=True)
+      print("", end ="") # print("\n    Exchange-Correlation Functional:",options.xc)
+      print("", end ="") # print("\n    Exchange-Correlation Functional Type:",options.xctype)
+      print("", end ="") # print("\n    Hybrid alpha parameter: %f"%options.xcalpha,flush=True)
       eps_scaling = np.zeros((self.nbf,self.nbf))
 
       eps_a = np.zeros((self.nbf))
@@ -614,7 +615,7 @@ class UKS():
 
       if options.guess_mos_provided is True:
         try:
-          print("    Reading MOs from File...")
+          print("", end ="") # print("    Reading MOs from File...")
           Cmo, nel = io_utils.read_real_mos(options.guess_mos)
           Ca = Cmo[0]
           Cb = Cmo[1]
@@ -626,7 +627,7 @@ class UKS():
           D = [Da,Db]
         except:
           Cmo = np.zeros((2*self.nbf,2*self.nbf))
-          print("    Could not read MOs. Computing MOs from PySCF....")
+          print("", end ="") # print("    Could not read MOs. Computing MOs from PySCF....")
           D =  self.jk.init_guess_by_atom().real
       else:
         self.jk.conv_tol	= options.e_conv
@@ -639,7 +640,7 @@ class UKS():
         energy_pyscf = self.jk.kernel()
         Cmo = np.zeros((2*self.nbf,2*self.nbf))
         D   = np.zeros((2,self.nbf,self.nbf))
-        print("    Computing MOs from PySCF....",flush=True)
+        print("", end ="") # print("    Computing MOs from PySCF....",flush=True)
         C =  self.jk.mo_coeff
         Ca =  C[0]
         Cb =  C[1]
@@ -652,14 +653,14 @@ class UKS():
       if self.options.cosmo is True: 
         cosmo = solvent.ddcosmo.DDCOSMO(self.ints_factory)
         cosmo.eps = self.options.cosmo_epsilon 
-        print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
+        print("", end ="") # print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
 
       pot = self.jk.get_veff(self.ints_factory,(D[0],D[1])) #pyscf effective potential
       newE  = np.einsum("mn,mn->",D[0],(Fa)) 
       newE += np.einsum("mn,mn->",D[1],(Fb))
       energy = newE+pot.ecoul+pot.exc
-#      print(energy)
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
+#      print("", end ="") # print(energy)
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]| ",flush=True)
 
       if options.diis is True:
         err_veca = np.zeros((1,1,1))
@@ -691,7 +692,7 @@ class UKS():
         evals_b, evecs_b = sp.linalg.eigh(Fborth)
         Cmo_b = np.matmul(Shalf,evecs_b).real
         if options.noscf is True:
-          print("    NOSCF flag enabled. Guess orbitals will be used without optimization")
+          print("", end ="") # print("    NOSCF flag enabled. Guess orbitals will be used without optimization")
           dE = options.e_conv/10.
           dD = options.d_conv/10.
           oneE = np.trace(np.matmul((D[0]+D[1]),(self.T+self.Vne)))
@@ -717,7 +718,7 @@ class UKS():
           D[0] = 1.*newDa
           D[1] = 1.*newDb
           if it > -1:
-              print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,diisa.is_diis),flush=True)
+              print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s"%(it,energy+self.e_nuc,dE,dD,diisa.is_diis),flush=True)
         if (dE < options.e_conv) and (dD < options.d_conv):
           if self.options.relativistic == "zora":
             Ci = np.zeros((1,self.nbf),dtype=complex)
@@ -739,72 +740,72 @@ class UKS():
           else:
             eps_a = evals_a
             eps_b = evals_b
-          print("    Iterations have converged!")
-          print("")
-          print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-          print("    One-electron Energy:          %20.12f" %(oneE))
-          print("    Two-electron Energy:          %20.12f" %(twoE))
+          print("", end ="") # print("    Iterations have converged!")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+          print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+          print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
           if self.options.relativistic == "zora":
-            print("    Zora Energy Scaling:        %20.12f" %(zora_scal))
-          print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-          print("")
-          print("    Orbital Energies [Eh]")
-          print("    ---------------------")
-          print("")
-          print("    Alpha occupied:")
+            print("", end ="") # print("    Zora Energy Scaling:        %20.12f" %(zora_scal))
+          print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+          print("", end ="") # print("")
+          print("", end ="") # print("    Orbital Energies [Eh]")
+          print("", end ="") # print("    ---------------------")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Alpha occupied:")
           for i in range(self.nel[0]):
-              print("    %4i: %12.5f "%(i+1,eps_a[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Alpha Virtual:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,eps_a[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Alpha Virtual:")
           for a in range(self.nbf-self.nel[0]):
-              print("    %4i: %12.5f "%(self.nel[0]+a+1,eps_a[self.nel[0]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
-          print("")
-          print("    Beta occupied:")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,eps_a[self.nel[0]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Beta occupied:")
           for i in range(self.nel[1]):
-              print("    %4i: %12.5f "%(i+1,eps_b[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Beta Virtual:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,eps_b[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Beta Virtual:")
           for a in range(self.nbf-self.nel[1]):
-              print("    %4i: %12.5f "%(self.nel[1]+a+1,eps_b[self.nel[1]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[1]+a+1,eps_b[self.nel[1]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
           break
         if (it == options.maxiter-1):
-            print("SCF iterations did not converge!")
+            print("", end ="") # print("SCF iterations did not converge!")
             exit(0)
         it += 1
-      print("")
+      print("", end ="") # print("")
 
       ao_labels = self.ints_factory.ao_labels()
-      print("    Alpha Molecular Orbital Analysis")
-      print("    --------------------------------\n")
+      print("", end ="") # print("    Alpha Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------------\n")
       for p in range(self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps_a[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps_a[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(Cmo_a.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_a[i][p]),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_a[i][p]),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
-      print("    Beta Molecular Orbital Analysis")
-      print("    -------------------------------\n")
+      print("", end ="") # print("    Beta Molecular Orbital Analysis")
+      print("", end ="") # print("    -------------------------------\n")
       for p in range(self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[1] else 0),eps_b[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[1] else 0),eps_b[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(Cmo_b.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_b[i][p]),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],Cmo_b[i][p]),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
-      print("    AO labels")
+      print("", end ="") # print("    AO labels")
       for i in range(len(ao_labels)):
-        print("    %i: %-12s"%(i+1,ao_labels[i]))
+        print("", end ="") # print("    %i: %-12s"%(i+1,ao_labels[i]))
 
       self.F = [Fa,Fb]
       self.C = [Cmo_a,Cmo_b]
@@ -817,18 +818,18 @@ class UKS():
       filename = self.options.inputfile.split(".")[0]
       io_utils.write_molden(self,filename)
 
-      print("    @UKS Final Energy:   %20.12f" %(self.scf_energy))
+      print("", end ="") # print("    @UKS Final Energy:   %20.12f" %(self.scf_energy))
 
       #quick spin analysis
       Na = np.trace((D[0]@self.S))
       Nb = np.trace((D[1]@self.S))
       self.S2 = 0.5 * (Na+Nb) + 0.25*(Na-Nb)**2 - np.trace((D[0]@self.S)@(D[1]@self.S))
-      print("")
-      print("    Computed <S2> : %12.8f "%(self.S2))
+      print("", end ="") # print("")
+      print("", end ="") # print("    Computed <S2> : %12.8f "%(self.S2))
       if Nb > Na:
-        print("    Expected <S2> : %12.8f "%((0.5*(Nb-Na))**2+(0.5*(Nb-Na))))
+        print("", end ="") # print("    Expected <S2> : %12.8f "%((0.5*(Nb-Na))**2+(0.5*(Nb-Na))))
       else:
-        print("    Expected <S2> : %12.8f "%((0.5*(Na-Nb))**2+(0.5*(Na-Nb))))
+        print("", end ="") # print("    Expected <S2> : %12.8f "%((0.5*(Na-Nb))**2+(0.5*(Na-Nb))))
 
       return self.scf_energy
 
@@ -846,8 +847,8 @@ class GKS():
       self.reference    = "gks"
       
     def compute(self,options):
-      print("    Number of electrons        : %4i"%(self.nel[0]))
-      print("    Number of basis functions  : %4i"%(2*self.nbf))
+      print("", end ="") # print("    Number of electrons        : %4i"%(self.nel[0]))
+      print("", end ="") # print("    Number of basis functions  : %4i"%(2*self.nbf))
 
       self.options = options
       self.S   = self.ints_factory.intor('int1e_ovlp')
@@ -861,47 +862,47 @@ class GKS():
       self.B_field = self.options.B_field_amplitude 
       if self.B_field > 0.:
         self.B_pol   = self.options.B_field_polarization 
-        print("\n    Static Magnetic Field Enabled!")
-        print("    B Field Amplitude:    %8.5f a.u."%self.B_field)
-        print("    B Field Polarization: %2i"%self.B_pol)
+        print("", end ="") # print("\n    Static Magnetic Field Enabled!")
+        print("", end ="") # print("    B Field Amplitude:    %8.5f a.u."%self.B_field)
+        print("", end ="") # print("    B Field Polarization: %2i"%self.B_pol)
         self.Vne = self.Vne - self.B_field * self.mag[self.B_pol]
 
       self.E_field = self.options.E_field_amplitude 
       if self.E_field > 0.:
         self.E_pol   = self.options.E_field_polarization 
-        print("\n    Static Magnetic Field Enabled!")
-        print("    E Field Amplitude:    %8.5f a.u."%self.E_field)
-        print("    E Field Polarization: %2i"%self.E_pol)
+        print("", end ="") # print("\n    Static Magnetic Field Enabled!")
+        print("", end ="") # print("    E Field Amplitude:    %8.5f a.u."%self.E_field)
+        print("", end ="") # print("    E Field Polarization: %2i"%self.E_pol)
         self.Vne = self.Vne - self.E_field * self.mu[self.E_pol]
 
       options.xctype  = dft.libxc.xc_type(self.options.xc)
       options.xcalpha = dft.libxc.hybrid_coeff(self.options.xc)
-      print("\n    Exchange-Correlation Functional:",options.xc)
-      print("\n    Exchange-Correlation Functional Type:",options.xctype)
-      print("\n    Hybrid alpha parameter: %f"%options.xcalpha)
+      print("", end ="") # print("\n    Exchange-Correlation Functional:",options.xc)
+      print("", end ="") # print("\n    Exchange-Correlation Functional Type:",options.xctype)
+      print("", end ="") # print("\n    Hybrid alpha parameter: %f"%options.xcalpha)
  
       self.jk    = dft.GKS(self.ints_factory,options.xc) #jk object from pyscf
       #find trial movecs
       if options.guess_mos_provided is True:
-        print("    Reading MOs from File...")
+        print("", end ="") # print("    Reading MOs from File...")
         try:
           Cmo, nel = io_utils.read_complex_mos(options.guess_mos)
           if Cmo.shape == (2,2*self.nbf,2*self.nbf):
-            print("    GKS orbitals found.",flush=True)  
+            print("", end ="") # print("    GKS orbitals found.",flush=True)  
             D = np.matmul(Cmo[0][:,:nel[0]],np.conjugate(Cmo[0].T[:nel[0],:]))  
           elif Cmo.shape == (2,self.nbf,self.nbf):
-            print("    RKS orbitals found. projecting into RGKS space",flush=True)
+            print("", end ="") # print("    RKS orbitals found. projecting into RGKS space",flush=True)
             D = np.zeros((2*self.nbf,2*self.nbf),dtype=complex)  
             D[:self.nbf,:self.nbf] = np.matmul(Cmo[0][:,:nel[0]],np.conjugate(Cmo[0].T[:nel[0],:]))  
             D[self.nbf:,self.nbf:] = np.matmul(Cmo[1][:,:nel[1]],np.conjugate(Cmo[1].T[:nel[1],:]))  
           else:
-            print("    Guess orbitals with wrong dimensions! Computing trial density from PySCF....")
+            print("", end ="") # print("    Guess orbitals with wrong dimensions! Computing trial density from PySCF....")
             D =  self.jk.init_guess_by_atom()
         except:
-          print("    MOs not found! Computing trial density from PySCF....")
+          print("", end ="") # print("    MOs not found! Computing trial density from PySCF....")
           D =  self.jk.init_guess_by_atom()
       else:
-        print("    Failed reading MOs from file! Computing trial density from PySCF....")
+        print("", end ="") # print("    Failed reading MOs from file! Computing trial density from PySCF....")
         self.jk.conv_tol	= options.e_conv
         self.jk.conv_tol_grad = options.d_conv
         self.jk.verbose = 4
@@ -947,9 +948,9 @@ class GKS():
       newE = np.einsum("mn,mn->",D,F0) #+ Exc
       energy = 0
       newD = np.zeros((2*self.nbf,2*self.nbf),dtype=complex)
-      print("    Starting SCF procedure.",flush=True) 
+      print("", end ="") # print("    Starting SCF procedure.",flush=True) 
       tic = time.time()
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]|  Time(s) ",flush=True)
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]|  Time(s) ",flush=True)
 
       if options.diis is True:
         err_vec = np.zeros((1,1,1))
@@ -974,7 +975,7 @@ class GKS():
         energy = newE.real
         D = 1.*newD
         if it > -1:
-            print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s %5.2f"%(it,energy+self.e_nuc,dE,dD,diis.is_diis,time.time()-tic),flush=True)
+            print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s %5.2f"%(it,energy+self.e_nuc,dE,dD,diis.is_diis,time.time()-tic),flush=True)
         if (dE < options.e_conv) and (dD < options.d_conv):
           if self.options.relativistic == "zora":
             Ci = np.zeros((1,2*self.nbf),dtype=complex)
@@ -990,46 +991,46 @@ class GKS():
             eps = evals
 
 
-          print("    Iterations have converged!")
-          print("")
-          print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-          print("    One-electron Energy:          %20.12f" %(oneE))
-          print("    Two-electron Energy:          %20.12f" %(twoE))
+          print("", end ="") # print("    Iterations have converged!")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+          print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+          print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
           if self.options.relativistic == "zora":
-            print("    Zora Energy scaling:          %20.12f" %(zora_scal))
-          print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-          print("")
-          print("    Orbital Energies [Eh]")
-          print("    ---------------------")
-          print("")
-          print("    Occupied orbitals:")
+            print("", end ="") # print("    Zora Energy scaling:          %20.12f" %(zora_scal))
+          print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+          print("", end ="") # print("")
+          print("", end ="") # print("    Orbital Energies [Eh]")
+          print("", end ="") # print("    ---------------------")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Occupied orbitals:")
           for i in range(self.nel[0]):
-              print("    %4i: %12.5f "%(i+1,eps[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Virtual orbitals:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,eps[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Virtual orbitals:")
           for a in range(2*self.nbf-self.nel[0]):
-              print("    %4i: %12.5f "%(self.nel[0]+a+1,eps[self.nel[0]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,eps[self.nel[0]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
           break
         if (it == options.maxiter-1):
-            print("SCF iterations did not converge!")
+            print("", end ="") # print("SCF iterations did not converge!")
         it += 1
-      print("")
+      print("", end ="") # print("")
 
-      print("    Molecular Orbital Analysis")
-      print("    --------------------------\n")
+      print("", end ="") # print("    Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------\n")
 
       ao_labels = 2*self.ints_factory.ao_labels()
       for p in range(2*self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(Cmo.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],Cmo[i][p].real),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],Cmo[i][p].real),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
       self.F = [F]
       self.C = [Cmo]
@@ -1044,14 +1045,14 @@ class GKS():
       io_utils.write_molden(self,filename)
 
       self.E0 = (energy.real+self.e_nuc)
-      print("")
-      print("    @GHF Final Energy: %20.12f Eh" %self.E0)
-      print("    @GHF Final Energy: %20.12f eV" %(self.E0*27.21138))
-#      print("    @PYSCF Final Energy: %20.12f Eh" %(energy_pyscf))
-      print("")
+      print("", end ="") # print("")
+      print("", end ="") # print("    @GHF Final Energy: %20.12f Eh" %self.E0)
+      print("", end ="") # print("    @GHF Final Energy: %20.12f eV" %(self.E0*27.21138))
+#      print("", end ="") # print("    @PYSCF Final Energy: %20.12f Eh" %(energy_pyscf))
+      print("", end ="") # print("")
 
       toc = time.time()
-      print("    SCF intrations took %5.2f seconds"%(toc-tic),flush=True)
+      print("", end ="") # print("    SCF intrations took %5.2f seconds"%(toc-tic),flush=True)
 
       return self.scf_energy
 
@@ -1070,8 +1071,8 @@ class RGKS():
       self.reference    = "rgks"
       
     def compute(self,options):
-      print("    Number of electrons        : %4i"%(self.nel[0]))
-      print("    Number of basis functions  : %4i"%(2*self.nbf))
+      print("", end ="") # print("    Number of electrons        : %4i"%(self.nel[0]))
+      print("", end ="") # print("    Number of basis functions  : %4i"%(2*self.nbf))
 
       self.options = options
       self.S   = self.ints_factory.intor('int1e_ovlp')
@@ -1081,32 +1082,32 @@ class RGKS():
  
       options.xctype  = dft.libxc.xc_type(self.options.xc)
       options.xcalpha = dft.libxc.hybrid_coeff(self.options.xc)
-      print("\n    Exchange-Correlation Functional:",options.xc)
-      print("\n    Exchange-Correlation Functional Type:",options.xctype)
-      print("\n    Hybrid alpha parameter: %f"%options.xcalpha,flush=True)
+      print("", end ="") # print("\n    Exchange-Correlation Functional:",options.xc)
+      print("", end ="") # print("\n    Exchange-Correlation Functional Type:",options.xctype)
+      print("", end ="") # print("\n    Hybrid alpha parameter: %f"%options.xcalpha,flush=True)
 
       self.jk    = dft.GKS(self.ints_factory,options.xc) #jk object from pyscf
       #find trial movecs
       if options.guess_mos_provided is True:
-        print("    Reading MOs from File...")
+        print("", end ="") # print("    Reading MOs from File...")
         try:
           Cmo, nel = io_utils.read_real_mos(options.guess_mos)
           if Cmo.shape == (2,2*self.nbf,2*self.nbf):
-            print("    RGKS orbitals found.",flush=True)  
+            print("", end ="") # print("    RGKS orbitals found.",flush=True)  
             D = np.matmul(Cmo[0][:,:nel[0]],np.conjugate(Cmo[0].T[:nel[0],:]))  
           elif Cmo.shape == (2,self.nbf,self.nbf):
-            print("    RKS orbitals found. projecting into RGKS space",flush=True)
+            print("", end ="") # print("    RKS orbitals found. projecting into RGKS space",flush=True)
             D = np.zeros((2*self.nbf,2*self.nbf))  
             D[:self.nbf,:self.nbf] = np.matmul(Cmo[0][:,:nel[0]],np.conjugate(Cmo[0].T[:nel[0],:]))  
             D[self.nbf:,self.nbf:] = np.matmul(Cmo[1][:,:nel[1]],np.conjugate(Cmo[1].T[:nel[1],:]))  
           else:
-            print("    Guess orbitals with wrong dimensions! Computing trial density from PySCF....")
+            print("", end ="") # print("    Guess orbitals with wrong dimensions! Computing trial density from PySCF....")
             D =  self.jk.init_guess_by_atom().real
         except:
-          print("    MOs not found! Computing trial density from PySCF....")
+          print("", end ="") # print("    MOs not found! Computing trial density from PySCF....")
           D =  self.jk.init_guess_by_atom().real
       else:
-        print("    Failed reading MOs from file! Computing trial density from PySCF....")
+        print("", end ="") # print("    Failed reading MOs from file! Computing trial density from PySCF....")
         self.jk.conv_tol	= options.e_conv
         self.jk.conv_tol_grad = options.d_conv
         self.jk.verbose = 4
@@ -1152,14 +1153,14 @@ class RGKS():
       if self.options.cosmo is True: 
         cosmo = solvent.ddcosmo.DDCOSMO(self.ints_factory)
         cosmo.eps = self.options.cosmo_epsilon 
-        print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
+        print("", end ="") # print("    COSMO solvent enabled. Dielectric constant %f"%(self.options.cosmo_epsilon))
 
-      print("    Starting SCF procedure.",flush=True) 
+      print("", end ="") # print("    Starting SCF procedure.",flush=True) 
       tic = time.time()
-      print("\n                   Total Energy    |Delta E|    RMS |[F,D]|  Time(s) ",flush=True)
+      print("", end ="") # print("\n                   Total Energy    |Delta E|    RMS |[F,D]|  Time(s) ",flush=True)
 
       if options.diis is True:
-        print("Initializing DIIS",flush=True)
+        print("", end ="") # print("Initializing DIIS",flush=True)
         err_vec = np.zeros((1,1,1))
         Fdiis = np.zeros((1,1,1))
         diis = diis_routine.DIIS(self) 
@@ -1167,7 +1168,7 @@ class RGKS():
         diis.e_vecs = np.zeros((diis.diis_max,2*self.nbf,2*self.nbf))
 
       for it in range(options.maxiter):
-        print("Evaluating effective potential",flush=True)
+        print("", end ="") # print("Evaluating effective potential",flush=True)
         pot = self.jk.get_veff(self.ints_factory,D) #pyscf effective potential
         F = F0 + pot.real
         if self.options.cosmo is True:
@@ -1176,20 +1177,20 @@ class RGKS():
           e_cosmo, v_cosmo = cosmo.kernel(dm=[Daa,Dbb])
           F[:self.nbf,:self.nbf] += v_cosmo
           F[self.nbf:,self.nbf:] += v_cosmo
-        print("Extrapolating Fock matrix",flush=True)
+        print("", end ="") # print("Extrapolating Fock matrix",flush=True)
         Forth, e_rms = diis.do_diis(F,D,S,Shalf)
-        print("Diagonalizing Fock matrix",flush=True)
+        print("", end ="") # print("Diagonalizing Fock matrix",flush=True)
         evals, evecs = sp.linalg.eigh(Forth)
-        print("Back-transforming MOs",flush=True)
+        print("", end ="") # print("Back-transforming MOs",flush=True)
         Cmo   = Shalf@evecs.real
  
         if options.noscf is True:
-          print("    NOSCF flag enabled. Guess orbitals will be used without optimization",flush=True)
+          print("", end ="") # print("    NOSCF flag enabled. Guess orbitals will be used without optimization",flush=True)
           if len(options.swap_mos) == 2:
             orig = options.swap_mos[0]
             swap = options.swap_mos[1]
             for i in range(len(orig)):
-              print("    WARNING: Swapping molecular orbitals %i and %i"%(orig[i]+1,swap[i]+1))
+              print("", end ="") # print("    WARNING: Swapping molecular orbitals %i and %i"%(orig[i]+1,swap[i]+1))
               orig_i = [orig[i],swap[i]]
               swap_i = [swap[i],orig[i]]
               Cmo[:,swap_i] = Cmo[:,orig_i]
@@ -1215,7 +1216,7 @@ class RGKS():
           energy = newE
           D = 1.*newD
           if it > 0:
-              print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s %5.2f"%(it,energy+self.e_nuc,dE,dD,diis.is_diis,time.time()-tic),flush=True)
+              print("", end ="") # print("    @SCF iter %3i: % 12.8f % 10.6e % 10.6e %6s %5.2f"%(it,energy+self.e_nuc,dE,dD,diis.is_diis,time.time()-tic),flush=True)
         if (dE < options.e_conv) and (dD < options.d_conv):
           if self.options.relativistic == "zora":
             Ci = np.zeros((1,2*self.nbf),dtype=complex)
@@ -1231,48 +1232,48 @@ class RGKS():
             eps = evals
 
 
-          print("    Iterations have converged!")
-          print("")
-          print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
-          print("    One-electron Energy:          %20.12f" %(oneE))
-          print("    Two-electron Energy:          %20.12f" %(twoE))
+          print("", end ="") # print("    Iterations have converged!")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Nuclear Repulsion Energy:     %20.12f" %(self.e_nuc))
+          print("", end ="") # print("    One-electron Energy:          %20.12f" %(oneE))
+          print("", end ="") # print("    Two-electron Energy:          %20.12f" %(twoE))
           if self.options.relativistic == "zora":
-            print("    Zora Energy scaling:          %20.12f" %(zora_scal)) 
+            print("", end ="") # print("    Zora Energy scaling:          %20.12f" %(zora_scal)) 
           if self.options.cosmo is True:
-            print("    Cosmo Energy:               %20.12f" %(e_cosmo)) 
-          print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
-          print("")
-          print("    Orbital Energies [Eh]")
-          print("    ---------------------")
-          print("")
-          print("    Occupied orbitals:")
+            print("", end ="") # print("    Cosmo Energy:               %20.12f" %(e_cosmo)) 
+          print("", end ="") # print("    Total  Energy:                %20.12f\n" %(twoE+oneE+self.e_nuc))
+          print("", end ="") # print("")
+          print("", end ="") # print("    Orbital Energies [Eh]")
+          print("", end ="") # print("    ---------------------")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Occupied orbitals:")
           for i in range(self.nel[0]):
-              print("    %4i: %12.5f "%(i+1,eps[i]),end="")
-              if (i+1)%3 == 0: print("")
-          print("")
-          print("    Virtual orbitals:")
+              print("", end ="") # print("    %4i: %12.5f "%(i+1,eps[i]),end="")
+              if (i+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
+          print("", end ="") # print("    Virtual orbitals:")
           for a in range(2*self.nbf-self.nel[0]):
-              print("    %4i: %12.5f "%(self.nel[0]+a+1,eps[self.nel[0]+a]),end="")
-              if (a+1)%3 == 0: print("")
-          print("")
+              print("", end ="") # print("    %4i: %12.5f "%(self.nel[0]+a+1,eps[self.nel[0]+a]),end="")
+              if (a+1)%3 == 0: print("", end ="") # print("")
+          print("", end ="") # print("")
           break
         if (it == options.maxiter-1):
-            print("SCF iterations did not converge!")
+            print("", end ="") # print("SCF iterations did not converge!")
         it += 1
-      print("")
+      print("", end ="") # print("")
 
-      print("    Molecular Orbital Analysis")
-      print("    --------------------------\n")
+      print("", end ="") # print("    Molecular Orbital Analysis")
+      print("", end ="") # print("    --------------------------\n")
 
       ao_labels = 2*self.ints_factory.ao_labels()
       for p in range(2*self.nbf):
-        print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps[p]))
-        print("    ----------------------------------------------------------------------------")
+        print("", end ="") # print("    Vector %5i:    Occupation = %1i    Energy = %8.5f "%(p+1, (1 if p < self.nel[0] else 0),eps[p]))
+        print("", end ="") # print("    ----------------------------------------------------------------------------")
         sort_idx = np.argsort(-np.abs(Cmo.T[p]))
         for idx, i in enumerate(sort_idx[:6]):
-          print("    %-12s: % 8.5f "%(ao_labels[i],Cmo[i][p].real),end="")
-          if ((idx+1)%3 == 0): print("")
-        print("\n")
+          print("", end ="") # print("    %-12s: % 8.5f "%(ao_labels[i],Cmo[i][p].real),end="")
+          if ((idx+1)%3 == 0): print("", end ="") # print("")
+        print("", end ="") # print("\n")
 
       self.F = [F]
       self.C = [Cmo]
@@ -1281,20 +1282,20 @@ class RGKS():
       self.eps = [eps]
       self.mu = mu
       self.scf_energy = twoE + oneE + self.e_nuc
-      print("Writing MOs",flush=True)
+      print("", end ="") # print("Writing MOs",flush=True)
       mos_filename = self.options.inputfile.split(".")[0]+".mos"
       io_utils.write_mos([Cmo,Cmo],self.nel,mos_filename)
-      print("Writing Molden file",flush=True)
+      print("", end ="") # print("Writing Molden file",flush=True)
       filename = self.options.inputfile.split(".")[0]
       io_utils.write_molden(self,filename)
 
       self.E0 = (energy.real+self.e_nuc)
-      print("")
-      print("    @RGHF Final Energy: %20.12f Eh" %self.E0)
-      print("    @RGHF Final Energy: %20.12f eV" %(self.E0*27.21138))
-      print("")
+      print("", end ="") # print("")
+      print("", end ="") # print("    @RGHF Final Energy: %20.12f Eh" %self.E0)
+      print("", end ="") # print("    @RGHF Final Energy: %20.12f eV" %(self.E0*27.21138))
+      print("", end ="") # print("")
 
       toc = time.time()
-      print("    SCF intrations took %5.2f seconds"%(toc-tic),flush=True)
+      print("", end ="") # print("    SCF intrations took %5.2f seconds"%(toc-tic),flush=True)
 
       return self.scf_energy

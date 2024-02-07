@@ -1,6 +1,8 @@
 import numpy as np
 from pyscf.data import elements
 
+# I replaced all prints with blanks to not clog up runtime messages.
+
 def write_mos(C,nel,mos_filename):
     C = np.asarray(C)
     nbf = len(C[0]) 
@@ -13,7 +15,7 @@ def write_mos(C,nel,mos_filename):
     for i in range(2*nbf*nmo):
       f.write(bytearray(C[i]))
     f.close()
-    print("File written to %s!"%mos_filename)
+    print("", end ="") # print("File written to %s!"%mos_filename)
 
 def read_real_mos(mos_filename):
    f = open(mos_filename,"rb")
@@ -26,7 +28,7 @@ def read_real_mos(mos_filename):
    C = np.fromfile(f,dtype="float64",count=2*nbf*nmo)
    C = C.reshape(2,nbf,nmo)
    f.close()
-   print("MOs read from %s"%(mos_filename))
+   print("", end ="") # print("MOs read from %s"%(mos_filename))
    return C, [nela,nelb]  
 
 #the code below accounts for complex orbitals
@@ -41,7 +43,7 @@ def read_complex_mos(mos_filename):
    C = np.fromfile(f,dtype="complex",count=2*nbf*nmo)
    C = C.reshape(2,nbf,nmo)
    f.close()
-   print("Complex MOs read from %s"%(mos_filename))
+   print("", end ="") # print("Complex MOs read from %s"%(mos_filename))
    return C, [nela,nelb]  
 
 

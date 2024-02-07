@@ -19,7 +19,7 @@ plt.rcParams['ytick.major.size'] = 6
 plt.rcParams['ytick.major.width'] = 2
 
 eField = []
-dtMEEP = 0
+dt = 0
 
 def JK(wfn, D):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2.*D)
@@ -32,11 +32,6 @@ def ind_dipole(direction1, direction2, wfn):
     D_mo = wfn.C[0].T@wfn.S.T@D_ao@wfn.S@wfn.C[0]
 
     # RK4 method
-    # If this is happening at the atomic scale, 
-    # one time unit here is 2.4188843265857E-17 s
-    # one time unit in meep is 3.33333333E-15 s or 333.33333E-17 s
-    dt = dtMEEP * (333.3333333333333/2.4188843265857)
-
     Ft_ao = JK(wfn, D_ao) - wfn.mu[direction1]*eField[0]
     Ft_mo = wfn.C[0].T@Ft_ao@wfn.C[0]
     k1 = (-1j*(Ft_mo@D_mo - D_mo@Ft_mo))
@@ -65,10 +60,10 @@ def ind_dipole(direction1, direction2, wfn):
 
 def run(inputfile, eFieldAvg, dT):
     global eField 
-    global dtMEEP
+    global dt
     import options
     eField = eFieldAvg
-    dtMEEP = dT
+    dt = dT
     options = options.OPTIONS()
 
     molecule, method, basis = input_parser.read_input(inputfile,options)
@@ -92,17 +87,17 @@ def run(inputfile, eFieldAvg, dT):
                     spin = int(options.spin), 
                     cart=options.cartesian)
     pyscf_mol.set_common_origin(molecule["com"])
-    pyscf_mol.verbose = 1
+    pyscf_mol.verbose = 0
     pyscf_mol.max_memory = options.memory
     pyscf_mol.build()
 
     rks_wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = rks_wfn.compute(options)
 
-    print("\n\nComputing Induced Dipole now!")
+    # print("\n\nComputing Induced Dipole now!")
     mu_xx = ind_dipole(0, 0, rks_wfn)
     mu_yy = ind_dipole(1, 1, rks_wfn)
     mu_zz = ind_dipole(2, 2, rks_wfn)
     ind_dipole_avg = (mu_xx + mu_yy + mu_zz)/3
 
-    return mu_zz
+    return mu_zz.real

@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import constants
 
+# I replaced all prints with blanks to not clog up runtime messages.
+
 def read_input(inputfile,options):
     #read input file and separates it into three classes: molecule, method, and basis
     molecule = {}
@@ -361,28 +363,27 @@ def print_molecule_info(mol):
     mult = mol["spin"]+1
     charge = mol["charge"]
     natoms = len(atoms)
-    print("    Molecule Info")
-    print("    -------------")
-    print("")
-    print("    Number of atoms    : %i"%(natoms))
-    print("    Number of electrons: %i"%(nel))
-    print("    Charge             : %i"%(charge))
-    print("    Multiplicity       : %i"%(mult))
-    print("    Geometry [a0]:")
+    print("", end ="") # print("    Molecule Info")
+    print("", end ="") # print("    -------------")
+    print("", end ="") # print("")
+    print("", end ="") # print("    Number of atoms    : %i"%(natoms))
+    print("", end ="") # print("    Number of electrons: %i"%(nel))
+    print("", end ="") # print("    Charge             : %i"%(charge))
+    print("", end ="") # print("    Multiplicity       : %i"%(mult))
+    print("", end ="") # print("    Geometry [a0]:")
     for a in range(natoms):
         atom = atoms[a]+str(a+1)
-        print("    %5s %20.12f %20.12f %20.12f "%(atoms[a],\
-        coords[atom][0],coords[atom][1],coords[atom][2]))
-    print("")
+        print("", end ="") # print("    %5s %20.12f %20.12f %20.12f "%(atoms[a],coords[atom][0],coords[atom][1],coords[atom][2]))
+    print("", end ="") # print("")
     return None
 
 def print_method_info(method):
-    print("    Method: %s "%method["name"])
-    print("    E_conv: %e "%method["e_conv"])
-    print("    D_conv: %e "%method["d_conv"])
-    print("    Maxiter: %i "%method["maxiter"])
-    print("")
+    print("", end ="") # print("    Method: %s "%method["name"])
+    print("", end ="") # print("    E_conv: %e "%method["e_conv"])
+    print("", end ="") # print("    D_conv: %e "%method["d_conv"])
+    print("", end ="") # print("    Maxiter: %i "%method["maxiter"])
+    print("", end ="") # print("")
     return None
 def print_basis_info(basis):
-    print("    Basis set: %s "%basis["name"])
+    print("", end ="") # print("    Basis set: %s "%basis["name"])
     return None
