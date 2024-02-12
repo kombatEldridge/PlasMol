@@ -128,6 +128,8 @@ def callRTTDDFT(sim):
     # one time unit in meep is 3.33333333E-15 s or 333.33333E-17 s
     # one time unit in bohr is 2.4188843265857E-17 s
     dTbohr = dT * (333.3333333333333/2.4188843265857)
+    print(dT * 3.33e-15)
+    print(dTbohr * 2.4188843265857e-17)
 
     print("Calling RT-TDDFT Code: ", sim.meep_time(), " meep time")
     print("Ez_arr: ", Ez_arr)
