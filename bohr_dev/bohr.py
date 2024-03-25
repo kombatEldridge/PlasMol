@@ -18,15 +18,12 @@ plt.rcParams['xtick.major.width'] = 2
 plt.rcParams['ytick.major.size'] = 6
 plt.rcParams['ytick.major.width'] = 2
 
-eField = []
-dt = 0
-
 def JK(wfn, D):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2.*D)
     Fa = wfn.T + wfn.Vne + pot
     return Fa
 
-def ind_dipole(direction1, direction2, wfn):
+def ind_dipole(direction1, direction2, wfn, eField, dt):
     D_ao = wfn.D[0]
     D_ao_init = wfn.D[0]
     D_mo = wfn.C[0].T@wfn.S.T@D_ao@wfn.S@wfn.C[0]
@@ -58,12 +55,8 @@ def ind_dipole(direction1, direction2, wfn):
     mu = np.trace(wfn.mu[direction2]@D_ao) - np.trace(wfn.mu[direction2]@D_ao_init)
     return mu
 
-def run(inputfile, eFieldAvg, dT):
-    global eField 
-    global dt
+def run(inputfile, Ex, Ey, Ez, dt):
     import options
-    eField = eFieldAvg
-    dt = dT
     options = options.OPTIONS()
 
     molecule, method, basis = input_parser.read_input(inputfile,options)
@@ -94,10 +87,8 @@ def run(inputfile, eFieldAvg, dT):
     rks_wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = rks_wfn.compute(options)
 
-    # print("\n\nComputing Induced Dipole now!")
-    mu_xx = ind_dipole(0, 0, rks_wfn)
-    mu_yy = ind_dipole(1, 1, rks_wfn)
-    mu_zz = ind_dipole(2, 2, rks_wfn)
-    ind_dipole_avg = (mu_xx + mu_yy + mu_zz)/3
+    mu_xx = ind_dipole(0, 0, rks_wfn, Ex, dt)
+    mu_yy = ind_dipole(1, 1, rks_wfn, Ey, dt)
+    mu_zz = ind_dipole(2, 2, rks_wfn, Ez, dt)
 
-    return mu_zz.real
+    return mu_xx.real, mu_yy.real, mu_zz.real
