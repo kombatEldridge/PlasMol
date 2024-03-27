@@ -60,7 +60,6 @@ def chirpy(t):
 def chirpz(t):
     return dipArr[2][str(round(t, decimals))] if dipArr[2][str(round(t, decimals))] != 0 else 0
 
-# Gaussian-shaped planewave
 sources = [
     # mp.Source(
     #     mp.ContinuousSource(frequency=100, is_integrated=True), # freq=10 is 100nm
@@ -75,17 +74,17 @@ sources = [
         component=mp.Ez,
     ), 
     mp.Source(
-        mp.CustomSource(src_func=chirpx),
+        mp.CustomSource(src_func=chirpx, is_integrated=True),
         center=mol_pos,
-        component=mp.Ex
+        component=mp.Ex, 
     ),
     mp.Source(
-        mp.CustomSource(src_func=chirpy),
+        mp.CustomSource(src_func=chirpy, is_integrated=True),
         center=mol_pos,
         component=mp.Ey
     ),
     mp.Source(
-        mp.CustomSource(src_func=chirpz),
+        mp.CustomSource(src_func=chirpz, is_integrated=True),
         center=mol_pos,
         component=mp.Ez
     )
