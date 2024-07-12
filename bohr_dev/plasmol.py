@@ -7,10 +7,12 @@ from meep.materials import Au_JC_visible as Au
 import bohr
 from scipy import constants
 
+# Location of molecule's input file in Psi4 format
 inputfile = sys.argv[1]
 
 # -------- MEEP INIT -------- #
 
+# Nanoparticle's radius in microns (the base unit in meep)
 r = 0.025
 
 wvl_min = 0.400 
@@ -22,7 +24,7 @@ dfrq = frq_max-frq_min
 nfrq = 50
 frq_range = mp.FreqRange(min=frq_min, max=frq_max)
 
-resolution = 1000
+resolution = 10000
 
 dpml = 0.01
 
@@ -61,30 +63,30 @@ def chirpz(t):
     return dipArr[2][str(round(t, decimals))] if dipArr[2][str(round(t, decimals))] != 0 else 0
 
 sources = [
-    # mp.Source(
-    #     mp.ContinuousSource(frequency=100, is_integrated=True), # freq=10 is 100nm
-    #     center=mp.Vector3(-0.5*s+dpml),
-    #     size=mp.Vector3(0, s, s),
-    #     component=mp.Ez
-    # ),
     mp.Source(
-        mp.GaussianSource(frq_cen, fwidth=dfrq, is_integrated=True),
+        mp.ContinuousSource(frequency=100, is_integrated=True), # freq=10 is 100nm
         center=mp.Vector3(-0.5*s+dpml),
         size=mp.Vector3(0, s, s),
-        component=mp.Ez,
-    ), 
+        component=mp.Ez
+    ),
+    # mp.Source(
+    #     mp.GaussianSource(frq_cen, fwidth=dfrq, is_integrated=True),
+    #     center=mp.Vector3(-0.5*s+dpml),
+    #     size=mp.Vector3(0, s, s),
+    #     component=mp.Ez,
+    # ), 
     mp.Source(
-        mp.CustomSource(src_func=chirpx, is_integrated=True),
+        mp.CustomSource(src_func=chirpx),
         center=mol_pos,
         component=mp.Ex, 
     ),
     mp.Source(
-        mp.CustomSource(src_func=chirpy, is_integrated=True),
+        mp.CustomSource(src_func=chirpy),
         center=mol_pos,
         component=mp.Ey
     ),
     mp.Source(
-        mp.CustomSource(src_func=chirpz, is_integrated=True),
+        mp.CustomSource(src_func=chirpz),
         center=mol_pos,
         component=mp.Ez
     )
@@ -175,14 +177,14 @@ def clear_directory(directory_path):
 
 clear_directory(script_name)
 
-# intensityMin = -0.0001
-# intensityMax = 0.0001
+intensityMin = -3
+intensityMax = 3
 
 sim.run(
     mp.at_every(dT, getSlice),
     mp.at_every(3*dT, callBohr), 
-    mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -z {half_frame} -Zc RdBu")),
-    # mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {half_frame} -Zc RdBu")),
+    # mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -z {half_frame} -Zc dkbluered")),
+    mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {half_frame} -Zc dkbluered")),
     # mp.at_every(10*dT, mp.output_png(mp.Ex, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -x {mol_framex} -Zc RdBu")),
     until=900*dT)
 
