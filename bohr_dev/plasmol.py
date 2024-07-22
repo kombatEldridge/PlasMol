@@ -24,7 +24,7 @@ dfrq = frq_max-frq_min
 nfrq = 50
 frq_range = mp.FreqRange(min=frq_min, max=frq_max)
 
-resolution = 10000
+resolution = 1000
 
 dpml = 0.01
 
@@ -107,7 +107,7 @@ sim = mp.Simulation(
 )
 
 # one time unit is 3.33 fs
-dT = sim.Courant/resolution
+dT = sim.Courant/sim.Resolution
 
 initDIP = 0
 
