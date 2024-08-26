@@ -9,64 +9,74 @@ from scipy import constants
 
 # Location of molecule's input file in Psi4 format
 inputfile = sys.argv[1]
+convertTimeMeeptoSI = 10 / 3  # t_Meep * convertTimeMeeptoSI = t_SI
+convertTimeBohrtoSI = 0.024188843  # t_Bohr * convertTimeBohrtoSI = t_SI
+convertFieldMeeptoSI = 1 / 1e-6 / constants.epsilon_0 / constants.c / 0.51422082e12
+responseCutOff = 1e-12
 
 # -------- MEEP INIT -------- #
 
 # Nanoparticle's radius in microns (the base unit in meep)
-r = 0.025
+radiusNP = 0.025
 
-wvl_min = 0.400 
-wvl_max = 0.800 
-frq_min = 1/wvl_max
-frq_max = 1/wvl_min
-frq_cen = 0.5*(frq_min+frq_max)
-dfrq = frq_max-frq_min
-nfrq = 50
-frq_range = mp.FreqRange(min=frq_min, max=frq_max)
+# Define wavelength range for the simulation
+wavelengthMin = 0.400
+wavelengthMax = 0.800
+frequencyMin = 1/wavelengthMax  # Minimum frequency
+frequencyMax = 1/wavelengthMin  # Maximum frequency
+frequencyCenter = 0.5*(frequencyMin+frequencyMax)  # Center frequency
+frequencyWidth = frequencyMax-frequencyMin  # Frequency width
+frequencySamplePts = 50  # Number of frequency points
+frequencyRange = mp.FreqRange(
+    min=frequencyMin, max=frequencyMax)  # Frequency range for MEEP
 
-resolution = 1000
+resolution = 1000  # Spatial resolution of the simulation
 
-dpml = 0.01
+# Thickness of Perfectly Matched Layer (PML) absorbing boundaries
+pmlThickness = 0.01
+pmlList = [mp.PML(thickness=pmlThickness)]  # Define PML list
 
-pml_layers = [mp.PML(thickness=dpml)]
+# Define symmetry conditions for the simulation
+symmetriesList = [mp.Mirror(mp.Y), mp.Mirror(mp.Z, phase=-1)]
 
-symmetries = [mp.Mirror(mp.Y), mp.Mirror(mp.Z, phase=-1)]
+cellLength = 0.1  # Size of the simulation cell
+# Set the dimensions of the simulation cell
+cellVolume = mp.Vector3(cellLength, cellLength, cellLength)
 
-s = 0.1
-cell_size = mp.Vector3(s, s, s)
+# Position of nanoparticle and molecule
+positionNP = mp.Vector3(0, 0, 0)  # Nanoparticle at origin
+# Molecule 0.010 microns off NP surface in the x direction
+positionMolecule = mp.Vector3(radiusNP + 0.010, 0, 0)
 
-# We'll put mol at 0.010 um off NP surface in x dir
-np_pos = mp.Vector3(0, 0, 0)
-mol_pos = mp.Vector3(r + 0.010, 0, 0)
+# Define the frame coordinates for nanoparticle and molecule
+frameCenter = cellLength * resolution / 2
+frameMoleculeX = (positionMolecule.x + cellLength / 2) * resolution
+frameMoleculeY = (positionMolecule.y + cellLength / 2) * resolution
+frameMoleculeZ = (positionMolecule.z + cellLength / 2) * resolution
+frameNPX = (positionNP.x + cellLength / 2) * resolution
+frameNPY = (positionNP.y + cellLength / 2) * resolution
+frameNPZ = (positionNP.z + cellLength / 2) * resolution
 
-# Unused right now, but defines volume of molecule
-# mol_dim = mp.Vector3(0.001, 0.001, 0.001)
-
-# positive x dir goes left to right
-# positive y dir goes top to down
-# positive z dir goes ???
-half_frame = s*resolution/2
-mol_framex = (mol_pos.x + s/2)*resolution
-mol_framey = (mol_pos.y + s/2)*resolution
-mol_framez = (mol_pos.z + s/2)*resolution
-np_framex = (np_pos.x + s/2)*resolution
-np_framey = (np_pos.y + s/2)*resolution
-np_framez = (np_pos.z + s/2)*resolution
-
-
-# This gets called every half time step (FDTD nuance)
+# These functions get called every half time step (FDTD nuance) so dipoleResponse must have values for t and t+dt/2
 def chirpx(t):
-    return dipArr[0][str(round(t, decimals))] if dipArr[0][str(round(t, decimals))] != 0 else 0
-def chirpy(t):
-    return dipArr[1][str(round(t, decimals))] if dipArr[1][str(round(t, decimals))] != 0 else 0
-def chirpz(t):
-    return dipArr[2][str(round(t, decimals))] if dipArr[2][str(round(t, decimals))] != 0 else 0
+    return dipoleResponse['x'][str(round(t, decimalPlaces))] if dipoleResponse['x'][str(round(t, decimalPlaces))] != 0 else 0
 
-sources = [
+
+def chirpy(t):
+    return dipoleResponse['y'][str(round(t, decimalPlaces))] if dipoleResponse['y'][str(round(t, decimalPlaces))] != 0 else 0
+
+
+def chirpz(t):
+    return dipoleResponse['z'][str(round(t, decimalPlaces))] if dipoleResponse['z'][str(round(t, decimalPlaces))] != 0 else 0
+
+
+# Define sources for the simulation
+sourcesList = [
     mp.Source(
-        mp.ContinuousSource(frequency=100, is_integrated=True), # freq=10 is 100nm
-        center=mp.Vector3(-0.5*s+dpml),
-        size=mp.Vector3(0, s, s),
+        # Frequency 100 corresponds to 100nm wavelength
+        mp.ContinuousSource(frequency=100, is_integrated=True),
+        center=mp.Vector3(-0.5 * cellLength + pmlThickness),
+        size=mp.Vector3(0, cellLength, cellLength),
         component=mp.Ez
     ),
     # mp.Source(
@@ -74,95 +84,112 @@ sources = [
     #     center=mp.Vector3(-0.5*s+dpml),
     #     size=mp.Vector3(0, s, s),
     #     component=mp.Ez,
-    # ), 
+    # ),
     mp.Source(
         mp.CustomSource(src_func=chirpx),
-        center=mol_pos,
-        component=mp.Ex, 
+        center=positionMolecule,
+        component=mp.Ex,
     ),
     mp.Source(
         mp.CustomSource(src_func=chirpy),
-        center=mol_pos,
+        center=positionMolecule,
         component=mp.Ey
     ),
     mp.Source(
         mp.CustomSource(src_func=chirpz),
-        center=mol_pos,
+        center=positionMolecule,
         component=mp.Ez
     )
 ]
 
-geometry = [mp.Sphere(radius=r,
-                      center=np_pos,
-                      material=Au)]
+# Define the geometry of the simulation (a gold sphere as the nanoparticle)
+objectList = [mp.Sphere(radius=radiusNP, center=positionNP, material=Au)]
 
+# Initialize the simulation object
 sim = mp.Simulation(
     resolution=resolution,
-    cell_size=cell_size,
-    boundary_layers=pml_layers,
-    sources=sources,
-    symmetries=symmetries,
-    geometry=geometry,
+    cell_size=cellVolume,
+    boundary_layers=pmlList,
+    sources=sourcesList,
+    symmetries=symmetriesList,
+    geometry=objectList,
     default_material=mp.Medium(index=1.33)
 )
 
-# one time unit is 3.33 fs
-dT = sim.Courant/sim.Resolution
+# Define the time step for the simulation
+timeStepMeep = sim.Courant / sim.resolution  # One time unit in MEEP is 3.33 fs
+timeStepBohr = 2 * timeStepMeep * convertTimeMeeptoSI / convertTimeBohrtoSI
 
-initDIP = 0
+initialDipole = 0  # Initial dipole moment
 
-# init as nested-dict
-dipArr = {}
-for i in np.arange(0,3):
-    dipArr[i] = {}
-    dipArr[i][str(0*dT)] = initDIP
-    dipArr[i][str(0.5*dT)] = initDIP
-    dipArr[i][str(1*dT)] = initDIP
+# Initialize dipole array as a nested dictionary
+dipoleResponse = {'x': {}, 'y': {}, 'z': {}}
+indexForComponents = {0: 'x', 1: 'y', 2: 'z'}
+for i in np.arange(0, 3):
+    componentName = indexForComponents[i]
+    dipoleResponse[componentName] = {}
+    dipoleResponse[componentName][str(0 * timeStepMeep)] = initialDipole
+    dipoleResponse[componentName][str(0.5 * timeStepMeep)] = initialDipole
+    dipoleResponse[componentName][str(1 * timeStepMeep)] = initialDipole
 
-num1_str = str(dT/2)
-decimal_index = num1_str.find('.')
-decimals = len(num1_str) - decimal_index - 1
+# Determine the number of decimal places for time steps
+# String representation of half the time step
+halfTimeStepString = str(timeStepMeep / 2)
+# Position of the decimal point in the string
+decimalPointIndex = halfTimeStepString.find('.')
+decimalPlaces = len(halfTimeStepString) - \
+    decimalPointIndex - 1  # Number of decimal places
 
-E_arr = [[],[],[]]
-components = [mp.Ex, mp.Ey, mp.Ez]
+# Initialize arrays to store electric field components
+electricFieldArray = {'x': [], 'y': [], 'z': []}
+fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
 
-def getSlice(sim):
-    global E_arr
-    print("Getting slice: ", sim.meep_time(), " meep time")
-    for i in np.arange(0,3):
-        E_arr[i].append(np.mean(sim.get_array(component=components[i], center=mol_pos, size=mp.Vector3(1E-20, 1E-20, 1E-20))))
-        dipArr[i][str(round(sim.meep_time() + (0.5*dT), decimals))] = initDIP
-        dipArr[i][str(round(sim.meep_time() + dT,       decimals))] = initDIP
+# Function to get a slice of the electric field at each time step
+
+
+def getElectricField(sim):
+    global electricFieldArray
+    print("Getting Electric Field at the molecule at time ",
+          sim.meep_time()*convertTimeMeeptoSI, " fs")
+    for i in np.arange(0, 3):
+        componentName = indexForComponents[i]
+        electricFieldArray[componentName].append(np.mean(sim.get_array(
+            component=fieldComponents[i], center=positionMolecule, size=mp.Vector3(1E-20, 1E-20, 1E-20)))*convertFieldMeeptoSI)
+        dipoleResponse[componentName][str(
+            round(sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = initialDipole
+        dipoleResponse[componentName][str(
+            round(sim.meep_time() + timeStepMeep, decimalPlaces))] = initialDipole
     return 0
+
 
 def callBohr(sim):
-    global E_arr
-    # Convert E_arr values to SI
-    # one E field unit in meep is I (current) / a (length unit) / epsi_0 (vacuum permit) / c (speed of light) N/C
-    # one E field unit in bohr is 0.51422082E12 N/C
-    for i in np.arange(0,3):
-        E_arr[i] = np.array(E_arr[i]) * (1 / 1e-6 / constants.epsilon_0 / constants.c) / 0.51422082e12
+    global electricFieldArray
+    moleculeResponse = {'x': [0], 'y': [0], 'z': [0]}
+    print("Calling Bohr for molecule's response at time ",
+          sim.meep_time()*convertTimeMeeptoSI, " fs")
+    for i in np.arange(0, 3):
+        componentName = indexForComponents[i]
+        if (np.mean(electricFieldArray[componentName]) < responseCutOff):
+            moleculeResponse[componentName] = 0
+        else:
+            moleculeResponse[componentName] = bohr.run(
+                inputfile, electricFieldArray['x'], electricFieldArray['y'], electricFieldArray['z'], timeStepBohr)[i]
+        dipoleResponse[componentName][str(round(
+            sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = moleculeResponse[componentName]
+        dipoleResponse[componentName][str(
+            round(sim.meep_time() + timeStepMeep, decimalPlaces))] = moleculeResponse[componentName]
 
-    # If this is happening at the atomic scale, 
-    # one time unit in meep is 3.33333333E-15 s or 333.33333E-17 s
-    # one time unit in bohr is 2.4188843265857E-17 s
-    dTbohr = dT * (333.3333333333333/2.4188843265857)
-
-    molResponse = [0,0,0]
-
-    print("Calling Bohr: ", sim.meep_time(), " meep time")
-    for i in np.arange(0,3):
-        molResponse[i] = 0 if np.mean(E_arr[i]) < 1e-12 else bohr.run(inputfile, E_arr[0], E_arr[1], E_arr[2], dTbohr)[i]
-        dipArr[i][str(round(sim.meep_time() + (0.5*dT), decimals))] = molResponse[i]
-        dipArr[i][str(round(sim.meep_time() + dT,       decimals))] = molResponse[i]
-
-    print("molResponse: ", molResponse, "\n")
-    E_arr = [[],[],[]]
+    print("\t Molecule's Response: ", moleculeResponse, "\n")
+    # Reset electricFieldArray for the next iteration
+    electricFieldArray = {'x': [], 'y': [], 'z': []}
     return 0
 
+
+# Set the output directory for the simulation results
 script_name = "testingGifOutput"
 sim.use_output_directory(script_name)
 
+# Function to clear all files in the specified directory
 def clear_directory(directory_path):
     try:
         files = os.listdir(directory_path)
@@ -175,17 +202,25 @@ def clear_directory(directory_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
+# Clear the output directory before starting the simulation
 clear_directory(script_name)
 
+# For color scaling in the output (TODO: automate this)
 intensityMin = -3
 intensityMax = 3
 
+# Run the simulation, defining actions at specific intervals
 sim.run(
-    mp.at_every(dT, getSlice),
-    mp.at_every(3*dT, callBohr), 
-    # mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -z {half_frame} -Zc dkbluered")),
-    mp.at_every(10*dT, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {half_frame} -Zc dkbluered")),
-    # mp.at_every(10*dT, mp.output_png(mp.Ex, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -x {mol_framex} -Zc RdBu")),
-    until=900*dT)
+    # Call getSlice at every time step dT
+    mp.at_every(timeStepMeep, getElectricField),
+    # Call callBohr every 3 time steps
+    mp.at_every(3 * timeStepMeep, callBohr),
+    # Output images every 10 time steps
+    mp.at_every(10 * timeStepMeep, mp.output_png(mp.Ez,
+                f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {frameCenter} -Zc dkbluered")),
+    until=500 * timeStepMeep  # Run the simulation until 300 time steps
+)
 
+# Create a GIF from the output images
 make_gif(script_name)

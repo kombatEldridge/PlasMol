@@ -1,4 +1,4 @@
-molecule-Files/testingGifOutput/
+molecule-Files/testingGifOutput*
 bohr_dev/__init__.py
 bohr_dev/constants.py
 bohr_dev/diis_routine.py

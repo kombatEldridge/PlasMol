@@ -18,5 +18,5 @@ def make_gif(frame_folder):
     frame_one.save(f"{frame_folder}_{timestamp}.gif", format="GIF", append_images=frames[1:],
                save_all=True, duration=100, loop=0)
     print("File Saved:")
-    print(f"gifs/{frame_folder}_{timestamp}.gif")
+    print(f"{frame_folder}_{timestamp}.gif")
 
