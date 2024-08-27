@@ -128,35 +128,34 @@ class Simulation:
         return 0
     
     def callBohr(self, sim):
-        # Compute average electric field components
-        averageFields = {
-            'x': np.mean(self.electricFieldArray['x']),
-            'y': np.mean(self.electricFieldArray['y']),
-            'z': np.mean(self.electricFieldArray['z'])
-        }
+        if sim.timestep() > 2:
+            # Compute average electric field components
+            averageFields = {
+                'x': np.mean(self.electricFieldArray['x']),
+                'y': np.mean(self.electricFieldArray['y']),
+                'z': np.mean(self.electricFieldArray['z'])
+            }
 
-        # Check if any field component is above the cutoff to decide if Bohr needs to be called
-        if any(abs(averageFields[component]) >= self.responseCutOff for component in ['x', 'y', 'z']):
-            bohrResults = bohr.run(
-                self.inputfile,
-                self.electricFieldArray['x'],
-                self.electricFieldArray['y'],
-                self.electricFieldArray['z'],
-                self.timeStepBohr
-            )
-            
-            for i, componentName in enumerate(self.indexForComponents):
-                self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] 
-                self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] 
+            # Check if any field component is above the cutoff to decide if Bohr needs to be called
+            if any(abs(averageFields[component]) >= self.responseCutOff for component in ['x', 'y', 'z']) and len(self.electricFieldArray['x']) == 3:
+                bohrResults = bohr.run(
+                    self.inputfile,
+                    self.electricFieldArray['x'],
+                    self.electricFieldArray['y'],
+                    self.electricFieldArray['z'],
+                    self.timeStepBohr
+                )
+                
+                for i, componentName in enumerate(self.indexForComponents):
+                    self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] 
+                    self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] 
 
-            print("\t Molecule's Response: ", bohrResults, "\n")
-            
-            # print(simObj.electricFieldArray)
+                print("Molecule's Response: ", bohrResults)
+                # print(self.electricFieldArray)
 
-        # Remove first entry to make room for next entry
-        # for componentName in self.electricFieldArray:
-        #     self.electricFieldArray[componentName].pop(0)
-        self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
+            # Remove first entry to make room for next entry
+            for componentName in self.electricFieldArray:
+                self.electricFieldArray[componentName].pop(0)
 
         return 0
 
@@ -171,7 +170,7 @@ class Simulation:
 
         self.sim.run(
             mp.at_every(self.timeStepMeep, self.getElectricField),
-            mp.at_every(3 * self.timeStepMeep, self.callBohr),
+            mp.at_every(self.timeStepMeep, self.callBohr),
             mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {self.frameCenter} -Zc dkbluered")),
             until=250 * self.timeStepMeep
         )
