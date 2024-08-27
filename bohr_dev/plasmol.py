@@ -20,15 +20,11 @@ responseCutOff = 1e-12
 radiusNP = 0.025
 
 # Define wavelength range for the simulation
-wavelengthMin = 0.400
-wavelengthMax = 0.800
-frequencyMin = 1/wavelengthMax  # Minimum frequency
-frequencyMax = 1/wavelengthMin  # Maximum frequency
+frequencyMin = 1/0.800  # Minimum frequency
+frequencyMax = 1/0.400  # Maximum frequency
 frequencyCenter = 0.5*(frequencyMin+frequencyMax)  # Center frequency
 frequencyWidth = frequencyMax-frequencyMin  # Frequency width
 frequencySamplePts = 50  # Number of frequency points
-frequencyRange = mp.FreqRange(
-    min=frequencyMin, max=frequencyMax)  # Frequency range for MEEP
 
 resolution = 1000  # Spatial resolution of the simulation
 
@@ -50,24 +46,18 @@ positionMolecule = mp.Vector3(radiusNP + 0.010, 0, 0)
 
 # Define the frame coordinates for nanoparticle and molecule
 frameCenter = cellLength * resolution / 2
-frameMoleculeX = (positionMolecule.x + cellLength / 2) * resolution
-frameMoleculeY = (positionMolecule.y + cellLength / 2) * resolution
-frameMoleculeZ = (positionMolecule.z + cellLength / 2) * resolution
-frameNPX = (positionNP.x + cellLength / 2) * resolution
-frameNPY = (positionNP.y + cellLength / 2) * resolution
-frameNPZ = (positionNP.z + cellLength / 2) * resolution
 
 # These functions get called every half time step (FDTD nuance) so dipoleResponse must have values for t and t+dt/2
 def chirpx(t):
-    return dipoleResponse['x'][str(round(t, decimalPlaces))] if dipoleResponse['x'][str(round(t, decimalPlaces))] != 0 else 0
+    return dipoleResponse['x'].get(str(round(t, decimalPlaces)), 0)
 
 
 def chirpy(t):
-    return dipoleResponse['y'][str(round(t, decimalPlaces))] if dipoleResponse['y'][str(round(t, decimalPlaces))] != 0 else 0
+    return dipoleResponse['y'].get(str(round(t, decimalPlaces)), 0)
 
 
 def chirpz(t):
-    return dipoleResponse['z'][str(round(t, decimalPlaces))] if dipoleResponse['z'][str(round(t, decimalPlaces))] != 0 else 0
+    return dipoleResponse['z'].get(str(round(t, decimalPlaces)), 0)
 
 
 # Define sources for the simulation
@@ -120,69 +110,91 @@ sim = mp.Simulation(
 timeStepMeep = sim.Courant / sim.resolution  # One time unit in MEEP is 3.33 fs
 timeStepBohr = 2 * timeStepMeep * convertTimeMeeptoSI / convertTimeBohrtoSI
 
-initialDipole = 0  # Initial dipole moment
-
 # Initialize dipole array as a nested dictionary
 dipoleResponse = {'x': {}, 'y': {}, 'z': {}}
-indexForComponents = {0: 'x', 1: 'y', 2: 'z'}
-for i in np.arange(0, 3):
-    componentName = indexForComponents[i]
-    dipoleResponse[componentName] = {}
-    dipoleResponse[componentName][str(0 * timeStepMeep)] = initialDipole
-    dipoleResponse[componentName][str(0.5 * timeStepMeep)] = initialDipole
-    dipoleResponse[componentName][str(1 * timeStepMeep)] = initialDipole
+indexForComponents = ['x', 'y', 'z']
+for component in indexForComponents:
+    dipoleResponse[component].update({
+        str(0 * timeStepMeep): 0,
+        str(0.5 * timeStepMeep): 0,
+        str(1 * timeStepMeep): 0
+    })
 
 # Determine the number of decimal places for time steps
-# String representation of half the time step
 halfTimeStepString = str(timeStepMeep / 2)
-# Position of the decimal point in the string
-decimalPointIndex = halfTimeStepString.find('.')
-decimalPlaces = len(halfTimeStepString) - \
-    decimalPointIndex - 1  # Number of decimal places
+decimalPlaces = len(halfTimeStepString.split('.')[1])
 
 # Initialize arrays to store electric field components
 electricFieldArray = {'x': [], 'y': [], 'z': []}
 fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
 
 # Function to get a slice of the electric field at each time step
-
-
 def getElectricField(sim):
     global electricFieldArray
-    print("Getting Electric Field at the molecule at time ",
-          sim.meep_time()*convertTimeMeeptoSI, " fs")
-    for i in np.arange(0, 3):
-        componentName = indexForComponents[i]
-        electricFieldArray[componentName].append(np.mean(sim.get_array(
-            component=fieldComponents[i], center=positionMolecule, size=mp.Vector3(1E-20, 1E-20, 1E-20)))*convertFieldMeeptoSI)
-        dipoleResponse[componentName][str(
-            round(sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = initialDipole
-        dipoleResponse[componentName][str(
-            round(sim.meep_time() + timeStepMeep, decimalPlaces))] = initialDipole
+    print("Getting Electric Field at the molecule at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
+    for i, componentName in enumerate(indexForComponents):
+        field = np.mean(sim.get_array(component=fieldComponents[i], center=positionMolecule, size=mp.Vector3(1E-20, 1E-20, 1E-20)))
+        electricFieldArray[componentName].append(field * convertFieldMeeptoSI)
     return 0
 
 
 def callBohr(sim):
     global electricFieldArray
-    moleculeResponse = {'x': [0], 'y': [0], 'z': [0]}
-    print("Calling Bohr for molecule's response at time ",
-          sim.meep_time()*convertTimeMeeptoSI, " fs")
-    for i in np.arange(0, 3):
-        componentName = indexForComponents[i]
-        if (np.mean(electricFieldArray[componentName]) < responseCutOff):
-            moleculeResponse[componentName] = 0
-        else:
-            moleculeResponse[componentName] = bohr.run(
-                inputfile, electricFieldArray['x'], electricFieldArray['y'], electricFieldArray['z'], timeStepBohr)[i]
-        dipoleResponse[componentName][str(round(
-            sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = moleculeResponse[componentName]
-        dipoleResponse[componentName][str(
-            round(sim.meep_time() + timeStepMeep, decimalPlaces))] = moleculeResponse[componentName]
+    averageFields = {
+        'x': np.mean(electricFieldArray['x']),
+        'y': np.mean(electricFieldArray['y']),
+        'z': np.mean(electricFieldArray['z'])
+    }
+    print("Calling Bohr for molecule's response at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
 
-    print("\t Molecule's Response: ", moleculeResponse, "\n")
+    # Not correctly implemented because only sets response for component above cutoff
+    for i, componentName in enumerate(indexForComponents):
+        if (averageFields[componentName] >= responseCutOff):
+            bohrResults = bohr.run(
+                inputfile,
+                electricFieldArray['x'],
+                electricFieldArray['y'],
+                electricFieldArray['z'],
+                timeStepBohr
+            )
+            print("\t Molecule's Response: ", bohrResults, "\n")
+            dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = bohrResults[i]
+            dipoleResponse[componentName][str(round(sim.meep_time() + timeStepMeep, decimalPlaces))] = bohrResults[i]
+
     # Reset electricFieldArray for the next iteration
-    electricFieldArray = {'x': [], 'y': [], 'z': []}
+    electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
     return 0
+
+# def callBohr(sim):
+#     global electricFieldArray
+#     # Compute average electric field components
+#     averageFields = {
+#         'x': np.mean(electricFieldArray['x']),
+#         'y': np.mean(electricFieldArray['y']),
+#         'z': np.mean(electricFieldArray['z'])
+#     }
+
+#     # Check if any field component is above the cutoff to decide if Bohr needs to be called
+#     if any(abs(averageFields[component]) >= responseCutOff for component in ['x', 'y', 'z']):
+#         bohrResults = bohr.run(
+#             inputfile,
+#             electricFieldArray['x'],
+#             electricFieldArray['y'],
+#             electricFieldArray['z'],
+#             timeStepBohr
+#         )
+        
+#         for i, componentName in enumerate(indexForComponents):
+#             dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = bohrResults[i] 
+#             dipoleResponse[componentName][str(round(sim.meep_time() + timeStepMeep, decimalPlaces))] = bohrResults[i] 
+
+#         print(f"\t Molecule's Response: " +
+#             ', '.join(f"{componentName}: {dipoleResponse[componentName][str(round(sim.meep_time() + timeStepMeep, decimalPlaces))]}" 
+#                         for componentName in indexForComponents))
+        
+#     electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
+#     return 0
+
 
 
 # Set the output directory for the simulation results
@@ -219,7 +231,7 @@ sim.run(
     # Output images every 10 time steps
     mp.at_every(10 * timeStepMeep, mp.output_png(mp.Ez,
                 f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {frameCenter} -Zc dkbluered")),
-    until=500 * timeStepMeep  # Run the simulation until 300 time steps
+    until=300 * timeStepMeep  # Run the simulation until 300 time steps
 )
 
 # Create a GIF from the output images

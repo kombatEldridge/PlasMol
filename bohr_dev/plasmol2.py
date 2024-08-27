@@ -17,7 +17,7 @@ class Simulation:
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
         self.convertTimeBohrtoSI = 0.024188843
-        self.convertFieldMeeptoSI = 1 / 1e-6 / constants.epsilon_0 / constants.c / 0.51422082e12
+        self.convertFieldMeeptoBohr = 1 / 1e-6 / constants.epsilon_0 / constants.c / 0.51422082e12
 
         # Simulation parameters
         self.timeStepMeep = None
@@ -36,6 +36,7 @@ class Simulation:
         self.radiusNP = radiusNP
         self.cellLength = cellLength
         self.cellVolume = mp.Vector3(self.cellLength, self.cellLength, self.cellLength)
+        self.frameCenter = self.cellLength * self.resolution / 2
         self.positionNP = mp.Vector3(0, 0, 0)
         self.positionMolecule = mp.Vector3(self.radiusNP + moleculeOffset, 0, 0)
 
@@ -48,7 +49,6 @@ class Simulation:
         self.pmlThickness = 0.01
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.symmetriesList = [mp.Mirror(mp.Y), mp.Mirror(mp.Z, phase=-1)]
-        self.frameCenter = self.cellLength * self.resolution / 2
 
         self.sourcesList = [
             mp.Source(
@@ -117,6 +117,49 @@ class Simulation:
     def chirpz(self, t):
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
+    def getElectricField(self, sim):
+        # print(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+        for i, componentName in enumerate(self.indexForComponents):
+            field = np.mean(sim.get_array(component=self.fieldComponents[i], 
+                                            center=self.positionMolecule, 
+                                            size=mp.Vector3(1E-20, 1E-20, 1E-20)))
+            self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
+        # print(simObj.electricFieldArray)
+        return 0
+    
+    def callBohr(self, sim):
+        # Compute average electric field components
+        averageFields = {
+            'x': np.mean(self.electricFieldArray['x']),
+            'y': np.mean(self.electricFieldArray['y']),
+            'z': np.mean(self.electricFieldArray['z'])
+        }
+
+        # Check if any field component is above the cutoff to decide if Bohr needs to be called
+        if any(abs(averageFields[component]) >= self.responseCutOff for component in ['x', 'y', 'z']):
+            bohrResults = bohr.run(
+                self.inputfile,
+                self.electricFieldArray['x'],
+                self.electricFieldArray['y'],
+                self.electricFieldArray['z'],
+                self.timeStepBohr
+            )
+            
+            for i, componentName in enumerate(self.indexForComponents):
+                self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] 
+                self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] 
+
+            print("\t Molecule's Response: ", bohrResults, "\n")
+            
+            # print(simObj.electricFieldArray)
+
+        # Remove first entry to make room for next entry
+        # for componentName in self.electricFieldArray:
+        #     self.electricFieldArray[componentName].pop(0)
+        self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
+
+        return 0
+
     def run(self):
         clear_directory(self.imageDirName)
 
@@ -127,55 +170,58 @@ class Simulation:
         intensityMax = 3
 
         self.sim.run(
-            mp.at_every(self.timeStepMeep, getElectricField),
-            mp.at_every(self.timeStepMeep, callBohr),
+            mp.at_every(self.timeStepMeep, self.getElectricField),
+            mp.at_every(3 * self.timeStepMeep, self.callBohr),
             mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {self.frameCenter} -Zc dkbluered")),
-            until=300 * self.timeStepMeep
+            until=250 * self.timeStepMeep
         )
 
         make_gif(self.imageDirName)
 
-def getElectricField(sim):
-    global simObj
-    print(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * simObj.convertTimeMeeptoSI, 4)} fs")
-    for i in range(3):
-        componentName = simObj.indexForComponents[i]
-        field = np.mean(sim.get_array(component=simObj.fieldComponents[i], 
-                                        center=simObj.positionMolecule, 
-                                        size=mp.Vector3(1E-20, 1E-20, 1E-20)))
-        simObj.electricFieldArray[componentName].append(field * simObj.convertFieldMeeptoSI)
 
-def callBohr(sim):
-    global simObj
-    if(sim.timestep() > 3):
-        # Compute average electric field components
-        averageFields = {
-            'x': np.mean(simObj.electricFieldArray['x']),
-            'y': np.mean(simObj.electricFieldArray['y']),
-            'z': np.mean(simObj.electricFieldArray['z'])
-        }
+# def getElectricField(sim):
+#     global simObj
+#     # print(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * simObj.convertTimeMeeptoSI, 4)} fs")
+#     for i, componentName in enumerate(simObj.indexForComponents):
+#         field = np.mean(sim.get_array(component=simObj.fieldComponents[i], 
+#                                         center=simObj.positionMolecule, 
+#                                         size=mp.Vector3(1E-20, 1E-20, 1E-20)))
+#         simObj.electricFieldArray[componentName].append(field * simObj.convertFieldMeeptoBohr)
+#     # print(simObj.electricFieldArray)
+#     return 0
 
-        # Check if any field component is above the cutoff to decide if Bohr needs to be called
-        if any(abs(averageFields[component]) >= simObj.responseCutOff for component in ['x', 'y', 'z']):
-            bohrResults = bohr.run(
-                simObj.inputfile,
-                simObj.electricFieldArray['x'],
-                simObj.electricFieldArray['y'],
-                simObj.electricFieldArray['z'],
-                simObj.timeStepBohr
-            )
-            
-            for i, componentName in enumerate(simObj.indexForComponents):
-                simObj.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * simObj.timeStepMeep), simObj.decimalPlaces))] = bohrResults[i]
-                simObj.dipoleResponse[componentName][str(round(sim.meep_time() + simObj.timeStepMeep, simObj.decimalPlaces))] = bohrResults[i]
+# def callBohr(sim):
+#     global simObj
+#     # Compute average electric field components
+#     averageFields = {
+#         'x': np.mean(simObj.electricFieldArray['x']),
+#         'y': np.mean(simObj.electricFieldArray['y']),
+#         'z': np.mean(simObj.electricFieldArray['z'])
+#     }
 
-            print(f"\t Molecule's Response: " +
-                '\n'.join(f"{componentName}: {simObj.dipoleResponse[componentName][str(round(sim.meep_time() + simObj.timeStepMeep, simObj.decimalPlaces))]}" 
-                            for componentName in simObj.indexForComponents))
+#     # Check if any field component is above the cutoff to decide if Bohr needs to be called
+#     if any(abs(averageFields[component]) >= simObj.responseCutOff for component in ['x', 'y', 'z']):
+#         bohrResults = bohr.run(
+#             simObj.inputfile,
+#             simObj.electricFieldArray['x'],
+#             simObj.electricFieldArray['y'],
+#             simObj.electricFieldArray['z'],
+#             simObj.timeStepBohr
+#         )
+        
+#         for i, componentName in enumerate(simObj.indexForComponents):
+#             simObj.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * simObj.timeStepMeep), simObj.decimalPlaces))] = bohrResults[i] 
+#             simObj.dipoleResponse[componentName][str(round(sim.meep_time() + simObj.timeStepMeep, simObj.decimalPlaces))] = bohrResults[i] 
 
-        # Remove first entry to make room for next entry
-        for key in simObj.electricFieldArray:
-            simObj.electricFieldArray[key].pop(0)
+#         print("\t Molecule's Response: ", bohrResults, "\n")
+        
+#         # print(simObj.electricFieldArray)
+#     # Remove first entry to make room for next entry
+#     # for componentName in simObj.electricFieldArray:
+#     #     simObj.electricFieldArray[componentName].pop(0)
+#     simObj.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
+
+#     return 0
 
 def clear_directory(directory_path):
     try:

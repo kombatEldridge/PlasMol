@@ -8,16 +8,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as sc
 
-# Settings for matplotlib
-np.set_printoptions(precision=5, linewidth=200, suppress=True)
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
-plt.rcParams['axes.linewidth'] = 2
-plt.rcParams['xtick.major.size'] = 6
-plt.rcParams['xtick.major.width'] = 2
-plt.rcParams['ytick.major.size'] = 6
-plt.rcParams['ytick.major.width'] = 2
-
 def JK(wfn, D):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2*D)
     Fa = wfn.T + wfn.Vne + pot
