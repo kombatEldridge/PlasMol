@@ -10,3 +10,5 @@ bohr_dev/rttddft_mt.py
 bohr_dev/rttddft.py
 bohr_dev/utils.py
 bohr_dev/wavefunction.py
+.gitignore
+.DS_Store
