@@ -1,0 +1,8 @@
+molecule-Files/testingGifOutput*
+bohr_dev/*
+!bohr_dev/bohr.py
+!bohr_dev/gif.py
+!bohr_dev/plasmol.py
+!bohr_dev/plasmol2.py
+!bohr_dev/basis/
+.DS_Store
