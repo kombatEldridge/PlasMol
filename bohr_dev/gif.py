@@ -4,6 +4,18 @@ from datetime import datetime
 
 # run ulimit -n 4096 on linux first
 
+def clear_directory(directory_path):
+    try:
+        files = os.listdir(directory_path)
+        for file_name in files:
+            file_path = os.path.join(directory_path, file_name)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
+        print(f"All files in {directory_path} have been deleted.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 def make_gif(frame_folder):
     frame_folder = os.path.basename(os.path.normpath(frame_folder))
     print(frame_folder)
