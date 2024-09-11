@@ -1,113 +1,112 @@
+# /Users/bldrdge1/.conda/envs/meep/bin/python ../bohr_dev/plasmol2.py -m meep.in -b pyridine.in
+import sys
+import argparse
+import logging
+import sys
 import os
 import numpy as np
 import meep as mp
 import gif
 import bohr
-from meep.materials import Au_JC_visible as Au
 from collections import defaultdict
 
 class ContinuousSource:
-    def __init__(self, 
-                 frequency, 
-                 is_integrated=True, 
-                 center=mp.Vector3(-0.5 * 0.1 + 0.01), 
-                 size=mp.Vector3(0, 0.1, 0.1), 
+    def __init__(self,
+                 frequency,
+                 sourceCenter,
+                 sourceSize,
+                 is_integrated=True,
                  component=mp.Ez):
-        self.frequency = frequency 
-        self.is_integrated = is_integrated 
-        self.center = center 
-        self.size = size 
-        self.component = component 
-
-        self.update()
-
-    def update(self):
+        logging.debug(f"Initializing ContinuousSource with frequency: {frequency}")
+        self.frequency = frequency
+        self.is_integrated = is_integrated
+        self.sourceCenter = mp.Vector3(sourceCenter)
+        self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
+        self.component = component
         self.source = mp.Source(
-            mp.ContinuousSource(frequency=self.frequency, is_integrated=self.is_integrated),
-            center=self.center,
-            size=self.size,
+            mp.ContinuousSource(frequency=self.frequency,
+                                is_integrated=self.is_integrated),
+            center=self.sourceCenter,
+            size=self.sourceSize,
             component=self.component
         )
 
+
 class GaussianSource:
-    def __init__(self, 
-                 frequencyCenter=None, 
-                 frequencyWidth=None, 
-                 frequencyMin=None,
-                 frequencyMax=None,
-                 is_integrated=True, 
-                 center=mp.Vector3(-0.5 * 0.1 + 0.01), 
-                 size=mp.Vector3(0, 0.1, 0.1), 
+    def __init__(self,
+                 frequencyCenter,
+                 frequencyWidth,
+                 sourceCenter,
+                 sourceSize,
+                 is_integrated=True,
                  component=mp.Ez):
-        if frequencyCenter is not None and frequencyWidth is not None:
-            self.frequencyCenter = frequencyCenter
-            self.frequencyWidth = frequencyWidth
-        elif frequencyMin is not None and frequencyMax is not None:
-            self.frequencyCenter = 0.5 * (frequencyMin + frequencyMax)
-            self.frequencyWidth = frequencyMax - frequencyMin
-        else:
-            raise ValueError("You must provide either (frequencyCenter and frequencyWidth) or (frequencyMin and frequencyMax).")
-
-        self.is_integrated = is_integrated 
-        self.center = center
-        self.size = size
+        logging.debug(f"Initializing GaussianSource with frequencyCenter: {frequencyCenter}, frequencyWidth: {frequencyWidth}")
+        self.frequencyCenter = frequencyCenter
+        self.frequencyWidth = frequencyWidth
+        self.is_integrated = is_integrated
+        self.sourceCenter = mp.Vector3(sourceCenter)
+        self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
         self.component = component
-
-        self.update()
-
-    def update(self):
         self.source = mp.Source(
-            mp.GaussianSource(frequency=self.frequencyCenter, width=self.frequencyWidth, is_integrated=self.is_integrated),
-            center=self.center,
-            size=self.size,
+            mp.GaussianSource(frequency=frequencyCenter,
+                              width=frequencyWidth, is_integrated=is_integrated),
+            center=self.sourceCenter,
+            size=self.sourceSize,
             component=self.component
         )
 
 
 class Simulation:
-    def __init__(self, 
-                 inputfile, 
+    def __init__(self,
+                 inputfile,
                  sourceType,
-                 resolution=1000, 
-                 imageDirName="testingGifOutput2", 
-                 responseCutOff=1e-12, 
-                 radiusNP=0.025, 
-                 cellLength=0.1, 
-                 pmlThickness=0.01, 
-                 moleculeOffset=0.010):
+                 cellLength,
+                 pmlThickness,
+                 positionMolecule,
+                 symmetries,
+                 objectNP,
+                 intensityMin,
+                 intensityMax,
+                 timeLength=500,
+                 resolution=1000,
+                 imageDirName="testingGifOutput2",
+                 responseCutOff=1e-12,
+                 surroundingMaterialIndex=1.33):
+
+        logging.info(f"Initializing simulation with cellLength: {cellLength}, resolution: {resolution}")
+
+        # Define simulation parameters
         self.inputfile = inputfile
         self.resolution = resolution
         self.imageDirName = imageDirName
         self.responseCutOff = responseCutOff
+        self.cellLength = cellLength
+        self.pmlThickness = pmlThickness
+        self.timeLength = timeLength
+        self.positionMolecule = mp.Vector3(
+            positionMolecule[0], positionMolecule[1], positionMolecule[2])
+        self.sourceType = sourceType
+        self.intensityMin = intensityMin
+        self.intensityMax = intensityMax
 
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
         self.convertTimeBohrtoSI = 0.024188843
         self.convertFieldMeeptoBohr = 1 / 1e-6 / 8.8541878128e-12 / 299792458.0 / 0.51422082e12
 
-        # Simulation parameters
+        # Simulation runtime variables
         self.timeStepMeep = None
         self.timeStepBohr = None
-        self.dipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
-        self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
+        self.dipoleResponse = {component: defaultdict(
+            list) for component in ['x', 'y', 'z']}
+        self.electricFieldArray = {component: []
+                                   for component in ['x', 'y', 'z']}
         self.indexForComponents = ['x', 'y', 'z']
         self.fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
         self.decimalPlaces = None
-
-        # Define simulation parameters
-        self.radiusNP = radiusNP
-        self.cellLength = cellLength
-        self.cellVolume = mp.Vector3(self.cellLength, self.cellLength, self.cellLength)
-        self.pmlThickness = pmlThickness
+        self.cellVolume = mp.Vector3(
+            self.cellLength, self.cellLength, self.cellLength)
         self.frameCenter = self.cellLength * self.resolution / 2
-        self.positionNP = mp.Vector3(0, 0, 0)
-        self.positionMolecule = mp.Vector3(self.radiusNP + moleculeOffset, 0, 0)
-        
-        # Initialize the MEEP simulation
-        self.initialize_simulation(sourceType)
-
-    def initialize_simulation(self, sourceType):
-        self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.sourcesList = [
             mp.Source(
                 mp.CustomSource(src_func=self.chirpx, is_integrated=True),
@@ -125,14 +124,10 @@ class Simulation:
                 component=mp.Ez
             )
         ]
-
-        sourceType.center = mp.Vector3(-0.5 * self.cellLength + self.pmlThickness) 
-        sourceType.size = mp.Vector3(0, self.cellLength, self.cellLength)
-        sourceType.update()
-        self.sourcesList.append(sourceType.source)
-
-        self.symmetriesList = [mp.Mirror(mp.Y), mp.Mirror(mp.Z, phase=-1)]
-        self.objectList = [mp.Sphere(radius=self.radiusNP, center=self.positionNP, material=Au)]
+        self.sourcesList.append(self.sourceType.source)
+        self.pmlList = [mp.PML(thickness=self.pmlThickness)]
+        self.symmetriesList = symmetries
+        self.objectList = [objectNP]
 
         self.sim = mp.Simulation(
             resolution=self.resolution,
@@ -141,7 +136,7 @@ class Simulation:
             sources=self.sourcesList,
             symmetries=self.symmetriesList,
             geometry=self.objectList,
-            default_material=mp.Medium(index=1.33)
+            default_material=mp.Medium(index=surroundingMaterialIndex)
         )
 
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
@@ -157,6 +152,7 @@ class Simulation:
         # Determine the number of decimal places for time steps
         halfTimeStepString = str(self.timeStepMeep / 2)
         self.decimalPlaces = len(halfTimeStepString.split('.')[1])
+        logging.debug(f"Decimal places for time steps: {self.decimalPlaces}")
 
     def chirpx(self, t):
         return self.dipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0)
@@ -168,16 +164,17 @@ class Simulation:
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
-        # print(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+        logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
         for i, componentName in enumerate(self.indexForComponents):
-            field = np.mean(sim.get_array(component=self.fieldComponents[i], 
-                                            center=self.positionMolecule, 
-                                            size=mp.Vector3(1E-20, 1E-20, 1E-20)))
-            self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
-        # print(simObj.electricFieldArray)
+            field = np.mean(sim.get_array(component=self.fieldComponents[i],
+                                          center=self.positionMolecule,
+                                          size=mp.Vector3(1E-20, 1E-20, 1E-20)))
+            self.electricFieldArray[componentName].append(
+                field * self.convertFieldMeeptoBohr)
         return 0
-    
+
     def callBohr(self, sim):
+        logging.debug(f"Calling Bohr at time step {sim.timestep()}")
         if sim.timestep() > 2:
             averageFields = {
                 'x': np.mean(self.electricFieldArray['x']),
@@ -194,13 +191,15 @@ class Simulation:
                     self.electricFieldArray['z'],
                     self.timeStepBohr
                 )
-                
-                for i, componentName in enumerate(self.indexForComponents):
-                    self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
-                    self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
+                logging.info(f"Bohr calculation results: {bohrResults}")
 
-                print("Molecule's Response: ", bohrResults)
-                # print(self.electricFieldArray)
+                for i, componentName in enumerate(self.indexForComponents):
+                    self.dipoleResponse[componentName][str(round(sim.meep_time(
+                    ) + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
+                    self.dipoleResponse[componentName][str(round(sim.meep_time(
+                    ) + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
+
+                logging.info("Molecule's Response: ", bohrResults)
 
             # Remove first entry to make room for next entry
             for componentName in self.electricFieldArray:
@@ -210,33 +209,204 @@ class Simulation:
 
     def run(self):
         gif.clear_directory(self.imageDirName)
-
+        logging.info(f"Simulation started. Image directory cleared: {self.imageDirName}")
         self.sim.use_output_directory(self.imageDirName)
-
-        # For color scaling in the output (TODO: automate this)
-        intensityMin = -3
-        intensityMax = 3
 
         try:
             self.sim.run(
                 mp.at_every(self.timeStepMeep, self.getElectricField),
                 mp.at_every(self.timeStepMeep, self.callBohr),
-                # mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -z {self.frameCenter} -Zc dkbluered")),
-                mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {intensityMin} -M {intensityMax} -z {self.frameCenter} -Zc dkbluered")),
-                until = 500 * self.timeStepMeep
+                mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez,
+                            f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")),
+                until=self.timeLength * self.timeStepMeep
             )
+            logging.info("Simulation completed successfully.")
         except Exception as e:
-            print(f"Simulation failed with error: {e}")
+            logging.error(f"Simulation failed with error: {e}")
         finally:
             gif.make_gif(self.imageDirName)
+            logging.info("GIF creation completed")
 
-# Usage Example:
+
+def parseInputFile(filepath):
+    params = {}
+    current_section = None
+
+    with open(filepath, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith('#') or line.startswith('--') or line.startswith('%') or not line:
+                continue
+            if line.startswith('start'):
+                current_section = line.split()[1]
+                params[current_section] = {}
+            elif line.startswith('end'):
+                current_section = None
+            elif current_section:
+                key, *values = line.split()
+                if len(values) == 1:
+                    if values[0].lower() == 'true':
+                        params[current_section][key] = True
+                    elif values[0].lower() == 'false':
+                        params[current_section][key] = False
+                    else:
+                        try:
+                            params[current_section][key] = float(values[0])
+                        except ValueError:
+                            params[current_section][key] = values[0]
+                else:
+                    processed_values = []
+                    for v in values:
+                        if v.lstrip('-').replace('.', '', 1).isdigit():
+                            processed_values.append(float(v) if '.' in v else int(v))
+                        else:
+                            processed_values.append(v)
+                    
+                    params[current_section][key] = processed_values  
+    
+    logging.info(params)
+    simObj = setParameters(params)
+    return simObj
+
+
+def setParameters(parameters):
+    simObj = Simulation(
+        inputfile=bohrinputfile,
+        sourceType=setSource(parameters['source']),
+        resolution=parameters['simulation']['resolution'],
+        imageDirName=parameters['simulation']['imageDirName'],
+        responseCutOff=parameters['simulation']['responseCutOff'],
+        cellLength=parameters['simulation']['cellLength'],
+        pmlThickness=parameters['simulation']['pmlThickness'],
+        timeLength=parameters['simulation']['timeLength'],
+        positionMolecule=parameters['molecule']['center'],
+        symmetries=setSymmetry(parameters['simulation']['symmetries']),
+        objectNP=setObject(parameters['object']),
+        surroundingMaterialIndex=parameters['simulation']['surroundingMaterialIndex'],
+        intensityMin=parameters['simulation']['intensityMin'],
+        intensityMax=parameters['simulation']['intensityMax']
+    )
+
+    return simObj
+
+
+def setSource(sourceParams):
+    source_type = sourceParams['source_type']
+
+    # sourceCenter recommended: -0.5 * cellLength + pmlThickness
+    if source_type == 'continuous':
+        source = ContinuousSource(
+            frequency=sourceParams['frequency'],
+            is_integrated=sourceParams['is_integrated'],
+            sourceCenter=sourceParams['sourceCenter'],
+            sourceSize=sourceParams['sourceSize']
+        )
+
+    elif source_type == 'gaussian':
+        if 'frequencyCenter' in sourceParams and 'frequencyWidth' in sourceParams:
+            frequency_center = sourceParams['frequencyCenter']
+            frequency_width = sourceParams['frequencyWidth']
+        elif 'frequencyMin' in sourceParams and 'frequencyMax' in sourceParams:
+            frequency_center = (
+                sourceParams['frequencyMin'] + sourceParams['frequencyMax']) / 2
+            frequency_width = sourceParams['frequencyMax'] - sourceParams['frequencyMin']
+        else:
+            raise ValueError(
+                "Either frequencyCenter and frequencyWidth or frequencyMin and frequencyMax must be provided for a GaussianSource.")
+
+        source = GaussianSource(
+            frequencyCenter=frequency_center,
+            frequencyWidth=frequency_width,
+            is_integrated=sourceParams['is_integrated'],
+            sourceCenter=sourceParams['sourceCenter'],
+            sourceSize=sourceParams['sourceSize']
+        )
+
+    else:
+        raise ValueError("Unsupported source type: {}".format(source_type))
+
+    return source
+
+
+def setObject(objParams):
+    if objParams['material'] == 'Au':
+        from meep.materials import Au_JC_visible as Au
+        material = Au
+    elif objParams['material'] == 'Ag':
+        from meep.materials import Ag
+        material = Ag
+    else:
+        raise ValueError(
+            "Unsupported material type: {}".format(objParams['material']))
+
+    objectNP = mp.Sphere(
+        radius=objParams['radius'], center=objParams['center'], material=material)
+    return objectNP
+
+
+def setSymmetry(symParams):
+    symmetries = []
+    for i in range(len(symParams)):
+        if symParams[i] in ['X', 'Y', 'Z']:
+            if i + 1 < len(symParams):
+                try:
+                    phase = int(symParams[i + 1])
+                except ValueError:
+                    raise ValueError(
+                        f"Symmetry '{symParams[i]}' is not followed by a valid integer.")
+
+                if symParams[i] == 'X':
+                    symmetries.append(mp.Mirror(mp.X, phase=phase))
+                elif symParams[i] == 'Y':
+                    symmetries.append(mp.Mirror(mp.Y, phase=phase))
+                elif symParams[i] == 'Z':
+                    symmetries.append(mp.Mirror(mp.Z, phase=phase))
+            else:
+                raise ValueError(
+                    f"Symmetry '{symParams[i]}' has no value following it.")
+    if not symmetries:
+        raise ValueError(f"Unsupported symmetry type: {symParams}")
+
+
+def processArguments():
+    logging.info("Processing command line arguments.")
+    parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
+    parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.")
+    parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.")
+    parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
+    
+    args = parser.parse_args()
+
+    if args.verbose >= 2:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.debug("Verbosity Level: DEBUG")
+        mp.verbosity(3)
+    elif args.verbose == 1:
+        logging.basicConfig(level=20)
+        logging.info("Verbosity Level: INFO")
+        mp.verbosity(2)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+        mp.verbosity(0)
+
+    if not args.meep:
+        logging.error("Meep input file not provided. Exiting.")
+        sys.exit(1)
+    
+    if not args.bohr:
+        logging.error("Bohr input file not provided. Exiting.")
+        sys.exit(1)
+
+    logging.debug(f"Meep input file: {args.meep}")
+    logging.debug(f"Bohr input file: {args.bohr}")
+    
+    return args
+
 if __name__ == "__main__":
-    import sys
-    inputfile = sys.argv[1]
-    cellLength=0.1
-    pmlThickness=0.01
-    continuousSource = ContinuousSource(frequency = 100)
-    gaussianSource = GaussianSource(frequencyMin = 1 / 0.800, frequencyMax = 1 / 0.400)
-    simObj = Simulation(inputfile, continuousSource)
-    simObj.run()
+
+    args = processArguments()
+    meepinputfile = args.meep
+    bohrinputfile = args.bohr
+    simObj = parseInputFile(meepinputfile)
+    logging.info("Input file successfully parsed. Beginning simulation")
+    # simObj.run()

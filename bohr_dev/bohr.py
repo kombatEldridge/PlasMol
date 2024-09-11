@@ -1,12 +1,7 @@
 import input_parser
-import time
 from pyscf import gto
-import options
 import wavefunction
-import datetime
 import numpy as np
-import matplotlib.pyplot as plt
-import scipy.constants as sc
 
 def JK(wfn, D):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2*D)
