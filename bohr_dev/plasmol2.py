@@ -9,6 +9,8 @@ import meep as mp
 import gif
 import bohr
 from collections import defaultdict
+from datetime import datetime
+import pprint
 
 class ContinuousSource:
     def __init__(self,
@@ -69,11 +71,14 @@ class Simulation:
                  intensityMax,
                  timeLength=500,
                  resolution=1000,
-                 imageDirName="testingGifOutput2",
+                 imageDirName=None,
                  responseCutOff=1e-12,
                  surroundingMaterialIndex=1.33):
 
         logging.info(f"Initializing simulation with cellLength: {cellLength}, resolution: {resolution}")
+        if imageDirName is None:
+            imageDirName = f"meep-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
+            logging.info(f"Directory for images: {os.path.abspath(imageDirName)}")
 
         # Define simulation parameters
         self.inputfile = inputfile
@@ -199,8 +204,6 @@ class Simulation:
                     self.dipoleResponse[componentName][str(round(sim.meep_time(
                     ) + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
 
-                logging.info("Molecule's Response: ", bohrResults)
-
             # Remove first entry to make room for next entry
             for componentName in self.electricFieldArray:
                 self.electricFieldArray[componentName].pop(0)
@@ -209,7 +212,7 @@ class Simulation:
 
     def run(self):
         gif.clear_directory(self.imageDirName)
-        logging.info(f"Simulation started. Image directory cleared: {self.imageDirName}")
+        logging.info("Meep simulation started.")
         self.sim.use_output_directory(self.imageDirName)
 
         try:
@@ -220,7 +223,7 @@ class Simulation:
                             f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")),
                 until=self.timeLength * self.timeStepMeep
             )
-            logging.info("Simulation completed successfully.")
+            logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}")
         finally:
@@ -264,27 +267,28 @@ def parseInputFile(filepath):
                     
                     params[current_section][key] = processed_values  
     
-    logging.info(params)
+    formatted_dict = format_dict_with_tabs(params)
+    logging.debug(f"Input file parsed contents:\n{formatted_dict}")
     simObj = setParameters(params)
     return simObj
 
 
 def setParameters(parameters):
     simObj = Simulation(
-        inputfile=bohrinputfile,
-        sourceType=setSource(parameters['source']),
-        resolution=parameters['simulation']['resolution'],
-        imageDirName=parameters['simulation']['imageDirName'],
-        responseCutOff=parameters['simulation']['responseCutOff'],
-        cellLength=parameters['simulation']['cellLength'],
-        pmlThickness=parameters['simulation']['pmlThickness'],
-        timeLength=parameters['simulation']['timeLength'],
-        positionMolecule=parameters['molecule']['center'],
-        symmetries=setSymmetry(parameters['simulation']['symmetries']),
-        objectNP=setObject(parameters['object']),
-        surroundingMaterialIndex=parameters['simulation']['surroundingMaterialIndex'],
-        intensityMin=parameters['simulation']['intensityMin'],
-        intensityMax=parameters['simulation']['intensityMax']
+    inputfile=bohrinputfile,  # Mandatory
+    sourceType=setSource(parameters['source']),  # Mandatory
+    cellLength=parameters['simulation']['cellLength'],  # Mandatory
+    pmlThickness=parameters['simulation']['pmlThickness'],  # Mandatory
+    positionMolecule=parameters['molecule']['center'],  # Mandatory
+    symmetries=setSymmetry(parameters['simulation']['symmetries']),  # Mandatory
+    objectNP=setObject(parameters['object']),  # Mandatory
+    intensityMin=parameters['simulation']['intensityMin'],  # Mandatory
+    intensityMax=parameters['simulation']['intensityMax'],  # Mandatory
+    timeLength=parameters['simulation'].get('timeLength', 500),  # Optional
+    resolution=parameters['simulation'].get('resolution', 1000),  # Optional
+    imageDirName=parameters['simulation'].get('imageDirName', None),  # Optional
+    responseCutOff=parameters['simulation'].get('responseCutOff', 1e-12),  # Optional
+    surroundingMaterialIndex=parameters['simulation'].get('surroundingMaterialIndex', 1.33)  # Optional
     )
 
     return simObj
@@ -369,25 +373,13 @@ def setSymmetry(symParams):
 
 
 def processArguments():
-    logging.info("Processing command line arguments.")
+    logging.debug("Processing command line arguments.")
     parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
     parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.")
     parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
     
     args = parser.parse_args()
-
-    if args.verbose >= 2:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.debug("Verbosity Level: DEBUG")
-        mp.verbosity(3)
-    elif args.verbose == 1:
-        logging.basicConfig(level=20)
-        logging.info("Verbosity Level: INFO")
-        mp.verbosity(2)
-    else:
-        logging.basicConfig(level=logging.WARNING)
-        mp.verbosity(0)
 
     if not args.meep:
         logging.error("Meep input file not provided. Exiting.")
@@ -397,16 +389,37 @@ def processArguments():
         logging.error("Bohr input file not provided. Exiting.")
         sys.exit(1)
 
-    logging.debug(f"Meep input file: {args.meep}")
-    logging.debug(f"Bohr input file: {args.bohr}")
+    logging.debug(f"Meep input file: {os.path.abspath(args.meep)}")
+    logging.debug(f"Bohr input file: {os.path.abspath(args.bohr)}")
     
     return args
 
-if __name__ == "__main__":
 
+def format_dict_with_tabs(d, tabs=3):
+    formatted = pprint.pformat(d, indent=4)
+    tab_prefix = '\t' * tabs
+    return '\n'.join(tab_prefix + line for line in formatted.splitlines())
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', action='count', default=0)
+    temp_args = parser.parse_known_args()[0]
+
+    if temp_args.verbose >= 2:
+        logging.basicConfig(level=logging.DEBUG, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        mp.verbosity(3)
+    elif temp_args.verbose == 1:
+        logging.basicConfig(level=logging.INFO, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        mp.verbosity(2)
+    else:
+        logging.basicConfig(level=logging.WARNING, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        mp.verbosity(0)
+        
     args = processArguments()
+    
     meepinputfile = args.meep
     bohrinputfile = args.bohr
     simObj = parseInputFile(meepinputfile)
     logging.info("Input file successfully parsed. Beginning simulation")
-    # simObj.run()
+    simObj.run()

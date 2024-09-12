@@ -25,7 +25,7 @@ end molecule
 
 start simulation
     resolution 1000
-    imageDirName testingGifOutput2
+    -- imageDirName testingGifOutput2
     responseCutOff 1e-12
     cellLength 0.1
     pmlThickness 0.01

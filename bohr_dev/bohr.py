@@ -66,6 +66,8 @@ def run(inputfile, Ex, Ey, Ez, dt):
         if index != (len(atoms)-1):
             pyscf_molecule += ";"
 
+    # Added B3LYP_WITH_VWN5 = True
+    # to /Users/bldrdge1/.conda/envs/meep/lib/python3.11/site-packages/pyscf/__config__.py
     pyscf_mol = gto.M(atom = pyscf_molecule, 
                       basis  = basis["name"], 
                       unit   = 'B', 
