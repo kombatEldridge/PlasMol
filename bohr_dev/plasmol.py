@@ -15,6 +15,7 @@ convertFieldMeeptoSI = 1 / 1e-6 / constants.epsilon_0 / constants.c / 0.51422082
 responseCutOff = 1e-12
 
 # -------- MEEP INIT -------- #
+mp.verbosity(3)
 
 # Nanoparticle's radius in microns (the base unit in meep)
 radiusNP = 0.025
@@ -92,6 +93,7 @@ sourcesList = [
     )
 ]
 
+Au.do_averaging = True
 # Define the geometry of the simulation (a gold sphere as the nanoparticle)
 objectList = [mp.Sphere(radius=radiusNP, center=positionNP, material=Au)]
 
@@ -131,25 +133,30 @@ fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
 # Function to get a slice of the electric field at each time step
 def getElectricField(sim):
     global electricFieldArray
-    print("Getting Electric Field at the molecule at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
+    # print("Getting Electric Field at the molecule at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
     for i, componentName in enumerate(indexForComponents):
         field = np.mean(sim.get_array(component=fieldComponents[i], center=positionMolecule, size=mp.Vector3(1E-20, 1E-20, 1E-20)))
         electricFieldArray[componentName].append(field * convertFieldMeeptoSI)
+
+    # print(electricFieldArray)
     return 0
 
 
 def callBohr(sim):
     global electricFieldArray
+
     averageFields = {
         'x': np.mean(electricFieldArray['x']),
         'y': np.mean(electricFieldArray['y']),
         'z': np.mean(electricFieldArray['z'])
     }
-    print("Calling Bohr for molecule's response at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
+    # print("Calling Bohr for molecule's response at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
 
     # Not correctly implemented because only sets response for component above cutoff
     for i, componentName in enumerate(indexForComponents):
         if (averageFields[componentName] >= responseCutOff):
+            print(f"Calling Bohr at time step {sim.timestep()}")
+            print(f'\tElectric field given to Bohr: {electricFieldArray}')
             bohrResults = bohr.run(
                 inputfile,
                 electricFieldArray['x'],
@@ -157,7 +164,7 @@ def callBohr(sim):
                 electricFieldArray['z'],
                 timeStepBohr
             )
-            print("\t Molecule's Response: ", bohrResults, "\n")
+            print(f"\tBohr calculation results: {bohrResults}")
             dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * timeStepMeep), decimalPlaces))] = bohrResults[i]
             dipoleResponse[componentName][str(round(sim.meep_time() + timeStepMeep, decimalPlaces))] = bohrResults[i]
 
@@ -209,8 +216,8 @@ def clear_directory(directory_path):
             file_path = os.path.join(directory_path, file_name)
             if os.path.isfile(file_path):
                 os.remove(file_path)
-                print(f"Deleted: {file_path}")
-        print(f"All files in {directory_path} have been deleted.")
+                # print(f"Deleted: {file_path}")
+        # print(f"All files in {directory_path} have been deleted.")
     except Exception as e:
         print(f"An error occurred: {e}")
 

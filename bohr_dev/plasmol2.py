@@ -179,7 +179,7 @@ class Simulation:
         return 0
 
     def callBohr(self, sim):
-        logging.debug(f"Calling Bohr at time step {sim.timestep()}")
+
         if sim.timestep() > 2:
             averageFields = {
                 'x': np.mean(self.electricFieldArray['x']),
@@ -189,6 +189,9 @@ class Simulation:
 
             # Check if any field component is above the cutoff to decide if Bohr needs to be called
             if any(abs(averageFields[component]) >= self.responseCutOff for component in ['x', 'y', 'z']) and len(self.electricFieldArray['x']) == 3:
+                logging.debug(f"Calling Bohr at time step {sim.timestep()}")
+                print(f"Calling Bohr at time step {sim.timestep()}")
+                print(f'\tElectric field given to Bohr: {averageFields}')
                 bohrResults = bohr.run(
                     self.inputfile,
                     self.electricFieldArray['x'],
@@ -197,6 +200,7 @@ class Simulation:
                     self.timeStepBohr
                 )
                 logging.info(f"Bohr calculation results: {bohrResults}")
+                print(f"\tBohr calculation results: {bohrResults}")
 
                 for i, componentName in enumerate(self.indexForComponents):
                     self.dipoleResponse[componentName][str(round(sim.meep_time(
@@ -275,26 +279,26 @@ def parseInputFile(filepath):
 
 def setParameters(parameters):
     simObj = Simulation(
-    inputfile=bohrinputfile,  # Mandatory
-    sourceType=setSource(parameters['source']),  # Mandatory
-    cellLength=parameters['simulation']['cellLength'],  # Mandatory
-    pmlThickness=parameters['simulation']['pmlThickness'],  # Mandatory
-    positionMolecule=parameters['molecule']['center'],  # Mandatory
-    symmetries=setSymmetry(parameters['simulation']['symmetries']),  # Mandatory
-    objectNP=setObject(parameters['object']),  # Mandatory
-    intensityMin=parameters['simulation']['intensityMin'],  # Mandatory
-    intensityMax=parameters['simulation']['intensityMax'],  # Mandatory
-    timeLength=parameters['simulation'].get('timeLength', 500),  # Optional
-    resolution=parameters['simulation'].get('resolution', 1000),  # Optional
-    imageDirName=parameters['simulation'].get('imageDirName', None),  # Optional
-    responseCutOff=parameters['simulation'].get('responseCutOff', 1e-12),  # Optional
-    surroundingMaterialIndex=parameters['simulation'].get('surroundingMaterialIndex', 1.33)  # Optional
+        inputfile=bohrinputfile,  # Mandatory
+        sourceType=getSource(parameters['source']),  # Mandatory
+        cellLength=parameters['simulation']['cellLength'],  # Mandatory
+        pmlThickness=parameters['simulation']['pmlThickness'],  # Mandatory
+        positionMolecule=parameters['molecule']['center'],  # Mandatory
+        symmetries=getSymmetry(parameters['simulation']['symmetries']),  # Mandatory
+        objectNP=getObject(parameters['object']),  # Mandatory
+        intensityMin=parameters['simulation']['intensityMin'],  # Mandatory
+        intensityMax=parameters['simulation']['intensityMax'],  # Mandatory
+        timeLength=parameters['simulation'].get('timeLength', 500),  # Optional
+        resolution=parameters['simulation'].get('resolution', 1000),  # Optional
+        imageDirName=parameters['simulation'].get('imageDirName', None),  # Optional
+        responseCutOff=parameters['simulation'].get('responseCutOff', 1e-12),  # Optional
+        surroundingMaterialIndex=parameters['simulation'].get('surroundingMaterialIndex', 1.33)  # Optional
     )
 
     return simObj
 
 
-def setSource(sourceParams):
+def getSource(sourceParams):
     source_type = sourceParams['source_type']
 
     # sourceCenter recommended: -0.5 * cellLength + pmlThickness
@@ -332,7 +336,7 @@ def setSource(sourceParams):
     return source
 
 
-def setObject(objParams):
+def getObject(objParams):
     if objParams['material'] == 'Au':
         from meep.materials import Au_JC_visible as Au
         material = Au
@@ -343,12 +347,11 @@ def setObject(objParams):
         raise ValueError(
             "Unsupported material type: {}".format(objParams['material']))
 
-    objectNP = mp.Sphere(
-        radius=objParams['radius'], center=objParams['center'], material=material)
+    objectNP = mp.Sphere(radius=objParams['radius'], center=objParams['center'], material=material)
     return objectNP
 
 
-def setSymmetry(symParams):
+def getSymmetry(symParams):
     symmetries = []
     for i in range(len(symParams)):
         if symParams[i] in ['X', 'Y', 'Z']:
@@ -370,6 +373,8 @@ def setSymmetry(symParams):
                     f"Symmetry '{symParams[i]}' has no value following it.")
     if not symmetries:
         raise ValueError(f"Unsupported symmetry type: {symParams}")
+    else:
+        return symmetries
 
 
 def processArguments():

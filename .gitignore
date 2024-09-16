@@ -1,5 +1,4 @@
-molecule-Files/testingGifOutput*
-molecule-Files/meep-*
+molecule-Files/**
 bohr_dev/*
 !bohr_dev/bohr.py
 !bohr_dev/gif.py
