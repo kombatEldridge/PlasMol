@@ -45,3 +45,31 @@ OMPI_MCA_btl='self,tcp,vader'
 # To execute from /molecule-Files:
 python3 ../bohr_dev/plasmol.py pyridine.in
 ```
+
+
+
+# Questions for Nascimento
+
+### Out of plane response
+When we give Bohr the following E field measurements at the three time steps, 
+|   | $t_n$                   | $t_n + dt/2$           | $t_{n+1}$               |
+|---|-------------------------|------------------------|-------------------------|
+| x | 0.0                     | 0.0                    | 0.0                     |
+| y | -2.9590431971790376e-31 | -1.183617278871615e-30 | -1.183617278871615e-30  |
+| z | -3.2321144001108524e-13 | -6.362250103160091e-13 | -1.2372383136685856e-12 |
+
+it returns the following array of its response in the x, y, and z direction
+|   | $t_{n+1}$               |
+|---|-------------------------|
+| x | 1.4210854715202004e-14  |
+| y | -8.837375276016246e-14  |
+| z | -7.776588659828583e-14  |
+
+You can clearly see that the incoming electric field is excited in the z direction, but the output of the molecule is excited in all three directions. *Is this a realistic result?*
+
+### How to measure the incoming E field
+Currently, the electric field is measured at the specific voxel (term for 3D pixel) of the molecule. When the response is taken from Bohr, it outputs at that very same voxel. That means at the second step, we measure both the field coming in and also the response field and feed that back as the input field. *What is an appropriate way to measure the incoming field?*
+
+These fields have directions, and we can measure the flux of the electric fields in and out of the molecule's voxel.
+
+![img](../../../../../../Users/bldrdge1/Library/CloudStorage/OneDrive-TheUniversityofMemphis/Brinton Plasmol Paper/FluxBox.jpg)

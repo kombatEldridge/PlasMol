@@ -10,7 +10,6 @@ import gif
 import bohr
 from collections import defaultdict
 from datetime import datetime
-import pprint
 
 class ContinuousSource:
     def __init__(self,
@@ -201,36 +200,18 @@ class Simulation:
     def chirpx(self, t):
         """
         Chirp function for the x-component of the dipole response.
-
-        Args:
-            t (float): Time in the simulation.
-
-        Returns:
-            float: Dipole response for the x-component at time t.
         """
         return self.dipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpy(self, t):
         """
         Chirp function for the y-component of the dipole response.
-
-        Args:
-            t (float): Time in the simulation.
-
-        Returns:
-            float: Dipole response for the y-component at time t.
         """
         return self.dipoleResponse['y'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpz(self, t):
         """
         Chirp function for the z-component of the dipole response.
-
-        Args:
-            t (float): Time in the simulation.
-
-        Returns:
-            float: Dipole response for the z-component at time t.
         """
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
@@ -258,17 +239,16 @@ class Simulation:
             sim (mp.Simulation): The Meep simulation object.
         """
         if sim.timestep() > 2:
-            averageFields = {
-                'x': np.mean(self.electricFieldArray['x']),
-                'y': np.mean(self.electricFieldArray['y']),
-                'z': np.mean(self.electricFieldArray['z'])
-            }
+            # averageFields = {
+            #     'x': np.mean(self.electricFieldArray['x']),
+            #     'y': np.mean(self.electricFieldArray['y']),
+            #     'z': np.mean(self.electricFieldArray['z'])
+            # }
 
             # Check if any field component is above the cutoff to decide if Bohr needs to be called
-            if any(abs(averageFields[component]) >= self.responseCutOff for component in ['x', 'y', 'z']) and len(self.electricFieldArray['x']) == 3:
-                logging.debug(f"Calling Bohr at time step {sim.timestep()}")
-                print(f"Calling Bohr at time step {sim.timestep()}")
-                print(f'\tElectric field given to Bohr: {averageFields}')
+            if any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
+                logging.info(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+                logging.info(f'\tElectric field given to Bohr:\n {formatDict(self.electricFieldArray)} in AU')
                 bohrResults = bohr.run(
                     self.inputfile,
                     self.electricFieldArray['x'],
@@ -276,14 +256,13 @@ class Simulation:
                     self.electricFieldArray['z'],
                     self.timeStepBohr
                 )
-                logging.info(f"Bohr calculation results: {bohrResults}")
-                print(f"\tBohr calculation results: {bohrResults}")
+                logging.info(f"\tBohr calculation results: {bohrResults} in AU")
 
                 for i, componentName in enumerate(self.indexForComponents):
-                    self.dipoleResponse[componentName][str(round(sim.meep_time(
-                    ) + (0.5 * self.timeStepMeep), self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
-                    self.dipoleResponse[componentName][str(round(sim.meep_time(
-                    ) + self.timeStepMeep, self.decimalPlaces))] = bohrResults[i] / self.convertFieldMeeptoBohr
+                    self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
+                        = bohrResults[i] / self.convertFieldMeeptoBohr
+                    self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] \
+                        = bohrResults[i] / self.convertFieldMeeptoBohr
 
             # Remove first entry to make room for next entry
             for componentName in self.electricFieldArray:
@@ -360,7 +339,7 @@ def parseInputFile(filepath):
                     
                     params[current_section][key] = processed_values  
     
-    formatted_dict = format_dict_with_tabs(params)
+    formatted_dict = formatDict(params)
     logging.debug(f"Input file parsed contents:\n{formatted_dict}")
     simObj = setParameters(params)
     return simObj
@@ -509,8 +488,8 @@ def processArguments():
     Command line arguments:
     - `-m` or `--meep`: Path to the Meep input file (required).
     - `-b` or `--bohr`: Path to the Bohr input file (required).
+    - `-l` or `--log`: Log file name.
     - `-v` or `--verbose`: Increase verbosity of logging.
-    - `-l` or `--log`: Log file name (required).
 
     Returns:
         argparse.Namespace: Parsed arguments.
@@ -522,7 +501,7 @@ def processArguments():
     parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
     parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.", required=True)
     parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.", required=True)
-    parser.add_argument('-l', '--log', help="Log file name", required=True)
+    parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
 
     args = parser.parse_args()
@@ -541,7 +520,7 @@ def processArguments():
     return args
 
 
-def format_dict_with_tabs(d, tabs=3):
+def formatDict(d, tabs=3):
     """
     Formats a dictionary as a string with a specified number of tab indentations.
 
@@ -552,6 +531,8 @@ def format_dict_with_tabs(d, tabs=3):
     Returns:
         str: The formatted dictionary as a string with tab indentations.
     """
+    import pprint
+
     formatted = pprint.pformat(d, indent=4)
     tab_prefix = '\t' * tabs
     return '\n'.join(tab_prefix + line for line in formatted.splitlines())
@@ -573,17 +554,24 @@ class PrintLogger(object):
 
 
 if __name__ == "__main__":
-    log_format = '(%(filename)s)\t%(levelname)s:\t%(message)s'
+    # log_format = '(%(filename)s)\t%(levelname)s:\t%(message)s'
+    log_format = '%(levelname)s: %(message)s'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--log', help="Log file name", required=True)
+    parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0)
     temp_args = parser.parse_known_args()[0]
 
-    file_handler = logging.FileHandler(temp_args.log, mode='w')
-    file_handler.setFormatter(logging.Formatter(log_format))
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    logger.addHandler(file_handler)
+
+    if temp_args.log:
+        file_handler = logging.FileHandler(temp_args.log, mode='w')
+        file_handler.setFormatter(logging.Formatter(log_format))
+        logger.addHandler(file_handler)
+    else:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(logging.Formatter(log_format))
+        logger.addHandler(console_handler)
     
     if temp_args.verbose >= 2:
         logger.setLevel(logging.DEBUG)
