@@ -72,4 +72,4 @@ Currently, the electric field is measured at the specific voxel (term for 3D pix
 
 These fields have directions, and we can measure the flux of the electric fields in and out of the molecule's voxel.
 
-![img](../../../../../../Users/bldrdge1/Library/CloudStorage/OneDrive-TheUniversityofMemphis/Brinton Plasmol Paper/FluxBox.jpg)
+![img](FluxBox.jpg)
