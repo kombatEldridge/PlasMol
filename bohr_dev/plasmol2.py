@@ -19,6 +19,16 @@ class ContinuousSource:
                  sourceSize,
                  is_integrated=True,
                  component=mp.Ez):
+        """
+        Initializes a ContinuousSource object.
+
+        Args:
+            frequency (float): The frequency of the continuous source.
+            sourceCenter (tuple): The center coordinates of the source.
+            sourceSize (tuple): The size dimensions of the source.
+            is_integrated (bool): If True, integrates the source over time.
+            component (mp.Vector3): The component of the electric field for the source.
+        """
         logging.debug(f"Initializing ContinuousSource with frequency: {frequency}")
         self.frequency = frequency
         self.is_integrated = is_integrated
@@ -42,6 +52,17 @@ class GaussianSource:
                  sourceSize,
                  is_integrated=True,
                  component=mp.Ez):
+        """
+        Initializes a GaussianSource object.
+
+        Args:
+            frequencyCenter (float): The center frequency of the Gaussian source.
+            frequencyWidth (float): The width of the Gaussian source in frequency.
+            sourceCenter (tuple): The center coordinates of the source.
+            sourceSize (tuple): The size dimensions of the source.
+            is_integrated (bool): If True, integrates the source over time.
+            component (mp.Vector3): The component of the electric field for the source.
+        """
         logging.debug(f"Initializing GaussianSource with frequencyCenter: {frequencyCenter}, frequencyWidth: {frequencyWidth}")
         self.frequencyCenter = frequencyCenter
         self.frequencyWidth = frequencyWidth
@@ -74,7 +95,25 @@ class Simulation:
                  imageDirName=None,
                  responseCutOff=1e-12,
                  surroundingMaterialIndex=1.33):
+        """
+        Initializes a Simulation object with various physical parameters.
 
+        Args:
+            inputfile (str): The input file used for Bohr calculations.
+            sourceType (object): Source object (ContinuousSource or GaussianSource).
+            cellLength (float): The length of the simulation cell.
+            pmlThickness (float): Thickness of the perfectly matched layer (PML).
+            positionMolecule (tuple): Position of the molecule in the simulation.
+            symmetries (list): Symmetry conditions for the simulation.
+            objectNP (mp.Object): The object or nanoparticle within the simulation.
+            intensityMin (float): Minimum intensity value for visualization.
+            intensityMax (float): Maximum intensity value for visualization.
+            timeLength (float): Duration of the simulation in Meep time.
+            resolution (int): Spatial resolution of the simulation grid.
+            imageDirName (str): Directory name for storing images.
+            responseCutOff (float): Electric field response cutoff for calling Bohr.
+            surroundingMaterialIndex (float): Refractive index of the surrounding material.
+        """
         logging.info(f"Initializing simulation with cellLength: {cellLength}, resolution: {resolution}")
         if imageDirName is None:
             imageDirName = f"meep-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
@@ -160,15 +199,48 @@ class Simulation:
         logging.debug(f"Decimal places for time steps: {self.decimalPlaces}")
 
     def chirpx(self, t):
+        """
+        Chirp function for the x-component of the dipole response.
+
+        Args:
+            t (float): Time in the simulation.
+
+        Returns:
+            float: Dipole response for the x-component at time t.
+        """
         return self.dipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpy(self, t):
+        """
+        Chirp function for the y-component of the dipole response.
+
+        Args:
+            t (float): Time in the simulation.
+
+        Returns:
+            float: Dipole response for the y-component at time t.
+        """
         return self.dipoleResponse['y'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpz(self, t):
+        """
+        Chirp function for the z-component of the dipole response.
+
+        Args:
+            t (float): Time in the simulation.
+
+        Returns:
+            float: Dipole response for the z-component at time t.
+        """
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
+        """
+        Retrieves the electric field values at the molecule's position during the simulation.
+
+        Args:
+            sim (mp.Simulation): The Meep simulation object.
+        """
         logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
@@ -179,7 +251,12 @@ class Simulation:
         return 0
 
     def callBohr(self, sim):
+        """
+        Calls Bohr calculations if the electric field exceeds the response cutoff.
 
+        Args:
+            sim (mp.Simulation): The Meep simulation object.
+        """
         if sim.timestep() > 2:
             averageFields = {
                 'x': np.mean(self.electricFieldArray['x']),
@@ -215,6 +292,9 @@ class Simulation:
         return 0
 
     def run(self):
+        """
+        Runs the Meep simulation and generates a GIF of the electric field evolution.
+        """
         gif.clear_directory(self.imageDirName)
         logging.info("Meep simulation started.")
         self.sim.use_output_directory(self.imageDirName)
@@ -236,6 +316,15 @@ class Simulation:
 
 
 def parseInputFile(filepath):
+    """
+    Parses an input file and converts its parameters into a Simulation object.
+
+    Args:
+        filepath (str): Path to the input file.
+
+    Returns:
+        Simulation: A configured Simulation object.
+    """
     params = {}
     current_section = None
 
@@ -278,6 +367,15 @@ def parseInputFile(filepath):
 
 
 def setParameters(parameters):
+    """
+    Sets up a Simulation object with the provided parameters.
+
+    Args:
+        parameters (dict): The simulation parameters.
+
+    Returns:
+        Simulation: A Simulation object initialized with the given parameters.
+    """
     simObj = Simulation(
         inputfile=bohrinputfile,  # Mandatory
         sourceType=getSource(parameters['source']),  # Mandatory
@@ -299,6 +397,15 @@ def setParameters(parameters):
 
 
 def getSource(sourceParams):
+    """
+    Creates and returns the appropriate source object (ContinuousSource or GaussianSource) based on the parameters.
+
+    Args:
+        sourceParams (dict): Parameters defining the source type and its attributes.
+
+    Returns:
+        Source: A source object for the simulation.
+    """
     source_type = sourceParams['source_type']
 
     # sourceCenter recommended: -0.5 * cellLength + pmlThickness
@@ -337,6 +444,15 @@ def getSource(sourceParams):
 
 
 def getObject(objParams):
+    """
+    Creates and returns an object for the simulation based on material and geometric parameters.
+
+    Args:
+        objParams (dict): Parameters defining the object (e.g., material and radius).
+
+    Returns:
+        mp.Sphere: A nanoparticle object for the simulation.
+    """
     if objParams['material'] == 'Au':
         from meep.materials import Au_JC_visible as Au
         material = Au
@@ -352,6 +468,15 @@ def getObject(objParams):
 
 
 def getSymmetry(symParams):
+    """
+    Creates and returns a list of symmetry conditions for the simulation.
+
+    Args:
+        symParams (list): List of symmetry conditions and associated phase values.
+
+    Returns:
+        list: A list of symmetry conditions for the simulation.
+    """
     symmetries = []
     for i in range(len(symParams)):
         if symParams[i] in ['X', 'Y', 'Z']:
@@ -378,12 +503,28 @@ def getSymmetry(symParams):
 
 
 def processArguments():
+    """
+    Parses command line arguments for the Meep simulation script.
+
+    Command line arguments:
+    - `-m` or `--meep`: Path to the Meep input file (required).
+    - `-b` or `--bohr`: Path to the Bohr input file (required).
+    - `-v` or `--verbose`: Increase verbosity of logging.
+    - `-l` or `--log`: Log file name (required).
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
+
+    Exits:
+        Exits the program with status code 1 if required arguments are not provided.
+    """
     logging.debug("Processing command line arguments.")
     parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
-    parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.")
-    parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.")
+    parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.", required=True)
+    parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.", required=True)
+    parser.add_argument('-l', '--log', help="Log file name", required=True)
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
-    
+
     args = parser.parse_args()
 
     if not args.meep:
@@ -401,26 +542,61 @@ def processArguments():
 
 
 def format_dict_with_tabs(d, tabs=3):
+    """
+    Formats a dictionary as a string with a specified number of tab indentations.
+
+    Args:
+        d (dict): The dictionary to format.
+        tabs (int): The number of tab characters to use for indentation (default is 3).
+
+    Returns:
+        str: The formatted dictionary as a string with tab indentations.
+    """
     formatted = pprint.pformat(d, indent=4)
     tab_prefix = '\t' * tabs
     return '\n'.join(tab_prefix + line for line in formatted.splitlines())
 
 
+class PrintLogger(object):
+    """Intercepts print statements and redirects them to a logger."""
+    def __init__(self, logger, level=logging.INFO):
+        self.logger = logger
+        self.level = level
+
+    def write(self, message):
+        message = message.rstrip()
+        if message:
+            self.logger.log(self.level, message)
+
+    def flush(self):
+        pass
+
+
 if __name__ == "__main__":
+    log_format = '(%(filename)s)\t%(levelname)s:\t%(message)s'
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--log', help="Log file name", required=True)
     parser.add_argument('-v', '--verbose', action='count', default=0)
     temp_args = parser.parse_known_args()[0]
 
+    file_handler = logging.FileHandler(temp_args.log, mode='w')
+    file_handler.setFormatter(logging.Formatter(log_format))
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(file_handler)
+    
     if temp_args.verbose >= 2:
-        logging.basicConfig(level=logging.DEBUG, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        logger.setLevel(logging.DEBUG)
         mp.verbosity(3)
     elif temp_args.verbose == 1:
-        logging.basicConfig(level=logging.INFO, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        logger.setLevel(logging.INFO)
         mp.verbosity(2)
     else:
-        logging.basicConfig(level=logging.WARNING, format='(%(filename)s) \t%(levelname)s:\t%(message)s')
+        logger.setLevel(logging.WARNING)
         mp.verbosity(0)
-        
+
+    sys.stdout = PrintLogger(logger, logging.INFO)
+
     args = processArguments()
     
     meepinputfile = args.meep
