@@ -83,18 +83,8 @@ def run(inputfile, Ex, Ey, Ez, dt):
     rks_wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = rks_wfn.compute(options)
 
-    mu_xx = ind_dipole(0, 0, rks_wfn, Ex, dt)
-    mu_yy = ind_dipole(1, 1, rks_wfn, Ey, dt)
-    mu_zz = ind_dipole(2, 2, rks_wfn, Ez, dt)
-    
-    # Do not allow mu to pass through under 1e-10
-    if abs(mu_xx) < 1e-10:
-        mu_xx = 0
-
-    if abs(mu_yy) < 1e-10:
-        mu_yy = 0
-
-    if abs(mu_zz) < 1e-10:
-        mu_zz = 0
+    mu_xx = 0 if (mu_xx := ind_dipole(0, 0, rks_wfn, Ex, dt)) < method["resplimit"] else mu_xx
+    mu_yy = 0 if (mu_yy := ind_dipole(1, 1, rks_wfn, Ey, dt)) < method["resplimit"] else mu_yy
+    mu_zz = 0 if (mu_zz := ind_dipole(2, 2, rks_wfn, Ez, dt)) < method["resplimit"] else mu_zz
 
     return mu_xx, mu_yy, mu_zz
