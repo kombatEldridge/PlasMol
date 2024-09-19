@@ -9,6 +9,7 @@ def JK(wfn, D):
     return Fa
 
 def ind_dipole(direction1, direction2, wfn, eField, dt):
+    print(dt)
     D_ao = wfn.D[0]
     D_ao_init = wfn.D[0]
     D_mo = wfn.C[0].T @ wfn.S.T @ D_ao @ wfn.S @ wfn.C[0]
@@ -46,7 +47,7 @@ def ind_dipole(direction1, direction2, wfn, eField, dt):
 
     # Calculate the induced dipole moment in the direction2
     mu = np.trace(wfn.mu[direction2] @ D_ao) - np.trace(wfn.mu[direction2] @ D_ao_init)
-    return mu
+    return mu.real
 
 def run(inputfile, Ex, Ey, Ez, dt):
     import options
@@ -85,5 +86,15 @@ def run(inputfile, Ex, Ey, Ez, dt):
     mu_xx = ind_dipole(0, 0, rks_wfn, Ex, dt)
     mu_yy = ind_dipole(1, 1, rks_wfn, Ey, dt)
     mu_zz = ind_dipole(2, 2, rks_wfn, Ez, dt)
+    
+    # Do not allow mu to pass through under 1e-10
+    if abs(mu_xx) < 1e-10:
+        mu_xx = 0
 
-    return mu_xx.real, mu_yy.real, mu_zz.real
+    if abs(mu_yy) < 1e-10:
+        mu_yy = 0
+
+    if abs(mu_zz) < 1e-10:
+        mu_zz = 0
+
+    return mu_xx, mu_yy, mu_zz

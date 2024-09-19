@@ -25,13 +25,17 @@ end molecule
 
 start simulation
     resolution 1000
-    imageDirName testing
-    responseCutOff 1e-12
+    responseCutOff 1e-8
     cellLength 0.1
     pmlThickness 0.01
     timeLength 300
     symmetries Y 1 Z -1
     surroundingMaterialIndex 1.33
+end simulation
+
+start outputPNG 
+    imageDirName testing
+    timestepsBetween 10
     intensityMin -3
     intensityMax 3
-end simulation
+end outputPNG

@@ -80,20 +80,13 @@ class GaussianSource:
 
 class Simulation:
     def __init__(self,
-                 inputfile,
-                 sourceType,
-                 cellLength,
-                 pmlThickness,
-                 positionMolecule,
-                 symmetries,
-                 objectNP,
-                 intensityMin,
-                 intensityMax,
-                 timeLength=500,
-                 resolution=1000,
-                 imageDirName=None,
-                 responseCutOff=1e-12,
-                 surroundingMaterialIndex=1.33):
+                 inputFile,
+                 simParams, 
+                 molecule,
+                 sourceType, 
+                 symmetries, 
+                 objectNP, 
+                 outputPNG):
         """
         Initializes a Simulation object with various physical parameters.
 
@@ -113,24 +106,26 @@ class Simulation:
             responseCutOff (float): Electric field response cutoff for calling Bohr.
             surroundingMaterialIndex (float): Refractive index of the surrounding material.
         """
-        logging.info(f"Initializing simulation with cellLength: {cellLength}, resolution: {resolution}")
-        if imageDirName is None:
-            imageDirName = f"meep-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
-            logging.info(f"Directory for images: {os.path.abspath(imageDirName)}")
 
         # Define simulation parameters
-        self.inputfile = inputfile
-        self.resolution = resolution
-        self.imageDirName = imageDirName
-        self.responseCutOff = responseCutOff
-        self.cellLength = cellLength
-        self.pmlThickness = pmlThickness
-        self.timeLength = timeLength
+        self.inputFile = inputFile
+        self.cellLength = simParams['cellLength']
+        self.pmlThickness = simParams['pmlThickness']
+        self.timeLength = simParams['timeLength']
+        self.resolution = simParams['resolution']
+        self.responseCutOff = simParams['responseCutOff']
+
+        logging.info(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
+
         self.positionMolecule = mp.Vector3(
-            positionMolecule[0], positionMolecule[1], positionMolecule[2])
-        self.sourceType = sourceType
-        self.intensityMin = intensityMin
-        self.intensityMax = intensityMax
+            molecule['center'][0], 
+            molecule['center'][1], 
+            molecule['center'][2]) if molecule else None
+        self.sourceType = sourceType if sourceType else None
+        self.imageDirName = outputPNG['imageDirName'] if outputPNG else None
+        self.timestepsBetween = outputPNG['timestepsBetween'] if outputPNG else None
+        self.intensityMin = outputPNG['intensityMin'] if outputPNG else None
+        self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
 
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
@@ -166,12 +161,11 @@ class Simulation:
                 center=self.positionMolecule,
                 component=mp.Ez
             )
-        ]
-        self.sourcesList.append(self.sourceType.source)
+        ] if molecule else []
+        if self.sourceType: self.sourcesList.append(self.sourceType.source)
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.symmetriesList = symmetries
-        self.objectList = [objectNP]
-
+        self.objectList = [objectNP] if objectNP else []
         self.sim = mp.Simulation(
             resolution=self.resolution,
             cell_size=self.cellVolume,
@@ -179,9 +173,11 @@ class Simulation:
             sources=self.sourcesList,
             symmetries=self.symmetriesList,
             geometry=self.objectList,
-            default_material=mp.Medium(index=surroundingMaterialIndex)
+            default_material=mp.Medium(index=simParams['surroundingMaterialIndex']),
+            # Courant=0.3
         )
 
+        # TODO: Lets get that timestepBohr number down (by 1/10?)
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
         self.timeStepBohr = 2 * self.timeStepMeep * self.convertTimeMeeptoSI / self.convertTimeBohrtoSI
 
@@ -222,6 +218,8 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
+
+        # TODO: Subtract the electric field dumped by bohr from the previous step
         logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
@@ -238,6 +236,7 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
+        
         if sim.timestep() > 2:
             # averageFields = {
             #     'x': np.mean(self.electricFieldArray['x']),
@@ -250,7 +249,7 @@ class Simulation:
                 logging.info(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
                 logging.info(f'\tElectric field given to Bohr:\n {formatDict(self.electricFieldArray)} in AU')
                 bohrResults = bohr.run(
-                    self.inputfile,
+                    self.inputFile,
                     self.electricFieldArray['x'],
                     self.electricFieldArray['y'],
                     self.electricFieldArray['z'],
@@ -274,24 +273,36 @@ class Simulation:
         """
         Runs the Meep simulation and generates a GIF of the electric field evolution.
         """
-        gif.clear_directory(self.imageDirName)
+        if self.imageDirName: gif.clear_directory(self.imageDirName)
         logging.info("Meep simulation started.")
-        self.sim.use_output_directory(self.imageDirName)
+        if self.imageDirName: self.sim.use_output_directory(self.imageDirName)
 
         try:
-            self.sim.run(
-                mp.at_every(self.timeStepMeep, self.getElectricField),
-                mp.at_every(self.timeStepMeep, self.callBohr),
-                mp.at_every(10 * self.timeStepMeep, mp.output_png(mp.Ez,
-                            f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")),
-                until=self.timeLength * self.timeStepMeep
-            )
+            run_functions = []
+            if self.positionMolecule:
+                run_functions.append(mp.at_every(self.timeStepMeep, self.getElectricField))
+                run_functions.append(mp.at_every(self.timeStepMeep, self.callBohr))
+
+            if self.imageDirName:
+                run_functions.append(mp.at_every(self.timestepsBetween * self.timeStepMeep,
+                                                mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
+
+            self.sim.run(*run_functions, until=self.timeLength * self.timeStepMeep)
+            # self.sim.run(
+            #     mp.at_every(self.timeStepMeep, self.getElectricField),
+            #     mp.at_every(self.timeStepMeep, self.callBohr),
+            #     mp.at_every(self.timestepsBetween * self.timeStepMeep, mp.output_png(mp.Ez,
+            #                 f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")),
+            #     until=self.timeLength * self.timeStepMeep
+            # )
             logging.info("Simulation completed successfully!")
+
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}")
         finally:
-            gif.make_gif(self.imageDirName)
-            logging.info("GIF creation completed")
+            if self.imageDirName: 
+                gif.make_gif(self.imageDirName)
+                logging.info("GIF creation completed")
 
 
 def parseInputFile(filepath):
@@ -356,23 +367,39 @@ def setParameters(parameters):
         Simulation: A Simulation object initialized with the given parameters.
     """
     simObj = Simulation(
-        inputfile=bohrinputfile,  # Mandatory
-        sourceType=getSource(parameters['source']),  # Mandatory
-        cellLength=parameters['simulation']['cellLength'],  # Mandatory
-        pmlThickness=parameters['simulation']['pmlThickness'],  # Mandatory
-        positionMolecule=parameters['molecule']['center'],  # Mandatory
-        symmetries=getSymmetry(parameters['simulation']['symmetries']),  # Mandatory
-        objectNP=getObject(parameters['object']),  # Mandatory
-        intensityMin=parameters['simulation']['intensityMin'],  # Mandatory
-        intensityMax=parameters['simulation']['intensityMax'],  # Mandatory
-        timeLength=parameters['simulation'].get('timeLength', 500),  # Optional
-        resolution=parameters['simulation'].get('resolution', 1000),  # Optional
-        imageDirName=parameters['simulation'].get('imageDirName', None),  # Optional
-        responseCutOff=parameters['simulation'].get('responseCutOff', 1e-12),  # Optional
-        surroundingMaterialIndex=parameters['simulation'].get('surroundingMaterialIndex', 1.33)  # Optional
+        inputFile=bohrinputfile, # will always return something 
+        simParams=getSimulation(parameters.get('simulation', {})), # will always return something 
+        molecule=getMolecule(parameters.get('molecule', None)), # could return None
+        sourceType=getSource(parameters.get('source', None)), # could return None
+        symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)), # could return None
+        objectNP=getObject(parameters.get('object', None)), # could return None
+        outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
     )
 
     return simObj
+
+
+def getMolecule(molParams):
+    if not molParams:
+        logging.debug('No molecule chosen for simulation. Continuing without it.')
+        return None
+    
+    # Room to add future molecule params, otherwise should delete.
+
+    return molParams
+
+
+def getSimulation(simParams):
+    if not simParams:
+        logging.debug('No simulation parameters chosen for simulation. Continuing with default values.')
+    
+    simParams['cellLength'] = simParams.get('cellLeeeeeength', 0.1)
+    simParams['pmlThickness'] = simParams.get('pmlThickness', 0.01)
+    simParams['timeLength'] = simParams.get('timeLength', 500)
+    simParams['resolution'] = simParams.get('resolution', 1000)
+    simParams['responseCutOff'] = simParams.get('responseCutOff', 1e-12)
+    simParams['surroundingMaterialIndex'] = simParams.get('surroundingMaterialIndex', 1.33)
+    return simParams
 
 
 def getSource(sourceParams):
@@ -383,8 +410,12 @@ def getSource(sourceParams):
         sourceParams (dict): Parameters defining the source type and its attributes.
 
     Returns:
-        Source: A source object for the simulation.
+        Source: A source object for the simulation, or None if invalid input.
     """
+    if not sourceParams:
+        logging.debug('No source chosen for simulation. Continuing without it.')
+        return None
+
     source_type = sourceParams['source_type']
 
     # sourceCenter recommended: -0.5 * cellLength + pmlThickness
@@ -417,7 +448,7 @@ def getSource(sourceParams):
         )
 
     else:
-        raise ValueError("Unsupported source type: {}".format(source_type))
+        raise ValueError(f"Unsupported source type: {source_type}")
 
     return source
 
@@ -432,6 +463,10 @@ def getObject(objParams):
     Returns:
         mp.Sphere: A nanoparticle object for the simulation.
     """
+    if not objParams:
+        logging.debug('No object chosen for simulation. Continuing without it.')
+        return None
+
     if objParams['material'] == 'Au':
         from meep.materials import Au_JC_visible as Au
         material = Au
@@ -456,6 +491,10 @@ def getSymmetry(symParams):
     Returns:
         list: A list of symmetry conditions for the simulation.
     """
+    if not symParams:
+        logging.debug('No symmetries chosen for simulation. Continuing without them.')
+        return None
+    
     symmetries = []
     for i in range(len(symParams)):
         if symParams[i] in ['X', 'Y', 'Z']:
@@ -479,6 +518,21 @@ def getSymmetry(symParams):
         raise ValueError(f"Unsupported symmetry type: {symParams}")
     else:
         return symmetries
+
+
+def getOutputPNG(pngParams):
+    if not pngParams:
+        logging.debug('No picture output chosen for simulation. Continuing without them.')
+        return None
+
+    if any(key not in pngParams for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
+        raise ValueError("If you want to generate pictures, you must provide timestepsBetween, intensityMin, and intensityMax.")
+
+    if 'imageDirName' not in pngParams:
+        pngParams['imageDirName'] = f"meep-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
+        logging.info(f"Directory for images: {os.path.abspath(pngParams['imageDirName'])}")
+
+    return pngParams
 
 
 def processArguments():
