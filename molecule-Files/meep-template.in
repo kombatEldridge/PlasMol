@@ -1,0 +1,41 @@
+start source
+    source_type continuous
+    frequency 100
+    is_integrated true
+    sourceCenter -0.04
+    sourceSize 0 0.1 0.1
+end source
+
+-- start source
+    -- source_type gaussian
+    -- frequencyMin 1/0.8
+    -- frequencyMax 1/0.4
+    -- is_integrated true
+-- end source
+
+start object
+    radius 0.025
+    center 0 0 0
+    material Au
+end object
+
+start molecule
+    center 0.035 0 0
+end molecule
+
+start simulation
+    resolution 1000
+    responseCutOff 1e-8
+    cellLength 0.1
+    pmlThickness 0.01
+    timeLength 300
+    symmetries Y 1 Z -1
+    surroundingMaterialIndex 1.33
+end simulation
+
+start outputPNG 
+    imageDirName testing
+    timestepsBetween 10
+    intensityMin -3
+    intensityMax 3
+end outputPNG

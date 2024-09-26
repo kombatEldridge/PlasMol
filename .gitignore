@@ -1,5 +1,8 @@
-molecule-Files/**
+molecule-Files/*
 bohr_dev/*
+!molecule-Files/meep-template.in
+!molecule-Files/molecule-template.in
+!molecule-Files/molecule-template.mos
 !bohr_dev/bohr.py
 !bohr_dev/gif.py
 !bohr_dev/plasmol.py
