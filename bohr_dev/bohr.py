@@ -9,7 +9,6 @@ def JK(wfn, D):
     return Fa
 
 def ind_dipole(direction1, direction2, wfn, eField, dt):
-    print(dt)
     D_ao = wfn.D[0]
     D_ao_init = wfn.D[0]
     D_mo = wfn.C[0].T @ wfn.S.T @ D_ao @ wfn.S @ wfn.C[0]
@@ -83,8 +82,8 @@ def run(inputfile, Ex, Ey, Ez, dt):
     rks_wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = rks_wfn.compute(options)
 
-    mu_xx = 0 if (mu_xx := ind_dipole(0, 0, rks_wfn, Ex, dt)) < method["resplimit"] else mu_xx
-    mu_yy = 0 if (mu_yy := ind_dipole(1, 1, rks_wfn, Ey, dt)) < method["resplimit"] else mu_yy
-    mu_zz = 0 if (mu_zz := ind_dipole(2, 2, rks_wfn, Ez, dt)) < method["resplimit"] else mu_zz
+    mu_xx = 0 if abs(mu_xx := ind_dipole(0, 0, rks_wfn, Ex, dt)) < method["resplimit"] else mu_xx
+    mu_yy = 0 if abs(mu_yy := ind_dipole(1, 1, rks_wfn, Ey, dt)) < method["resplimit"] else mu_yy
+    mu_zz = 0 if abs(mu_zz := ind_dipole(2, 2, rks_wfn, Ez, dt)) < method["resplimit"] else mu_zz
 
     return mu_xx, mu_yy, mu_zz

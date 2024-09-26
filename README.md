@@ -23,7 +23,10 @@ bohr is currently a private build and details on usage remain TBD.
 ### Running locally
 Once you establish a Meep conda environment, you'll need to activate it.
 
-### Running on an HPC/Clus
+
+../bohr_dev/plasmol2.py -m meep.in -b pyridine.in -l plasmol2.out -vv
+
+### Running on an HPC/Cluster
 Specifically on the BigBlue at the University of Memphis:
 ```bash
 module load meep/1.28
