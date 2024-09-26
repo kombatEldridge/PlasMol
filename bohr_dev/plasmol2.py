@@ -209,6 +209,7 @@ class Simulation:
         """
         Chirp function for the z-component of the dipole response.
         """
+        logging.debug(f"chirpz being called at {np.round(t * self.convertTimeMeeptoSI, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)}.")
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
@@ -225,8 +226,7 @@ class Simulation:
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
                                           center=self.positionMolecule,
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
-            self.electricFieldArray[componentName].append(
-                field * self.convertFieldMeeptoBohr)
+            self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
         return 0
 
     def callBohr(self, sim):
@@ -236,14 +236,7 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
-        
         if sim.timestep() > 2:
-            # averageFields = {
-            #     'x': np.mean(self.electricFieldArray['x']),
-            #     'y': np.mean(self.electricFieldArray['y']),
-            #     'z': np.mean(self.electricFieldArray['z'])
-            # }
-
             # Check if any field component is above the cutoff to decide if Bohr needs to be called
             if any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
                 logging.info(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
@@ -255,7 +248,7 @@ class Simulation:
                     self.electricFieldArray['z'],
                     self.timeStepBohr
                 )
-                logging.info(f"\tBohr calculation results: {bohrResults} in AU")
+                logging.info(f"\tBohr calculation results: {np.array(bohrResults) / self.convertFieldMeeptoBohr} in Meep Units")
 
                 for i, componentName in enumerate(self.indexForComponents):
                     self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
@@ -268,17 +261,21 @@ class Simulation:
                 self.electricFieldArray[componentName].pop(0)
 
         return 0
+    
+    def printHello(self, sim):
+        logging.info(f"Hello: {sim.meep_time() * self.convertTimeMeeptoSI}")
 
     def run(self):
         """
         Runs the Meep simulation and generates a GIF of the electric field evolution.
         """
         if self.imageDirName: gif.clear_directory(self.imageDirName)
-        logging.info("Meep simulation started.")
         if self.imageDirName: self.sim.use_output_directory(self.imageDirName)
 
+        logging.info("Meep simulation started.")
         try:
             run_functions = []
+            run_functions.append(mp.at_every(0, self.printHello))
             if self.positionMolecule:
                 run_functions.append(mp.at_every(self.timeStepMeep, self.getElectricField))
                 run_functions.append(mp.at_every(self.timeStepMeep, self.callBohr))
@@ -288,15 +285,7 @@ class Simulation:
                                                 mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
 
             self.sim.run(*run_functions, until=self.timeLength * self.timeStepMeep)
-            # self.sim.run(
-            #     mp.at_every(self.timeStepMeep, self.getElectricField),
-            #     mp.at_every(self.timeStepMeep, self.callBohr),
-            #     mp.at_every(self.timestepsBetween * self.timeStepMeep, mp.output_png(mp.Ez,
-            #                 f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")),
-            #     until=self.timeLength * self.timeStepMeep
-            # )
             logging.info("Simulation completed successfully!")
-
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}")
         finally:
