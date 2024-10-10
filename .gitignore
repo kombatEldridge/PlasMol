@@ -6,6 +6,8 @@ bohr_dev/*
 !bohr_dev/bohr.py
 !bohr_dev/gif.py
 !bohr_dev/plasmol.py
-!bohr_dev/plasmol2.py
+!bohr_dev/simulation.py
+!bohr_dev/driver.py
+!bohr_dev/sources.py
 !bohr_dev/basis/
 .DS_Store
