@@ -13,9 +13,16 @@ from datetime import datetime
 
 class ContinuousSource:
     def __init__(self,
-                 frequency,
                  sourceCenter,
                  sourceSize,
+                 frequency=None,
+                 start_time=0,
+                 end_time=1e+20,
+                 width=0,
+                 fwidth=np.inf,
+                 cutoff=None,
+                 slowness=3.0,
+                 wavelength=None,
                  is_integrated=True,
                  component=mp.Ez):
         """
@@ -28,28 +35,40 @@ class ContinuousSource:
             is_integrated (bool): If True, integrates the source over time.
             component (mp.Vector3): The component of the electric field for the source.
         """
-        logging.debug(f"Initializing ContinuousSource with frequency: {frequency}")
-        self.frequency = frequency
-        self.is_integrated = is_integrated
+        logging.debug(f"Initializing ContinuousSource")
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
-        self.component = component
+        kwargs = {
+            'frequency': frequency,
+            'is_integrated': is_integrated,
+            'start_time': start_time,
+            'end_time': end_time,
+            'width': width,
+            'fwidth': fwidth,
+            'cutoff': cutoff,
+            'slowness': slowness,
+            'wavelength': wavelength,
+        }
+        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
-            mp.ContinuousSource(frequency=self.frequency,
-                                is_integrated=self.is_integrated),
+            mp.ContinuousSource(**filtered_kwargs),
             center=self.sourceCenter,
             size=self.sourceSize,
-            component=self.component
+            component=component
         )
 
 
 class GaussianSource:
     def __init__(self,
-                 frequencyCenter,
-                 frequencyWidth,
                  sourceCenter,
                  sourceSize,
+                 frequencyCenter=None,
+                 frequencyWidth=0,
+                 fwidth=np.inf,
+                 start_time=0,
+                 cutoff=5.0,
                  is_integrated=True,
+                 wavelength=None,
                  component=mp.Ez):
         """
         Initializes a GaussianSource object.
@@ -62,19 +81,24 @@ class GaussianSource:
             is_integrated (bool): If True, integrates the source over time.
             component (mp.Vector3): The component of the electric field for the source.
         """
-        logging.debug(f"Initializing GaussianSource with frequencyCenter: {frequencyCenter}, frequencyWidth: {frequencyWidth}")
-        self.frequencyCenter = frequencyCenter
-        self.frequencyWidth = frequencyWidth
-        self.is_integrated = is_integrated
+        logging.debug(f"Initializing GaussianSource")
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
-        self.component = component
+        kwargs = {
+            'frequency': frequencyCenter,
+            'width': frequencyWidth,
+            'fwidth': fwidth,
+            'start_time': start_time,
+            'cutoff': cutoff,
+            'is_integrated': is_integrated,
+            'wavelength': wavelength,
+        }
+        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
-            mp.GaussianSource(frequency=frequencyCenter,
-                              width=frequencyWidth, is_integrated=is_integrated),
+            mp.GaussianSource(**filtered_kwargs),
             center=self.sourceCenter,
             size=self.sourceSize,
-            component=self.component
+            component=component
         )
 
 
@@ -121,6 +145,7 @@ class Simulation:
             molecule['center'][0], 
             molecule['center'][1], 
             molecule['center'][2]) if molecule else None
+        self.turnOnMolecule = molecule.get('turnOn', True)
         self.sourceType = sourceType if sourceType else None
         self.imageDirName = outputPNG['imageDirName'] if outputPNG else None
         self.timestepsBetween = outputPNG['timestepsBetween'] if outputPNG else None
@@ -131,14 +156,14 @@ class Simulation:
         self.convertTimeMeeptoSI = 10 / 3
         self.convertTimeBohrtoSI = 0.024188843
         self.convertFieldMeeptoBohr = 1 / 1e-6 / 8.8541878128e-12 / 299792458.0 / 0.51422082e12
+        self.convertMomentBohrtoMeep = 8.4783536198e-30 * 299792458.0 / 1 / 1e-6 / 1e-6 
 
         # Simulation runtime variables
         self.timeStepMeep = None
         self.timeStepBohr = None
         self.dipoleResponse = {component: defaultdict(
             list) for component in ['x', 'y', 'z']}
-        self.electricFieldArray = {component: []
-                                   for component in ['x', 'y', 'z']}
+        self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
         self.indexForComponents = ['x', 'y', 'z']
         self.fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
         self.decimalPlaces = None
@@ -159,9 +184,9 @@ class Simulation:
             mp.Source(
                 mp.CustomSource(src_func=self.chirpz, is_integrated=True),
                 center=self.positionMolecule,
-                component=mp.Ez
+                component=mp.Ez, 
             )
-        ] if molecule else []
+        ] if (molecule and self.turnOnMolecule) else []
         if self.sourceType: self.sourcesList.append(self.sourceType.source)
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.symmetriesList = symmetries
@@ -209,7 +234,7 @@ class Simulation:
         """
         Chirp function for the z-component of the dipole response.
         """
-        logging.debug(f"chirpz being called at {np.round(t * self.convertTimeMeeptoSI, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)}.")
+        logging.debug(f"CustomSource being called at {np.round(t * self.convertTimeMeeptoSI, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)} in MU.")
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
@@ -221,7 +246,7 @@ class Simulation:
         """
 
         # TODO: Subtract the electric field dumped by bohr from the previous step
-        logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+        logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
                                           center=self.positionMolecule,
@@ -248,13 +273,13 @@ class Simulation:
                     self.electricFieldArray['z'],
                     self.timeStepBohr
                 )
-                logging.info(f"\tBohr calculation results: {np.array(bohrResults) / self.convertFieldMeeptoBohr} in Meep Units")
+                logging.info(f"\tBohr calculation results: {np.array(bohrResults)* self.convertMomentBohrtoMeep} in MU")
 
                 for i, componentName in enumerate(self.indexForComponents):
                     self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
-                        = bohrResults[i] / self.convertFieldMeeptoBohr
+                        = bohrResults[i] * self.convertMomentBohrtoMeep
                     self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] \
-                        = bohrResults[i] / self.convertFieldMeeptoBohr
+                        = bohrResults[i] * self.convertMomentBohrtoMeep
 
             # Remove first entry to make room for next entry
             for componentName in self.electricFieldArray:
@@ -262,8 +287,6 @@ class Simulation:
 
         return 0
     
-    def printHello(self, sim):
-        logging.info(f"Hello: {sim.meep_time() * self.convertTimeMeeptoSI}")
 
     def run(self):
         """
@@ -275,7 +298,6 @@ class Simulation:
         logging.info("Meep simulation started.")
         try:
             run_functions = []
-            run_functions.append(mp.at_every(0, self.printHello))
             if self.positionMolecule:
                 run_functions.append(mp.at_every(self.timeStepMeep, self.getElectricField))
                 run_functions.append(mp.at_every(self.timeStepMeep, self.callBohr))
@@ -410,31 +432,31 @@ def getSource(sourceParams):
     # sourceCenter recommended: -0.5 * cellLength + pmlThickness
     if source_type == 'continuous':
         source = ContinuousSource(
-            frequency=sourceParams['frequency'],
-            is_integrated=sourceParams['is_integrated'],
             sourceCenter=sourceParams['sourceCenter'],
-            sourceSize=sourceParams['sourceSize']
+            sourceSize=sourceParams['sourceSize'],
+            frequency=sourceParams.get('frequency', None),
+            start_time=sourceParams.get('start_time', None),
+            end_time=sourceParams.get('end_time', None),
+            width=sourceParams.get('width', None),
+            fwidth=sourceParams.get('fwidth', None),
+            cutoff=sourceParams.get('cutoff', None),
+            slowness=sourceParams.get('slowness', None),
+            wavelength=sourceParams.get('wavelength', None),
+            is_integrated=sourceParams.get('is_integrated', None)
         )
 
     elif source_type == 'gaussian':
-        if 'frequencyCenter' in sourceParams and 'frequencyWidth' in sourceParams:
-            frequency_center = sourceParams['frequencyCenter']
-            frequency_width = sourceParams['frequencyWidth']
-        elif 'frequencyMin' in sourceParams and 'frequencyMax' in sourceParams:
-            frequency_center = (
-                sourceParams['frequencyMin'] + sourceParams['frequencyMax']) / 2
-            frequency_width = sourceParams['frequencyMax'] - sourceParams['frequencyMin']
-        else:
-            raise ValueError(
-                "Either frequencyCenter and frequencyWidth or frequencyMin and frequencyMax must be provided for a GaussianSource.")
-
         source = GaussianSource(
-            frequencyCenter=frequency_center,
-            frequencyWidth=frequency_width,
-            is_integrated=sourceParams['is_integrated'],
             sourceCenter=sourceParams['sourceCenter'],
-            sourceSize=sourceParams['sourceSize']
-        )
+            sourceSize=sourceParams['sourceSize'],
+            frequencyCenter=sourceParams.get('frequencyCenter', None),
+            frequencyWidth=sourceParams.get('frequencyWidth', None),
+            fwidth=sourceParams.get('fwidth', None),
+            start_time=sourceParams.get('start_time', None),
+            cutoff=sourceParams.get('cutoff', None),
+            is_integrated=sourceParams.get('is_integrated', None),
+            wavelength=sourceParams.get('wavelength', None),
+            component=sourceParams.get('component', None))
 
     else:
         raise ValueError(f"Unsupported source type: {source_type}")
@@ -511,7 +533,7 @@ def getSymmetry(symParams):
 
 def getOutputPNG(pngParams):
     if not pngParams:
-        logging.debug('No picture output chosen for simulation. Continuing without them.')
+        logging.debug('No picture output chosen for simulation. Continuing without it.')
         return None
 
     if any(key not in pngParams for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
