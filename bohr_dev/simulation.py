@@ -109,6 +109,7 @@ class Simulation:
         # TODO: Lets get that timestepBohr number down (by 1/10?)
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
         self.timeStepBohr = 2 * self.timeStepMeep * self.convertTimeMeeptoSI / self.convertTimeBohrtoSI
+        logging.info(f"The timestep for this simulation is\n\t{self.timeStepMeep} in Meep Units,\n\t{self.timeStepBohr} in Atomic Units, and\n\t{self.timeStepBohr*self.convertTimeBohrtoSI} in fs")
 
         # Determine the number of decimal places for time steps
         halfTimeStepString = str(self.timeStepMeep / 2)
