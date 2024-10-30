@@ -67,7 +67,7 @@ class Simulation:
         self.timeStepBohr = None
         self.dipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
         self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
-        self.permaArray = {component: defaultdict(list) for component in ['x', 'y', 'z']}
+        self.electricField = {component: defaultdict(list) for component in ['x', 'y', 'z']}
         self.indexForComponents = ['x', 'y', 'z']
         self.fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
         self.decimalPlaces = None
@@ -116,18 +116,16 @@ class Simulation:
         logging.debug(f"Decimal places for time steps: {self.decimalPlaces}")
 
         for component in self.indexForComponents:
-            for i in np.arange(self.timeLength):
+            for i in np.arange(0, round(self.timeStepMeep * self.timeLength, self.decimalPlaces), self.timeStepMeep):
                 self.dipoleResponse[component].update({
-                    str(round(0 * i * self.timeStepMeep, self.decimalPlaces)): 0,
-                    str(round(0.5 * i * self.timeStepMeep, self.decimalPlaces)): 0,
-                    str(round(1 * i * self.timeStepMeep, self.decimalPlaces)): 0
+                    str(round(0 * i, self.decimalPlaces)): 0,
+                    str(round(0.5 * i, self.decimalPlaces)): 0,
+                    str(round(1 * i, self.decimalPlaces)): 0
                 })
-                self.permaArray[component].update({
-                    str(round(0 * i * self.timeStepMeep, self.decimalPlaces)): 0,
-                    # str(round(0.5 * i * self.timeStepMeep, self.decimalPlaces)): 0,
-                    str(round(1 * i * self.timeStepMeep, self.decimalPlaces)): 0
-                })
-
+                # self.electricField[component].update({
+                #     str(round(0 * i, self.decimalPlaces)): 0,
+                #     str(round(1 * i, self.decimalPlaces)): 0
+                # })
 
     def chirpx(self, t):
         """
@@ -145,7 +143,7 @@ class Simulation:
         """
         Chirp function for the z-component of the dipole response.
         """
-        logging.debug(f"CustomSource being called at {np.round(t * self.convertTimeMeeptoSI, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)} in MU.")
+        logging.debug(f"CustomSource being called at {np.round(t, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)} in MU.")
         return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
@@ -163,7 +161,7 @@ class Simulation:
                                           center=self.positionMolecule,
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
             self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
-            self.permaArray[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
+            self.electricField[componentName][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] \
                         = field * self.convertFieldMeeptoBohr
 
         return 0
@@ -225,34 +223,66 @@ class Simulation:
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}")
         finally:
-            print("self.permaArray in AU: ", self.permaArray)
-            print("self.dipoleResponse in MU", self.dipoleResponse)
-            show(self.permaArray)
+            for component in self.indexForComponents:
+                for i in np.arange(round(0.5 * self.timeStepMeep, self.decimalPlaces), round(self.timeStepMeep * (self.timeLength + 1.5), self.decimalPlaces), self.timeStepMeep):
+                    try:
+                        self.dipoleResponse[component].pop(str(round(i, self.decimalPlaces)))
+                    except:
+                        continue
+            show(self.electricField, self.dipoleResponse)
             if self.imageDirName: 
                 gif.make_gif(self.imageDirName)
                 logging.info("GIF creation completed")
 
-def show(data):
+
+def show(data1, data2):
     import matplotlib.pyplot as plt
-    from collections import defaultdict
 
-    timestamps = list(data['x'].keys())
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-    timestamps = [float(t) for t in timestamps]
+    def get_sorted_data(data):
+        sorted_timestamps = sorted(data.keys(), key=float)
+        sorted_values = [data[t] for t in sorted_timestamps]
+        sorted_timestamps = [float(t) for t in sorted_timestamps]  # Convert to float
+        return sorted_timestamps, sorted_values
 
-    x_values = list(data['x'].values())
-    y_values = list(data['y'].values())
-    z_values = list(data['z'].values())
+    timestamps1, x_values1 = get_sorted_data(data1['x'])
+    _, y_values1 = get_sorted_data(data1['y'])
+    _, z_values1 = get_sorted_data(data1['z'])
 
-    plt.plot(timestamps, x_values, label='x', marker='o')
-    plt.plot(timestamps, y_values, label='y', marker='o')
-    plt.plot(timestamps, z_values, label='z', marker='o')
+    ax1.plot(timestamps1, x_values1, label='x', marker='o')
+    ax1.plot(timestamps1, y_values1, label='y', marker='o')
+    ax1.plot(timestamps1, z_values1, label='z', marker='o')
+    ax1.set_title('Electric Field measured in AU')
+    ax1.set_xlabel('Timestamps')
+    ax1.set_ylabel('Electric Field Magnitude')
+    ax1.legend()
 
-    # Add labels and title
-    plt.xlabel('Timestamps')
-    plt.ylabel('Values')
-    plt.title('X, Y, Z Values Over Time')
-    plt.legend()
+    timestamps2, x_values2 = get_sorted_data(data2['x'])
+    _, y_values2 = get_sorted_data(data2['y'])
+    _, z_values2 = get_sorted_data(data2['z'])
 
-    # Display the plot
+    ax2.plot(timestamps2, x_values2, label='x', marker='o')
+    ax2.plot(timestamps2, y_values2, label='y', marker='o')
+    ax2.plot(timestamps2, z_values2, label='z', marker='o')
+    ax2.set_title('Molecule\'s response measured in MU')
+    ax2.set_xlabel('Timestamps')
+    ax2.set_ylabel('Polarization Field Magnitude')
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.savefig('1ktimestep-600nm.png', dpi=500)
+
+
+    def write_to_csv(filename, timestamps, x_values, y_values, z_values):
+        import csv
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Timestamps', 'X Values', 'Y Values', 'Z Values'])
+            for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
+                writer.writerow([t, x, y, z])
+
+    write_to_csv('Electric-field-600nm.csv', timestamps1, x_values1, y_values1, z_values1)
+    write_to_csv('Molecule-response-600nm.csv', timestamps2, x_values2, y_values2, z_values2)
+
     plt.show()
