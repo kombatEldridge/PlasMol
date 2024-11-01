@@ -10,8 +10,7 @@ class ContinuousSource:
                  start_time=0,
                  end_time=1e+20,
                  width=0,
-                 fwidth=np.inf,
-                 cutoff=None,
+                 fwidth=float("inf"),
                  slowness=3.0,
                  wavelength=None,
                  is_integrated=True,
@@ -30,15 +29,12 @@ class ContinuousSource:
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
         kwargs = {
-            'frequency': frequency,
+            'frequency': 1 / wavelength if wavelength else float(frequency),
             'is_integrated': is_integrated,
             'start_time': start_time,
             'end_time': end_time,
-            'width': width,
-            'fwidth': fwidth,
-            'cutoff': cutoff,
+            'width': max(width, 1 / fwidth) if fwidth not in [None, float("inf")] else width,
             'slowness': slowness,
-            'wavelength': wavelength,
         }
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
@@ -53,9 +49,9 @@ class GaussianSource:
     def __init__(self,
                  sourceCenter,
                  sourceSize,
-                 frequencyCenter=None,
-                 frequencyWidth=0,
-                 fwidth=np.inf,
+                 frequency=None,
+                 width=0,
+                 fwidth=float("inf"),
                  start_time=0,
                  cutoff=5.0,
                  is_integrated=True,
@@ -66,7 +62,8 @@ class GaussianSource:
 
         Args:
             frequencyCenter (float): The center frequency of the Gaussian source.
-            frequencyWidth (float): The width of the Gaussian source in frequency.
+            width (float): The width of the Gaussian source in wavelengths.
+            fwidth (float): The width of the Gaussian source in frequency.
             sourceCenter (tuple): The center coordinates of the source.
             sourceSize (tuple): The size dimensions of the source.
             is_integrated (bool): If True, integrates the source over time.
@@ -76,13 +73,11 @@ class GaussianSource:
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
         kwargs = {
-            'frequency': frequencyCenter,
-            'width': frequencyWidth,
-            'fwidth': fwidth,
+            'frequency': 1 / wavelength if wavelength else float(frequency),
+            'width': max(width, 1 / fwidth) if fwidth not in [None, float("inf")] else width,
             'start_time': start_time,
             'cutoff': cutoff,
             'is_integrated': is_integrated,
-            'wavelength': wavelength,
         }
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(

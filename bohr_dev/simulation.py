@@ -92,6 +92,9 @@ class Simulation:
             )
         ] if (molecule and self.turnOnMolecule) else []
         if self.sourceType: self.sourcesList.append(self.sourceType.source)
+        logging.debug(f"Source that reached the simulation: {vars(self.sourceType.source.src)}")
+        logging.debug(f"Swigobj that reached the simulation: {dir(self.sourceType.source.src.swigobj)}")
+        # logging.debug(f"Swigobj that reached the simulation: {vars(self.sourceType.source.src.swigobj)}")
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.symmetriesList = symmetries
         self.objectList = [objectNP] if objectNP else []
@@ -103,7 +106,6 @@ class Simulation:
             symmetries=self.symmetriesList,
             geometry=self.objectList,
             default_material=mp.Medium(index=simParams['surroundingMaterialIndex']),
-            # Courant=0.3
         )
 
         # TODO: Lets get that timestepBohr number down (by 1/10?)
@@ -123,10 +125,6 @@ class Simulation:
                     str(round(0.5 * i, self.decimalPlaces)): 0,
                     str(round(1 * i, self.decimalPlaces)): 0
                 })
-                # self.electricField[component].update({
-                #     str(round(0 * i, self.decimalPlaces)): 0,
-                #     str(round(1 * i, self.decimalPlaces)): 0
-                # })
 
     def chirpx(self, t):
         """
@@ -272,7 +270,7 @@ def show(data1, data2):
     ax2.legend()
 
     plt.tight_layout()
-    plt.savefig('1ktimestep-600nm.png', dpi=500)
+    plt.savefig('1ktimestep-600nm-2.png', dpi=500)
 
 
     def write_to_csv(filename, timestamps, x_values, y_values, z_values):
@@ -283,7 +281,7 @@ def show(data1, data2):
             for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
                 writer.writerow([t, x, y, z])
 
-    write_to_csv('Electric-field-600nm.csv', timestamps1, x_values1, y_values1, z_values1)
-    write_to_csv('Molecule-response-600nm.csv', timestamps2, x_values2, y_values2, z_values2)
+    write_to_csv('Electric-field-600nm-2.csv', timestamps1, x_values1, y_values1, z_values1)
+    write_to_csv('Molecule-response-600nm-2.csv', timestamps2, x_values2, y_values2, z_values2)
 
     plt.show()

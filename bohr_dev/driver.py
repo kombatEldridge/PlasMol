@@ -26,10 +26,10 @@ def parseInputFile(filepath):
             line = line.strip()
             if line.startswith('#') or line.startswith('--') or line.startswith('%') or not line:
                 continue
-            if line.startswith('start'):
+            if line.startswith('start '):
                 current_section = line.split()[1]
                 params[current_section] = {}
-            elif line.startswith('end'):
+            elif line.startswith('end '):
                 current_section = None
             elif current_section:
                 key, *values = line.split()
@@ -96,7 +96,7 @@ def getSimulation(simParams):
     if not simParams:
         logging.debug('No simulation parameters chosen for simulation. Continuing with default values.')
     
-    simParams['cellLength'] = simParams.get('cellLeeeeeength', 0.1)
+    simParams['cellLength'] = simParams.get('cellLength', 0.1)
     simParams['pmlThickness'] = simParams.get('pmlThickness', 0.01)
     simParams['timeLength'] = simParams.get('timeLength', 500)
     simParams['resolution'] = simParams.get('resolution', 1000)
@@ -131,7 +131,6 @@ def getSource(sourceParams):
             end_time=sourceParams.get('end_time', None),
             width=sourceParams.get('width', None),
             fwidth=sourceParams.get('fwidth', None),
-            cutoff=sourceParams.get('cutoff', None),
             slowness=sourceParams.get('slowness', None),
             wavelength=sourceParams.get('wavelength', None),
             is_integrated=sourceParams.get('is_integrated', None)
@@ -141,8 +140,8 @@ def getSource(sourceParams):
         source = sources.GaussianSource(
             sourceCenter=sourceParams['sourceCenter'],
             sourceSize=sourceParams['sourceSize'],
-            frequencyCenter=sourceParams.get('frequencyCenter', None),
-            frequencyWidth=sourceParams.get('frequencyWidth', None),
+            frequency=sourceParams.get('frequency', None),
+            width=sourceParams.get('width', None),
             fwidth=sourceParams.get('fwidth', None),
             start_time=sourceParams.get('start_time', None),
             cutoff=sourceParams.get('cutoff', None),

@@ -17,7 +17,6 @@ def clear_directory(directory_path):
 
 def make_gif(frame_folder):
     frame_folder = os.path.basename(os.path.normpath(frame_folder))
-    logging.info(frame_folder)
     items = os.listdir(frame_folder)
     items = [file_name for file_name in items if file_name != ".DS_Store"]
     items = [item for item in items if "png" in item]
