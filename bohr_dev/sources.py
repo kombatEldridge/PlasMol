@@ -39,9 +39,9 @@ class ContinuousSource:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
             mp.ContinuousSource(**filtered_kwargs),
+            component=component,
             center=self.sourceCenter,
             size=self.sourceSize,
-            component=component
         )
 
 
@@ -82,8 +82,8 @@ class GaussianSource:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
             mp.GaussianSource(**filtered_kwargs),
+            component=component,
             center=self.sourceCenter,
             size=self.sourceSize,
-            component=component
         )
 

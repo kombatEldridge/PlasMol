@@ -5,6 +5,7 @@ import meep as mp
 import gif
 import bohr
 from collections import defaultdict
+import inspect
 
 class Simulation:
     def __init__(self,
@@ -14,7 +15,8 @@ class Simulation:
                  sourceType, 
                  symmetries, 
                  objectNP, 
-                 outputPNG):
+                 outputPNG, 
+                 matplotlib):
         """
         Initializes a Simulation object with various physical parameters.
 
@@ -49,12 +51,14 @@ class Simulation:
             molecule['center'][0], 
             molecule['center'][1], 
             molecule['center'][2]) if molecule else None
-        self.turnOnMolecule = molecule.get('turnOn', True)
+        self.turnOnMolecule = molecule.get('turnOn', True) if molecule else None
         self.sourceType = sourceType if sourceType else None
         self.imageDirName = outputPNG['imageDirName'] if outputPNG else None
         self.timestepsBetween = outputPNG['timestepsBetween'] if outputPNG else None
         self.intensityMin = outputPNG['intensityMin'] if outputPNG else None
         self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
+        self.matplotlib = matplotlib['show'] if matplotlib else None
+        self.matplotlib_output = matplotlib['output'] if matplotlib else None
 
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
@@ -92,9 +96,6 @@ class Simulation:
             )
         ] if (molecule and self.turnOnMolecule) else []
         if self.sourceType: self.sourcesList.append(self.sourceType.source)
-        logging.debug(f"Source that reached the simulation: {vars(self.sourceType.source.src)}")
-        logging.debug(f"Swigobj that reached the simulation: {dir(self.sourceType.source.src.swigobj)}")
-        # logging.debug(f"Swigobj that reached the simulation: {vars(self.sourceType.source.src.swigobj)}")
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
         self.symmetriesList = symmetries
         self.objectList = [objectNP] if objectNP else []
@@ -198,7 +199,6 @@ class Simulation:
 
         return 0
     
-
     def run(self):
         """
         Runs the Meep simulation and generates a GIF of the electric field evolution.
@@ -228,7 +228,8 @@ class Simulation:
                         self.dipoleResponse[component].pop(str(round(i, self.decimalPlaces)))
                     except:
                         continue
-            show(self.electricField, self.dipoleResponse)
+            if self.matplotlib:
+                show(self.electricField, self.dipoleResponse)
             if self.imageDirName: 
                 gif.make_gif(self.imageDirName)
                 logging.info("GIF creation completed")
@@ -236,13 +237,12 @@ class Simulation:
 
 def show(data1, data2):
     import matplotlib.pyplot as plt
-
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
     def get_sorted_data(data):
         sorted_timestamps = sorted(data.keys(), key=float)
         sorted_values = [data[t] for t in sorted_timestamps]
-        sorted_timestamps = [float(t) for t in sorted_timestamps]  # Convert to float
+        sorted_timestamps = [float(t) for t in sorted_timestamps]
         return sorted_timestamps, sorted_values
 
     timestamps1, x_values1 = get_sorted_data(data1['x'])
@@ -272,7 +272,6 @@ def show(data1, data2):
     plt.tight_layout()
     plt.savefig('1ktimestep-600nm-2.png', dpi=500)
 
-
     def write_to_csv(filename, timestamps, x_values, y_values, z_values):
         import csv
         with open(filename, 'w', newline='') as file:
@@ -281,7 +280,18 @@ def show(data1, data2):
             for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
                 writer.writerow([t, x, y, z])
 
-    write_to_csv('Electric-field-600nm-2.csv', timestamps1, x_values1, y_values1, z_values1)
-    write_to_csv('Molecule-response-600nm-2.csv', timestamps2, x_values2, y_values2, z_values2)
+    write_to_csv(f'Electric-field-{self.matplotlib_output}.csv', timestamps1, x_values1, y_values1, z_values1)
+    write_to_csv(f'Molecule-response-{self.matplotlib_output}.csv', timestamps2, x_values2, y_values2, z_values2)
 
     plt.show()
+
+def debugObj(obj):
+    # obj = self.sourceType.source
+    attributes = dir(obj)
+    for attribute in attributes:
+        if not attribute.startswith('__'):
+            try:
+                value = getattr(obj, attribute)
+                print(f"{attribute}: {value}")
+            except Exception as e:
+                print(f"{attribute}: Could not retrieve (error: {e})")

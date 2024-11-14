@@ -77,6 +77,7 @@ def setParameters(parameters):
         symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)), # could return None
         objectNP=getObject(parameters.get('object', None)), # could return None
         outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
+        matplotlib=parameters.get('matplotlib', None), # could return None
     )
 
     return simObj
@@ -146,8 +147,7 @@ def getSource(sourceParams):
             start_time=sourceParams.get('start_time', None),
             cutoff=sourceParams.get('cutoff', None),
             is_integrated=sourceParams.get('is_integrated', None),
-            wavelength=sourceParams.get('wavelength', None),
-            component=sourceParams.get('component', None))
+            wavelength=sourceParams.get('wavelength', None))
 
     else:
         raise ValueError(f"Unsupported source type: {source_type}")
