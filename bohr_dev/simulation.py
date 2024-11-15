@@ -16,7 +16,8 @@ class Simulation:
                  symmetries, 
                  objectNP, 
                  outputPNG, 
-                 matplotlib):
+                 matplotlib, 
+                 formatted_dict):
         """
         Initializes a Simulation object with various physical parameters.
 
@@ -45,7 +46,7 @@ class Simulation:
         self.resolution = simParams['resolution']
         self.responseCutOff = simParams['responseCutOff']
 
-        logging.info(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
+        logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
 
         self.positionMolecule = mp.Vector3(
             molecule['center'][0], 
@@ -59,6 +60,7 @@ class Simulation:
         self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
         self.matplotlib = matplotlib['show'] if matplotlib else None
         self.matplotlib_output = matplotlib['output'] if matplotlib else None
+        self.formatted_dict = formatted_dict
 
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
@@ -155,7 +157,7 @@ class Simulation:
         """
 
         # TODO: Subtract the electric field dumped by bohr from the previous step
-        logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
+        logging.debug(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
                                           center=self.positionMolecule,
@@ -176,8 +178,8 @@ class Simulation:
         if sim.timestep() > 2:
             # Check if any field component is above the cutoff to decide if Bohr needs to be called
             if any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
-                logging.info(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
-                logging.info(f'\tElectric field given to Bohr:\n {self.electricFieldArray} in AU')
+                logging.debug(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+                logging.debug(f'\tElectric field given to Bohr:\n {self.electricFieldArray} in AU')
                 bohrResults = bohr.run(
                     self.inputFile,
                     self.electricFieldArray['x'],
@@ -185,7 +187,7 @@ class Simulation:
                     self.electricFieldArray['z'],
                     self.timeStepBohr
                 )
-                logging.info(f"\tBohr calculation results: {np.array(bohrResults)* self.convertMomentBohrtoMeep} in MU")
+                logging.debug(f"\tBohr calculation results: {np.array(bohrResults)* self.convertMomentBohrtoMeep} in MU")
 
                 for i, componentName in enumerate(self.indexForComponents):
                     self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
@@ -198,6 +200,60 @@ class Simulation:
                 self.electricFieldArray[componentName].pop(0)
 
         return 0
+    
+    def show(self, data1, data2):
+        import matplotlib.pyplot as plt
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+        def get_sorted_data(data):
+            sorted_timestamps = sorted(data.keys(), key=float)
+            sorted_values = [data[t] for t in sorted_timestamps]
+            sorted_timestamps = [float(t) for t in sorted_timestamps]
+            return sorted_timestamps, sorted_values
+
+        timestamps1, x_values1 = get_sorted_data(data1['x'])
+        _, y_values1 = get_sorted_data(data1['y'])
+        _, z_values1 = get_sorted_data(data1['z'])
+
+        ax1.plot(timestamps1, x_values1, label='x', marker='o')
+        ax1.plot(timestamps1, y_values1, label='y', marker='o')
+        ax1.plot(timestamps1, z_values1, label='z', marker='o')
+        ax1.set_title('Electric Field measured in AU')
+        ax1.set_xlabel('Timestamps')
+        ax1.set_ylabel('Electric Field Magnitude')
+        ax1.legend()
+
+        timestamps2, x_values2 = get_sorted_data(data2['x'])
+        _, y_values2 = get_sorted_data(data2['y'])
+        _, z_values2 = get_sorted_data(data2['z'])
+
+        ax2.plot(timestamps2, x_values2, label='x', marker='o')
+        ax2.plot(timestamps2, y_values2, label='y', marker='o')
+        ax2.plot(timestamps2, z_values2, label='z', marker='o')
+        ax2.set_title('Molecule\'s response measured in MU')
+        ax2.set_xlabel('Timestamps')
+        ax2.set_ylabel('Polarization Field Magnitude')
+        ax2.legend()
+
+        plt.tight_layout()
+        plt.savefig(f'{self.matplotlib_output}.png', dpi=1000)
+        logging.debug(f"Matplotlib image written: {self.matplotlib_output}.png")
+
+        def write_to_csv(filename, timestamps, x_values, y_values, z_values, comment=None, attributes=None):
+            import csv
+            with open(filename, 'w', newline='') as file:
+                if comment:
+                    for line in comment.splitlines():
+                        file.write(f"# {line}\n")
+                writer = csv.writer(file)
+                writer.writerow(['Timestamps', 'X Values', 'Y Values', 'Z Values'])
+                for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
+                    writer.writerow([t, x, y, z])
+        
+        write_to_csv(f'{self.matplotlib_output}-E-Field.csv', timestamps1, x_values1, y_values1, z_values1, comment=f"Simulation's Electric Field measured at the molecule's position.\nJob Input:\n{self.formatted_dict}")
+        write_to_csv(f'{self.matplotlib_output}-Molecule.csv', timestamps2, x_values2, y_values2, z_values2, comment=f"Molecule's Polarizability Field measured at the molecule's position.\nJob Input:\n{self.formatted_dict}")
+        logging.debug(f"CSV files written: {self.matplotlib_output}-E-Field.csv and {self.matplotlib_output}-Molecule.csv")
+
     
     def run(self):
         """
@@ -229,61 +285,10 @@ class Simulation:
                     except:
                         continue
             if self.matplotlib:
-                show(self.electricField, self.dipoleResponse)
+                self.show(self.electricField, self.dipoleResponse)
             if self.imageDirName: 
                 gif.make_gif(self.imageDirName)
-                logging.info("GIF creation completed")
 
-
-def show(data1, data2):
-    import matplotlib.pyplot as plt
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    def get_sorted_data(data):
-        sorted_timestamps = sorted(data.keys(), key=float)
-        sorted_values = [data[t] for t in sorted_timestamps]
-        sorted_timestamps = [float(t) for t in sorted_timestamps]
-        return sorted_timestamps, sorted_values
-
-    timestamps1, x_values1 = get_sorted_data(data1['x'])
-    _, y_values1 = get_sorted_data(data1['y'])
-    _, z_values1 = get_sorted_data(data1['z'])
-
-    ax1.plot(timestamps1, x_values1, label='x', marker='o')
-    ax1.plot(timestamps1, y_values1, label='y', marker='o')
-    ax1.plot(timestamps1, z_values1, label='z', marker='o')
-    ax1.set_title('Electric Field measured in AU')
-    ax1.set_xlabel('Timestamps')
-    ax1.set_ylabel('Electric Field Magnitude')
-    ax1.legend()
-
-    timestamps2, x_values2 = get_sorted_data(data2['x'])
-    _, y_values2 = get_sorted_data(data2['y'])
-    _, z_values2 = get_sorted_data(data2['z'])
-
-    ax2.plot(timestamps2, x_values2, label='x', marker='o')
-    ax2.plot(timestamps2, y_values2, label='y', marker='o')
-    ax2.plot(timestamps2, z_values2, label='z', marker='o')
-    ax2.set_title('Molecule\'s response measured in MU')
-    ax2.set_xlabel('Timestamps')
-    ax2.set_ylabel('Polarization Field Magnitude')
-    ax2.legend()
-
-    plt.tight_layout()
-    plt.savefig('1ktimestep-600nm-2.png', dpi=500)
-
-    def write_to_csv(filename, timestamps, x_values, y_values, z_values):
-        import csv
-        with open(filename, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Timestamps', 'X Values', 'Y Values', 'Z Values'])
-            for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
-                writer.writerow([t, x, y, z])
-
-    write_to_csv(f'Electric-field-{self.matplotlib_output}.csv', timestamps1, x_values1, y_values1, z_values1)
-    write_to_csv(f'Molecule-response-{self.matplotlib_output}.csv', timestamps2, x_values2, y_values2, z_values2)
-
-    plt.show()
 
 def debugObj(obj):
     # obj = self.sourceType.source

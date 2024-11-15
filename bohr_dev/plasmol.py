@@ -133,7 +133,6 @@ fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
 # Function to get a slice of the electric field at each time step
 def getElectricField(sim):
     global electricFieldArray
-    # print("Getting Electric Field at the molecule at time ", sim.meep_time()*convertTimeMeeptoSI, " fs")
     for i, componentName in enumerate(indexForComponents):
         field = np.mean(sim.get_array(component=fieldComponents[i], center=positionMolecule, size=mp.Vector3(1E-20, 1E-20, 1E-20)))
         electricFieldArray[componentName].append(field * convertFieldMeeptoSI)

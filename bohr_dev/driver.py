@@ -54,12 +54,12 @@ def parseInputFile(filepath):
                     params[current_section][key] = processed_values  
     
     formatted_dict = formatDict(params)
-    logging.debug(f"Input file parsed contents:\n{formatted_dict}")
-    simObj = setParameters(params)
+    logging.info(f"Input file parsed contents:\n{formatted_dict}")
+    simObj = setParameters(params, formatted_dict)
     return simObj
 
 
-def setParameters(parameters):
+def setParameters(parameters, formatted_dict):
     """
     Sets up a Simulation object with the provided parameters.
 
@@ -78,6 +78,7 @@ def setParameters(parameters):
         objectNP=getObject(parameters.get('object', None)), # could return None
         outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
         matplotlib=parameters.get('matplotlib', None), # could return None
+        formatted_dict=formatted_dict
     )
 
     return simObj
@@ -85,7 +86,7 @@ def setParameters(parameters):
 
 def getMolecule(molParams):
     if not molParams:
-        logging.debug('No molecule chosen for simulation. Continuing without it.')
+        logging.info('No molecule chosen for simulation. Continuing without it.')
         return None
     
     # Room to add future molecule params, otherwise should delete.
@@ -95,7 +96,7 @@ def getMolecule(molParams):
 
 def getSimulation(simParams):
     if not simParams:
-        logging.debug('No simulation parameters chosen for simulation. Continuing with default values.')
+        logging.info('No simulation parameters chosen for simulation. Continuing with default values.')
     
     simParams['cellLength'] = simParams.get('cellLength', 0.1)
     simParams['pmlThickness'] = simParams.get('pmlThickness', 0.01)
@@ -117,7 +118,7 @@ def getSource(sourceParams):
         Source: A source object for the simulation, or None if invalid input.
     """
     if not sourceParams:
-        logging.debug('No source chosen for simulation. Continuing without it.')
+        logging.info('No source chosen for simulation. Continuing without it.')
         return None
 
     source_type = sourceParams['source_type']
@@ -166,7 +167,7 @@ def getObject(objParams):
         mp.Sphere: A nanoparticle object for the simulation.
     """
     if not objParams:
-        logging.debug('No object chosen for simulation. Continuing without it.')
+        logging.info('No object chosen for simulation. Continuing without it.')
         return None
 
     if objParams['material'] == 'Au':
@@ -194,7 +195,7 @@ def getSymmetry(symParams):
         list: A list of symmetry conditions for the simulation.
     """
     if not symParams:
-        logging.debug('No symmetries chosen for simulation. Continuing without them.')
+        logging.info('No symmetries chosen for simulation. Continuing without them.')
         return None
     
     symmetries = []
@@ -224,7 +225,7 @@ def getSymmetry(symParams):
 
 def getOutputPNG(pngParams):
     if not pngParams:
-        logging.debug('No picture output chosen for simulation. Continuing without it.')
+        logging.info('No picture output chosen for simulation. Continuing without it.')
         return None
 
     if any(key not in pngParams for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
@@ -270,8 +271,8 @@ def processArguments():
         logging.error("Bohr input file not provided. Exiting.")
         sys.exit(1)
 
-    logging.debug(f"Meep input file: {os.path.abspath(args.meep)}")
-    logging.debug(f"Bohr input file: {os.path.abspath(args.bohr)}")
+    logging.info(f"Meep input file: {os.path.abspath(args.meep)}")
+    logging.info(f"Bohr input file: {os.path.abspath(args.bohr)}")
     
     return args
 
@@ -311,7 +312,8 @@ class PrintLogger(object):
 
 if __name__ == "__main__":
     # log_format = '(%(filename)s)\t%(levelname)s:\t%(message)s'
-    log_format = '%(levelname)s: %(message)s'
+    log_format = "%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s"
+    # log_format = '%(levelname)s: %(message)s'
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0)
