@@ -1,41 +1,47 @@
+-- start source
+--     source_type continuous
+--     wavelength 0.2
+--     is_integrated true
+--     sourceCenter -0.04
+--     sourceSize 0 0.1 0.1
+--     end_time 0.25
+-- end source
+
 start source
-    source_type continuous
-    frequency 100
+    source_type gaussian
+    wavelength 0.6
+    width 0.05
+    -- frequency 1.678322
+    -- fwidth 0.2797
     is_integrated true
     sourceCenter -0.04
     sourceSize 0 0.1 0.1
+    -- cutoff 50
 end source
 
--- start source
-    -- source_type gaussian
-    -- frequencyMin 1/0.8
-    -- frequencyMax 1/0.4
-    -- is_integrated true
--- end source
-
-start object
-    radius 0.025
-    center 0 0 0
-    material Au
-end object
-
 start molecule
-    center 0.035 0 0
+    center 0 0 0
+    -- turnOn False
 end molecule
 
 start simulation
-    resolution 1000
+    resolution 2000
     responseCutOff 1e-8
     cellLength 0.1
     pmlThickness 0.01
-    timeLength 300
+    timeLength 20
     symmetries Y 1 Z -1
     surroundingMaterialIndex 1.33
 end simulation
 
 start outputPNG 
-    imageDirName testing
-    timestepsBetween 10
+    imageDirName testingEnd
+    timestepsBetween 5
     intensityMin -3
     intensityMax 3
 end outputPNG
+
+start matplotlib
+    show True
+    output gauss_600_50_2
+end matplotlib
