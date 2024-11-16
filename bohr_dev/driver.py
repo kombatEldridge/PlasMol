@@ -312,8 +312,8 @@ class PrintLogger(object):
 
 if __name__ == "__main__":
     # log_format = '(%(filename)s)\t%(levelname)s:\t%(message)s'
-    log_format = "%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s"
-    # log_format = '%(levelname)s: %(message)s'
+    # log_format = "%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s"
+    log_format = '%(levelname)s: %(message)s'
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0)
