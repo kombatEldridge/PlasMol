@@ -277,7 +277,7 @@ def processArguments():
     return args
 
 
-def formatDict(d, tabs=3):
+def formatDict(d, tabs=1):
     """
     Formats a dictionary as a string with a specified number of tab indentations.
 

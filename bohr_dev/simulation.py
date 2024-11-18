@@ -1,11 +1,12 @@
 # /Users/bldrdge1/.conda/envs/meep/bin/python ../bohr_dev/plasmol2.py -m meep.in -b pyridine.in
 import logging
 import numpy as np
+import pandas as pd
+import csv
 import meep as mp
 import gif
 import bohr
 from collections import defaultdict
-import inspect
 
 class Simulation:
     def __init__(self,
@@ -60,6 +61,8 @@ class Simulation:
         self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
         self.matplotlib = matplotlib['show'] if matplotlib else None
         self.matplotlib_output = matplotlib['output'] if matplotlib else None
+        self.eFieldFileName = f'{self.matplotlib_output}-E-Field.csv' if matplotlib else None
+        self.pFieldFileName = f'{self.matplotlib_output}-P-Field.csv' if matplotlib else None
         self.formatted_dict = formatted_dict
 
         # Conversion factors
@@ -73,7 +76,7 @@ class Simulation:
         self.timeStepBohr = None
         self.dipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
         self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
-        self.electricField = {component: defaultdict(list) for component in ['x', 'y', 'z']}
+        # self.electricField = {component: defaultdict(list) for component in ['x', 'y', 'z']}
         self.indexForComponents = ['x', 'y', 'z']
         self.fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
         self.decimalPlaces = None
@@ -110,6 +113,8 @@ class Simulation:
             geometry=self.objectList,
             default_material=mp.Medium(index=simParams['surroundingMaterialIndex']),
         )
+
+        print(debugObj(self.sourceType.source.src))
 
         # TODO: Lets get that timestepBohr number down (by 1/10?)
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
@@ -155,16 +160,20 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
-
-        # TODO: Subtract the electric field dumped by bohr from the previous step
+        # TODO: Subtract the electric field dumped by bohr from the previous step, maybe?
         logging.debug(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
                                           center=self.positionMolecule,
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
             self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
-            self.electricField[componentName][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] \
-                        = field * self.convertFieldMeeptoBohr
+        
+        if self.matplotlib:
+            self.updateCSV(filename=self.eFieldFileName, 
+                        timestamp=str(round((sim.meep_time() + (self.timeStepMeep)) * self.convertTimeMeeptoSI, self.decimalPlaces)), 
+                        x_value=self.electricFieldArray['x'][-1], 
+                        y_value=self.electricFieldArray['y'][-1], 
+                        z_value=self.electricFieldArray['z'][-1])
 
         return 0
 
@@ -175,84 +184,92 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
-        if sim.timestep() > 2:
-            # Check if any field component is above the cutoff to decide if Bohr needs to be called
-            if any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
-                logging.debug(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
-                logging.debug(f'\tElectric field given to Bohr:\n {self.electricFieldArray} in AU')
-                bohrResults = bohr.run(
-                    self.inputFile,
-                    self.electricFieldArray['x'],
-                    self.electricFieldArray['y'],
-                    self.electricFieldArray['z'],
-                    self.timeStepBohr
-                )
-                logging.debug(f"\tBohr calculation results: {np.array(bohrResults)* self.convertMomentBohrtoMeep} in MU")
+        if sim.timestep() > 2 and any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
+            logging.debug(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+            logging.debug(f'\tElectric field given to Bohr:\n {self.electricFieldArray} in atomic units')
+            bohrResults = bohr.run(self.inputFile,
+                                    self.electricFieldArray['x'],
+                                    self.electricFieldArray['y'],
+                                    self.electricFieldArray['z'],
+                                    self.timeStepBohr)
+            logging.debug(f"\tBohr calculation results: {np.array(bohrResults)} in atomic units")
 
-                for i, componentName in enumerate(self.indexForComponents):
-                    self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
-                        = bohrResults[i] * self.convertMomentBohrtoMeep
-                    self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] \
-                        = bohrResults[i] * self.convertMomentBohrtoMeep
+            for i, componentName in enumerate(self.indexForComponents):
+                self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
+                    = bohrResults[i] * self.convertMomentBohrtoMeep
+                self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] \
+                    = bohrResults[i] * self.convertMomentBohrtoMeep
 
-            # Remove first entry to make room for next entry
+            if self.matplotlib:
+                self.updateCSV(filename=self.pFieldFileName, 
+                            timestamp=str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces)), 
+                            x_value=self.dipoleResponse['x'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep, 
+                            y_value=self.dipoleResponse['y'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep, 
+                            z_value=self.dipoleResponse['z'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep)
+                
             for componentName in self.electricFieldArray:
                 self.electricFieldArray[componentName].pop(0)
+        else:
+            if self.matplotlib:
+                self.updateCSV(filename=self.pFieldFileName, 
+                            timestamp=str(round((sim.meep_time() + (self.timeStepMeep)) * self.convertTimeMeeptoSI, self.decimalPlaces)), 
+                            x_value=0.0, 
+                            y_value=0.0, 
+                            z_value=0.0)
 
         return 0
     
-    def show(self, data1, data2):
+
+    def updateCSV(self, filename, timestamp=None, x_value=None, y_value=None, z_value=None, comment=None):
+        if comment:
+            with open(filename, 'w', newline='') as file:
+                for line in comment.splitlines():
+                    file.write(f"# {line}\n")
+                writer = csv.writer(file)
+                writer.writerow(['Timestamps (fs)', 'X Values', 'Y Values', 'Z Values'])
+        
+        if timestamp is not None and x_value is not None and y_value is not None and z_value is not None:
+            with open(filename, 'a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([timestamp, x_value, y_value, z_value])
+
+    def show(self):
+        logging.debug(f"Reading CSV files: {self.eFieldFileName} and {self.pFieldFileName}")
         import matplotlib.pyplot as plt
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-        def get_sorted_data(data):
-            sorted_timestamps = sorted(data.keys(), key=float)
-            sorted_values = [data[t] for t in sorted_timestamps]
-            sorted_timestamps = [float(t) for t in sorted_timestamps]
-            return sorted_timestamps, sorted_values
+        data1 = pd.read_csv(self.eFieldFileName, comment='#')
+        data2 = pd.read_csv(self.pFieldFileName, comment='#')
 
-        timestamps1, x_values1 = get_sorted_data(data1['x'])
-        _, y_values1 = get_sorted_data(data1['y'])
-        _, z_values1 = get_sorted_data(data1['z'])
+        timestamps1 = data1['Timestamps (fs)']
+        x_values1 = data1['X Values']
+        y_values1 = data1['Y Values']
+        z_values1 = data1['Z Values']
 
         ax1.plot(timestamps1, x_values1, label='x', marker='o')
         ax1.plot(timestamps1, y_values1, label='y', marker='o')
         ax1.plot(timestamps1, z_values1, label='z', marker='o')
-        ax1.set_title('Electric Field measured in AU')
-        ax1.set_xlabel('Timestamps')
+        ax1.set_title('Incident Electric Field')
+        ax1.set_xlabel('Timestamps (fs)')
         ax1.set_ylabel('Electric Field Magnitude')
         ax1.legend()
 
-        timestamps2, x_values2 = get_sorted_data(data2['x'])
-        _, y_values2 = get_sorted_data(data2['y'])
-        _, z_values2 = get_sorted_data(data2['z'])
+        timestamps2 = data2['Timestamps (fs)']
+        x_values2 = data2['X Values']
+        y_values2 = data2['Y Values']
+        z_values2 = data2['Z Values']
 
         ax2.plot(timestamps2, x_values2, label='x', marker='o')
         ax2.plot(timestamps2, y_values2, label='y', marker='o')
         ax2.plot(timestamps2, z_values2, label='z', marker='o')
-        ax2.set_title('Molecule\'s response measured in MU')
-        ax2.set_xlabel('Timestamps')
+        ax2.set_title('Molecule\'s Response')
+        ax2.set_xlabel('Timestamps (fs)')
         ax2.set_ylabel('Polarization Field Magnitude')
         ax2.legend()
 
         plt.tight_layout()
         plt.savefig(f'{self.matplotlib_output}.png', dpi=1000)
         logging.debug(f"Matplotlib image written: {self.matplotlib_output}.png")
-
-        def write_to_csv(filename, timestamps, x_values, y_values, z_values, comment=None, attributes=None):
-            import csv
-            with open(filename, 'w', newline='') as file:
-                if comment:
-                    for line in comment.splitlines():
-                        file.write(f"# {line}\n")
-                writer = csv.writer(file)
-                writer.writerow(['Timestamps', 'X Values', 'Y Values', 'Z Values'])
-                for t, x, y, z in zip(timestamps, x_values, y_values, z_values):
-                    writer.writerow([t, x, y, z])
-        
-        write_to_csv(f'{self.matplotlib_output}-E-Field.csv', timestamps1, x_values1, y_values1, z_values1, comment=f"Simulation's Electric Field measured at the molecule's position.\nJob Input:\n{self.formatted_dict}")
-        write_to_csv(f'{self.matplotlib_output}-Molecule.csv', timestamps2, x_values2, y_values2, z_values2, comment=f"Molecule's Polarizability Field measured at the molecule's position.\nJob Input:\n{self.formatted_dict}")
-        logging.debug(f"CSV files written: {self.matplotlib_output}-E-Field.csv and {self.matplotlib_output}-Molecule.csv")
 
     
     def run(self):
@@ -263,6 +280,11 @@ class Simulation:
         if self.imageDirName: self.sim.use_output_directory(self.imageDirName)
 
         logging.info("Meep simulation started.")
+
+        if self.matplotlib:
+            self.updateCSV(filename=self.eFieldFileName, comment=f"Simulation's Electric Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formatted_dict}")
+            self.updateCSV(filename=self.pFieldFileName, comment=f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formatted_dict}")
+
         try:
             run_functions = []
             if self.positionMolecule:
@@ -285,7 +307,7 @@ class Simulation:
                     except:
                         continue
             if self.matplotlib:
-                self.show(self.electricField, self.dipoleResponse)
+                self.show()
             if self.imageDirName: 
                 gif.make_gif(self.imageDirName)
 
