@@ -8,6 +8,21 @@ import simulation as sim
 import sources
 from datetime import datetime
 
+class PrintLogger(object):
+    """Intercepts print statements and redirects them to a logger."""
+    def __init__(self, logger, level=logging.INFO):
+        self.logger = logger
+        self.level = level
+
+    def write(self, message):
+        message = message.rstrip()
+        if message:
+            self.logger.log(self.level, message)
+
+    def flush(self):
+        pass
+
+
 def parseInputFile(filepath):
     """
     Parses an input file and converts its parameters into a Simulation object.
@@ -53,13 +68,11 @@ def parseInputFile(filepath):
                     
                     params[current_section][key] = processed_values  
     
-    formatted_dict = formatDict(params)
-    logging.info(f"Input file parsed contents:\n{formatted_dict}")
-    simObj = setParameters(params, formatted_dict)
+    simObj = setParameters(params)
     return simObj
 
 
-def setParameters(parameters, formatted_dict):
+def setParameters(parameters):
     """
     Sets up a Simulation object with the provided parameters.
 
@@ -70,15 +83,15 @@ def setParameters(parameters, formatted_dict):
         Simulation: A Simulation object initialized with the given parameters.
     """
     simObj = sim.Simulation(
-        inputFile=bohrinputfile, # will always return something 
+        bohrInputFile=bohrinputfile, # will always return something 
+        meepInputFile=meepinputfile, # will always return something 
         simParams=getSimulation(parameters.get('simulation', {})), # will always return something 
         molecule=getMolecule(parameters.get('molecule', None)), # could return None
         sourceType=getSource(parameters.get('source', None)), # could return None
         symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)), # could return None
         objectNP=getObject(parameters.get('object', None)), # could return None
         outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
-        matplotlib=parameters.get('matplotlib', None), # could return None
-        formatted_dict=formatted_dict
+        matplotlib=parameters.get('matplotlib', None) # could return None
     )
 
     return simObj
@@ -271,9 +284,20 @@ def processArguments():
         logging.error("Bohr input file not provided. Exiting.")
         sys.exit(1)
 
-    logging.info(f"Meep input file: {os.path.abspath(args.meep)}")
     logging.info(f"Bohr input file: {os.path.abspath(args.bohr)}")
-    
+    with open(os.path.abspath(args.bohr), 'r') as file:
+        for line in file:
+            if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
+                continue
+            logger.info('\t%s', line.rstrip('\n'))
+    logger.info("")
+    logging.info(f"Meep input file: {os.path.abspath(args.meep)}")
+    with open(os.path.abspath(args.meep), 'r') as file:
+        for line in file:
+            if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
+                continue
+            logger.info('\t%s', line.rstrip('\n'))
+    logger.info("")
     return args
 
 
@@ -293,21 +317,6 @@ def formatDict(d, tabs=1):
     formatted = pprint.pformat(d, indent=4)
     tab_prefix = '\t' * tabs
     return '\n'.join(tab_prefix + line for line in formatted.splitlines())
-
-
-class PrintLogger(object):
-    """Intercepts print statements and redirects them to a logger."""
-    def __init__(self, logger, level=logging.INFO):
-        self.logger = logger
-        self.level = level
-
-    def write(self, message):
-        message = message.rstrip()
-        if message:
-            self.logger.log(self.level, message)
-
-    def flush(self):
-        pass
 
 
 if __name__ == "__main__":

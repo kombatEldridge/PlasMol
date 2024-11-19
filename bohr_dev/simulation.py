@@ -5,20 +5,21 @@ import pandas as pd
 import csv
 import meep as mp
 import gif
+import os
 import bohr
 from collections import defaultdict
 
 class Simulation:
     def __init__(self,
-                 inputFile,
+                 bohrInputFile,
+                 meepInputFile,
                  simParams, 
                  molecule,
                  sourceType, 
                  symmetries, 
                  objectNP, 
                  outputPNG, 
-                 matplotlib, 
-                 formatted_dict):
+                 matplotlib):
         """
         Initializes a Simulation object with various physical parameters.
 
@@ -40,7 +41,7 @@ class Simulation:
         """
 
         # Define simulation parameters
-        self.inputFile = inputFile
+        self.inputFile = bohrInputFile
         self.cellLength = simParams['cellLength']
         self.pmlThickness = simParams['pmlThickness']
         self.timeLength = simParams['timeLength']
@@ -59,11 +60,17 @@ class Simulation:
         self.timestepsBetween = outputPNG['timestepsBetween'] if outputPNG else None
         self.intensityMin = outputPNG['intensityMin'] if outputPNG else None
         self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
-        self.matplotlib = matplotlib['show'] if matplotlib else None
+        self.matplotlib = True if matplotlib else None
         self.matplotlib_output = matplotlib['output'] if matplotlib else None
         self.eFieldFileName = f'{self.matplotlib_output}-E-Field.csv' if matplotlib else None
         self.pFieldFileName = f'{self.matplotlib_output}-P-Field.csv' if matplotlib else None
-        self.formatted_dict = formatted_dict
+
+        with open(os.path.abspath(meepInputFile), 'r') as file:
+            self.formattedDict = ""
+            for line in file:
+                if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
+                    continue
+                self.formattedDict = "\t".join([self.formattedDict, line])
 
         # Conversion factors
         self.convertTimeMeeptoSI = 10 / 3
@@ -74,9 +81,8 @@ class Simulation:
         # Simulation runtime variables
         self.timeStepMeep = None
         self.timeStepBohr = None
-        self.dipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
-        self.electricFieldArray = {component: [] for component in ['x', 'y', 'z']}
-        # self.electricField = {component: defaultdict(list) for component in ['x', 'y', 'z']}
+        self.measuredDipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
+        self.measuredElectricField = {component: [] for component in ['x', 'y', 'z']}
         self.indexForComponents = ['x', 'y', 'z']
         self.fieldComponents = [mp.Ex, mp.Ey, mp.Ez]
         self.decimalPlaces = None
@@ -114,9 +120,6 @@ class Simulation:
             default_material=mp.Medium(index=simParams['surroundingMaterialIndex']),
         )
 
-        print(debugObj(self.sourceType.source.src))
-
-        # TODO: Lets get that timestepBohr number down (by 1/10?)
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
         self.timeStepBohr = 2 * self.timeStepMeep * self.convertTimeMeeptoSI / self.convertTimeBohrtoSI
         logging.info(f"The timestep for this simulation is\n\t{self.timeStepMeep} in Meep Units,\n\t{self.timeStepBohr} in Atomic Units, and\n\t{self.timeStepBohr*self.convertTimeBohrtoSI} in fs")
@@ -128,7 +131,7 @@ class Simulation:
 
         for component in self.indexForComponents:
             for i in np.arange(0, round(self.timeStepMeep * self.timeLength, self.decimalPlaces), self.timeStepMeep):
-                self.dipoleResponse[component].update({
+                self.measuredDipoleResponse[component].update({
                     str(round(0 * i, self.decimalPlaces)): 0,
                     str(round(0.5 * i, self.decimalPlaces)): 0,
                     str(round(1 * i, self.decimalPlaces)): 0
@@ -138,20 +141,20 @@ class Simulation:
         """
         Chirp function for the x-component of the dipole response.
         """
-        return self.dipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0)
+        return self.measuredDipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpy(self, t):
         """
         Chirp function for the y-component of the dipole response.
         """
-        return self.dipoleResponse['y'].get(str(round(t, self.decimalPlaces)), 0)
+        return self.measuredDipoleResponse['y'].get(str(round(t, self.decimalPlaces)), 0)
 
     def chirpz(self, t):
         """
         Chirp function for the z-component of the dipole response.
         """
-        logging.debug(f"CustomSource being called at {np.round(t, self.decimalPlaces)} fs. Returning: {self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)} in MU.")
-        return self.dipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
+        logging.debug(f"CustomSource being called at {np.round(t, self.decimalPlaces)} fs. Returning: {self.measuredDipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)} in MU.")
+        return self.measuredDipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0)
 
     def getElectricField(self, sim):
         """
@@ -161,21 +164,20 @@ class Simulation:
             sim (mp.Simulation): The Meep simulation object.
         """
         # TODO: Subtract the electric field dumped by bohr from the previous step, maybe?
-        logging.debug(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
+        logging.info(f"Getting Electric Field at the molecule at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 6)} fs")
         for i, componentName in enumerate(self.indexForComponents):
             field = np.mean(sim.get_array(component=self.fieldComponents[i],
                                           center=self.positionMolecule,
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
-            self.electricFieldArray[componentName].append(field * self.convertFieldMeeptoBohr)
+            self.measuredElectricField[componentName].append(field * self.convertFieldMeeptoBohr)
         
         if self.matplotlib:
             self.updateCSV(filename=self.eFieldFileName, 
                         timestamp=str(round((sim.meep_time() + (self.timeStepMeep)) * self.convertTimeMeeptoSI, self.decimalPlaces)), 
-                        x_value=self.electricFieldArray['x'][-1], 
-                        y_value=self.electricFieldArray['y'][-1], 
-                        z_value=self.electricFieldArray['z'][-1])
+                        x_value=self.measuredElectricField['x'][-1], 
+                        y_value=self.measuredElectricField['y'][-1], 
+                        z_value=self.measuredElectricField['z'][-1])
 
-        return 0
 
     def callBohr(self, sim):
         """
@@ -184,57 +186,74 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
-        if sim.timestep() > 2 and any(abs(self.electricFieldArray[component][2]) >= self.responseCutOff for component in ['x', 'y', 'z']):
-            logging.debug(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
-            logging.debug(f'\tElectric field given to Bohr:\n {self.electricFieldArray} in atomic units')
-            bohrResults = bohr.run(self.inputFile,
-                                    self.electricFieldArray['x'],
-                                    self.electricFieldArray['y'],
-                                    self.electricFieldArray['z'],
-                                    self.timeStepBohr)
-            logging.debug(f"\tBohr calculation results: {np.array(bohrResults)} in atomic units")
-
-            for i, componentName in enumerate(self.indexForComponents):
-                self.dipoleResponse[componentName][str(round(sim.meep_time() + (0.5 * self.timeStepMeep), self.decimalPlaces))] \
-                    = bohrResults[i] * self.convertMomentBohrtoMeep
-                self.dipoleResponse[componentName][str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))] \
-                    = bohrResults[i] * self.convertMomentBohrtoMeep
-
-            if self.matplotlib:
-                self.updateCSV(filename=self.pFieldFileName, 
-                            timestamp=str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces)), 
-                            x_value=self.dipoleResponse['x'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep, 
-                            y_value=self.dipoleResponse['y'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep, 
-                            z_value=self.dipoleResponse['z'][str(round(sim.meep_time() + (self.timeStepMeep), self.decimalPlaces))] / self.convertMomentBohrtoMeep)
+        if sim.timestep() > 2:
+            if any(abs(self.measuredElectricField[component][-1]) >= self.responseCutOff for component in ['x', 'y', 'z']):
+                logging.info(f"Calling Bohr at time {np.round(sim.meep_time() * self.convertTimeMeeptoSI, 4)} fs")
+                logging.debug(f'Electric field given to Bohr: {self.measuredElectricField} in atomic units')
                 
-            for componentName in self.electricFieldArray:
-                self.electricFieldArray[componentName].pop(0)
-        else:
-            if self.matplotlib:
-                self.updateCSV(filename=self.pFieldFileName, 
-                            timestamp=str(round((sim.meep_time() + (self.timeStepMeep)) * self.convertTimeMeeptoSI, self.decimalPlaces)), 
-                            x_value=0.0, 
-                            y_value=0.0, 
-                            z_value=0.0)
+                bohrResults = bohr.run(
+                    self.inputFile,
+                    self.measuredElectricField['x'],
+                    self.measuredElectricField['y'],
+                    self.measuredElectricField['z'],
+                    self.timeStepBohr
+                )
+                logging.debug(f"Bohr calculation results: {np.array(bohrResults)} in atomic units")
 
-        return 0
-    
+                for i, componentName in enumerate(self.indexForComponents):
+                    for offset in [0.5 * self.timeStepMeep, self.timeStepMeep]:
+                        timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
+                        self.measuredDipoleResponse[componentName][timestamp] = (
+                            bohrResults[i] * self.convertMomentBohrtoMeep
+                        )
+                
+                timestamp = str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))
+                self.updateCSV(
+                    filename=self.pFieldFileName,
+                    timestamp=timestamp,
+                    x_value=self.measuredDipoleResponse['x'][timestamp] / self.convertMomentBohrtoMeep,
+                    y_value=self.measuredDipoleResponse['y'][timestamp] / self.convertMomentBohrtoMeep,
+                    z_value=self.measuredDipoleResponse['z'][timestamp] / self.convertMomentBohrtoMeep
+                )
+            else:
+                self.updateCSV(
+                    filename=self.pFieldFileName,
+                    timestamp=str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeeptoSI, self.decimalPlaces)),
+                    x_value=0.0,
+                    y_value=0.0,
+                    z_value=0.0
+                )
+            
+            for componentName in self.measuredElectricField:
+                self.measuredElectricField[componentName].pop(0)
+        else:
+            self.updateCSV(
+                filename=self.pFieldFileName,
+                timestamp=str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeeptoSI, self.decimalPlaces)),
+                x_value=0.0,
+                y_value=0.0,
+                z_value=0.0
+            )
+            
 
     def updateCSV(self, filename, timestamp=None, x_value=None, y_value=None, z_value=None, comment=None):
-        if comment:
-            with open(filename, 'w', newline='') as file:
-                for line in comment.splitlines():
-                    file.write(f"# {line}\n")
-                writer = csv.writer(file)
-                writer.writerow(['Timestamps (fs)', 'X Values', 'Y Values', 'Z Values'])
-        
-        if timestamp is not None and x_value is not None and y_value is not None and z_value is not None:
-            with open(filename, 'a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([timestamp, x_value, y_value, z_value])
+        if self.matplotlib:
+            if comment:
+                with open(filename, 'w', newline='') as file:
+                    for line in comment.splitlines():
+                        file.write(f"# {line}\n")
+                    file.write("\n")
+                    writer = csv.writer(file)
+                    writer.writerow(['Timestamps (fs)', 'X Values', 'Y Values', 'Z Values'])
+            
+            if timestamp is not None and x_value is not None and y_value is not None and z_value is not None:
+                with open(filename, 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([timestamp, x_value, y_value, z_value])
 
     def show(self):
         logging.debug(f"Reading CSV files: {self.eFieldFileName} and {self.pFieldFileName}")
+        logging.getLogger('matplotlib').setLevel(logging.INFO)
         import matplotlib.pyplot as plt
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
@@ -282,8 +301,8 @@ class Simulation:
         logging.info("Meep simulation started.")
 
         if self.matplotlib:
-            self.updateCSV(filename=self.eFieldFileName, comment=f"Simulation's Electric Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formatted_dict}")
-            self.updateCSV(filename=self.pFieldFileName, comment=f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formatted_dict}")
+            self.updateCSV(filename=self.eFieldFileName, comment=f"Simulation's Electric Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formattedDict}")
+            self.updateCSV(filename=self.pFieldFileName, comment=f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formattedDict}")
 
         try:
             run_functions = []
@@ -303,7 +322,7 @@ class Simulation:
             for component in self.indexForComponents:
                 for i in np.arange(round(0.5 * self.timeStepMeep, self.decimalPlaces), round(self.timeStepMeep * (self.timeLength + 1.5), self.decimalPlaces), self.timeStepMeep):
                     try:
-                        self.dipoleResponse[component].pop(str(round(i, self.decimalPlaces)))
+                        self.measuredDipoleResponse[component].pop(str(round(i, self.decimalPlaces)))
                     except:
                         continue
             if self.matplotlib:
