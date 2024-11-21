@@ -9,7 +9,7 @@
             "args": [
                 "-m", "meep.in",
                 "-b", "pyridine.in",
-                "-v",
+                "-vv",
                 "-l", "plasmol.log"
             ],
             "env": {
