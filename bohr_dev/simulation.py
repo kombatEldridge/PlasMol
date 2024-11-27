@@ -206,7 +206,7 @@ class Simulation:
 
     def updateCSVhandler(self, sim):
         try:
-            timestamp = str(round(sim.meep_time() + self.timeStepMeep, self.decimalPlaces))
+            timestamp = str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeep2fs, self.decimalPlaces))
             self.updateCSV(filename=self.eFieldFileName, 
                         timestamp=timestamp, 
                         x_value=self.measuredElectricField['x'][-1], 
