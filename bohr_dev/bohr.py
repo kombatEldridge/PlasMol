@@ -48,7 +48,13 @@ def ind_dipole(direction1, direction2, wfn, eField, dt):
     mu = np.trace(wfn.mu[direction2] @ D_ao) - np.trace(wfn.mu[direction2] @ D_ao_init)
     return mu.real
 
-def run(inputfile, Ex, Ey, Ez, dt):
+def run(inputfile, 
+        dt,
+        directionCalculationSim,
+        directionCalculationBohr,
+        Ex=None, 
+        Ey=None, 
+        Ez=None):
     import options
     options = options.OPTIONS()
 
@@ -82,8 +88,15 @@ def run(inputfile, Ex, Ey, Ez, dt):
     rks_wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = rks_wfn.compute(options)
 
-    mu_xx = 0 if abs(mu_xx := ind_dipole(0, 0, rks_wfn, Ex, dt)) < method["resplimit"] else float(mu_xx)
-    mu_yy = 0 if abs(mu_yy := ind_dipole(1, 1, rks_wfn, Ey, dt)) < method["resplimit"] else float(mu_yy)
-    mu_zz = 0 if abs(mu_zz := ind_dipole(2, 2, rks_wfn, Ez, dt)) < method["resplimit"] else float(mu_zz)
+    output = np.zeros((3, 3))
+    mapDirToDig = {'x': 0, 'y': 1, 'z': 2}
+    eArr = [Ex, Ey, Ez]
 
-    return mu_xx, mu_yy, mu_zz
+    for simDir in directionCalculationSim:
+        for bohrDir in directionCalculationBohr:
+            mu = ind_dipole(mapDirToDig[simDir], mapDirToDig[bohrDir], rks_wfn, eArr[mapDirToDig[simDir]], dt)
+            if abs(mu) >= method["resplimit"]:
+                output[mapDirToDig[simDir], mapDirToDig[bohrDir]] = float(mu)
+
+    filtered_output = np.sum(output, axis=1).tolist()
+    return filtered_output

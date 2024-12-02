@@ -102,7 +102,13 @@ def getMolecule(molParams):
         logging.info('No molecule chosen for simulation. Continuing without it.')
         return None
     
-    # Room to add future molecule params, otherwise should delete.
+    molParams['directionCalculation'] = molParams.get('directionCalculation', ['x', 'y', 'z'])
+    if not isinstance(molParams['directionCalculation'], list):
+        molParams['directionCalculation'] = [molParams['directionCalculation']]
+    molParams['directionCalculation'] = sorted([v.lower() for v in molParams['directionCalculation']])
+    for v in molParams['directionCalculation']:
+        if v not in {'x', 'y', 'z'} or len(v) > 1:
+            raise ValueError(f"Directions should be x, y, and/or z separated by spaces '{v}'")
 
     return molParams
 
@@ -113,10 +119,26 @@ def getSimulation(simParams):
     
     simParams['cellLength'] = simParams.get('cellLength', 0.1)
     simParams['pmlThickness'] = simParams.get('pmlThickness', 0.01)
-    simParams['timeLength'] = simParams.get('timeLength', 500)
     simParams['resolution'] = simParams.get('resolution', 1000)
     simParams['responseCutOff'] = simParams.get('responseCutOff', 1e-12)
     simParams['surroundingMaterialIndex'] = simParams.get('surroundingMaterialIndex', 1.33)
+
+    simParams['directionCalculation'] = simParams.get('directionCalculation', ['x', 'y', 'z'])
+    if not isinstance(simParams['directionCalculation'], list):
+        simParams['directionCalculation'] = [simParams['directionCalculation']]
+    simParams['directionCalculation'] = sorted([v.lower() for v in simParams['directionCalculation']])
+    for v in simParams['directionCalculation']:
+        if v not in {'x', 'y', 'z'} or len(v) > 1:
+            raise ValueError(f"Directions should be x, y, and/or z separated by spaces '{v}'")
+        
+    totalTime = simParams.get('totalTime', None)
+    if totalTime:
+        simParams['totalTime'] = totalTime[0]
+        simParams['totalTimeUnit'] = totalTime[1]
+    simParams['timeLength'] = simParams.get('timeLength', None)
+    if simParams['timeLength'] is None and totalTime is None:
+        raise ValueError("Must provide either timeLength or totalTime with proper unit. Neither found.")
+
     return simParams
 
 
