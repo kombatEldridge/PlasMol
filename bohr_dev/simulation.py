@@ -64,9 +64,11 @@ class Simulation:
         self.intensityMin = outputPNG['intensityMin'] if outputPNG else None
         self.intensityMax = outputPNG['intensityMax'] if outputPNG else None
         self.matplotlib = True if matplotlib else None
-        self.matplotlib_output = matplotlib['output'] if matplotlib else None
-        self.eFieldFileName = f'csv/{self.matplotlib_output}-E-Field.csv' if matplotlib else None
-        self.pFieldFileName = f'csv/{self.matplotlib_output}-P-Field.csv' if matplotlib and molecule else None
+        self.matplotlibOutput = matplotlib['output'] if matplotlib else None
+        self.matplotlibLocationCSV = matplotlib['CSVlocation'] if matplotlib['CSVlocation'] else ""
+        self.matplotlibLocationIMG = matplotlib['IMGlocation'] if matplotlib['IMGlocation'] else ""
+        self.eFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-E-Field.csv' if matplotlib else None
+        self.pFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-P-Field.csv' if matplotlib and molecule else None
 
         with open(os.path.abspath(meepInputFile), 'r') as file:
             self.formattedDict = ""
@@ -380,8 +382,8 @@ class Simulation:
             ax1.legend()
 
         plt.tight_layout()
-        plt.savefig(f'img/{self.matplotlib_output}.png', dpi=1000)
-        logging.debug(f"Matplotlib image written: img/{self.matplotlib_output}.png")
+        plt.savefig(f'{self.matplotlibLocationIMG}{self.matplotlibOutput}.png', dpi=1000)
+        logging.debug(f"Matplotlib image written: {self.matplotlibLocationIMG}{self.matplotlibOutput}.png")
 
     
     def run(self):

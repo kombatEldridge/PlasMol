@@ -91,11 +91,20 @@ def setParameters(parameters):
         symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)), # could return None
         objectNP=getObject(parameters.get('object', None)), # could return None
         outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
-        matplotlib=parameters.get('matplotlib', None) # could return None
+        matplotlib=getMatPlotLib(parameters.get('matplotlib', None)) # could return None
     )
 
     return simObj
 
+def getMatPlotLib(matParams):
+    if not matParams:
+        logging.info('No matplotlib chosen for simulation. Continuing without it.')
+        return None
+
+    matParams['output'] = matParams.get('output', None)
+    matParams['CSVlocation'] = matParams.get('CSVlocation', None)
+    matParams['IMGlocation'] = matParams.get('IMGlocation', None)
+    return matParams
 
 def getMolecule(molParams):
     if not molParams:
