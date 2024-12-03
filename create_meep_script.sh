@@ -8,7 +8,11 @@ ask_with_default() {
     echo "${input:-$default}"
 }
 
+input_file="meep.in"
+echo "Creating $input_file..."
+
 # Source section
+echo ""
 echo "Source Section"
 frequency=$(ask_with_default "Enter the source frequency" "1")
 width=$(ask_with_default "Enter the source width" "0.1")
@@ -27,14 +31,11 @@ chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
 time_value=$(echo "$total_time" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
 dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${time_value}"
 
-echo "Creating directory: $dir_name"
 mkdir -p "$dir_name"
 cp /project/bldrdge1/PlasMol/molecule-Files/files/* "$dir_name"
 cd "$dir_name" || exit
 
 # Input file creation
-input_file="meep.in"
-echo "Generating $input_file..."
 {
     echo "start source"
     echo "    source_type chirped"
@@ -111,14 +112,13 @@ if [ "$include_matplotlib" = "y" ]; then
     } >>"$input_file"
 fi
 
-echo "$input_file created."
-
 # SLURM submit script creation
-echo ""
-echo "Submission Script Section"
 submit_file="submit_plasmol.sh"
+echo ""
 echo "Generating $submit_file..."
 
+echo ""
+echo "Submission Script Section"
 memory=$(ask_with_default "Enter memory allocation (e.g., 50G)" "50G")
 time_limit=$(ask_with_default "Enter the time limit (e.g., 14-00:00:00)" "14-00:00:00")
 
@@ -138,11 +138,11 @@ module load meep/1.29
 
 EOL
 
-echo "$submit_file created."
+echo ""
+echo "Directory created:\n\t$dir_name"
 
 # SLURM job submission
-echo "Do you want to submit the job to SLURM now? (y/n)"
-read submit_choice
+submit_choice=$(ask_with_default "Do you want to submit the job to SLURM now? (y/n)" "y")
 if [ "$submit_choice" = "y" ]; then
     sbatch "$submit_file"
     echo "Job submitted."
