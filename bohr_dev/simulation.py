@@ -386,11 +386,11 @@ class Simulation:
 
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-            if x_values1:
+            if x_values1 is not None:
                 ax1.plot(timestamps1, x_values1, label='x', marker='o')
-            if y_values1:
+            if y_values1 is not None:
                 ax1.plot(timestamps1, y_values1, label='y', marker='o')
-            if z_values1:
+            if z_values1 is not None:
                 ax1.plot(timestamps1, z_values1, label='z', marker='o')
 
             ax1.set_title('Incident Electric Field')
@@ -398,11 +398,11 @@ class Simulation:
             ax1.set_ylabel('Electric Field Magnitude')
             ax1.legend()
 
-            if x_values2:
+            if x_values2 is not None:
                 ax2.plot(timestamps2, x_values2, label='x', marker='o')
-            if y_values2:
+            if y_values2 is not None:
                 ax2.plot(timestamps2, y_values2, label='y', marker='o')
-            if z_values2:
+            if z_values2 is not None:
                 ax2.plot(timestamps2, z_values2, label='z', marker='o')
             ax2.set_title('Molecule\'s Response')
             ax2.set_xlabel('Timestamps (fs)')
@@ -411,11 +411,11 @@ class Simulation:
         else:
             fig, ax1 = plt.subplots(figsize=(7, 5))
 
-            if x_values1:
+            if x_values1 is not None:
                 ax1.plot(timestamps1, x_values1, label='x', marker='o')
-            if y_values1:
+            if y_values1 is not None:
                 ax1.plot(timestamps1, y_values1, label='y', marker='o')
-            if z_values1:
+            if z_values1 is not None:
                 ax1.plot(timestamps1, z_values1, label='z', marker='o')
             ax1.set_title('Incident Electric Field')
             ax1.set_xlabel('Timestamps (fs)')
