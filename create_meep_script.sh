@@ -23,7 +23,8 @@ total_time=$(ask_with_default "Enter the total simulation time (e.g., 40 fs)" "4
 # Generate directory name based on source parameters
 chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
 chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
-dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${total_time}"
+time_value=$(echo "$total_time" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${time_value}"
 
 echo "Creating directory: $dir_name"
 mkdir -p "$dir_name"
