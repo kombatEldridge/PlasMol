@@ -162,6 +162,7 @@ echo "    $dir_name"
 echo "-------------------------------"
 
 # SLURM job submission
+echo ""
 submit_choice=$(ask_with_default "    Do you want to submit the job to SLURM now? (y/n)" "y" "^(y|n)$" "Please enter 'y' or 'n'.")
 if [ "$submit_choice" = "y" ]; then
     sbatch "$submit_file"
