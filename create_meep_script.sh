@@ -81,7 +81,7 @@ fi
 # outputPNG section
 echo ""
 echo "outputPNG Section"
-include_outputPNG=$(ask_with_default "Do you want to include an outputPNG section? (y/n)" "y")
+include_outputPNG=$(ask_with_default "Do you want to include an outputPNG section? (y/n)" "n")
 if [ "$include_outputPNG" = "y" ]; then
     imageDirName=$(ask_with_default "Enter the name of the directory to output the images" "imgDir")
     timestepsBetween=$(ask_with_default "Enter the number of timesteps between each screenshot" "5")
@@ -100,7 +100,9 @@ echo ""
 echo "Matplotlib Section"
 include_matplotlib=$(ask_with_default "Do you want to include a matplotlib section? (y/n)" "y")
 if [ "$include_matplotlib" = "y" ]; then
-    output_name=$(ask_with_default "Enter the output file name" "chirped40fs")
+    time_value=$(echo "$total_time" | sed 's/ //g')
+    default_output_name="${source_type}${time_value}"
+    output_name=$(ask_with_default "Enter the output file name" "$default_output_name")
     {
         echo ""
         echo "start matplotlib"
@@ -118,8 +120,6 @@ submit_file="submit_plasmol.sh"
 echo "Generating $submit_file..."
 
 memory=$(ask_with_default "Enter memory allocation (e.g., 50G)" "50G")
-partition=$(ask_with_default "Enter the partition name" "acomputeq")
-job_name=$(ask_with_default "Enter the job name" "plasmol")
 time_limit=$(ask_with_default "Enter the time limit (e.g., 14-00:00:00)" "14-00:00:00")
 
 # Write to submit file
