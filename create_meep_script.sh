@@ -101,7 +101,7 @@ echo "Matplotlib Section"
 include_matplotlib=$(ask_with_default "Do you want to include a matplotlib section? (y/n)" "y")
 if [ "$include_matplotlib" = "y" ]; then
     time_value=$(echo "$total_time" | sed 's/ //g')
-    default_output_name="${source_type}${time_value}"
+    default_output_name="chirped${time_value}"
     output_name=$(ask_with_default "Enter the output file name" "$default_output_name")
     {
         echo ""
