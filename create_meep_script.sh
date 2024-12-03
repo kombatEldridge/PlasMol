@@ -15,14 +15,14 @@ ask_with_default() {
             echo "$input"
             break
         else
-            echo "$error_message"
+            echo "$error_message" >&2
         fi
     done
 }
 
 # Input file creation
 input_file="meep.in"
-echo "Creating $input_file..."
+echo "Creating $input_file:"
 
 # Source section
 echo ""
