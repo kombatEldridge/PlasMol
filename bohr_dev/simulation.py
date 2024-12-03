@@ -91,6 +91,7 @@ class Simulation:
         self.measuredDipoleResponse = {component: defaultdict(list) for component in self.indexForComponents}
         self.measuredElectricField = {component: [] for component in self.indexForComponents}
         self.fieldComponents = []
+        self.mapDirectionToDigit = {'x': 0, 'y': 1, 'z': 2}
         char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         for value in self.directionCalculationSim:
             if value in char_to_field:
@@ -233,14 +234,16 @@ class Simulation:
                 )
                 logging.debug(f"Bohr calculation results: {bohrResults} in atomic units")
 
-                for i, componentName in enumerate(self.indexForComponents):
+                for componentName in self.indexForComponents:
                     for offset in [0.5 * self.timeStepMeep, self.timeStepMeep]:
                         timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
-                        self.measuredDipoleResponse[componentName][timestamp] = bohrResults[i]
+                        self.measuredDipoleResponse[componentName][timestamp] = bohrResults[self.mapDirectionToDigit[componentName]]
+                        print(self.measuredDipoleResponse[componentName][timestamp])
+                        print(bohrResults[self.mapDirectionToDigit[componentName]])
+                        print(timestamp)
 
             for componentName in self.measuredElectricField:
                 self.measuredElectricField[componentName].pop(0)
-
 
 
     def updateCSVhandler(self, sim):
@@ -256,10 +259,11 @@ class Simulation:
                         timestamp=timestamp, 
                         **filtered_values)
             if self.pFieldFileName:
+                timestampMeep = str(round((sim.meep_time() + self.timeStepMeep), self.decimalPlaces))
                 values = {
-                    'x_value': self.measuredDipoleResponse['x'].get(timestamp, 0) if 'x' in self.indexForComponents else None,
-                    'y_value': self.measuredDipoleResponse['y'].get(timestamp, 0) if 'y' in self.indexForComponents else None,
-                    'z_value': self.measuredDipoleResponse['z'].get(timestamp, 0) if 'z' in self.indexForComponents else None
+                    'x_value': self.measuredDipoleResponse['x'].get(timestampMeep, 0) if 'x' in self.indexForComponents else None,
+                    'y_value': self.measuredDipoleResponse['y'].get(timestampMeep, 0) if 'y' in self.indexForComponents else None,
+                    'z_value': self.measuredDipoleResponse['z'].get(timestampMeep, 0) if 'z' in self.indexForComponents else None
                 }
                 filtered_values = {k: v for k, v in values.items() if v is not None}
                 self.updateCSV(filename=self.pFieldFileName, 
