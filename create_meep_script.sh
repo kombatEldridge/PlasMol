@@ -15,6 +15,7 @@ width=$(ask_with_default "Enter the source width" "0.1")
 peak_time=$(ask_with_default "Enter the source peak time" "5")
 chirp_rate=$(ask_with_default "Enter the chirp rate" "-0.5")
 
+# First part of Simulation Section
 echo ""
 echo "Simulation Section"
 resolution=$(ask_with_default "Enter the simulation resolution" "8000")
