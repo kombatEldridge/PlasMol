@@ -149,13 +149,33 @@ if [ "$include_outputPNG" = "y" ]; then
     } >>"$temp_input_file"
 fi
 
+case "$source_type" in
+    "gaussian")
+        prefix="molecule-Files/GaussianTests/"
+        dir_name="gauss_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
+        ;;
+    "continuous")
+        prefix="molecule-Files/ContinuousTests/"
+        dir_name="cont_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
+        ;;
+    "chirped")
+        prefix="molecule-Files/ChirpedTests/"
+        chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
+        chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
+        dir_name="chirped_f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${total_time}"
+        ;;
+    "pulse")
+        prefix="molecule-Files/PulseTests/"
+        dir_name="pulse_f${frequency}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
+        ;;
+esac
+
 # Optionally include matplotlib section
 echo ""
 echo "Matplotlib Section"
 include_matplotlib=$(ask_with_default "    Do you want to include a matplotlib section? (y/n)" "y" "^(y|n)$" "Please enter 'y' or 'n'.")
 if [ "$include_matplotlib" = "y" ]; then
-    default_output_name="chirped${total_time}"
-    output_name=$(ask_with_default "    Enter the output file name" "$default_output_name" "^[a-zA-Z0-9]+$" "Please enter a valid name.")
+    output_name=$(ask_with_default "    Enter the output file name" "$dir_name" "^[a-zA-Z0-9_.]+$" "Please enter a valid name.")
     {
         echo ""
         echo "start matplotlib"
@@ -164,37 +184,19 @@ if [ "$include_matplotlib" = "y" ]; then
     } >>"$temp_input_file"
 fi
 
-
-case "$source_type" in
-    "gaussian")
-        dir_name="molecule-Files/GaussianTests/gauss_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
-        ;;
-    "continuous")
-        dir_name="molecule-Files/ContinuousTests/cont_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
-        ;;
-    "chirped")
-        chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
-        chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
-        dir_name="molecule-Files/ChirpedTests/chirped_f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${total_time}"
-        ;;
-    "pulse")
-        dir_name="molecule-Files/PulseTests/pulse_f${frequency}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
-        ;;
-esac
-
 # Directory creation just before SLURM submission
 echo ""
 echo "-------------------------------"
 echo "Creating directory:"
-echo "    $dir_name"
+echo "    $prefix$dir_name"
 echo "-------------------------------"
 
-mkdir -p "$dir_name"
-cp molecule-Files/files/* "$dir_name"
-cd "$dir_name" || exit
+mkdir -p "$prefix$dir_name"
+cp molecule-Files/files/* "$prefix$dir_name"
+cd "$prefix$dir_name" || exit
 
 # Move temp input file to the new directory
-mv "../../../$temp_input_file" "../../../$dir_name/meep.in"
+mv "../../../$temp_input_file" "meep.in"
 
 # SLURM submit script creation
 submit_file="submit_plasmol.sh"
