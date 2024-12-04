@@ -29,10 +29,13 @@ echo "---------------------"
 # Source section
 echo ""
 echo "Source Section"
+source_type=$(ask_with_default "    Enter the source type (chirped, pulse)" "pulse" "^(chirped|pulse)$" "Invalid source type. Please enter either chirped or pulse")
 frequency=$(ask_with_default "    Enter the source frequency" "1" "^[0-9]*\.?[0-9]+$" "Invalid frequency. Please enter a valid number.")
 width=$(ask_with_default "    Enter the source width" "0.1" "^[0-9]*\.?[0-9]+$" "Invalid width. Please enter a valid number.")
 peak_time=$(ask_with_default "    Enter the source peak time" "5" "^[0-9]*\.?[0-9]+$" "Invalid peak time. Please enter a valid number.")
-chirp_rate=$(ask_with_default "    Enter the chirp rate" "-0.5" "^[+-]?[0-9]*\.?[0-9]+$" "Invalid chirp rate. Please enter a valid number.")
+if [ "$source_type" = "chirped" ]; then
+    chirp_rate=$(ask_with_default "    Enter the chirp rate" "-0.5" "^[+-]?[0-9]*\.?[0-9]+$" "Invalid chirp rate. Please enter a valid number.")
+fi
 
 # First part of Simulation Section
 echo ""
@@ -41,10 +44,14 @@ resolution=$(ask_with_default "    Enter the simulation resolution" "8000" "^[1-
 total_time=$(ask_with_default "    Enter the total simulation time (e.g., 40 fs)" "40 fs" "^[0-9]+( [a-zA-Z]+)?$" "Invalid time format. Must be a number followed by a time unit (fs, as, mu, or au).")
 
 # Generate directory name based on source parameters
-chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
-chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
 time_value=$(echo "$total_time" | sed -E 's/[^0-9]*([0-9]+).*/\1/')
-dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${time_value}"
+if [ -z "$chirp_rate" ]; then
+    dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_r${resolution}_tT${time_value}"
+else
+    chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
+    chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
+    dir_name="/project/bldrdge1/PlasMol/molecule-Files/chirpedPulse-Test/f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${time_value}"
+fi
 
 mkdir -p "$dir_name"
 cp /project/bldrdge1/PlasMol/molecule-Files/files/* "$dir_name"
@@ -53,13 +60,19 @@ cd "$dir_name" || exit
 # Input file creation
 {
     echo "start source"
-    echo "    source_type chirped"
+    echo "    source_type $source_type"
     echo "    sourceCenter -0.04"
     echo "    sourceSize 0 0.1 0.1"
     echo "    frequency $frequency"
     echo "    width $width"
     echo "    peakTime $peak_time"
-    echo "    chirpRate $chirp_rate"
+} >"$input_file"
+
+if [ "$source_type" = "chirped" ]; then
+    echo "    chirpRate $chirp_rate" >"$input_file"
+fi
+
+{
     echo "    is_integrated True"
     echo "end source"
 } >"$input_file"
