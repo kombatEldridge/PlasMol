@@ -210,6 +210,21 @@ def getSource(sourceParams):
             is_integrated=sourceParams.get('is_integrated', None)
         )
 
+    elif source_type == 'pulse':
+        source = sources.PulseSource(
+            sourceCenter=sourceParams['sourceCenter'],
+            sourceSize=sourceParams['sourceSize'],
+            frequency=sourceParams.get('frequency', None),
+            width=sourceParams.get('width', None),
+            peakTime=sourceParams.get('peakTime', None),
+            start_time=sourceParams.get('start_time', None),
+            end_time=sourceParams.get('end_time', None),
+            center_frequency=sourceParams.get('center_frequency', None),
+            fwidth=sourceParams.get('fwidth', None),
+            is_integrated=sourceParams.get('is_integrated', None)
+        )
+
+
     else:
         raise ValueError(f"Unsupported source type: {source_type}")
 
