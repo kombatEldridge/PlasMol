@@ -12,3 +12,4 @@ bohr_dev/*
 !bohr_dev/basis/
 .DS_Store
 chirpedPulseTest.py
+refresh.git
