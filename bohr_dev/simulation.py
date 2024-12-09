@@ -269,11 +269,6 @@ class Simulation:
                         timestamp = str(
                             round(sim.meep_time() + offset, self.decimalPlaces))
                         self.measuredDipoleResponse[componentName][timestamp] = bohrResults[self.mapDirectionToDigit[componentName]]
-                        print(
-                            self.measuredDipoleResponse[componentName][timestamp])
-                        print(
-                            bohrResults[self.mapDirectionToDigit[componentName]])
-                        print(timestamp)
 
             for componentName in self.measuredElectricField:
                 self.measuredElectricField[componentName].pop(0)
@@ -327,13 +322,13 @@ class Simulation:
 
             if timestamp:
                 row = [timestamp]
-                if x_value:
-                    row.append(x_value)
-                if y_value:
-                    row.append(y_value)
-                if z_value:
-                    row.append(z_value)
-
+                if 'x' in self.indexForComponents:
+                    row.append(x_value if x_value is not None else 0)
+                if 'y' in self.indexForComponents:
+                    row.append(y_value if y_value is not None else 0)
+                if 'z' in self.indexForComponents:
+                    row.append(z_value if z_value is not None else 0)
+                
                 with open(filename, 'a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(row)
