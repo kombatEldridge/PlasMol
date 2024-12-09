@@ -62,16 +62,25 @@ case "$source_type" in
         } >> "$temp_input_file"
         ;;
     "chirped")
-        frequency=$(ask_with_default "    Enter the source frequency" "1" "^[0-9]*\.?[0-9]+$" "Invalid frequency. Please enter a valid number.")
-        width=$(ask_with_default "    Enter the source width" "0.2" "^[0-9]*\.?[0-9]+$" "Invalid width. Please enter a valid number.")
-        peak_time=$(ask_with_default "    Enter the source peak time" "10" "^[0-9]*\.?[0-9]+$" "Invalid peak time. Please enter a valid number.")
-        chirp_rate=$(ask_with_default "    Enter the chirp rate" "-0.5" "^[+-]?[0-9]*\.?[0-9]+$" "Invalid chirp rate. Please enter a valid number.")
         {
             echo "start source"
             echo "    source_type chirped"
             echo "    sourceCenter -0.04"
             echo "    sourceSize 0 0.1 0.1"
-            echo "    frequency $frequency"
+        } >> "$temp_input_file"
+        freq_or_wav=$(ask_with_default "    Which parameter do you want to specify? (frequency or wavelength)" "frequency" "^(frequency|wavelength)$" "Please enter 'frequency' or 'wavelength'.")
+        if [ "$freq_or_wav" = "frequency" ]; then
+            frequency=$(ask_with_default "    Enter the source frequency" "2" "^[0-9]*\.?[0-9]+$" "Invalid frequency. Please enter a valid number.")
+            echo "    frequency $frequency" >> "$temp_input_file"
+        fi
+        if [ "$freq_or_wav" = "wavelength" ]; then
+            wavelength=$(ask_with_default "    Enter the source wavelength" "0.5" "^[0-9]*\.?[0-9]+$" "Invalid wavelength. Please enter a valid number.")
+            echo "    wavelength $wavelength" >> "$temp_input_file"
+        fi
+        width=$(ask_with_default "    Enter the source width" "0.2" "^[0-9]*\.?[0-9]+$" "Invalid width. Please enter a valid number.")
+        peak_time=$(ask_with_default "    Enter the source peak time" "10" "^[0-9]*\.?[0-9]+$" "Invalid peak time. Please enter a valid number.")
+        chirp_rate=$(ask_with_default "    Enter the chirp rate" "-0.5" "^[+-]?[0-9]*\.?[0-9]+$" "Invalid chirp rate. Please enter a valid number.")
+        {
             echo "    width $width"
             echo "    peakTime $peak_time"
             echo "    chirpRate $chirp_rate"
@@ -80,15 +89,24 @@ case "$source_type" in
         } >> "$temp_input_file"
         ;;
     "pulse")
-        frequency=$(ask_with_default "    Enter the source frequency" "1" "^[0-9]*\.?[0-9]+$" "Invalid frequency. Please enter a valid number.")
-        width=$(ask_with_default "    Enter the source width" "0.2" "^[0-9]*\.?[0-9]+$" "Invalid width. Please enter a valid number.")
-        peak_time=$(ask_with_default "    Enter the source peak time" "10" "^[0-9]*\.?[0-9]+$" "Invalid peak time. Please enter a valid number.")
         {
             echo "start source"
             echo "    source_type pulse"
             echo "    sourceCenter -0.04"
             echo "    sourceSize 0 0.1 0.1"
-            echo "    frequency $frequency"
+        } >> "$temp_input_file"
+        freq_or_wav=$(ask_with_default "    Which parameter do you want to specify? (frequency or wavelength)" "frequency" "^(frequency|wavelength)$" "Please enter 'frequency' or 'wavelength'.")
+        if [ "$freq_or_wav" = "frequency" ]; then
+            frequency=$(ask_with_default "    Enter the source frequency" "2" "^[0-9]*\.?[0-9]+$" "Invalid frequency. Please enter a valid number.")
+            echo "    frequency $frequency" >> "$temp_input_file"
+        fi
+        if [ "$freq_or_wav" = "wavelength" ]; then
+            wavelength=$(ask_with_default "    Enter the source wavelength" "0.5" "^[0-9]*\.?[0-9]+$" "Invalid wavelength. Please enter a valid number.")
+            echo "    wavelength $wavelength" >> "$temp_input_file"
+        fi
+        width=$(ask_with_default "    Enter the source width" "0.2" "^[0-9]*\.?[0-9]+$" "Invalid width. Please enter a valid number.")
+        peak_time=$(ask_with_default "    Enter the source peak time" "10" "^[0-9]*\.?[0-9]+$" "Invalid peak time. Please enter a valid number.")
+        {
             echo "    width $width"
             echo "    peakTime $peak_time"
             echo "    is_integrated true"

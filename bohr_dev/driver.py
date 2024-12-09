@@ -200,6 +200,7 @@ def getSource(sourceParams):
             sourceCenter=sourceParams['sourceCenter'],
             sourceSize=sourceParams['sourceSize'],
             frequency=sourceParams.get('frequency', None),
+            wavelength=sourceParams.get('wavelength', None),
             width=sourceParams.get('width', None),
             peakTime=sourceParams.get('peakTime', None),
             chirpRate=sourceParams.get('chirpRate', None),
@@ -215,6 +216,7 @@ def getSource(sourceParams):
             sourceCenter=sourceParams['sourceCenter'],
             sourceSize=sourceParams['sourceSize'],
             frequency=sourceParams.get('frequency', None),
+            wavelength=sourceParams.get('wavelength', None),
             width=sourceParams.get('width', None),
             peakTime=sourceParams.get('peakTime', None),
             start_time=sourceParams.get('start_time', None),
@@ -223,7 +225,6 @@ def getSource(sourceParams):
             fwidth=sourceParams.get('fwidth', None),
             is_integrated=sourceParams.get('is_integrated', None)
         )
-
 
     else:
         raise ValueError(f"Unsupported source type: {source_type}")
