@@ -206,8 +206,6 @@ def getSource(sourceParams):
             chirpRate=sourceParams.get('chirpRate', None),
             start_time=sourceParams.get('start_time', None),
             end_time=sourceParams.get('end_time', None),
-            center_frequency=sourceParams.get('center_frequency', None),
-            fwidth=sourceParams.get('fwidth', None),
             is_integrated=sourceParams.get('is_integrated', None)
         )
 
@@ -221,8 +219,6 @@ def getSource(sourceParams):
             peakTime=sourceParams.get('peakTime', None),
             start_time=sourceParams.get('start_time', None),
             end_time=sourceParams.get('end_time', None),
-            center_frequency=sourceParams.get('center_frequency', None),
-            fwidth=sourceParams.get('fwidth', None),
             is_integrated=sourceParams.get('is_integrated', None)
         )
 
