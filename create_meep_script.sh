@@ -184,7 +184,12 @@ case "$source_type" in
         ;;
     "pulse")
         prefix="molecule-Files/PulseTests/"
-        dir_name="pulse_f${frequency}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
+        if [ "$freq_or_wav" = "wavelength" ]; then
+            dir_name="pulse_w${wavelength}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
+        fi
+        if [ "$freq_or_wav" = "frequency" ]; then
+                dir_name="pulse_f${frequency}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
+        fi
         ;;
 esac
 
