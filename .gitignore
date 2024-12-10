@@ -11,6 +11,6 @@ bohr_dev/*
 !bohr_dev/sources.py
 !bohr_dev/basis/
 .DS_Store
-PulseTest/*
-!PulseTest/chirpedPulseTest.py
+Tests/*
+!Tests/chirpedPulseTest.py
 refresh.git
