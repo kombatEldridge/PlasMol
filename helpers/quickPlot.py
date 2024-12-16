@@ -51,7 +51,21 @@ def plot_csv_files(files):
         except Exception as e:
             print(f"Error reading {file}: {e}")
 
-    plt.title("Combined Plot of Selected CSV Files")
+    save = input("Should I save the plot? (y/n): ")
+    if save == 'y':
+        name = input("What shall I name the file? ")
+        if name:
+            file_name = name
+        else:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+            file_name = f"combinedCSV_{timestamp}.png"
+        plt.savefig(file_name, dpi=500)
+
+    if name:
+        plt.title(name)
+    else:
+        plt.title("Combined Plot of Selected CSV Files")
     plt.xlabel("Timestamps (fs)")
     plt.ylabel("Electric Field Magnitude")
     plt.legend(loc='upper right', fontsize='small')
