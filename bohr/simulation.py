@@ -69,8 +69,8 @@ class Simulation:
         self.intensityMin = outputPNG['intensityMin'] if self.outputPNG else None
         self.intensityMax = outputPNG['intensityMax'] if self.outputPNG else None
         self.matplotlibOutput = matplotlib['output'] if self.matplotlib else None
-        self.matplotlibLocationCSV = matplotlib['CSVlocation'] if matplotlib['CSVlocation'] else ""
-        self.matplotlibLocationIMG = matplotlib['IMGlocation'] if matplotlib['IMGlocation'] else ""
+        self.matplotlibLocationCSV = matplotlib['CSVlocation'] if self.matplotlib and matplotlib['CSVlocation'] else ""
+        self.matplotlibLocationIMG = matplotlib['IMGlocation'] if self.matplotlib and matplotlib['IMGlocation'] else ""
         self.eFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-E-Field.csv' if self.matplotlib else None
         self.pFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-P-Field.csv' if self.matplotlib and self.molecule else None
 

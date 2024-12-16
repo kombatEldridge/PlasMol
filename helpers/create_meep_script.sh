@@ -174,7 +174,11 @@ if [ "$include_outputPNG" = "y" ]; then
     } >>"$temp_input_file"
 fi
 
-left_part=$(echo "$molecule" | sed -E 's/\..*//')
+if [ -n "$molecule" ]; then
+    left_part=$(echo "$molecule" | sed -E 's/\..*//')
+else
+    left_part="no-molecule"
+fi
 
 case "$source_type" in
     "gaussian")
@@ -183,7 +187,7 @@ case "$source_type" in
         ;;
     "continuous")
         prefix="jobs/$left_part/"
-        dir_name="cont_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
+        dir_name="cont_w${wavelength}_r${resolution}_tT${total_time}"
         ;;
     "chirped")
         prefix="jobs/$left_part/"
@@ -228,45 +232,43 @@ cp moleculeFiles/* "$prefix$dir_name"
 cd "$prefix$dir_name" || exit
 
 # Move temp input file to the new directory
-mv "../../$temp_input_file" "meep.in"
+mv "../../../$temp_input_file" "meep.in"
 
-# SLURM submit script creation
-submit_file="submit_plasmol.sh"
-echo ""
-echo "------------------------"
-echo "Generating $submit_file:"
-echo "------------------------"
-
-echo ""
-echo "Submission Script Section"
-memory=$(ask_with_default "    Enter memory allocation (e.g., 50G)" "50G" "^[0-9]+[A-Za-z]+$" "Please enter a valid memory format (e.g., 50G).")
-time_limit=$(ask_with_default "    Enter the time limit (e.g., 14-00:00:00)" "14-00:00:00" "^[0-9]{2}-[0-9]{2}:[0-9]{2}:[0-9]{2}$" "Please enter a valid time limit format (e.g., 14-00:00:00).")
-
-# Write to submit file
-cat <<EOL >"$submit_file"
-#!/bin/bash
-#SBATCH --mem=$memory
-#SBATCH --partition=acomputeq
-#SBATCH --job-name=plasmol
-#SBATCH --time=$time_limit
-#SBATCH --export=NONE
-
-export QT_QPA_PLATFORM="minimal"
-
-module load meep/1.29
-/opt/ohpc/pub/apps/uofm/python/3.9.13/bin/python3 /project/bldrdge1/PlasMol/bohr/driver.py -m meep.in -b $molecule -vv -l plasmol_hpc.log
-
-EOL
-
-# SLURM job submission
-echo ""
 submit_choice=$(ask_with_default "    How would you like to run this job? (slurm/cli/n)" "slurm" "^(slurm|cli|n)$" "Please enter 'slurm', 'cli', or 'n'.")
 if [ "$submit_choice" = "slurm" ]; then
+    # SLURM submit script creation
+    submit_file="submit_plasmol.sh"
+    echo ""
+    echo "------------------------"
+    echo "Generating $submit_file:"
+    echo "------------------------"
+
+    echo ""
+    echo "Submission Script Section"
+    memory=$(ask_with_default "    Enter memory allocation (e.g., 50G)" "50G" "^[0-9]+[A-Za-z]+$" "Please enter a valid memory format (e.g., 50G).")
+    time_limit=$(ask_with_default "    Enter the time limit (e.g., 14-00:00:00)" "14-00:00:00" "^[0-9]{2}-[0-9]{2}:[0-9]{2}:[0-9]{2}$" "Please enter a valid time limit format (e.g., 14-00:00:00).")
+
+    # Write to submit file
+    {
+        echo "#!/bin/bash"
+        echo "#SBATCH --mem=$memory"
+        echo "#SBATCH --partition=acomputeq"
+        echo "#SBATCH --job-name=plasmol"
+        echo "#SBATCH --time=$time_limit"
+        echo "#SBATCH --export=NONE"
+        echo ""
+        echo "export QT_QPA_PLATFORM="minimal""
+        echo ""
+        echo "module load meep/1.29"
+        echo "/opt/ohpc/pub/apps/uofm/python/3.9.13/bin/python3 /project/bldrdge1/PlasMol/bohr/driver.py -m meep.in -b $molecule -vv -l plasmol_hpc.log"
+    } >>"$submit_file"
+    
     sbatch "$submit_file"
     echo "Job submitted."
-else if [ "$submit_choice" = "cli" ]; then
-    meep
-    meepy /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -vv -l plasmol_hpc.log
+elif [ "$submit_choice" = "cli" ]; then
+    path=$(pwd)
+    echo "Run this command: "
+    echo "cd $path && meep && meepy /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -vv -l plasmol_hpc.log"
 else
     echo "Job not submitted."
 fi

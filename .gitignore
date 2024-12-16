@@ -7,7 +7,5 @@ bohr/*
 !bohr/sources.py
 !bohr/basis/
 .DS_Store
-tests/*
-!tests/chirpedPulseTest.py
 refresh.git
 meep_temp.in
