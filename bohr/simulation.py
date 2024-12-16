@@ -1,4 +1,4 @@
-# /Users/bldrdge1/.conda/envs/meep/bin/python ../bohr_dev/plasmol2.py -m meep.in -b pyridine.in
+# /Users/bldrdge1/.conda/envs/meep/bin/python ../bohr/plasmol2.py -m meep.in -b pyridine.in
 import logging
 import numpy as np
 import pandas as pd

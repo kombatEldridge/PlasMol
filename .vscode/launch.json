@@ -5,7 +5,7 @@
             "name": "Debug PlasMol Script",
             "type": "python",
             "request": "launch",
-            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/bohr_dev/driver.py",
+            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py",
             "args": [
                 "-m", "meep.in",
                 "-b", "pyridine.in",
@@ -15,7 +15,7 @@
             "env": {
                 "PYTHONPATH": "/Users/bldrdge1/.conda/envs/meep1.29/lib/python3.9/site-packages"
             },
-            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/molecule-Files",
+            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/moleculeFiles",
             "python": "/Users/bldrdge1/.conda/envs/meep1.29/bin/python",
             "console": "integratedTerminal"
         }

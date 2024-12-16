@@ -64,7 +64,7 @@ Before running PlasMol, ensure you have the following installed:
 The main script is `driver.py`. To run the simulation:
 
 ```bash
-python bohr_dev/driver.py -m <path_to_meep_input_file> -b <path_to_molecule_input_file> [-l <log_file_name>] [-v]
+python bohr/driver.py -m <path_to_meep_input_file> -b <path_to_molecule_input_file> [-l <log_file_name>] [-v]
 ```
 * `-m` or `--meep`: Path to the Meep input file (required).
 * `-b` or `--bohr`: Path to the Bohr input file (required).  The example uses `pyridine.in`.
@@ -73,9 +73,9 @@ python bohr_dev/driver.py -m <path_to_meep_input_file> -b <path_to_molecule_inpu
 
 The `create_meep_script.sh` script helps generate a Meep input file.  Run it to be guided through the necessary inputs.
 
-**Example `pyridine.in` content (molecule-Files/molecule-template.in):**  This file needs to define the molecule's geometry and other relevant parameters for PySCF. The example shows a template; fill it accordingly.
+**Example `pyridine.in` content (moleculeFiles/molecule-template.in):**  This file needs to define the molecule's geometry and other relevant parameters for PySCF. The example shows a template; fill it accordingly.
 
-**Example `meep.in` content (molecule-Files/meep-template.in):** This file defines simulation parameters, source characteristics and output settings. The example shows a template, use the `create_meep_script.sh` script to generate an appropriate file.
+**Example `meep.in` content (moleculeFiles/meep-template.in):** This file defines simulation parameters, source characteristics and output settings. The example shows a template, use the `create_meep_script.sh` script to generate an appropriate file.
 
 
 ## Configuration
@@ -104,7 +104,7 @@ This file contains information about the molecule itself, specifically parameter
 ## Project Structure
 
 ```
-bohr_dev/
+bohr/
 ├── basis/          # Directory containing basis sets for PySCF.
 │   ├── modbas.2c    
 │   ├── modbas.4c
@@ -117,7 +117,7 @@ bohr_dev/
 ├── simulation.py  # Contains the `Simulation` class.
 ├── sources.py      # Defines source classes (ContinuousSource, GaussianSource, ChirpedSource).
 └── ...
-molecule-Files/
+moleculeFiles/
 ├── meep-template.in # Template Meep input file.
 ├── molecule-template.in # Template molecule input file.
 └── molecule-template.mos # Template of molecule guess_mos file

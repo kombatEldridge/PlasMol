@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ../
+
 # Ask questions with defaults and validate inputs
 ask_with_default() {
     local prompt="$1"
@@ -141,6 +143,11 @@ echo ""
 echo "Molecule Section"
 include_molecule=$(ask_with_default "    Do you want to include a molecule section? (y/n)" "n" "^(y|n)$" "Please enter 'y' or 'n'.")
 if [ "$include_molecule" = "y" ]; then
+    molecule=$(ask_with_default "    What is the name of your molecule input file?" "pyridine.in" "^[a-zA-Z0-9.]+$" "Answer must be exact name of input file found in moleculeFiles/.")
+    if [ ! -e "moleculeFiles/$molecule" ]; then 
+        echo "        The file '$molecule' does not exist or is not in moleculeFiles"
+        exit 1
+    fi
     {
         echo ""
         echo "start molecule"
@@ -167,23 +174,25 @@ if [ "$include_outputPNG" = "y" ]; then
     } >>"$temp_input_file"
 fi
 
+left_part=$(echo "$molecule" | sed -E 's/\..*//')
+
 case "$source_type" in
     "gaussian")
-        prefix="molecule-Files/GaussianTests/"
+        prefix="jobs/$left_part/"
         dir_name="gauss_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
         ;;
     "continuous")
-        prefix="molecule-Files/ContinuousTests/"
+        prefix="jobs/$left_part/"
         dir_name="cont_w${width}_l${wavelength}_r${resolution}_tT${total_time}"
         ;;
     "chirped")
-        prefix="molecule-Files/ChirpedTests/"
+        prefix="jobs/$left_part/"
         chirp_rate_prefix=$(echo "$chirp_rate" | awk '{if ($1 < 0) print "n"; else print ""}')
         chirp_rate_abs=$(echo "$chirp_rate" | sed 's/^-//')
         dir_name="chirped_f${frequency}_w${width}_pT${peak_time}_cR${chirp_rate_prefix}${chirp_rate_abs}_r${resolution}_tT${total_time}"
         ;;
     "pulse")
-        prefix="molecule-Files/PulseTests/"
+        prefix="jobs/$left_part/"
         if [ "$freq_or_wav" = "wavelength" ]; then
             dir_name="pulse_w${wavelength}_w${width}_pT${peak_time}_r${resolution}_tT${total_time}"
         fi
@@ -215,11 +224,11 @@ echo "    $prefix$dir_name"
 echo "-------------------------------"
 
 mkdir -p "$prefix$dir_name"
-cp molecule-Files/files/* "$prefix$dir_name"
+cp moleculeFiles/* "$prefix$dir_name"
 cd "$prefix$dir_name" || exit
 
 # Move temp input file to the new directory
-mv "../../../$temp_input_file" "meep.in"
+mv "../../$temp_input_file" "meep.in"
 
 # SLURM submit script creation
 submit_file="submit_plasmol.sh"
@@ -245,16 +254,19 @@ cat <<EOL >"$submit_file"
 export QT_QPA_PLATFORM="minimal"
 
 module load meep/1.29
-/opt/ohpc/pub/apps/uofm/python/3.9.13/bin/python3 /project/bldrdge1/PlasMol/bohr_dev/driver.py -m meep.in -b pyridine.in -vv -l plasmol_hpc.log
+/opt/ohpc/pub/apps/uofm/python/3.9.13/bin/python3 /project/bldrdge1/PlasMol/bohr/driver.py -m meep.in -b $molecule -vv -l plasmol_hpc.log
 
 EOL
 
 # SLURM job submission
 echo ""
-submit_choice=$(ask_with_default "    Do you want to submit the job to SLURM now? (y/n)" "y" "^(y|n)$" "Please enter 'y' or 'n'.")
-if [ "$submit_choice" = "y" ]; then
+submit_choice=$(ask_with_default "    How would you like to run this job? (slurm/cli/n)" "slurm" "^(slurm|cli|n)$" "Please enter 'slurm', 'cli', or 'n'.")
+if [ "$submit_choice" = "slurm" ]; then
     sbatch "$submit_file"
     echo "Job submitted."
+else if [ "$submit_choice" = "cli" ]; then
+    meep
+    meepy /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -vv -l plasmol_hpc.log
 else
-    echo "Job not submitted. You can submit manually using: sbatch $submit_file"
+    echo "Job not submitted."
 fi
