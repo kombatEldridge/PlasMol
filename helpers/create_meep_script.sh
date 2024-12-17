@@ -128,7 +128,7 @@ total_time_unit=$(ask_with_default "    Enter the total simulation time unit (fs
     echo ""
     echo "start simulation"
     echo "    resolution $resolution"
-    echo "    responseCutOff 1e-12"
+    echo "    responseCutOff 1e-20"
     echo "    cellLength 0.1"
     echo "    pmlThickness 0.01"
     echo "    totalTime $total_time $total_time_unit"
