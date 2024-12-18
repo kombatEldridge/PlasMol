@@ -47,7 +47,7 @@ def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
     conversionFactor = 3.378555833184493
 
     # Time range for visualization
-    t = np.linspace(10, 30, 1000)  # Time array
+    t = np.linspace(0, 1, 1000)  # Time array
 
     # Initialize the plot
     plt.figure(figsize=(12, 8))
@@ -59,15 +59,17 @@ def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
                 for wavelength in wavelengths:
                     frequency = 1 / wavelength
                     scaled_width = width * (conversionFactor**2)
-                    pulse = pulse_wave(t, frequency, peakTime, scaled_width)
+                    scaled_peakTime = peakTime / conversionFactor
+                    pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
                     real_part = np.real(pulse)
-                    plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {peakTime}")
+                    plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {scaled_peakTime}")
             if frequencies:
                 for frequency in frequencies:
                     scaled_width = width * (conversionFactor**2)
-                    pulse = pulse_wave(t, frequency, peakTime, scaled_width)
+                    scaled_peakTime = peakTime / conversionFactor
+                    pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
                     real_part = np.real(pulse)
-                    plt.plot(t, real_part, label=f"Frequency: {frequency}, Width: {width}, PeakTime: {peakTime}")
+                    plt.plot(t, real_part, label=f"Frequency: {frequency}, Width: {width}, PeakTime: {scaled_peakTime}")
 
     # Add labels, legend, and title
     plt.xlabel("Time (t)")
@@ -137,8 +139,8 @@ if __name__ == '__main__':
     
     # Example parameters
     peakTimes = [20]
-    widths = [0.02, 0.03]
-    wavelengths = [0.6]  # In micrometers (or equivalent)
+    widths = [0.02, 0.05]
+    wavelengths = [0.25]  # In micrometers (or equivalent)
 
     # Call the function
     plotWave(peakTimes, widths, wavelengths=wavelengths)
