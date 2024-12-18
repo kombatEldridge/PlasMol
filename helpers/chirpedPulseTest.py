@@ -59,14 +59,14 @@ def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
                 for wavelength in wavelengths:
                     frequency = 1 / wavelength
                     scaled_width = width * (conversionFactor**2)
-                    scaled_peakTime = peakTime / conversionFactor
+                    scaled_peakTime = peakTime 
                     pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
                     real_part = np.real(pulse)
                     plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {scaled_peakTime}")
             if frequencies:
                 for frequency in frequencies:
                     scaled_width = width * (conversionFactor**2)
-                    scaled_peakTime = peakTime / conversionFactor
+                    scaled_peakTime = peakTime 
                     pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
                     real_part = np.real(pulse)
                     plt.plot(t, real_part, label=f"Frequency: {frequency}, Width: {width}, PeakTime: {scaled_peakTime}")

@@ -317,7 +317,7 @@ if [ "$submit_choice" = "slurm" ]; then
     echo ""
     echo "Submission Script Section"
     memory=$(ask_with_default "    Enter memory allocation (e.g., 50G)" "$memory" "^[0-9]+[A-Za-z]+$" "Please enter a valid memory format (e.g., 50G).")
-    time_limit=$(ask_with_default "    Enter the time limit (e.g., 14-00:00:00)" "$time_limit" "^[0-9]{2}-[0-9]{2}:[0-9]{2}:[0-9]{2}$" "Please enter a valid time limit format (e.g., 14-00:00:00).")
+    time_limit=$(ask_with_default "    Enter the time limit (e.g., 14-00:00:00)" "$time_limit" "^(\d{1,2}-)?\d{2}:\d{2}:\d{2}$" "Please enter a valid time limit format (e.g., 14-00:00:00).")
 
     # Write to submit file
     {
