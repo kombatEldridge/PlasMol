@@ -23,6 +23,62 @@ def testParams(t=np.linspace(0, 20, 1000),
     plt.title("Pulse")
     plt.show()
 
+def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
+    """
+    Plot the pulse wave for multiple combinations of peakTime, width, and wavelength/frequency.
+
+    Parameters:
+    - peakTimes (list): List of peak times.
+    - widths (list): List of widths.
+    - wavelengths (list, optional): List of wavelengths. Defaults to None.
+    - frequencies (list, optional): List of frequencies (if no wavelengths are provided). Defaults to None.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Define the pulse wave function
+    def pulse_wave(t, frequency, peakTime, width):
+        return np.exp(1j * 2 * np.pi * frequency * (t - peakTime)) * np.exp(-width * (t - peakTime) ** 2)
+
+    if wavelengths is None and frequencies is None:
+        raise ValueError("Either wavelengths or frequencies must be provided.")
+    
+    # Conversion factor
+    conversionFactor = 3.378555833184493
+
+    # Time range for visualization
+    t = np.linspace(10, 30, 1000)  # Time array
+
+    # Initialize the plot
+    plt.figure(figsize=(12, 8))
+
+    # Generate all combinations of parameters
+    for peakTime in peakTimes:
+        for width in widths:
+            if wavelengths:
+                for wavelength in wavelengths:
+                    frequency = 1 / wavelength
+                    scaled_width = width * (conversionFactor**2)
+                    pulse = pulse_wave(t, frequency, peakTime, scaled_width)
+                    real_part = np.real(pulse)
+                    plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {peakTime}")
+            if frequencies:
+                for frequency in frequencies:
+                    scaled_width = width * (conversionFactor**2)
+                    pulse = pulse_wave(t, frequency, peakTime, scaled_width)
+                    real_part = np.real(pulse)
+                    plt.plot(t, real_part, label=f"Frequency: {frequency}, Width: {width}, PeakTime: {peakTime}")
+
+    # Add labels, legend, and title
+    plt.xlabel("Time (t)")
+    plt.ylabel("Amplitude")
+    plt.title("Pulse Wave Function for Multiple Parameter Sets")
+    plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
+    plt.legend(fontsize='small', loc='upper right')
+    plt.grid()
+
+    # Show the plot
+    plt.show()
 
 def getWavelength(filePath):
 
@@ -77,11 +133,12 @@ def getWavelength(filePath):
     print(f"Fitted Conversion Factor: {conv_fac}\n")
 
 if __name__ == '__main__':
-    getWavelength('pulse_f0.5_w0.2_pT10_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f1_w0.2_pT8_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f1_w0.2_pT10_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f1_w0.2_pT12_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f1_w0.3_pT10_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f1_w0.4_pT10_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f2_w0.2_pT10_r1000_tT50-E-Field.csv')
-    getWavelength('pulse_f3_w0.2_pT10_r1000_tT50-E-Field.csv')
+    # getWavelength('pulse_f0.5_w0.2_pT10_r1000_tT50-E-Field.csv')
+    
+    # Example parameters
+    peakTimes = [20]
+    widths = [0.02, 0.03]
+    wavelengths = [0.6]  # In micrometers (or equivalent)
+
+    # Call the function
+    plotWave(peakTimes, widths, wavelengths=wavelengths)
