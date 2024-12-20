@@ -24,6 +24,6 @@ xc hf
 nocom
 guess_mos pyridine.mos
 noscf
-resplimit 1e-10
+resplimit 1e-20
 
 method rttddft
