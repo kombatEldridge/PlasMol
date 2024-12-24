@@ -1,4 +1,3 @@
-# /Users/bldrdge1/.conda/envs/meep/bin/python ../bohr/plasmol2.py -m meep.in -b pyridine.in
 import logging
 import numpy as np
 import pandas as pd
@@ -13,14 +12,15 @@ from collections import defaultdict
 class Simulation:
     def __init__(self,
                  bohrInputFile,
-                 meepInputFile,
                  simParams,
-                 molecule,
-                 sourceType,
-                 symmetries,
-                 objectNP,
-                 outputPNG,
-                 matplotlib):
+                 molecule=None,
+                 sourceType=None,
+                 symmetries=None,
+                 objectNP=None,
+                 outputPNG=None,
+                 matplotlib=None,
+                 loggerStatus=None,
+                 ):
         """
         Initializes a Simulation object with various physical parameters.
 
@@ -73,14 +73,7 @@ class Simulation:
         self.matplotlibLocationIMG = matplotlib['IMGlocation'] if self.matplotlib and matplotlib['IMGlocation'] else ""
         self.eFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-E-Field.csv' if self.matplotlib else None
         self.pFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-P-Field.csv' if self.matplotlib and self.molecule else None
-
-        with open(os.path.abspath(meepInputFile), 'r') as file:
-            self.formattedDict = ""
-            for line in file:
-                if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
-                    continue
-                self.formattedDict = "\t".join([self.formattedDict, line])
-
+        
         # Conversion factors
         self.convertTimeMeep2fs = 10 / 3
         self.convertTimeAtomic2fs = 0.024188843
@@ -190,6 +183,13 @@ class Simulation:
 
             logging.debug(
                 f"Using totalTime of {self.totalTime} {self.totalTimeUnit} to define timeLength of {self.timeLength}")
+            
+            if loggerStatus == 2:
+                self.formattedDict = self.debug_format_input_params()
+            elif loggerStatus == 1:
+                self.formattedDict = "test"
+            elif loggerStatus == 0:
+                self.formattedDict = None
 
     def chirpx(self, t):
         """
@@ -434,11 +434,18 @@ class Simulation:
         logging.info("Meep simulation started.")
 
         if self.matplotlib:
-            self.updateCSV(filename=self.eFieldFileName,
-                           comment=f"Simulation's Electric Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formattedDict}")
+            e_field_comment = f"Simulation's Electric Field measured\nat the molecule's position in atomic units."
+            if self.formattedDict:
+                e_field_comment += f"\nJob Input:\n{self.formattedDict}"
+            
+            self.updateCSV(filename=self.eFieldFileName, comment=e_field_comment)
+
             if self.molecule:
-                self.updateCSV(filename=self.pFieldFileName,
-                               comment=f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units.\nJob Input:\n{self.formattedDict}")
+                p_field_comment = f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units."
+                if self.formattedDict:
+                    p_field_comment += f"\nJob Input:\n{self.formattedDict}"
+                
+                self.updateCSV(filename=self.pFieldFileName, comment=p_field_comment)
 
         try:
             run_functions = [mp.at_every(
@@ -468,6 +475,40 @@ class Simulation:
             if self.outputPNG:
                 gif.make_gif(self.imageDirName)
 
+    def debug_format_input_params(self):
+        # Get all instance variables
+        params = vars(self)
+
+        # Function to recursively format nested structures (e.g., dicts, lists of objects)
+        def recursive_format(value):
+            if isinstance(value, dict):
+                return {key: recursive_format(val) for key, val in value.items()}
+            elif isinstance(value, list):
+                return [recursive_format(item) for item in value]
+            elif hasattr(value, "__dict__"):  # If the object has attributes, use dir()
+                # Use dir() to get all the attributes and print them
+                attributes = dir(value)
+                attribute_details = {}
+                for attr in attributes:
+                    # Skip attributes or methods starting with '__' or '_'
+                    if attr.startswith('__') or attr.startswith('_'):
+                        continue
+                    try:
+                        attr_value = getattr(value, attr)
+                        if callable(attr_value):
+                            continue
+                        attribute_details[attr] = attr_value
+                    except AttributeError:
+                        attribute_details[attr] = "<no value or method>"
+                return attribute_details
+            else:
+                return str(value)
+
+        # Format the instance variables
+        formatted_params = {key: recursive_format(value) for key, value in params.items() if value is not None}
+        
+        return formatted_params
+    
 
 def debugObj(obj):
     # obj = self.sourceType.source

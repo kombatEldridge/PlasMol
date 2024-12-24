@@ -1,3 +1,4 @@
+# /Users/bldrdge1/.conda/envs/meep1.29/bin/python /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -l plasmol.log -vv
 import sys
 import argparse
 import logging
@@ -6,6 +7,7 @@ import os
 import meep as mp
 import simulation as sim
 import sources
+import re
 from datetime import datetime
 
 class PrintLogger(object):
@@ -36,11 +38,27 @@ def parseInputFile(filepath):
     params = {}
     current_section = None
 
+    comment_pattern = re.compile(r"(#|--|%)(.*)$")
+
+    def evaluate_expression(expression):
+        """Safely evaluate simple math expressions."""
+        try:
+            return eval(expression, {"__builtins__": None}, {})
+        except:
+            return expression
+
     with open(filepath, 'r') as file:
         for line in file:
             line = line.strip()
-            if line.startswith('#') or line.startswith('--') or line.startswith('%') or not line:
+
+            if not line:
                 continue
+
+            line = comment_pattern.split(line)[0].strip()
+
+            if not line:
+                continue
+
             if line.startswith('start '):
                 current_section = line.split()[1]
                 params[current_section] = {}
@@ -49,25 +67,27 @@ def parseInputFile(filepath):
             elif current_section:
                 key, *values = line.split()
                 if len(values) == 1:
-                    if values[0].lower() == 'true':
+                    value = values[0]
+                    if value.lower() == 'true':
                         params[current_section][key] = True
-                    elif values[0].lower() == 'false':
+                    elif value.lower() == 'false':
                         params[current_section][key] = False
                     else:
                         try:
-                            params[current_section][key] = float(values[0])
-                        except ValueError:
-                            params[current_section][key] = values[0]
+                            evaluated = evaluate_expression(value)
+                            params[current_section][key] = float(evaluated) if isinstance(evaluated, (int, float)) else evaluated
+                        except:
+                            params[current_section][key] = value
                 else:
                     processed_values = []
                     for v in values:
-                        if v.lstrip('-').replace('.', '', 1).isdigit():
-                            processed_values.append(float(v) if '.' in v else int(v))
-                        else:
+                        try:
+                            evaluated = evaluate_expression(v)
+                            processed_values.append(float(evaluated) if isinstance(evaluated, (int, float)) else evaluated)
+                        except:
                             processed_values.append(v)
-                    
-                    params[current_section][key] = processed_values  
-    
+                    params[current_section][key] = processed_values
+
     simObj = setParameters(params)
     return simObj
 
@@ -83,18 +103,19 @@ def setParameters(parameters):
         Simulation: A Simulation object initialized with the given parameters.
     """
     simObj = sim.Simulation(
-        bohrInputFile=bohrinputfile, # will always return something 
-        meepInputFile=meepinputfile, # will always return something 
-        simParams=getSimulation(parameters.get('simulation', {})), # will always return something 
-        molecule=getMolecule(parameters.get('molecule', None)), # could return None
-        sourceType=getSource(parameters.get('source', None)), # could return None
-        symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)), # could return None
-        objectNP=getObject(parameters.get('object', None)), # could return None
-        outputPNG=getOutputPNG(parameters.get('outputPNG', None)), # could return None
-        matplotlib=getMatPlotLib(parameters.get('matplotlib', None)) # could return None
+        bohrInputFile=parameters.get('molecule', {}).get('inputFile', bohrinputfile),
+        simParams=getSimulation(parameters.get('simulation', {})),
+        molecule=getMolecule(parameters.get('molecule', None)),
+        sourceType=getSource(parameters.get('source', None)),
+        symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)),
+        objectNP=getObject(parameters.get('object', None)),
+        outputPNG=getOutputPNG(parameters.get('outputPNG', None)),
+        matplotlib=getMatPlotLib(parameters.get('matplotlib', None)),
+        loggerStatus=args.verbose
     )
 
     return simObj
+
 
 def getMatPlotLib(matParams):
     if not matParams:
@@ -105,6 +126,7 @@ def getMatPlotLib(matParams):
     matParams['CSVlocation'] = matParams.get('CSVlocation', None)
     matParams['IMGlocation'] = matParams.get('IMGlocation', None)
     return matParams
+
 
 def getMolecule(molParams):
     if not molParams:
@@ -316,7 +338,7 @@ def processArguments():
 
     Command line arguments:
     - `-m` or `--meep`: Path to the Meep input file (required).
-    - `-b` or `--bohr`: Path to the Bohr input file (required).
+    - `-b` or `--bohr`: Path to the Bohr input file (optional).
     - `-l` or `--log`: Log file name.
     - `-v` or `--verbose`: Increase verbosity of logging.
 
@@ -328,35 +350,44 @@ def processArguments():
     """
     logging.debug("Processing command line arguments.")
     parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
-    parser.add_argument('-m', '--meep', type=str, help="Path to the Meep input file.", required=True)
-    parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.", required=True)
+    parser.add_argument('-m', '--meep', '--input', type=str, help="Path to the Meep input file.")
+    parser.add_argument('-b', '--bohr', '--molecule', type=str, help="Path to the Bohr input file.")
     parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
 
     args = parser.parse_args()
 
-    if not args.meep:
-        logging.error("Meep input file not provided. Exiting.")
-        sys.exit(1)
-    
-    if not args.bohr:
-        logging.error("Bohr input file not provided. Exiting.")
-        sys.exit(1)
+    if args.log and args.verbose == 0:
+        args.verbose = 1
 
-    logging.info(f"Bohr input file: {os.path.abspath(args.bohr)}")
-    with open(os.path.abspath(args.bohr), 'r') as file:
-        for line in file:
-            if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
-                continue
-            logger.info('\t%s', line.rstrip('\n'))
-    logger.info("")
+    if not args.meep:
+        for fallback_file in ['meep.in', 'sim.in']:
+            if os.path.isfile(fallback_file):
+                logging.info(f"Using fallback file: {fallback_file}")
+                args.meep = fallback_file
+                break
+        else:
+            logging.error("Meep input file not provided, and no fallback file found. Exiting.")
+            sys.exit(1)
+    
     logging.info(f"Meep input file: {os.path.abspath(args.meep)}")
     with open(os.path.abspath(args.meep), 'r') as file:
         for line in file:
             if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
                 continue
             logger.info('\t%s', line.rstrip('\n'))
+
     logger.info("")
+    
+    if args.bohr:
+        logging.info(f"Bohr input file: {os.path.abspath(args.bohr)}")
+        with open(os.path.abspath(args.bohr), 'r') as file:
+            for line in file:
+                if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
+                    continue
+                logger.info('\t%s', line.rstrip('\n'))
+        logger.info("")
+
     return args
 
 
@@ -383,9 +414,14 @@ if __name__ == "__main__":
     # log_format = "%(asctime)s - %(name)s - %(filename)s - %(levelname)s - %(message)s"
     log_format = '%(levelname)s: %(message)s'
     parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--meep', '--input', type=str, help="Path to the Meep input file.")
+    parser.add_argument('-b', '--bohr', '--molecule', type=str, help="Path to the Bohr input file.")
     parser.add_argument('-l', '--log', help="Log file name")
-    parser.add_argument('-v', '--verbose', action='count', default=0)
+    parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
     temp_args = parser.parse_known_args()[0]
+
+    if temp_args.log and temp_args.verbose == 0:
+        temp_args.verbose = 1
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -414,7 +450,7 @@ if __name__ == "__main__":
     args = processArguments()
     
     meepinputfile = args.meep
-    bohrinputfile = args.bohr
+    bohrinputfile = args.bohr if args.bohr else None
     simDriver = parseInputFile(meepinputfile)
     logging.info("Input file successfully parsed. Beginning simulation")
     simDriver.run()

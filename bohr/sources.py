@@ -121,8 +121,6 @@ class ChirpedSource:
         kwargs = {
             'start_time': start_time,
             'end_time': end_time,
-            'center_frequency': center_frequency,
-            'fwidth': fwidth,
             'is_integrated': is_integrated,
         }
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
