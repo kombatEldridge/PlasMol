@@ -25,5 +25,6 @@ nocom
 guess_mos pyridine.mos
 noscf
 resplimit 1e-20
+propagator rk4
 
 method rttddft
