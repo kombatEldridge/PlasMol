@@ -2,15 +2,14 @@ import numpy as np
 import os
 from bohr.bohr import JK
 
-def rk4_ind_dipole(direction1, direction2, wfn, eField, dt, storage_file='D_ao.npy'):
+def rk4_ind_dipole(direction1, direction2, wfn, eField, dt, storage_file='D_ao_np1.npy', temp_storage_file='D_ao_np2.npy'):
     # Load D_ao from the storage file if it exists; otherwise initialize
     if os.path.exists(storage_file):
         D_ao = np.load(storage_file)
     else:
         D_ao = wfn.D[0]
 
-    D_ao = wfn.D[0]
-    D_ao_init = wfn.D[0]
+    D_ao_init = D_ao
     D_mo = wfn.C[0].T @ wfn.S.T @ D_ao @ wfn.S @ wfn.C[0]
 
     # RK4 method to evolve the density matrix over a time step dt
@@ -44,7 +43,12 @@ def rk4_ind_dipole(direction1, direction2, wfn, eField, dt, storage_file='D_ao.n
     D_mo = D_mo + dt * (k1 + 2 * k2 + 2 * k3 + k4) / 6
     D_ao = wfn.C[0] @ D_mo @ wfn.C[0].T
 
-    np.save(storage_file, D_ao)
+    if os.path.exists(temp_storage_file):
+        temp_D_ao_load = np.load(temp_storage_file)
+        np.save(storage_file, temp_D_ao_load)
+
+    np.save(temp_storage_file, D_ao)
+
 
     # Calculate the induced dipole moment in the direction2
     mu = np.trace(wfn.mu[direction2] @ D_ao) - np.trace(wfn.mu[direction2] @ D_ao_init)
