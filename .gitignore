@@ -6,6 +6,7 @@ bohr/*
 !bohr/driver.py
 !bohr/sources.py
 !bohr/rk4.py
+!bohr/jk.py
 !bohr/basis/
 .DS_Store
 refresh.git
