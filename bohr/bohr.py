@@ -5,11 +5,6 @@ import numpy as np
 import os
 from rk4 import rk4_ind_dipole as ind_dipole
 
-def JK(wfn, D):
-    pot = wfn.jk.get_veff(wfn.ints_factory, 2*D)
-    Fa = wfn.T + wfn.Vne + pot
-    return Fa
-
 def run(inputfile, 
         dt,
         directionCalculationSim,

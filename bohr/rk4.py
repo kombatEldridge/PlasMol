@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from bohr.bohr import JK
+from jk import JK
 
 def rk4_ind_dipole(direction1, direction2, wfn, eField, dt, storage_file='D_ao_np1.npy', temp_storage_file='D_ao_np2.npy'):
     # Load D_ao from the storage file if it exists; otherwise initialize
