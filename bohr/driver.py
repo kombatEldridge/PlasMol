@@ -9,6 +9,7 @@ import simulation as sim
 import sources
 import re
 from datetime import datetime
+import matrix_handler as mh
 
 class PrintLogger(object):
     """Intercepts print statements and redirects them to a logger."""
@@ -453,4 +454,5 @@ if __name__ == "__main__":
     bohrinputfile = args.bohr if args.bohr else None
     simDriver = parseInputFile(meepinputfile)
     logging.info("Input file successfully parsed. Beginning simulation")
+    mh.clear_Matrix_Files()
     simDriver.run()

@@ -3,15 +3,12 @@ from pyscf import gto
 import wavefunction
 import numpy as np
 import os
-from rk4 import rk4_ind_dipole as ind_dipole
+from mu import calculate_ind_dipole
+import logging
+import matrix_handler as mh
 
-def run(inputfile, 
-        dt,
-        directionCalculationSim,
-        directionCalculationBohr,
-        Ex=None, 
-        Ey=None, 
-        Ez=None):
+
+def run(inputfile, dt, eArr):
     import options
     options = options.OPTIONS()
 
@@ -42,25 +39,18 @@ def run(inputfile,
     pyscf_mol.max_memory = options.memory
     pyscf_mol.build()
 
-    rks_wfn = wavefunction.RKS(pyscf_mol)
-    rks_energy = rks_wfn.compute(options)
-
-    output = np.zeros((3, 3))
-    mapDirToDig = {'x': 0, 'y': 1, 'z': 2}
-    eArr = [Ex, Ey, Ez]
+    wfn = wavefunction.RKS(pyscf_mol)
+    rks_energy = wfn.compute(options)
+    
+    mh.set_D_mo_0(wfn.D[0]) 
+    mh.set_F_mo_0(wfn.F[0])
 
     if method["propagator"] == 'rk4':
-        from rk4 import rk4_ind_dipole as ind_dipole
+        from rk4 import propagate_density_matrix
     elif method["propagator"] == 'magnus':
-        from magnus import magnus_ind_dipole as ind_dipole
-    elif method["propagator"] == 'ptg':
-        from ptg import ptg_ind_dipole as ind_dipole
-
-    for simDir in directionCalculationSim:
-        for bohrDir in directionCalculationBohr:
-            mu = ind_dipole(mapDirToDig[simDir], mapDirToDig[bohrDir], rks_wfn, eArr[mapDirToDig[simDir]], dt)
-            if abs(mu) >= method["resplimit"]:
-                output[mapDirToDig[simDir], mapDirToDig[bohrDir]] = float(mu)
-
-    filtered_output = np.sum(output, axis=1).tolist()
-    return filtered_output
+        from magnus_2nd import propagate_density_matrix
+    
+    induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn)
+        
+    # Should be [p_x, p_y, p_z] where p is the dipole moment
+    return induced_dipole_matrix 
