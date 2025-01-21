@@ -80,8 +80,8 @@ class Simulation:
         self.convertMomentAtomic2Meep = 8.4783536198e-30 * 299792458.0 / 1 / 1e-6 / 1e-6
 
         # Simulation runtime variables
-        self.measuredDipoleResponse = {component: defaultdict(list) for component in self.xyz}
         self.xyz = ['x', 'y', 'z']
+        self.measuredDipoleResponse = {component: defaultdict(list) for component in self.xyz}
         self.mapDirectionToDigit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         self.decimalPlaces = None
