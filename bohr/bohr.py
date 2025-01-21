@@ -6,8 +6,10 @@ import os
 from mu import calculate_ind_dipole
 import logging
 import matrix_handler as mh
+import sys
+from volume import get_volume
 
-
+# TODO: should probably move this to code that runs once only on init
 def run(inputfile, dt, eArr):
     import options
     options = options.OPTIONS()
@@ -42,15 +44,22 @@ def run(inputfile, dt, eArr):
     wfn = wavefunction.RKS(pyscf_mol)
     rks_energy = wfn.compute(options)
     
-    mh.set_D_mo_0(wfn.D[0]) 
-    mh.set_F_mo_0(wfn.F[0])
+    D_ao_0 = wfn.D[0]
+    D_mo_0 = wfn.C[0].T @ wfn.S @ D_ao_0 @ wfn.S @ wfn.C[0]
+    mh.set_D_mo_0(D_mo_0)
+
+    F_ao_0 = wfn.F[0]
+    F_mo_0 = wfn.S @ wfn.C[0] @ F_ao_0 @ wfn.C[0].T @ wfn.S 
+    mh.set_F_mo_0(F_mo_0)
 
     if method["propagator"] == 'rk4':
         from rk4 import propagate_density_matrix
     elif method["propagator"] == 'magnus':
         from magnus_2nd import propagate_density_matrix
-    
-    induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn)
+
+    volume = get_volume(molecule["coords"])
+
+    induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn) / volume
         
     # Should be [p_x, p_y, p_z] where p is the dipole moment
     return induced_dipole_matrix 

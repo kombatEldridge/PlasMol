@@ -50,10 +50,8 @@ class Simulation:
         self.timeLength = simParams['timeLength']
         self.resolution = simParams['resolution']
         self.responseCutOff = simParams['responseCutOff']
-        self.dirExcitedArrChar = simParams['directionCalculation']
 
-        logging.debug(
-            f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
+        logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
 
         self.molecule = True if molecule else None
         self.matplotlib = True if matplotlib else None
@@ -82,8 +80,8 @@ class Simulation:
         self.convertMomentAtomic2Meep = 8.4783536198e-30 * 299792458.0 / 1 / 1e-6 / 1e-6
 
         # Simulation runtime variables
-        self.measuredDipoleResponse = {component: defaultdict(list) for component in ['x', 'y', 'z']}
-        self.measuredElectricField = {component: [] for component in ['x', 'y', 'z']}
+        self.measuredDipoleResponse = {component: defaultdict(list) for component in self.xyz}
+        self.xyz = ['x', 'y', 'z']
         self.mapDirectionToDigit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         self.decimalPlaces = None
@@ -138,6 +136,9 @@ class Simulation:
         # Determine the number of decimal places for time stepså
         halfTimeStepString = str(self.timeStepMeep / 2)
         self.decimalPlaces = len(halfTimeStepString.split('.')[1])
+
+        voxelVol = (self.cellLength / self.sim.resolution)**3
+        logging.debug(f"Voxel volume: {voxelVol} µm³ == {voxelVol * 1e12} Å³")
 
         logging.info(
             f"The timestep for this simulation is\n\t{round(self.timeStepMeep, self.decimalPlaces)} in Meep Units,\n\t{round(self.timeStepMeep * self.convertTimeMeep2Atomic, self.decimalPlaces)} in Atomic Units, and\n\t{round(self.timeStepMeep * self.convertTimeMeep2fs, self.decimalPlaces)} in fs")
@@ -204,15 +205,21 @@ class Simulation:
             sim (mp.Simulation): The Meep simulation object.
         """
         # TODO: Subtract the electric field dumped by bohr from the previous step, maybe?
-        logging.info(
-            f"Getting Electric Field at the molecule at time {round(sim.meep_time() * self.convertTimeMeep2fs, 4)} fs")
-        for componentName in ['x', 'y', 'z']:
+        logging.info(f"Getting Electric Field at the molecule at time {round(sim.meep_time() * self.convertTimeMeep2fs, 4)} fs")
+        eField = {component: [] for component in self.xyz}
+        for componentName in self.xyz:
             field = np.mean(sim.get_array(component=self.char_to_field[componentName],
                                           center=self.positionMolecule,
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
-            self.measuredElectricField[componentName].append(field * self.convertFieldMeep2Atomic)
+            
+            eField[componentName] = field * self.convertFieldMeep2Atomic
 
-    def callBohr(self, sim):
+        if self.molecule:
+            self.callBohr(sim, eField)
+
+        self.updateCSVhandler(sim, eField)
+
+    def callBohr(self, sim, eField):
         """
         Calls Bohr calculations if the electric field exceeds the response cutoff.
 
@@ -220,24 +227,16 @@ class Simulation:
             sim (mp.Simulation): The Meep simulation object.
         """
         if sim.timestep() > 2:
-            if any(abs(self.measuredElectricField[component][-1]) >= self.responseCutOff for component in ['x', 'y', 'z']):
+            if any(abs(eField[component]) >= self.responseCutOff for component in self.xyz):
                 logging.info(f"Calling Bohr at time {round(sim.meep_time() * self.convertTimeMeep2fs, 4)} fs")
 
                 # changed to only capture recent E field for magnus 2nd
-                eArr = [
-                    self.measuredElectricField['x'][-1],
-                    self.measuredElectricField['y'][-1],
-                    self.measuredElectricField['z'][-1]
-                ]
+                eArr = [eField['x'],eField['y'],eField['z']]
 
                 logging.debug(f'Electric field given to Bohr: {eArr} in atomic units')
 
                 # Will be expecting a matrix of [p_x, p_y, p_z] where p is the dipole moment
-                bohrResults = bohr.run(
-                    self.inputFile,
-                    self.timeStepBohr,
-                    eArr
-                )
+                bohrResults = bohr.run(self.inputFile, self.timeStepBohr, eArr)
                 logging.debug(f"Bohr calculation results: {bohrResults} in atomic units")
                 
                 # Probably need to take the dipole moment and divide it by the volume of the molecule
@@ -249,21 +248,18 @@ class Simulation:
                 # CustomSource with isIntegrated=True expects Polarization density
                 # https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
 
-                for componentName in ['x', 'y', 'z']:
+                for componentName in self.xyz:
                     for offset in [0.5 * self.timeStepMeep, self.timeStepMeep]:
                         timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
                         self.measuredDipoleResponse[componentName][timestamp] = bohrResults[self.mapDirectionToDigit[componentName]]
 
-            for componentName in self.measuredElectricField:
-                self.measuredElectricField[componentName].pop(0)
-
-    def updateCSVhandler(self, sim):
+    def updateCSVhandler(self, sim, eField):
         try:
             timestamp = str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeep2fs, self.decimalPlaces))
             values = {
-                'x_value': self.measuredElectricField['x'][-1],
-                'y_value': self.measuredElectricField['y'][-1],
-                'z_value': self.measuredElectricField['z'][-1]
+                'x_value': eField['x'],
+                'y_value': eField['y'],
+                'z_value': eField['z']
             }
             self.updateCSV(filename=self.eFieldFileName, timestamp=timestamp, **values)
             if self.pFieldFileName:
@@ -405,9 +401,6 @@ class Simulation:
 
         try:
             run_functions = [mp.at_every(self.timeStepMeep, self.getElectricField)]
-
-            if self.molecule:
-                run_functions.append(mp.at_every(self.timeStepMeep, self.callBohr))
 
             if self.outputPNG:
                 run_functions.append(mp.at_every(self.timestepsBetween * self.timeStepMeep,

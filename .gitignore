@@ -10,6 +10,7 @@ bohr/*
 !bohr/mu.py
 !bohr/magnus_2nd.py
 !bohr/matrix_handler.py
+!bohr/volume.py
 !bohr/basis/
 .DS_Store
 refresh.git

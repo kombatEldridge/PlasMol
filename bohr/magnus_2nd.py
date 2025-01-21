@@ -2,6 +2,7 @@ import numpy as np
 from fock_builder import build_fock
 import matrix_handler as mh
 import logging 
+from scipy.linalg import expm
 
 
 def extrapolate(F_mo, F_mo_ndt2):
@@ -33,25 +34,17 @@ def euclidean_norm_difference(matrix1, matrix2):
     norm_difference = np.linalg.norm(difference, 'fro')
     
     return norm_difference
-
+ 
 
 def construct_D_mo_dt(wfn, dt, exc):
     D_mo_0 = mh.get_D_mo_0()
-    print(D_mo_0)
 
     trace = np.trace(D_mo_0)
-    if np.isclose(trace, 1):
+    n = wfn.nel[0]
+    if np.isclose(trace, n):
         logging.debug("Previous Density matrix used.")
     else:
-        raise ValueError(f"Trace of the matrix is not 1 (instead {trace}).")
-
-    # D_ao_0 = wfn.C[0] @ D_mo_0 @ wfn.C[0].T
-
-    # trace = np.trace(D_ao_0)
-    # if np.isclose(trace, 1):
-    #     logging.debug("Previous Density matrix used.")
-    # else:
-    #     raise ValueError(f"Trace of the matrix is not 1 (instead {trace}).")
+        raise ValueError(f"Trace of the matrix is not {n} (instead {trace}).")
 
     F_mo_ct = mh.get_F_mo_ct()
     F_mo_ndt2 = mh.get_F_mo_ndt2()
@@ -67,7 +60,8 @@ def construct_D_mo_dt(wfn, dt, exc):
         F_mo_dt = wfn.C[0].T @ F_ao_dt @ wfn.C[0]
 
         if D_mo_dt_prev is not None:
-            if euclidean_norm_difference(D_mo_dt, D_mo_dt_prev) > 1e-8:
+            if euclidean_norm_difference(D_mo_dt, D_mo_dt_prev) < 1e-10:
+                logging.debug(f"Iterations before Predictor-Corrector scheme finished: {limit}")
                 return U_dt, F_mo_dt, F_mo_dt2, D_mo_dt
             
         F_mo_dt2 = interpolate(F_mo_ct, F_mo_dt)
@@ -75,12 +69,8 @@ def construct_D_mo_dt(wfn, dt, exc):
 
 
 def construct_U_dt(F_mo_dt2, dt, U_ct):
-    print(F_mo_dt2)
-    print(U_ct)
-    U_new = np.exp(-1j * F_mo_dt2 * dt)
-    print(U_new)
+    U_new = expm(-1j * F_mo_dt2 * dt)
     U_dt = U_new if U_ct is None else U_new @ U_ct
-    print(U_dt)
 
     # Check to see if matrix is Unitary
     unitary = np.conjugate(U_dt.T) @ U_dt
@@ -98,13 +88,6 @@ def propagate_density_matrix(dt, wfn, exc):
     # ndt2 refers to ct - dt/2
 
     U_dt, F_mo_dt, F_mo_dt2, D_mo_dt = construct_D_mo_dt(wfn, dt, exc)
-
-    # Check to see if Density matrix is staying realistic
-    # trace = np.trace(D_mo_dt.real)
-    # if np.isclose(trace, 1):
-    #     logging.debug("Previous Density matrix used.")
-    # else:
-    #     raise ValueError(f"Trace of the matrix is not 1 (instead {trace}).")
 
     # Everything is successful, so we save state
     mh.set_U_ct(U_dt)
