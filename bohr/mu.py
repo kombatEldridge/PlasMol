@@ -1,10 +1,9 @@
 import numpy as np
 import matrix_handler as mh
 
-def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn):
+def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn, D_mo_0):
     output = np.zeros(3)
-    D_mo_0 = mh.get_D_mo_0()
-    D_mo_dt = propagate_density_matrix(dt, wfn, exc)
+    D_mo_dt = propagate_density_matrix(dt, wfn, exc, D_mo_0)
 
     for dir in [0, 1, 2]: 
         # Repisky2015.pdf Eq. 22

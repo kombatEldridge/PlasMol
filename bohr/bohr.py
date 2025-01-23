@@ -46,6 +46,12 @@ def run(inputfile, dt, eArr):
     
     D_ao_0 = wfn.D[0]
     D_mo_0 = wfn.C[0].T @ wfn.S @ D_ao_0 @ wfn.S @ wfn.C[0]
+    trace = np.trace(D_mo_0)
+    n = wfn.nel[0]
+    if np.isclose(trace, n):
+        logging.debug("Previous Density matrix used.")
+    else:
+        raise ValueError(f"Trace of the matrix is not {n} (instead {trace}).")
     mh.set_D_mo_0(D_mo_0)
 
     F_ao_0 = wfn.F[0]
@@ -54,12 +60,13 @@ def run(inputfile, dt, eArr):
 
     if method["propagator"] == 'rk4':
         from rk4 import propagate_density_matrix
+    elif method["propagator"] == 'magnusPC':
+        from magnusPC import propagate_density_matrix
     elif method["propagator"] == 'magnus':
-        from magnus_2nd import propagate_density_matrix
+        from magnus import propagate_density_matrix
 
     volume = get_volume(molecule["coords"])
-
-    induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn) / volume
+    induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn, D_mo_0) / volume
         
     # Should be [p_x, p_y, p_z] where p is the dipole moment
     return induced_dipole_matrix 

@@ -8,7 +8,8 @@ bohr/*
 !bohr/rk4.py
 !bohr/fock_builder.py
 !bohr/mu.py
-!bohr/magnus_2nd.py
+!bohr/magnus.py
+!bohr/magnusPC.py
 !bohr/matrix_handler.py
 !bohr/volume.py
 !bohr/basis/
