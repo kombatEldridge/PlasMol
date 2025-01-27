@@ -104,7 +104,7 @@ def setParameters(parameters):
         Simulation: A Simulation object initialized with the given parameters.
     """
     simObj = sim.Simulation(
-        bohrInputFile=parameters.get('molecule', {}).get('inputFile', bohrinputfile),
+        bohrInputFile=parameters.get('molecule', {}).get('inputFile', bohrinputfile), # probably can make this optional in the future
         simParams=getSimulation(parameters.get('simulation', {})),
         molecule=getMolecule(parameters.get('molecule', None)),
         sourceType=getSource(parameters.get('source', None)),

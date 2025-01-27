@@ -173,12 +173,13 @@ class Simulation:
             elif loggerStatus == 0:
                 self.formattedDict = None
 
-        import molecule as mol
-        self.moleculeObject = mol.MOLECULE(self.inputFile)
-        self.method = self.moleculeObject.method["propagator"]
-        self.coords = self.moleculeObject.molecule["coords"]
-        self.wfn = self.moleculeObject.wfn
-        self.D_mo_0 = self.moleculeObject.D_mo_0
+        if self.molecule:
+            import molecule as mol
+            self.moleculeObject = mol.MOLECULE(self.inputFile)
+            self.method = self.moleculeObject.method["propagator"]
+            self.coords = self.moleculeObject.molecule["coords"]
+            self.wfn = self.moleculeObject.wfn
+            self.D_mo_0 = self.moleculeObject.D_mo_0
 
     # CustomSource with isIntegrated=True expects Polarization density
     # https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
