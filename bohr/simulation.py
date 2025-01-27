@@ -52,7 +52,7 @@ class Simulation:
         self.responseCutOff = simParams['responseCutOff']
 
         logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
-
+        
         self.molecule = True if molecule else None
         self.matplotlib = True if matplotlib else None
         self.outputPNG = True if outputPNG else None
@@ -89,7 +89,7 @@ class Simulation:
         self.frameCenter = self.cellLength * self.resolution / 2
 
         self.sourcesList = []
-        if molecule:
+        if self.molecule:
             self.sourcesList.append(
                 mp.Source(
                     mp.CustomSource(src_func=self.chirpx,is_integrated=True),
@@ -173,6 +173,16 @@ class Simulation:
             elif loggerStatus == 0:
                 self.formattedDict = None
 
+        import molecule as mol
+        self.moleculeObject = mol.MOLECULE(self.inputFile)
+        self.method = self.moleculeObject.method["propagator"]
+        self.coords = self.moleculeObject.molecule["coords"]
+        self.wfn = self.moleculeObject.wfn
+        self.D_mo_0 = self.moleculeObject.D_mo_0
+
+    # CustomSource with isIntegrated=True expects Polarization density
+    # https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
+
     def chirpx(self, t):
         """
         Chirp function for the x-component of the dipole response.
@@ -230,24 +240,14 @@ class Simulation:
             if any(abs(eField[component]) >= self.responseCutOff for component in self.xyz):
                 logging.info(f"Calling Bohr at time {round(sim.meep_time() * self.convertTimeMeep2fs, 4)} fs")
 
-                # changed to only capture recent E field for magnus 2nd
                 eArr = [eField['x'],eField['y'],eField['z']]
 
                 logging.debug(f'Electric field given to Bohr: {eArr} in atomic units')
 
                 # Will be expecting a matrix of [p_x, p_y, p_z] where p is the dipole moment
-                bohrResults = bohr.run(self.inputFile, self.timeStepBohr, eArr)
+                bohrResults = bohr.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
                 logging.debug(f"Bohr calculation results: {bohrResults} in atomic units")
                 
-                # Probably need to take the dipole moment and divide it by the volume of the molecule
-                # according to https://en.wikipedia.org/wiki/Polarization_density#Definition
-
-                # Dividing it gives the Polarization density 
-                # https://en.wikipedia.org/wiki/Current_density#Polarization_and_magnetization_currents
-
-                # CustomSource with isIntegrated=True expects Polarization density
-                # https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
-
                 for componentName in self.xyz:
                     for offset in [0.5 * self.timeStepMeep, self.timeStepMeep]:
                         timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))

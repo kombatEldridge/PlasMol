@@ -3,6 +3,7 @@ from fock_builder import build_fock
 import matrix_handler as mh
 from scipy.linalg import expm
 
+
 # Here, when appended to a vars name
     # ct means current time
     # dt refers to ct + dt 
@@ -21,30 +22,18 @@ def construct_U_dt(F_mo_dt2, dt, U_ct):
     return U_dt
 
 
-def construct_D_mo_dt(wfn, dt, exc, D_mo_0):
-    F_mo_dt2 = mh.get_F_mo_dt2()
+def propagate_density_matrix(dt, wfn, exc, D_mo_0):
+    D_mo_dt2 = mh.get_D_mo_dt2()
+    D_ao_dt2 = wfn.C[0] @ D_mo_dt2 @ wfn.C[0].T
+    F_ao_dt2 = build_fock(wfn, D_ao_dt2, exc)
+    F_mo_dt2 = wfn.S @ wfn.C[0] @ F_ao_dt2 @ wfn.C[0].T @ wfn.S
+
     U_ct = mh.get_U_ct()
     U_dt = construct_U_dt(F_mo_dt2, dt, U_ct)
-    D_mo_dt = U_dt @ D_mo_0 @ np.conjugate(U_dt.T)
-
-    D_ao_dt = wfn.C[0] @ D_mo_dt @ wfn.C[0].T
-    F_ao_dt = build_fock(wfn, D_ao_dt, exc)
-    F_mo_dt = wfn.C[0].T @ F_ao_dt @ wfn.C[0]
-
-    return U_dt, F_mo_dt, D_mo_dt
-
-
-def propagate_density_matrix(dt, wfn, exc, D_mo_0):
-    U_dt, F_mo_dt, D_mo_dt = construct_D_mo_dt(wfn, dt, exc, D_mo_0)
-
-    # Everything is successful, so we save state
-    mh.set_F_mo_ct(mh.get_F_mo_dt2())
-    mh.set_F_mo_dt2(F_mo_dt)
-    
-    mh.set_D_mo_ct(mh.get_D_mo_dt2())
-    mh.set_D_mo_dt2(D_mo_dt)
-    
     mh.set_U_ct(mh.get_U_dt2())
     mh.set_U_dt2(U_dt)
 
+    D_mo_dt = U_dt @ D_mo_0 @ np.conjugate(U_dt.T)
+
+    mh.set_D_mo_dt2(D_mo_dt)
     return D_mo_dt

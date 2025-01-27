@@ -1,5 +1,4 @@
 import numpy as np
-import matrix_handler as mh
 
 def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn, D_mo_0):
     output = np.zeros(3)
