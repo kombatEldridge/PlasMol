@@ -447,6 +447,7 @@ if __name__ == "__main__":
         mp.verbosity(0)
 
     sys.stdout = PrintLogger(logger, logging.INFO)
+    mh.clear_Matrix_Files()
 
     args = processArguments()
     
@@ -454,5 +455,4 @@ if __name__ == "__main__":
     bohrinputfile = args.bohr if args.bohr else None
     simDriver = parseInputFile(meepinputfile)
     logging.info("Input file successfully parsed. Beginning simulation")
-    mh.clear_Matrix_Files()
     simDriver.run()
