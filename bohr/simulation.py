@@ -11,8 +11,8 @@ from collections import defaultdict
 
 class Simulation:
     def __init__(self,
-                 bohrInputFile,
                  simParams,
+                 bohrInputFile=None,
                  molecule=None,
                  sourceType=None,
                  symmetries=None,
@@ -42,7 +42,6 @@ class Simulation:
         """
 
         # Define simulation parameters
-        self.inputFile = bohrInputFile
         self.cellLength = simParams['cellLength']
         self.pmlThickness = simParams['pmlThickness']
         self.totalTime = simParams['totalTime']
@@ -54,6 +53,7 @@ class Simulation:
         logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
         
         self.molecule = True if molecule else None
+        self.inputFile = bohrInputFile
         self.matplotlib = True if matplotlib else None
         self.outputPNG = True if outputPNG else None
         self.sourceType = sourceType if sourceType else None
@@ -89,41 +89,41 @@ class Simulation:
         self.frameCenter = self.cellLength * self.resolution / 2
 
         self.sourcesList = []
-        if self.molecule:
-            self.sourcesList.append(
-                mp.Source(
-                    mp.CustomSource(src_func=self.chirpx,is_integrated=True),
-                    center=self.positionMolecule,
-                    component=mp.Ex
-                )
-            )
-            self.sourcesList.append(
-                mp.Source(
-                    mp.CustomSource(src_func=self.chirpy,is_integrated=True),
-                    center=self.positionMolecule,
-                    component=mp.Ey
-                )
-            )
-            self.sourcesList.append(
-                mp.Source(
-                    mp.CustomSource(src_func=self.chirpz,is_integrated=True),
-                    center=self.positionMolecule,
-                    component=mp.Ez
-                )
-            )
-            logging.debug("Emitter for the molecule added to simulation")
+        # if self.molecule:
+        #     self.sourcesList.append(
+        #         mp.Source(
+        #             mp.CustomSource(src_func=self.chirpx,is_integrated=True),
+        #             center=self.positionMolecule,
+        #             component=mp.Ex
+        #         )
+        #     )
+        #     self.sourcesList.append(
+        #         mp.Source(
+        #             mp.CustomSource(src_func=self.chirpy,is_integrated=True),
+        #             center=self.positionMolecule,
+        #             component=mp.Ey
+        #         )
+        #     )
+        #     self.sourcesList.append(
+        #         mp.Source(
+        #             mp.CustomSource(src_func=self.chirpz,is_integrated=True),
+        #             center=self.positionMolecule,
+        #             component=mp.Ez
+        #         )
+        #     )
+        #     logging.debug("Emitter for the molecule added to simulation")
 
         if self.sourceType:
             self.sourcesList.append(self.sourceType.source)
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
-        self.symmetriesList = symmetries
+        self.symmetries = symmetries
         self.objectList = [objectNP] if objectNP else []
         self.sim = mp.Simulation(
             resolution=self.resolution,
             cell_size=self.cellVolume,
             boundary_layers=self.pmlList,
             sources=self.sourcesList,
-            symmetries=self.symmetriesList,
+            symmetries=self.symmetries,
             geometry=self.objectList,
             default_material=mp.Medium(
                 index=simParams['surroundingMaterialIndex']),

@@ -14,7 +14,7 @@ class ContinuousSource:
                  slowness=3.0,
                  wavelength=None,
                  is_integrated=True,
-                 component=mp.Ez):
+                 component='z'):
         """
         Initializes a ContinuousSource object.
 
@@ -26,6 +26,9 @@ class ContinuousSource:
             component (mp.Vector3): The component of the electric field for the source.
         """
         logging.debug(f"Initializing ContinuousSource")
+
+        char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
+        self.component = char_to_field[component]
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
         kwargs = {
@@ -39,7 +42,7 @@ class ContinuousSource:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
             mp.ContinuousSource(**filtered_kwargs),
-            component=component,
+            component=self.component,
             center=self.sourceCenter,
             size=self.sourceSize,
         )
@@ -56,7 +59,7 @@ class GaussianSource:
                  cutoff=5.0,
                  is_integrated=True,
                  wavelength=None,
-                 component=mp.Ez):
+                 component='z'):
         """
         Initializes a GaussianSource object.
 
@@ -70,6 +73,9 @@ class GaussianSource:
             component (mp.Vector3): The component of the electric field for the source.
         """
         logging.debug(f"Initializing GaussianSource")
+        
+        char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
+        self.component = char_to_field[component]
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
         kwargs = {
@@ -82,7 +88,7 @@ class GaussianSource:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         self.source = mp.Source(
             mp.GaussianSource(**filtered_kwargs),
-            component=component,
+            component=self.component,
             center=self.sourceCenter,
             size=self.sourceSize,
         )
@@ -100,7 +106,7 @@ class ChirpedSource:
                  start_time=-1e20,
                  end_time=1e20,
                  is_integrated=True,
-                 component=mp.Ez):
+                 component='z'):
         """
         Initializes a ChirpedSource object.
 
@@ -115,6 +121,9 @@ class ChirpedSource:
             component (mp.Vector3): The component of the electric field for the source.
         """
         logging.debug(f"Initializing ChirpedSource")
+        
+        char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
+        self.component = char_to_field[component]
         self.conversionFactor = 3.378555833184493 # from many tests in PulseTest
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
@@ -133,7 +142,7 @@ class ChirpedSource:
 
         self.source = mp.Source(
             src=mp.CustomSource(src_func=func, **filtered_kwargs),
-            component=component,
+            component=self.component,
             center=self.sourceCenter,
             size=self.sourceSize,
         )
@@ -149,7 +158,7 @@ class PulseSource:
                  start_time=-1e20,
                  end_time=1e20,
                  is_integrated=True,
-                 component=mp.Ez):
+                 component='z'):
         """
         Initializes a PulseSource object.
 
@@ -164,6 +173,9 @@ class PulseSource:
             component (mp.Vector3): The component of the electric field for the source.
         """
         logging.debug(f"Initializing PulseSource")
+
+        char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
+        self.component = char_to_field[component]
         self.conversionFactor = 3.378555833184493 # from many tests in PulseTest
         self.sourceCenter = mp.Vector3(sourceCenter)
         self.sourceSize = mp.Vector3(sourceSize[0], sourceSize[1], sourceSize[2])
@@ -180,7 +192,7 @@ class PulseSource:
 
         self.source = mp.Source(
             src=mp.CustomSource(src_func=func, **filtered_kwargs),
-            component=component,
+            component=self.component,
             center=self.sourceCenter,
             size=self.sourceSize,
         )

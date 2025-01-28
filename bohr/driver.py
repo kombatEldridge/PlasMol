@@ -104,8 +104,8 @@ def setParameters(parameters):
         Simulation: A Simulation object initialized with the given parameters.
     """
     simObj = sim.Simulation(
-        bohrInputFile=parameters.get('molecule', {}).get('inputFile', bohrinputfile), # probably can make this optional in the future
         simParams=getSimulation(parameters.get('simulation', {})),
+        bohrInputFile=parameters.get('molecule', {}).get('inputFile', bohrinputfile),
         molecule=getMolecule(parameters.get('molecule', None)),
         sourceType=getSource(parameters.get('source', None)),
         symmetries=getSymmetry(parameters.get('simulation', {}).get('symmetries', None)),
@@ -134,14 +134,6 @@ def getMolecule(molParams):
         logging.info('No molecule chosen for simulation. Continuing without it.')
         return None
     
-    molParams['directionCalculation'] = molParams.get('directionCalculation', ['x', 'y', 'z'])
-    if not isinstance(molParams['directionCalculation'], list):
-        molParams['directionCalculation'] = [molParams['directionCalculation']]
-    molParams['directionCalculation'] = sorted([v.lower() for v in molParams['directionCalculation']])
-    for v in molParams['directionCalculation']:
-        if v not in {'x', 'y', 'z'} or len(v) > 1:
-            raise ValueError(f"Directions should be x, y, and/or z separated by spaces '{v}'")
-
     return molParams
 
 
@@ -154,14 +146,6 @@ def getSimulation(simParams):
     simParams['resolution'] = simParams.get('resolution', 1000)
     simParams['responseCutOff'] = simParams.get('responseCutOff', 1e-12)
     simParams['surroundingMaterialIndex'] = simParams.get('surroundingMaterialIndex', 1.33)
-
-    simParams['directionCalculation'] = simParams.get('directionCalculation', ['x', 'y', 'z'])
-    if not isinstance(simParams['directionCalculation'], list):
-        simParams['directionCalculation'] = [simParams['directionCalculation']]
-    simParams['directionCalculation'] = sorted([v.lower() for v in simParams['directionCalculation']])
-    for v in simParams['directionCalculation']:
-        if v not in {'x', 'y', 'z'} or len(v) > 1:
-            raise ValueError(f"Directions should be x, y, and/or z separated by spaces '{v}'")
         
     totalTime = simParams.get('totalTime', None)
     if totalTime:
@@ -202,7 +186,8 @@ def getSource(sourceParams):
             fwidth=sourceParams.get('fwidth', None),
             slowness=sourceParams.get('slowness', None),
             wavelength=sourceParams.get('wavelength', None),
-            is_integrated=sourceParams.get('is_integrated', None)
+            is_integrated=sourceParams.get('is_integrated', None),
+            component=sourceParams.get('component', None)
         )
 
     elif source_type == 'gaussian':
@@ -215,7 +200,8 @@ def getSource(sourceParams):
             start_time=sourceParams.get('start_time', None),
             cutoff=sourceParams.get('cutoff', None),
             is_integrated=sourceParams.get('is_integrated', None),
-            wavelength=sourceParams.get('wavelength', None)
+            wavelength=sourceParams.get('wavelength', None),
+            component=sourceParams.get('component', None)
         )
         
     elif source_type == 'chirped':
@@ -229,7 +215,8 @@ def getSource(sourceParams):
             chirpRate=sourceParams.get('chirpRate', None),
             start_time=sourceParams.get('start_time', None),
             end_time=sourceParams.get('end_time', None),
-            is_integrated=sourceParams.get('is_integrated', None)
+            is_integrated=sourceParams.get('is_integrated', None),
+            component=sourceParams.get('component', None)
         )
 
     elif source_type == 'pulse':
@@ -242,7 +229,8 @@ def getSource(sourceParams):
             peakTime=sourceParams.get('peakTime', None),
             start_time=sourceParams.get('start_time', None),
             end_time=sourceParams.get('end_time', None),
-            is_integrated=sourceParams.get('is_integrated', None)
+            is_integrated=sourceParams.get('is_integrated', None),
+            component=sourceParams.get('component', None)
         )
 
     else:
@@ -447,6 +435,8 @@ if __name__ == "__main__":
         mp.verbosity(0)
 
     sys.stdout = PrintLogger(logger, logging.INFO)
+    logging.getLogger("h5py").setLevel(logging.INFO)
+
     mh.clear_Matrix_Files()
 
     args = processArguments()

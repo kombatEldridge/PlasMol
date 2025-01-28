@@ -3,12 +3,10 @@ from fock_builder import build_fock
 import matrix_handler as mh
 from scipy.linalg import expm
 
-
 # Here, when appended to a vars name
     # ct means current time
     # dt refers to ct + dt 
     # dt2 refers to ct + dt/2
-
 
 def construct_U_dt(F_mo_dt2, dt, U_ct):
     U_new = expm(-1j * F_mo_dt2 * dt)
