@@ -6,7 +6,12 @@ bohr/*
 !bohr/driver.py
 !bohr/sources.py
 !bohr/rk4.py
-!bohr/jk.py
+!bohr/fock_builder.py
+!bohr/mu.py
+!bohr/magnus.py
+!bohr/molecule.py
+!bohr/matrix_handler.py
+!bohr/volume.py
 !bohr/basis/
 .DS_Store
 refresh.git
