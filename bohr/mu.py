@@ -10,7 +10,7 @@ def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn, D_mo_0):
 
         output[dir] = float(mu_i.real)
 
-    # Should be [p_x, p_y, p_z] where p is the dipole moment
+    # Should be [p_x, p_y, p_z] where p is the dipole moment in AU
     return output
 
  

@@ -2,6 +2,7 @@ import numpy as np
 from fock_builder import build_fock
 import matrix_handler as mh
 from scipy.linalg import expm
+import logging
 
 # Here, when appended to a vars name
     # ct means current time
@@ -14,6 +15,7 @@ def construct_U_dt(F_mo_dt2, dt, U_ct):
 
     # Check to see if matrix is Unitary
     unitary = np.conjugate(U_dt.T) @ U_dt
+    logging.debug(f"U is Unitary? {np.allclose(unitary, np.eye(U_dt.shape[0]))}")
     if not (U_dt.shape[0] == U_dt.shape[1] and np.allclose(unitary, np.eye(U_dt.shape[0]))):
         raise ValueError(f"U^+ @ U is not a unitary matrix. Instead: {unitary}.")
 
@@ -25,9 +27,11 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0):
     D_ao_dt2 = wfn.C[0] @ D_mo_dt2 @ wfn.C[0].T
     F_ao_dt2 = build_fock(wfn, D_ao_dt2, exc)
     F_mo_dt2 = wfn.S @ wfn.C[0] @ F_ao_dt2 @ wfn.C[0].T @ wfn.S
+    F_mo_dt2 = 0.5 * (F_mo_dt2 + np.conjugate(F_mo_dt2.T)) # Enforces Hermitian symmetry
 
     U_ct = mh.get_U_ct()
     U_dt = construct_U_dt(F_mo_dt2, dt, U_ct)
+    U_dt, _ = np.linalg.qr(U_dt)  # Re-orthogonalize U_dt if needed
     mh.set_U_ct(mh.get_U_dt2())
     mh.set_U_dt2(U_dt)
 

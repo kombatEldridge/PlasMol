@@ -28,6 +28,9 @@ class PrintLogger(object):
 
 
 def read_electric_field_csv(file_path):
+    """
+    Returns the values found in the E filed csv files (which are in AU)
+    """
     time = []
     x_values = []
     y_values = []
@@ -61,6 +64,7 @@ def save_to_csv_incremental(output_file, Ptime, Px, Py, Pz):
 
 
 def show(Etime, Ex_values, Ey_values, Ez_values, Ptime, Px_values, Py_values, Pz_values):
+    logging.getLogger('matplotlib').setLevel(logging.INFO)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
     ax1.plot(Etime, Ex_values, label='x', marker='o')
@@ -82,8 +86,6 @@ def show(Etime, Ex_values, Ey_values, Ez_values, Ptime, Px_values, Py_values, Pz
 
     plt.tight_layout()
     plt.savefig('driverQM.png', dpi=1000)
-
-
 
 
 def processArguments():
@@ -187,6 +189,7 @@ if __name__ == "__main__":
     for i in range(len(Etime)):
         eArr = eArrArr[:,i]
         px, py, pz = run(dt, eArr, method, coords, wfn, D_mo_0)
+        logging.debug(f"At {Etime[i]} fs, the Bohr output is [{px}, {py}, {pz}] in AU")
         Ptime.append(Etime[i])
         Px_values.append(px)
         Py_values.append(py)

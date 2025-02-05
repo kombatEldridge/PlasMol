@@ -89,29 +89,29 @@ class Simulation:
         self.frameCenter = self.cellLength * self.resolution / 2
 
         self.sourcesList = []
-        # if self.molecule:
-        #     self.sourcesList.append(
-        #         mp.Source(
-        #             mp.CustomSource(src_func=self.chirpx,is_integrated=True),
-        #             center=self.positionMolecule,
-        #             component=mp.Ex
-        #         )
-        #     )
-        #     self.sourcesList.append(
-        #         mp.Source(
-        #             mp.CustomSource(src_func=self.chirpy,is_integrated=True),
-        #             center=self.positionMolecule,
-        #             component=mp.Ey
-        #         )
-        #     )
-        #     self.sourcesList.append(
-        #         mp.Source(
-        #             mp.CustomSource(src_func=self.chirpz,is_integrated=True),
-        #             center=self.positionMolecule,
-        #             component=mp.Ez
-        #         )
-        #     )
-        #     logging.debug("Emitter for the molecule added to simulation")
+        if self.molecule:
+            self.sourcesList.append(
+                mp.Source(
+                    mp.CustomSource(src_func=self.chirpx,is_integrated=True),
+                    center=self.positionMolecule,
+                    component=mp.Ex
+                )
+            )
+            self.sourcesList.append(
+                mp.Source(
+                    mp.CustomSource(src_func=self.chirpy,is_integrated=True),
+                    center=self.positionMolecule,
+                    component=mp.Ey
+                )
+            )
+            self.sourcesList.append(
+                mp.Source(
+                    mp.CustomSource(src_func=self.chirpz,is_integrated=True),
+                    center=self.positionMolecule,
+                    component=mp.Ez
+                )
+            )
+            logging.debug("Emitter for the molecule added to simulation")
 
         if self.sourceType:
             self.sourcesList.append(self.sourceType.source)

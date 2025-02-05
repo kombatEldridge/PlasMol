@@ -10,5 +10,5 @@ def run(dt, eArr, method, coords, wfn, D_mo_0):
     volume = get_volume(coords)
     induced_dipole_matrix = calculate_ind_dipole(propagate_density_matrix, dt, eArr, wfn, D_mo_0) / volume
         
-    # Should be [p_x, p_y, p_z] where p is the dipole moment
+    # Should be [p_x, p_y, p_z] where p is the dipole moment in AU
     return induced_dipole_matrix 
