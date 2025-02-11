@@ -10,6 +10,7 @@ import sys
 import os
 import meep as mp
 import matrix_handler as mh
+from csv_handler import initCSV, updateCSV, show_eField_Energy
 
 
 class PrintLogger(object):
@@ -55,37 +56,6 @@ def read_electric_field_csv(file_path):
             z_values.append(float(row[3]))
     
     return time, x_values, y_values, z_values
-
-
-def save_to_csv_incremental(output_file, Ptime, Px, Py, Pz):
-    with open(output_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([Ptime, Px, Py, Pz])
-
-
-def show(Etime, Ex_values, Ey_values, Ez_values, Ptime, Px_values, Py_values, Pz_values):
-    logging.getLogger('matplotlib').setLevel(logging.INFO)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    ax1.plot(Etime, Ex_values, label='x', marker='o')
-    ax1.plot(Etime, Ey_values, label='y', marker='o')
-    ax1.plot(Etime, Ez_values, label='z', marker='o')
-
-    ax1.set_title('Incident Electric Field')
-    ax1.set_xlabel('Timestamps (fs)')
-    ax1.set_ylabel('Electric Field Magnitude')
-    ax1.legend()
-
-    ax2.plot(Ptime, Px_values, label='x', marker='o')
-    ax2.plot(Ptime, Py_values, label='y', marker='o')
-    ax2.plot(Ptime, Pz_values, label='z', marker='o')
-    ax2.set_title('Molecule\'s Response')
-    ax2.set_xlabel('Timestamps (fs)')
-    ax2.set_ylabel('Polarization Field Magnitude')
-    ax2.legend()
-
-    plt.tight_layout()
-    plt.savefig('driverQM.png', dpi=1000)
 
 
 def processArguments():
@@ -181,21 +151,16 @@ if __name__ == "__main__":
     Etime, Ex_values, Ey_values, Ez_values = read_electric_field_csv(file_path)
     eArrArr = np.array([Ex_values, Ey_values, Ez_values])  # Convert list of lists to a NumPy array
 
-    Ptime, Px_values, Py_values, Pz_values = [], [], [], []
-    with open("magnus-P-Field.csv", mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Timestamps (fs)", "X Values", "Y Values", "Z Values"])
+    initCSV("magnus-P-Field.csv", "")
+    initCSV("magnus-energy.csv", "")
 
-    for i in range(len(Etime)):
+    for i in range(100):
         eArr = eArrArr[:,i]
-        px, py, pz = run(dt, eArr, method, coords, wfn, D_mo_0)
-        logging.debug(f"At {Etime[i]} fs, the Bohr output is [{px}, {py}, {pz}] in AU")
-        Ptime.append(Etime[i])
-        Px_values.append(px)
-        Py_values.append(py)
-        Pz_values.append(pz)
-        save_to_csv_incremental("magnus-P-Field.csv", Etime[i], px, py, pz)
+        bohrResponse, energy = run(dt, eArr, method, coords, wfn, D_mo_0)
+        logging.debug(f"At {Etime[i]} fs, the Bohr output is {bohrResponse} in AU and the energy is {energy}")
+        updateCSV("magnus-P-Field.csv", Etime[i], bohrResponse[0], bohrResponse[1], bohrResponse[2])
+        updateCSV("magnus-energy.csv", Etime[i], energy)
 
-    show(Etime, Ex_values, Ey_values, Ez_values, Ptime, Px_values, Py_values, Pz_values)
+    show_eField_Energy(file_path, "magnus-energy.csv", "energy", "")
 
     logging.info("Input file successfully parsed. Beginning simulation")

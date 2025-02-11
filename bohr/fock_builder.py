@@ -4,9 +4,7 @@ def JK(wfn, D_ao):
     return Fa
 
 def build_fock(wfn, D_ao, exc):
-    """
-    Builds the Fock matrix using Eq 20 of Repisky2015.pdf
-    """
+    # Repisky2015.pdf Eq. 20
     ext = 0
     for dir in [0, 1, 2]:
         ext += wfn.mu[dir] * exc[dir]

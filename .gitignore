@@ -13,6 +13,7 @@ bohr/*
 !bohr/matrix_handler.py
 !bohr/volume.py
 !bohr/driverQM.py
+!bohr/csv_handler.py
 !bohr/basis/
 .DS_Store
 refresh.git

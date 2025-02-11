@@ -1,13 +1,10 @@
 import logging
 import numpy as np
-import pandas as pd
-import csv
 import meep as mp
 import gif
-import os
 import bohr
 from collections import defaultdict
-
+from csv_handler import initCSV, updateCSV, show_eField_pField
 
 class Simulation:
     def __init__(self,
@@ -70,6 +67,7 @@ class Simulation:
         self.matplotlibLocationIMG = matplotlib['IMGlocation'] if self.matplotlib and matplotlib['IMGlocation'] else ""
         self.eFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-E-Field.csv' if self.matplotlib else None
         self.pFieldFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-P-Field.csv' if self.matplotlib and self.molecule else None
+        self.energyFileName = f'{self.matplotlibLocationCSV}{self.matplotlibOutput}-energy.csv' if self.matplotlib and self.molecule else None
         
         # Conversion factors
         self.convertTimeMeep2fs = 10 / 3
@@ -181,12 +179,11 @@ class Simulation:
             self.wfn = self.moleculeObject.wfn
             self.D_mo_0 = self.moleculeObject.D_mo_0
 
-    # CustomSource with isIntegrated=True expects Polarization density
-    # https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
-
     def chirpx(self, t):
         """
         Chirp function for the x-component of the dipole response.
+        CustomSource with isIntegrated=True expects Polarization density
+        https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
         """
         logging.debug(
             f"chirpx being called at {round(t * self.convertTimeMeep2fs, self.decimalPlaces)} fs. Emitting {self.measuredDipoleResponse['x'].get(str(round(t, self.decimalPlaces)), 0) * self.convertFieldMeep2Atomic} in atomic units.")
@@ -195,6 +192,8 @@ class Simulation:
     def chirpy(self, t):
         """
         Chirp function for the y-component of the dipole response.
+        CustomSource with isIntegrated=True expects Polarization density
+        https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
         """
         logging.debug(
             f"chirpy being called at {round(t * self.convertTimeMeep2fs, self.decimalPlaces)} fs. Emitting {self.measuredDipoleResponse['y'].get(str(round(t, self.decimalPlaces)), 0) * self.convertFieldMeep2Atomic} in atomic units.")
@@ -203,6 +202,8 @@ class Simulation:
     def chirpz(self, t):
         """
         Chirp function for the z-component of the dipole response.
+        CustomSource with isIntegrated=True expects Polarization density
+        https://github.com/NanoComp/meep/discussions/2809#discussioncomment-8929239
         """
         logging.debug(
             f"chirpz being called at {round(t * self.convertTimeMeep2fs, self.decimalPlaces)} fs. Emitting {self.measuredDipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0) * self.convertFieldMeep2Atomic} in atomic units.")
@@ -228,7 +229,8 @@ class Simulation:
         if self.molecule:
             self.callBohr(sim, eField)
 
-        self.updateCSVhandler(sim, eField)
+        timestamp = str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeep2fs, self.decimalPlaces))
+        updateCSV(self.eFieldFileName, timestamp, eField['x'], eField['y'], eField['z'])
 
     def callBohr(self, sim, eField):
         """
@@ -246,7 +248,7 @@ class Simulation:
                 logging.debug(f'Electric field given to Bohr: {eArr} in atomic units')
 
                 # Will be expecting a matrix of [p_x, p_y, p_z] where p is the dipole moment
-                bohrResults = bohr.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
+                bohrResults, energy = bohr.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
                 logging.debug(f"Bohr calculation results: {bohrResults} in atomic units")
                 
                 for componentName in self.xyz:
@@ -254,127 +256,9 @@ class Simulation:
                         timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
                         self.measuredDipoleResponse[componentName][timestamp] = bohrResults[self.mapDirectionToDigit[componentName]]
 
-    def updateCSVhandler(self, sim, eField):
-        try:
             timestamp = str(round((sim.meep_time() + self.timeStepMeep) * self.convertTimeMeep2fs, self.decimalPlaces))
-            values = {
-                'x_value': eField['x'],
-                'y_value': eField['y'],
-                'z_value': eField['z']
-            }
-            self.updateCSV(filename=self.eFieldFileName, timestamp=timestamp, **values)
-            if self.pFieldFileName:
-                timestampMeep = str(round((sim.meep_time() + self.timeStepMeep), self.decimalPlaces))
-                values = {
-                    'x_value': self.measuredDipoleResponse['x'].get(timestampMeep, 0),
-                    'y_value': self.measuredDipoleResponse['y'].get(timestampMeep, 0),
-                    'z_value': self.measuredDipoleResponse['z'].get(timestampMeep, 0)
-                }
-                self.updateCSV(filename=self.pFieldFileName, timestamp=timestamp, **values)
-        except:
-            pass
-
-    def updateCSV(self, filename, timestamp=None, x_value=None, y_value=None, z_value=None, comment=None):
-        if self.matplotlib:
-            if comment:
-                with open(filename, 'w', newline='') as file:
-                    for line in comment.splitlines():
-                        file.write(f"# {line}\n")
-                    file.write("\n")
-                    writer = csv.writer(file)
-                    header = ['Timestamps (fs)']
-                    header.append('X Values')
-                    header.append('Y Values')
-                    header.append('Z Values')
-                    writer.writerow(header)
-
-            if timestamp:
-                row = [timestamp]
-                row.append(x_value if x_value is not None else 0)
-                row.append(y_value if y_value is not None else 0)
-                row.append(z_value if z_value is not None else 0)
-                
-                with open(filename, 'a', newline='') as file:
-                    writer = csv.writer(file)
-                    writer.writerow(row)
-
-    def show(self):
-        import matplotlib.pyplot as plt
-        logging.getLogger('matplotlib').setLevel(logging.INFO)
-
-        if self.molecule:
-            logging.debug(
-                f"Reading CSV files: {self.eFieldFileName} and {self.pFieldFileName}")
-        else:
-            logging.debug(f"Reading CSV file: {self.eFieldFileName}")
-
-        def sort_csv_by_first_column(filename):
-            with open(filename, 'r') as file:
-                lines = file.readlines()
-
-            comments = [line for line in lines if line.startswith('#')]
-            header = next(line for line in lines if not line.startswith('#'))
-            data_lines = [line for line in lines if not line.startswith('#') and line != header]
-
-            from io import StringIO
-            data = pd.read_csv(StringIO(''.join(data_lines)))
-
-            data_sorted = data.sort_values(by='Timestamps (fs)')
-
-            with open(filename, 'w') as file:
-                file.writelines(comments)
-                file.write(header)
-                data_sorted.to_csv(file, index=False)
-
-        sort_csv_by_first_column(self.eFieldFileName)
-        data1 = pd.read_csv(self.eFieldFileName, comment='#')
-        data1 = data1.sort_values(by='Timestamps (fs)', ascending=True)
-        timestamps1 = data1['Timestamps (fs)']
-        x_values1 = data1['X Values']
-        y_values1 = data1['Y Values']
-        z_values1 = data1['Z Values']
-
-        if self.molecule:
-            sort_csv_by_first_column(self.pFieldFileName)
-            data2 = pd.read_csv(self.pFieldFileName, comment='#')
-            data2 = data2.sort_values(by='Timestamps (fs)', ascending=True)
-            timestamps2 = data2['Timestamps (fs)']
-            x_values2 = data2['X Values']
-            y_values2 = data2['Y Values']
-            z_values2 = data2['Z Values']
-
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-            ax1.plot(timestamps1, x_values1, label='x', marker='o')
-            ax1.plot(timestamps1, y_values1, label='y', marker='o')
-            ax1.plot(timestamps1, z_values1, label='z', marker='o')
-
-            ax1.set_title('Incident Electric Field')
-            ax1.set_xlabel('Timestamps (fs)')
-            ax1.set_ylabel('Electric Field Magnitude')
-            ax1.legend()
-
-            ax2.plot(timestamps2, x_values2, label='x', marker='o')
-            ax2.plot(timestamps2, y_values2, label='y', marker='o')
-            ax2.plot(timestamps2, z_values2, label='z', marker='o')
-            ax2.set_title('Molecule\'s Response')
-            ax2.set_xlabel('Timestamps (fs)')
-            ax2.set_ylabel('Polarization Field Magnitude')
-            ax2.legend()
-        else:
-            fig, ax1 = plt.subplots(figsize=(7, 5))
-
-            ax1.plot(timestamps1, x_values1, label='x', marker='o')
-            ax1.plot(timestamps1, y_values1, label='y', marker='o')
-            ax1.plot(timestamps1, z_values1, label='z', marker='o')
-            ax1.set_title('Incident Electric Field')
-            ax1.set_xlabel('Timestamps (fs)')
-            ax1.set_ylabel('Electric Field Magnitude')
-            ax1.legend()
-
-        plt.tight_layout()
-        plt.savefig(f'{self.matplotlibLocationIMG}{self.matplotlibOutput}.png', dpi=1000)
-        logging.debug(f"Matplotlib image written: {self.matplotlibLocationIMG}{self.matplotlibOutput}.png")
+            updateCSV(self.pFieldFileName, timestamp, bohrResults[0], bohrResults[1], bohrResults[2])
+            updateCSV(self.energyFileName, timestamp, energy)
 
     def run(self):
         """
@@ -391,14 +275,20 @@ class Simulation:
             if self.formattedDict:
                 e_field_comment += f"\nJob Input:\n{self.formattedDict}"
             
-            self.updateCSV(filename=self.eFieldFileName, comment=e_field_comment)
+            initCSV(self.eFieldFileName, e_field_comment)
 
             if self.molecule:
                 p_field_comment = f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units."
                 if self.formattedDict:
                     p_field_comment += f"\nJob Input:\n{self.formattedDict}"
                 
-                self.updateCSV(filename=self.pFieldFileName, comment=p_field_comment)
+                initCSV(self.pFieldFileName, p_field_comment)
+                
+                energy_comment = f"Molecule's energy measured in atomic units."
+                if self.formattedDict:
+                    energy_comment += f"\nJob Input:\n{self.formattedDict}"
+
+                initCSV(self.energyFileName, energy_comment)
 
         try:
             run_functions = [mp.at_every(self.timeStepMeep, self.getElectricField)]
@@ -407,7 +297,6 @@ class Simulation:
                 run_functions.append(mp.at_every(self.timestepsBetween * self.timeStepMeep,
                                                  mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
 
-            run_functions.append(mp.at_every(self.timeStepMeep, self.updateCSVhandler))
             self.sim.run(*run_functions, until=self.timeLength * self.timeStepMeep)
             logging.info("Simulation completed successfully!")
         except Exception as e:
@@ -415,7 +304,7 @@ class Simulation:
         finally:
             if self.matplotlib:
                 try:
-                    self.show()
+                    show_eField_pField(self.eFieldFileName, self.matplotlibLocationIMG, self.matplotlibOutput, self.pFieldFileName)
                 except Exception as e:
                     logging.error(f"Graph failed to be made with error: {e}")
             if self.outputPNG:
@@ -454,7 +343,6 @@ class Simulation:
         formatted_params = {key: recursive_format(value) for key, value in params.items() if value is not None}
         
         return formatted_params
-    
 
 def debugObj(obj):
     # obj = self.sourceType.source

@@ -44,9 +44,7 @@ class MOLECULE():
         self.D_mo_0 = self.wfn.C[0].T @ self.wfn.S @ D_ao_0 @ self.wfn.S @ self.wfn.C[0]
         trace = np.trace(self.D_mo_0)
         n = self.wfn.nel[0]
-        if np.isclose(trace, n):
-            logging.debug("Previous Density matrix used.")
-        else:
+        if not np.isclose(trace, n):
             raise ValueError(f"Trace of the matrix is not {n} (instead {trace}).")
         mh.set_D_mo_0(self.D_mo_0)
 

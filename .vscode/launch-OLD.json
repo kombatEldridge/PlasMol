@@ -2,20 +2,20 @@
     "version": "0.3.0",
     "configurations": [
         {
-            "name": "Debug DriverQM",
+            "name": "Debug PlasMol Script",
             "type": "python",
             "request": "launch",
-            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/bohr/driverQM.py",
+            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py",
             "args": [
-                "-b", "benzene.in",
+                "-m", "meep.in",
+                "-b", "pyridine.in",
                 "-vv",
-                "-l", "plasmol.log",
-                "-e", "magnus-E-Field-250nm.csv"
+                "-l", "plasmol.log"
             ],
             "env": {
                 "PYTHONPATH": "/Users/bldrdge1/.conda/envs/meep1.29/lib/python3.9/site-packages"
             },
-            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/jobs/test_benzene",
+            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/jobs/test",
             "python": "/Users/bldrdge1/.conda/envs/meep1.29/bin/python",
             "console": "integratedTerminal"
         }

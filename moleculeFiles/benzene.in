@@ -1,0 +1,31 @@
+start molecule
+  C       -0.71308        1.20378        0.00000
+  C       -0.00904       -0.01566        0.00000
+  C        1.39904       -0.01566        0.00000
+  C        2.10308        1.20378        0.00000
+  C        1.39904        2.42321       -0.00000
+  C       -0.00904        2.42321       -0.00000
+  H       -1.73551        1.20378       -0.00000
+  H       -0.52025       -0.90111       -0.00000
+  H        1.91025       -0.90111       -0.00000
+  H        3.12551        1.20378       -0.00000
+  H        1.91025        3.30866        0.00000
+  H       -0.52025        3.30866        0.00000
+end molecule
+
+charge 0
+spin 0
+basis 6-31g 
+diis true
+e_convergence 1e-6
+d_convergence 1e-6
+maxiter 200
+nroots 50
+xc hf
+nocom
+guess_mos benzene.mos
+noscf
+resplimit 1e-20
+propagator magnus
+
+method rttddft
