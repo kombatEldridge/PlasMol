@@ -154,7 +154,7 @@ if __name__ == "__main__":
     initCSV("magnus-P-Field.csv", "")
     initCSV("magnus-energy.csv", "")
 
-    for i in range(100):
+    for i in range(len(Etime)):
         eArr = eArrArr[:,i]
         bohrResponse, energy = run(dt, eArr, method, coords, wfn, D_mo_0)
         logging.debug(f"At {Etime[i]} fs, the Bohr output is {bohrResponse} in AU and the energy is {energy}")
