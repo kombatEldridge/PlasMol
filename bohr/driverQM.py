@@ -168,6 +168,6 @@ if __name__ == "__main__":
         logging.debug(f"At {Etime[i]} fs, the Bohr output is {bohrResponse} in AU")
         updateCSV(pFieldFileName, Etime[i], bohrResponse[0], bohrResponse[1], bohrResponse[2])
 
-    show_eField_pField(eFieldFileName, pFieldFileName, "output", "")
+    show_eField_pField(eFieldFileName, pFieldFileName)
 
     logging.info("Input file successfully parsed. Beginning simulation")

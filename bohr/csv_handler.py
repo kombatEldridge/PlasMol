@@ -32,7 +32,7 @@ def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
         writer.writerow(row)
 
 
-def show_eField_pField(eFieldFileName, matplotlibLocationIMG, matplotlibOutput, pFieldFileName=None):
+def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIMG=None, matplotlibOutput=None):
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
     if pFieldFileName is not None:
@@ -106,64 +106,16 @@ def show_eField_pField(eFieldFileName, matplotlibLocationIMG, matplotlibOutput, 
         ax1.legend()
 
     plt.tight_layout()
-    plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
-    logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
-
-
-def show_eField_Energy(eFieldFileName, energyFileName, matplotlibLocationIMG, matplotlibOutput):
-    logging.getLogger('matplotlib').setLevel(logging.INFO)
-
-    logging.debug(f"Reading CSV files: {eFieldFileName} and {energyFileName}")
-
-    def sort_csv_by_first_column(filename):
-        with open(filename, 'r') as file:
-            lines = file.readlines()
-
-        comments = [line for line in lines if line.startswith('#')]
-        header = next(line for line in lines if not line.startswith('#'))
-        data_lines = [line for line in lines if not line.startswith('#') and line != header]
-
-        from io import StringIO
-        data = pd.read_csv(StringIO(''.join(data_lines)))
-
-        data_sorted = data.sort_values(by='Timestamps (fs)')
-
-        with open(filename, 'w') as file:
-            file.writelines(comments)
-            file.write(header)
-            data_sorted.to_csv(file, index=False)
-
-    sort_csv_by_first_column(eFieldFileName)
-    data1 = pd.read_csv(eFieldFileName, comment='#')
-    data1 = data1.sort_values(by='Timestamps (fs)', ascending=True)
-    timestamps1 = data1['Timestamps (fs)']
-    x_values1 = data1['X Values']
-    y_values1 = data1['Y Values']
-    z_values1 = data1['Z Values']
-
-    sort_csv_by_first_column(energyFileName)
-    data2 = pd.read_csv(energyFileName, comment='#')
-    data2 = data2.sort_values(by='Timestamps (fs)', ascending=True)
-    timestamps2 = data2['Timestamps (fs)']
-    energy = data2['X Values']
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    ax1.plot(timestamps1, x_values1, label='x', marker='o')
-    ax1.plot(timestamps1, y_values1, label='y', marker='o')
-    ax1.plot(timestamps1, z_values1, label='z', marker='o')
-
-    ax1.set_title('Incident Electric Field')
-    ax1.set_xlabel('Timestamps (fs)')
-    ax1.set_ylabel('Electric Field Magnitude')
-    ax1.legend()
-
-    ax2.plot(timestamps2, energy, label='energy', marker='o')
-    ax2.set_title('Molecule\'s Response')
-    ax2.set_xlabel('Timestamps (fs)')
-    ax2.set_ylabel('Energy (a.u.)')
-    ax2.legend()
-    
-    plt.tight_layout()
-    plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
-    logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
+    if matplotlibLocationIMG is None:
+        if matplotlibOutput is None:
+            plt.savefig('output.png', dpi=1000)
+            logging.debug(f"Matplotlib image written: output.png")
+        else:
+            plt.savefig(f'{matplotlibOutput}.png', dpi=1000)
+            logging.debug(f"Matplotlib image written: {matplotlibOutput}.png")
+    elif matplotlibOutput is None:
+        plt.savefig(f'{matplotlibLocationIMG}.png', dpi=1000)
+        logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}.png")
+    else:
+        plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
+        logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")

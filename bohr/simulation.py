@@ -304,7 +304,7 @@ class Simulation:
         finally:
             if self.matplotlib:
                 try:
-                    show_eField_pField(self.eFieldFileName, self.matplotlibLocationIMG, self.matplotlibOutput, self.pFieldFileName)
+                    show_eField_pField(self.eFieldFileName, self.pFieldFileName, self.matplotlibLocationIMG, self.matplotlibOutput)
                 except Exception as e:
                     logging.error(f"Graph failed to be made with error: {e}")
             if self.outputPNG:
