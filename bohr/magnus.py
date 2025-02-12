@@ -7,7 +7,7 @@ import logging
 # Here, when appended to a vars name
     # t means time (two half steps behind dt)
     # t_plus_half_dt refers to t + dt/2 (one half step behind dt)
-    # dt refers to t + dt
+    # t_plus_dt refers to t + dt
     # dt is the time step between frames in MEEP for this Magnus implementation
 
 
@@ -43,28 +43,27 @@ def construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t):
     return U_t_plus_dt
 
 
-def propagate_density_matrix(dt, wfn, exc, D_mo_0):
-    F_mo_t_minus_half_dt = mh.get_F_mo_t_minus_half_dt()
-    F_mo_t = mh.get_F_mo_t()
+def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
+    F_mo_t_minus_half_dt = mh.get_F_mo_t_minus_half_dt(dir)
+    F_mo_t = mh.get_F_mo_t(dir)
     F_mo_t_plus_half_dt = extrapolate(F_mo_t, F_mo_t_minus_half_dt)
-    U_t = mh.get_U_t()
+    U_t = mh.get_U_t(dir)
 
     D_mo_t_plus_dt_guess = None
     for limit in range(0, 10000):
         U_t_plus_dt = construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t)
         D_mo_t_plus_dt = U_t_plus_dt @ D_mo_0 @ np.conjugate(U_t_plus_dt.T)
         D_ao_t_plus_dt = wfn.C[0] @ D_mo_t_plus_dt @ wfn.C[0].T
-        F_ao_t_plus_dt = build_fock(wfn, D_ao_t_plus_dt, exc)
+        F_ao_t_plus_dt = build_fock(wfn, D_ao_t_plus_dt, exc, dir)
         F_mo_t_plus_dt = wfn.C[0].T @ F_ao_t_plus_dt @ wfn.C[0]
 
         # Predictor-Corrector finish condition
         if D_mo_t_plus_dt_guess is not None:
             if euclidean_norm_difference(D_mo_t_plus_dt, D_mo_t_plus_dt_guess) < 1e-12:
                 logging.debug(f"Iterations before Predictor-Corrector scheme finished: {limit}")
-                mh.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt)
-                mh.set_F_mo_t(F_mo_t_plus_dt)
-                mh.set_F_ao_t(F_ao_t_plus_dt)
-                mh.set_U_t(U_t_plus_dt)
+                mh.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt, dir)
+                mh.set_F_mo_t(F_mo_t_plus_dt, dir)
+                mh.set_U_t(U_t_plus_dt, dir)
                 return D_mo_t_plus_dt
             
         F_mo_t_plus_half_dt = interpolate(F_mo_t, F_mo_t_plus_dt)

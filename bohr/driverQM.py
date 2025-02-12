@@ -1,7 +1,6 @@
 import molecule as mol
 from bohr import run
 import csv
-import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import argparse
@@ -10,7 +9,7 @@ import sys
 import os
 import meep as mp
 import matrix_handler as mh
-from csv_handler import initCSV, updateCSV, show_eField_Energy
+from csv_handler import initCSV, updateCSV, show_eField_pField
 
 
 class PrintLogger(object):
@@ -145,22 +144,30 @@ if __name__ == "__main__":
     method = moleculeObject.method["propagator"]
     coords = moleculeObject.molecule["coords"]
     wfn = moleculeObject.wfn
-    D_mo_0 = moleculeObject.D_mo_0
+    D_mo_0 = mh.get_D_mo_0()
 
-    file_path = args.csv
-    Etime, Ex_values, Ey_values, Ez_values = read_electric_field_csv(file_path)
+    eFieldFileName = args.csv
+    Etime, Ex_values, Ey_values, Ez_values = read_electric_field_csv(eFieldFileName)
     eArrArr = np.array([Ex_values, Ey_values, Ez_values])  # Convert list of lists to a NumPy array
 
-    initCSV("magnus-P-Field.csv", "")
-    initCSV("magnus-energy.csv", "")
+    pFieldFileName = "magnus-P-Field.csv"
+    p_field_comment = f"Molecule's Polarizability Field measured\nat the molecule's position in atomic units."
+    initCSV(pFieldFileName, p_field_comment)
+
+    logging.info(f"Bohr input file: {os.path.abspath(args.bohr)}")
+    with open(os.path.abspath(args.bohr), 'r') as file:
+        for line in file:
+            if line.strip().startswith('#') or line.strip().startswith('--') or line.strip().startswith('%'):
+                continue
+            logger.info('\t%s', line.rstrip('\n'))
+    logger.info("")
 
     for i in range(len(Etime)):
         eArr = eArrArr[:,i]
-        bohrResponse, energy = run(dt, eArr, method, coords, wfn, D_mo_0)
-        logging.debug(f"At {Etime[i]} fs, the Bohr output is {bohrResponse} in AU and the energy is {energy}")
-        updateCSV("magnus-P-Field.csv", Etime[i], bohrResponse[0], bohrResponse[1], bohrResponse[2])
-        updateCSV("magnus-energy.csv", Etime[i], energy)
+        bohrResponse = run(dt, eArr, method, coords, wfn, D_mo_0)
+        logging.debug(f"At {Etime[i]} fs, the Bohr output is {bohrResponse} in AU")
+        updateCSV(pFieldFileName, Etime[i], bohrResponse[0], bohrResponse[1], bohrResponse[2])
 
-    show_eField_Energy(file_path, "magnus-energy.csv", "energy", "")
+    show_eField_pField(eFieldFileName, pFieldFileName, "output", "")
 
     logging.info("Input file successfully parsed. Beginning simulation")

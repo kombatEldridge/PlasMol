@@ -3,10 +3,8 @@ def JK(wfn, D_ao):
     Fa = wfn.T + wfn.Vne + pot
     return Fa
 
-def build_fock(wfn, D_ao, exc):
+def build_fock(wfn, D_ao, exc, dir):
     # Repisky2015.pdf Eq. 20
-    ext = 0
-    for dir in [0, 1, 2]:
-        ext += wfn.mu[dir] * exc[dir]
+    ext = wfn.mu[dir] * exc[dir]
     F_ao = JK(wfn, D_ao) - ext
     return F_ao
