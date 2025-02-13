@@ -97,7 +97,7 @@ if __name__ == "__main__":
     
     Etime, Ex_values, Ey_values, Ez_values = read_electric_field_csv(args.csv)
     ef_interp = ElectricFieldInterpolator(Etime, Ex_values, Ey_values, Ez_values)
-    t_new = np.linspace(0, Etime[-1], len(Etime) * 100)
+    t_new = np.linspace(0, Etime[-1], len(Etime))
     dt = t_new[1] - t_new[0] 
     eArrArr = ef_interp.get_field_at(t_new)
     
@@ -109,10 +109,11 @@ if __name__ == "__main__":
             if not line.strip().startswith(('#', '--', '%')):
                 logger.info('\t%s', line.rstrip('\n'))
     
-    for i, t in enumerate(t_new):
+    for i in range(len(t_new)):
+    # for i in range(100):
         bohrResponse = run(dt, eArrArr[i], method, coords, wfn, D_mo_0)
-        logging.debug(f"At {t} fs, the Bohr output is {bohrResponse} in AU")
-        updateCSV(pFieldFileName, t, *bohrResponse)
+        logging.debug(f"At {t_new[i]} fs, the Bohr output is {bohrResponse} in AU")
+        updateCSV(pFieldFileName, t_new[i], *bohrResponse)
     
     show_eField_pField(args.csv, pFieldFileName)
     logging.info("Simulation completed successfully.")
