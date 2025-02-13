@@ -14,7 +14,6 @@ def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn, D_mo_0):
             mu_ij = np.trace(wfn.mu[i] @ D_mo_t_plus_dt_j) - np.trace(wfn.mu[i] @ D_mo_0)
             output[i][j] = float(mu_ij.real)
 
-    # Should be [p_x, p_y, p_z] where p is the dipole moment in AU
     return output
 
 
