@@ -64,6 +64,7 @@ def process_arguments():
     parser = argparse.ArgumentParser(description="Meep simulation with Bohr dipole moment calculation.")
     parser.add_argument('-b', '--bohr', type=str, help="Path to the Bohr input file.")
     parser.add_argument('-e', '--csv', type=str, help="Path to the E field file.")
+    parser.add_argument('-m', '--mult', type=int, help="Multiplier for E Field interpolator.")
     parser.add_argument('-l', '--log', help="Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity")
     
@@ -97,7 +98,7 @@ if __name__ == "__main__":
     
     Etime, Ex_values, Ey_values, Ez_values = read_electric_field_csv(args.csv)
     ef_interp = ElectricFieldInterpolator(Etime, Ex_values, Ey_values, Ez_values)
-    t_new = np.linspace(0, Etime[-1], len(Etime))
+    t_new = np.linspace(0, Etime[-1], len(Etime) * args.mult)
     dt = t_new[1] - t_new[0] 
     eArrArr = ef_interp.get_field_at(t_new)
     
