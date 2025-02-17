@@ -9,6 +9,7 @@ import logging
     # t_plus_dt refers to t + dt
     # dt is the time step between frames in MEEP for this Magnus implementation
 
+int_to_char = {0: 'x', 1: 'y', 2: 'z'}
 
 def JK(wfn, D_ao):
     pot = wfn.jk.get_veff(wfn.ints_factory, 2*D_ao)
@@ -75,7 +76,7 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
         # Predictor-Corrector finish condition
         if D_mo_t_plus_dt_guess is not None:
             if euclidean_norm_difference(D_mo_t_plus_dt, D_mo_t_plus_dt_guess) < 1e-12:
-                logging.debug(f"Iterations before Predictor-Corrector scheme finished: {limit}")
+                logging.debug(f"Predictor-Corrector scheme finished for the {int_to_char[dir]} direction in {limit} iterations.")
                 mh.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt, dir)
                 mh.set_F_mo_t(F_mo_t_plus_dt, dir)
                 mh.set_U_t(U_t_plus_dt, dir)

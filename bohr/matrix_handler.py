@@ -3,7 +3,7 @@ import os
 import inspect
 
 
-int_to_char ={0: 'x', 1: 'y', 2: 'z'}
+int_to_char = {0: 'x', 1: 'y', 2: 'z'}
 
 
 def get_U_t(dir):
