@@ -7,11 +7,11 @@ def calculate_ind_dipole(propagate_density_matrix, dt, exc, wfn, D_mo_0):
     output = np.zeros((3, 3))
 
     for j in [0, 1, 2]: 
-        D_mo_t_plus_dt_j = propagate_density_matrix(dt, wfn, exc, D_mo_0, j)
+        D_ao_t_plus_dt_j = propagate_density_matrix(dt, wfn, exc, D_mo_0, j)
 
         for i in [0, 1, 2]:
             # Repisky2015.pdf Eq. 22
-            mu_ij = np.trace(wfn.mu[i] @ D_mo_t_plus_dt_j) - np.trace(wfn.mu[i] @ D_mo_0)
+            mu_ij = np.trace(wfn.mu[i] @ D_ao_t_plus_dt_j) - np.trace(wfn.mu[i] @ wfn.D[0])
             output[i][j] = float(mu_ij.real)
 
     return output

@@ -39,7 +39,6 @@ def interpolate(F_mo_t, F_mo_t_plus_dt):
 def euclidean_norm_difference(matrix1, matrix2):
     difference = matrix1 - matrix2
     norm_difference = np.linalg.norm(difference, 'fro')
-    
     return norm_difference
 
 
@@ -67,6 +66,8 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
 
     D_mo_t_plus_dt_guess = None
     for limit in range(0, 10000):
+        if limit == 9999:
+            raise RuntimeError(f"Predictor-corrector failed to converge in 10000 iterations for dir {dir}")
         U_t_plus_dt = construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t)
         D_mo_t_plus_dt = U_t_plus_dt @ D_mo_0 @ np.conjugate(U_t_plus_dt.T)
         D_ao_t_plus_dt = wfn.C[0] @ D_mo_t_plus_dt @ wfn.C[0].T
@@ -80,7 +81,7 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
                 mh.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt, dir)
                 mh.set_F_mo_t(F_mo_t_plus_dt, dir)
                 mh.set_U_t(U_t_plus_dt, dir)
-                return D_mo_t_plus_dt
+                return D_ao_t_plus_dt
             
         F_mo_t_plus_half_dt = interpolate(F_mo_t, F_mo_t_plus_dt)
         D_mo_t_plus_dt_guess = D_mo_t_plus_dt
