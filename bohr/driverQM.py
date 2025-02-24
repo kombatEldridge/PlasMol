@@ -122,7 +122,8 @@ if __name__ == "__main__":
     
     # Generate a new time grid with adjusted resolution (args.mult is a multiplier)
     interpolated_times = np.linspace(0, time_values[-1], int(len(time_values) * args.mult))
-    time_step = interpolated_times[1] - interpolated_times[0]
+    convertTimefs2Atomic = 1 / 0.024188843
+    time_step = (interpolated_times[1] - interpolated_times[0]) * convertTimefs2Atomic
     interpolated_fields = field_interpolator.get_field_at(interpolated_times)
     
     # Initialize the interpolated electric field CSV file using initCSV

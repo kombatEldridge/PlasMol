@@ -57,6 +57,18 @@ def set_F_mo_t(F_mo_t, dir):
     np.save(f'F_mo_t_{int_to_char[dir]}.npy', F_mo_t)
 
 
+def get_D_mo_t(dir):
+    if os.path.exists(f'D_mo_t_{int_to_char[dir]}.npy'):
+        D_mo_t = np.load(f'D_mo_t_{int_to_char[dir]}.npy')
+    else:
+        D_mo_t = get_D_mo_0()
+    return D_mo_t
+
+
+def set_D_mo_t(D_mo_t, dir):
+    np.save(f'D_mo_t_{int_to_char[dir]}.npy', D_mo_t)
+
+
 def get_F_mo_t_minus_half_dt(dir):
     if os.path.exists(f'F_mo_t_minus_half_dt_{int_to_char[dir]}.npy'):
         F_mo_t_minus_half_dt = np.load(f'F_mo_t_minus_half_dt_{int_to_char[dir]}.npy')

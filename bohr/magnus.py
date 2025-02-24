@@ -42,13 +42,12 @@ def euclidean_norm_difference(matrix1, matrix2):
     return norm_difference
 
 
-def construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t):
+def construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt):
     # Repisky2015.pdf Eq. 16
     if not np.allclose(F_mo_t_plus_half_dt, np.conjugate(F_mo_t_plus_half_dt.T), atol=1e-8):
         raise ValueError("F_mo_t_plus_half_dt is not Hermitian.")
     
-    U_new = expm(-1j * F_mo_t_plus_half_dt * dt)
-    U_t_plus_dt = U_new if U_t is None else U_new @ U_t
+    U_t_plus_dt = expm(-1j * F_mo_t_plus_half_dt * dt)
 
     # Check to see if matrix is Unitary
     unitary = np.conjugate(U_t_plus_dt.T) @ U_t_plus_dt
@@ -58,7 +57,7 @@ def construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t):
     return U_t_plus_dt
 
 
-def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
+def propagate_density_matrix(dt, wfn, exc, dir):
     F_mo_t_minus_half_dt = mh.get_F_mo_t_minus_half_dt(dir)
     F_mo_t = mh.get_F_mo_t(dir)
     F_mo_t_plus_half_dt = extrapolate(F_mo_t, F_mo_t_minus_half_dt)
@@ -68,8 +67,9 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
     for limit in range(0, 10000):
         if limit == 9999:
             raise RuntimeError(f"Predictor-corrector failed to converge in 10000 iterations for dir {dir}")
-        U_t_plus_dt = construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt, U_t)
-        D_mo_t_plus_dt = U_t_plus_dt @ D_mo_0 @ np.conjugate(U_t_plus_dt.T)
+        U_t_plus_dt = construct_U_t_plus_dt(F_mo_t_plus_half_dt, dt)
+        D_mo_t = mh.get_D_mo_t(dir)
+        D_mo_t_plus_dt = U_t_plus_dt @ D_mo_t @ np.conjugate(U_t_plus_dt.T)
         D_ao_t_plus_dt = wfn.C[0] @ D_mo_t_plus_dt @ wfn.C[0].T
         F_ao_t_plus_dt = build_fock(wfn, D_ao_t_plus_dt, exc, dir)
         F_mo_t_plus_dt = wfn.C[0].T @ F_ao_t_plus_dt @ wfn.C[0]
@@ -81,6 +81,7 @@ def propagate_density_matrix(dt, wfn, exc, D_mo_0, dir):
                 mh.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt, dir)
                 mh.set_F_mo_t(F_mo_t_plus_dt, dir)
                 mh.set_U_t(U_t_plus_dt, dir)
+                mh.set_D_mo_t(D_mo_t_plus_dt, dir)
                 return D_ao_t_plus_dt
             
         F_mo_t_plus_half_dt = interpolate(F_mo_t, F_mo_t_plus_dt)
