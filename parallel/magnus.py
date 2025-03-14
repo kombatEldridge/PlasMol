@@ -129,7 +129,7 @@ def propagate_density_matrix(dt, molecule, exc, dir):
         F_mo_t_plus_dt = molecule.wfn.C[0].T @ F_ao_t_plus_dt @ molecule.wfn.C[0]
 
         if D_mo_t_plus_dt_guess is not None:
-            if euclidean_norm_difference(D_mo_t_plus_dt, D_mo_t_plus_dt_guess) < 1e-12:
+            if euclidean_norm_difference(D_mo_t_plus_dt, D_mo_t_plus_dt_guess) < molecule.pcconv:
                 logging.debug(f"Predictor-Corrector scheme finished for the {'xyz'[dir]} direction in {limit} iterations.")
                 molecule.set_F_mo_t_minus_half_dt(F_mo_t_plus_half_dt, dir)
                 molecule.set_F_mo_t(F_mo_t_plus_dt, dir)

@@ -49,8 +49,9 @@ if __name__ == "__main__":
         sys.stdout = PrintLogger(logger, logging.INFO)
         logging.getLogger("h5py").setLevel(logging.INFO)
     
+        logger.debug(f"Arguments given and parsed correctly: {args}")
         # Initialize the molecule and extract parameters
-        molecule = MOLECULE(args.bohr)
+        molecule = MOLECULE(args.bohr, args.pcconv)
     
         # Read the original electric field CSV file
         time_values, electric_x, electric_y, electric_z = read_electric_field_csv(args.csv)

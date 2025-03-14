@@ -14,7 +14,7 @@ class MOLECULE():
         matrix_store (dict): Dictionary storing matrices for each direction (x, y, z) and initial matrices.
         wfn (wavefunction.RKS): Wavefunction object computed from the molecule.
     """
-    def __init__(self, inputfile):
+    def __init__(self, inputfile, pcconv):
         """
         Initializes the molecule from an input file.
 
@@ -25,6 +25,8 @@ class MOLECULE():
         options = options.OPTIONS()
         self.molecule, self.method, basis = input_parser.read_input(inputfile, options)
         options.molecule = self.molecule
+
+        self.pcconv = pcconv
 
         # Format molecule string as required by PySCF
         atoms = self.molecule["atoms"]
