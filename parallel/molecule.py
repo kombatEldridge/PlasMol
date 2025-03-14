@@ -1,8 +1,8 @@
 # molecule.py
 import numpy as np
-import input_parser
 from pyscf import gto
-import wavefunction
+from bohr_internals import input_parser
+from bohr_internals import wavefunction
 
 class MOLECULE():
     """
@@ -21,7 +21,7 @@ class MOLECULE():
         Parameters:
             inputfile (str): Path to the input file containing molecule data.
         """
-        import options
+        from bohr_internals import options
         options = options.OPTIONS()
         self.molecule, self.method, basis = input_parser.read_input(inputfile, options)
         options.molecule = self.molecule

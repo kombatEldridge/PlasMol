@@ -4,17 +4,17 @@ import sys
 import logging
 import numpy as np
 import meep as mp  # type: ignore
+import threading
+import queue
 
-from molecule_parallel import MOLECULE
+from molecule import MOLECULE
 from logging_utils import PrintLogger
 from interpolation import ElectricFieldInterpolator
 from volume import get_volume
-from magnus_parallel import propagate_direction_worker, combine_propagation_results
+from magnus import propagate_direction_worker, combine_propagation_results
 from csv_utils import initCSV, read_electric_field_csv
 from plotting import show_eField_pField
 from cli import parse_arguments
-import threading
-import queue
 
 if __name__ == "__main__":
     try:
@@ -56,6 +56,7 @@ if __name__ == "__main__":
         time_values, electric_x, electric_y, electric_z = read_electric_field_csv(args.csv)
     
         # Create an interpolator for the electric field components
+        logger.debug("Building an interpolation profile with ElectricFieldInterpolator")
         field_interpolator = ElectricFieldInterpolator(time_values, electric_x, electric_y, electric_z)
     
         # Generate a new time grid with adjusted resolution (args.mult is a multiplier)
