@@ -3,10 +3,8 @@ import os
 import sys
 import logging
 import numpy as np
-# import meep as mp  # type: ignore
-import threading
-import queue
 
+from field import FIELD
 from molecule import MOLECULE
 from logging_utils import PrintLogger
 from interpolation import ElectricFieldInterpolator
@@ -44,7 +42,6 @@ if __name__ == "__main__":
         # Optional: Prevent propagation to avoid duplicate logging
         logger.propagate = False
     
-        # mp.verbosity(min(3, args.verbose))
         sys.stdout = PrintLogger(logger, logging.INFO)
         logging.getLogger("h5py").setLevel(logging.INFO)
     
@@ -69,6 +66,7 @@ if __name__ == "__main__":
 
         # Convert time in fs to au
         dt = time_step_fs * 41.3413733
+        logger.info(f"The timestep for this simulation is {dt} in au or {time_step_fs} in fs.")
 
         # Initialize the interpolated electric field CSV file using initCSV
         interpolated_e_field_csv = "interpolated-E-Field.csv"
@@ -81,6 +79,9 @@ if __name__ == "__main__":
             for t, field in zip(interpolated_times, interpolated_fields):
                 writer.writerow([t, field[0], field[1], field[2]])
     
+        # Initialize Field object
+        field = FIELD()
+
         # Initialize CSV file for the polarizability field output
         polarizability_csv = "magnus-P-Field.csv"
         initCSV(polarizability_csv, "Molecule's Polarizability Field measured in au.")
@@ -93,10 +94,13 @@ if __name__ == "__main__":
                     logger.info('\t%s', line.rstrip('\n'))
         
         for index, current_time in enumerate(interpolated_times):
-            exc = interpolated_fields[index]
-            collapsed_output = run(dt, molecule, exc)
-            logging.debug(f"At {current_time} fs, combined Bohr output is {collapsed_output} in au")
-            updateCSV(polarizability_csv, current_time, *collapsed_output)
+            if index >= 2: field.set_exc_t_minus_2dt(interpolated_fields[index-2])
+            if index >= 1: field.set_exc_t_minus_dt(interpolated_fields[index-1])
+            field.set_exc_t(interpolated_fields[index])
+
+            mu_arr = run(dt, molecule, field)
+            logging.debug(f"At {current_time} fs, combined Bohr output is {mu_arr} in au")
+            updateCSV(polarizability_csv, current_time, *mu_arr)
 
         # Plot the results using the interpolated electric field data
         show_eField_pField(interpolated_e_field_csv, polarizability_csv)

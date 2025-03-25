@@ -1,4 +1,4 @@
-# propagation.py
+# magnus.py
 import numpy as np
 from scipy.linalg import expm
 import logging

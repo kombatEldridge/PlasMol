@@ -1317,7 +1317,7 @@ from molecule import MOLECULE
 from logging_utils import PrintLogger
 from interpolation import ElectricFieldInterpolator
 from volume import get_volume
-from magnus import propagate_direction_worker, combine_propagation_results
+from magnus2 import propagate_direction_worker, combine_propagation_results
 from csv_utils import initCSV, read_electric_field_csv
 from plotting import show_eField_pField
 from cli import parse_arguments
@@ -1405,7 +1405,7 @@ if __name__ == "__main__":
                                  kwargs={'propagator': None})
             # We pass the propagate_density_matrix function via kwargs; here, we override the placeholder.
             # Alternatively, you can import it from propagation and pass it directly.
-            from magnus import propagate_density_matrix
+            from magnus2 import propagate_density_matrix
             t = threading.Thread(target=propagate_direction_worker,
                                  args=(propagate_density_matrix, d, interpolated_times,
                                        interpolated_fields, time_step, molecule, result_queues[d]))

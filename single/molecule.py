@@ -52,7 +52,7 @@ class MOLECULE():
         pyscf_mol.build()
 
         # Initialize matrices and wavefunction
-        self.matrix_store = {0: {}, 1: {}, 2: {}}
+        self.matrix_store = {}
         self.wfn = wavefunction.RKS(pyscf_mol)
         rks_energy = self.wfn.compute(options)
 
@@ -60,13 +60,14 @@ class MOLECULE():
         F_mo_0 = self.wfn.S @ self.wfn.C[0] @ F_ao_0 @ self.wfn.C[0].T @ self.wfn.S
         self.matrix_store['F_mo_0'] = F_mo_0
 
-        D_ao_0 = self.wfn.D[0]
-        self.D_mo_0 = self.wfn.C[0].T @ self.wfn.S @ D_ao_0 @ self.wfn.S @ self.wfn.C[0]
+        self.D_ao_0 = self.wfn.D[0]
+        self.D_mo_0 = self.wfn.C[0].T @ self.wfn.S @ self.D_ao_0 @ self.wfn.S @ self.wfn.C[0]
         trace = np.trace(self.D_mo_0)
         n = self.wfn.nel[0]
         if not np.isclose(trace, n):
             raise ValueError(f"Trace of the matrix is not {n} (instead {trace}).")
         self.matrix_store['D_mo_0'] = self.D_mo_0
+        self.matrix_store['D_ao_0'] = self.D_ao_0
 
     def get_F_mo_t(self):
         """
@@ -75,7 +76,7 @@ class MOLECULE():
         Returns:
             np.ndarray: Fock matrix.
         """
-        key = f'F_mo_t'
+        key = 'F_mo_t'
         return self.matrix_store.get(key, self.get_F_mo_0())
 
     def set_F_mo_t(self, F_mo_t):
@@ -104,7 +105,26 @@ class MOLECULE():
         Parameters:
             F_mo_t_minus_half_dt (np.ndarray): Fock matrix.
         """
-        self.matrix_store[f'F_mo_t_minus_half_dt'] = F_mo_t_minus_half_dt
+        self.matrix_store['F_mo_t_minus_half_dt'] = F_mo_t_minus_half_dt
+
+    def get_F_mo_t_minus_dt(self):
+        """
+        Gets the Fock matrix at time t - dt.
+
+        Returns:
+            np.ndarray: Fock matrix.
+        """
+        key = 'F_mo_t_minus_dt'
+        return self.matrix_store.get(key, self.get_F_mo_0())
+
+    def set_F_mo_t_minus_dt(self, F_mo_t_minus_dt):
+        """
+        Sets the Fock matrix at time t - dt for a given direction.
+
+        Parameters:
+            F_mo_t_minus_dt (np.ndarray): Fock matrix.
+        """
+        self.matrix_store['F_mo_t_minus_dt'] = F_mo_t_minus_dt
 
     def get_F_mo_0(self):
         """
@@ -114,6 +134,25 @@ class MOLECULE():
             np.ndarray: Initial Fock matrix.
         """
         return self.matrix_store['F_mo_0']
+    
+    def get_D_mo_t_minus_dt(self):
+        """
+        Gets the Density matrix at time t - dt.
+
+        Returns:
+            np.ndarray: Density matrix.
+        """
+        key = 'D_mo_t_minus_dt'
+        return self.matrix_store.get(key, self.get_D_mo_0())
+
+    def set_D_mo_t_minus_dt(self, D_mo_t_minus_dt):
+        """
+        Sets the Density matrix at time t - dt for a given direction.
+
+        Parameters:
+            F_mo_t_minus_dt (np.ndarray): Density matrix.
+        """
+        self.matrix_store['D_mo_t_minus_dt'] = D_mo_t_minus_dt
 
     def get_D_mo_t(self):
         """
@@ -142,3 +181,50 @@ class MOLECULE():
             np.ndarray: Initial density matrix.
         """
         return self.matrix_store['D_mo_0']
+    
+    def get_D_ao_t_minus_dt(self):
+        """
+        Gets the Density matrix at time t - dt.
+
+        Returns:
+            np.ndarray: Density matrix.
+        """
+        key = 'D_ao_t_minus_dt'
+        return self.matrix_store.get(key, self.get_D_ao_0())
+
+    def set_D_ao_t_minus_dt(self, D_ao_t_minus_dt):
+        """
+        Sets the Density matrix at time t - dt for a given direction.
+
+        Parameters:
+            F_ao_t_minus_dt (np.ndarray): Density matrix.
+        """
+        self.matrix_store['D_ao_t_minus_dt'] = D_ao_t_minus_dt
+
+    def get_D_ao_t(self):
+        """
+        Gets the density matrix at time t.
+
+        Returns:
+            np.ndarray: Density matrix.
+        """
+        key = 'D_ao_t'
+        return self.matrix_store.get(key, self.get_D_ao_0())
+
+    def set_D_ao_t(self, D_ao_t):
+        """
+        Sets the density matrix at time t.
+
+        Parameters:
+            D_ao_t (np.ndarray): Density matrix.
+        """
+        self.matrix_store['D_ao_t'] = D_ao_t
+
+    def get_D_ao_0(self):
+        """
+        Returns the initial density matrix.
+
+        Returns:
+            np.ndarray: Initial density matrix.
+        """
+        return self.matrix_store['D_ao_0']

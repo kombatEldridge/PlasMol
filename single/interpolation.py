@@ -33,4 +33,10 @@ class ElectricFieldInterpolator:
         x_interp = self.interp_x(query_times)
         y_interp = self.interp_y(query_times)
         z_interp = self.interp_z(query_times)
+
+        # Set values below 1e-20 to 0
+        x_interp[abs(x_interp) < 1e-20] = 0
+        y_interp[abs(y_interp) < 1e-20] = 0
+        z_interp[abs(z_interp) < 1e-20] = 0
+
         return np.column_stack((x_interp, y_interp, z_interp))
