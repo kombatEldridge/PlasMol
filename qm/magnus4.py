@@ -1,3 +1,4 @@
+# magnus4.py
 from scipy.linalg import expm
 import numpy as np
 import logging

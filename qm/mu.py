@@ -16,7 +16,6 @@ def calculate_ind_dipole(propagate_density_matrix, dt, molecule, field):
 
 
 def run(dt, molecule, field):
-    # from magnus import propagate_density_matrix
     from magnus4 import propagate_density_matrix
 
     volume = get_volume(molecule.molecule["coords"])

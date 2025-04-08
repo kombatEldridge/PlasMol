@@ -44,6 +44,16 @@ class ElectricFieldGenerator:
         active_component = np.real(complex_field)
         active_component[abs(active_component) < 1e-20] = 0
         
+        # Define a smoothing window at the start
+        ramp_duration = 10  # Adjust this (in fs) to control the smoothing length
+        t_start = t[0]  # Assume t is sorted and starts at the beginning
+        window = np.ones_like(t)
+        mask = t < (t_start + ramp_duration)
+        window[mask] = 0.5 * (1 - np.cos(np.pi * (t[mask] - t_start) / ramp_duration))
+        
+        # Apply the window to the active component
+        active_component *= window
+
         # Initialize a 2D array for the field components (all zeros initially)
         field = np.zeros((len(t), 3))
         
