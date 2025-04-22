@@ -17,7 +17,8 @@ def parse_arguments():
     parser.add_argument('-l', '--log', help="(Optional) Log file name")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="(Optional) Increase verbosity.")
     parser.add_argument('-i', '--pcconv', type=float, default=1e-12, help="(Optional) Iteration convergence for Predictor-Corrector scheme in Magnus propagator.")
-    parser.add_argument('-dt', type=float, default=1e-12, help="(Optional) The time step used in the simulation in fs.")
+    parser.add_argument('-dt_fs', type=float, help="(Optional) The time step used in the simulation in fs.")
+    parser.add_argument('-dt_au', type=float, help="(Optional) The time step used in the simulation in au.")
     parser.add_argument('-d', '--dir', type=str, default='z', help="(Optional) Direction string (x, y, or z) for the excited electric field.")
 
     args = parser.parse_args()
