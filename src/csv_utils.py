@@ -3,7 +3,7 @@ import os
 import csv
 import pandas as pd
 
-def initCSV(filename, comment):
+def initCSV(filename, comment, unit):
     """
     Initializes a CSV file with a header and comment lines.
 
@@ -16,7 +16,7 @@ def initCSV(filename, comment):
             file.write(f"# {line}\n")
         file.write("\n")
         writer = csv.writer(file)
-        header = ['Timestamps (fs)', 'X Values', 'Y Values', 'Z Values']
+        header = [f'Timestamps ({unit})', 'X Values', 'Y Values', 'Z Values']
         writer.writerow(header)
 
 def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):

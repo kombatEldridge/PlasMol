@@ -60,10 +60,20 @@ class MOLECULE():
         self.propagator = self.method["propagator"]
 
         self.F_ao_0 = self.wfn.F[0]
+        if not self.is_hermitian(self.F_ao_0, tol=1e-12):
+            raise ValueError("Initial fock matrix in AO is not Hermitian")
+
         self.F_mo_0 = self.transform_F_ao_to_F_mo(self.F_ao_0)
+        if not self.is_hermitian(self.F_mo_0, tol=1e-12):
+            raise ValueError("Initial fock matrix in MO is not Hermitian")
 
         self.D_ao_0 = self.wfn.D[0]
+        if not self.is_hermitian(self.D_ao_0, tol=1e-12):
+            raise ValueError("Initial density matrix in AO is not Hermitian")
+
         self.D_mo_0 = self.wfn.C[0].T @ self.wfn.S @ self.D_ao_0 @ self.wfn.S @ self.wfn.C[0]
+        if not self.is_hermitian(self.D_mo_0, tol=1e-12):
+            raise ValueError("Initial density matrix in MO is not Hermitian")
 
         trace = np.trace(self.D_mo_0)
         n = self.wfn.nel[0]
@@ -106,10 +116,10 @@ class MOLECULE():
         logging.debug(f"Electric field at t + dt: {exc}")
         ext = sum(wfn.mu[dir] * exc[dir] for dir in range(3))
         logging.debug(f"Dipole interaction term: {np.linalg.norm(ext)}")
-        F_ao = self.JK(wfn, D_ao) - ext
+        F_ao = self.JK(D_ao) - ext
         return F_ao
 
-    def transform_D_mo_to_D_ao(D_mo):
+    def transform_D_mo_to_D_ao(self, D_mo):
         """
         Transform density matrix from MO basis to AO basis.
         Placeholder - assumes params contains molecule object with wfn attributes.
@@ -131,7 +141,7 @@ class MOLECULE():
         D_ao = C @ D_mo @ C.T
         return D_ao
 
-    def transform_F_ao_to_F_mo(F_ao):
+    def transform_F_ao_to_F_mo(self, F_ao):
         """
         Transform Fock matrix from AO basis to MO basis.
         Placeholder - assumes params contains molecule object with wfn attributes.
@@ -150,5 +160,43 @@ class MOLECULE():
         """
         C = self.wfn.C[0]  # MO coefficients
 
-        F_mo = C.T @ F_ao @ C.T 
+        F_mo = C.T @ F_ao @ C
         return F_mo
+
+    def is_hermitian(self, A, tol):
+        """
+        Check if matrix A is Hermitian within tolerance.
+
+        Parameters:
+        -----------
+        A : ndarray
+            Matrix to check.
+        tol : float
+            Numerical tolerance.
+
+        Returns:
+        --------
+        bool
+            True if A is Hermitian within tolerance.
+        """
+        return np.allclose(A, A.conj().T, rtol=0, atol=tol)
+
+    def is_unitary(self, U, tol):
+        """
+        Check if matrix U is unitary within tolerance (U U^+ = I).
+
+        Parameters:
+        -----------
+        U : ndarray
+            Matrix to check.
+        tol : float
+            Numerical tolerance.
+
+        Returns:
+        --------
+        bool
+            True if U is unitary within tolerance.
+        """
+        ns_mo = U.shape[0]
+        identity = np.eye(ns_mo, dtype=complex)
+        return np.allclose(U @ U.conj().T, identity, rtol=0, atol=tol)

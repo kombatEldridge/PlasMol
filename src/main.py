@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
         # Initialize the interpolated electric field CSV file using initCSV
         interpolated_e_field_csv = "interpolated-E-Field.csv"
-        initCSV(interpolated_e_field_csv, "Interpolated Electric Field measured in au.")
+        initCSV(interpolated_e_field_csv, "Interpolated Electric Field in au.", args.time_units)
 
         # Append the interpolated data rows to the CSV file
         with open(interpolated_e_field_csv, 'a', newline='') as csvfile:
@@ -93,8 +93,7 @@ if __name__ == "__main__":
 
         # Initialize CSV file for the polarizability field output
         polarizability_csv = "magnus-P-Field.csv"
-
-        initCSV(polarizability_csv, "Molecule's Polarizability Field measured in au.")
+        initCSV(polarizability_csv, "Molecule's Polarizability Field in au.", args.time_units)
 
         # Log non-comment lines from the Bohr input file
         bohr_input_path = os.path.abspath(args.bohr)

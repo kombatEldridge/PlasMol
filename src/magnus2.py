@@ -39,15 +39,12 @@ def propagate_density(params, molecule, exc):
     F_mo_t = molecule.F_mo_t
     D_mo_t = molecule.D_mo_t
 
-    # Time step and target time
-    dt = params.dt
-
     # Step 1: Extrapolate F'(t + dt/2) = 2 * F'(t) - F'(t - dt/2)
     F_mo_tp12dt = 2 * F_mo_t - F_mo_tm12dt
 
     # Step 2: Initial propagation of P'(t) to P'(t + dt)
     D_mo_tpdt = D_mo_t.copy()
-    D_mo_tpdt = unitary_propagation(params, dt, F_mo_tp12dt, D_mo_tpdt)
+    D_mo_tpdt = unitary_propagation(params, molecule, F_mo_tp12dt, D_mo_tpdt)
 
     # Interpolation loop for self-consistency
     converged = False
@@ -72,7 +69,7 @@ def propagate_density(params, molecule, exc):
 
         # Step 5: Propagate P'(t) to P'(t + dt) with new F'(t + dt/2)
         D_mo_tpdt = D_mo_t.copy()
-        D_mo_tpdt = unitary_propagation(params, dt, F_mo_tp12dt, D_mo_tpdt)
+        D_mo_tpdt = unitary_propagation(params, molecule, F_mo_tp12dt, D_mo_tpdt)
 
         # Step 6: Check convergence
         if iinter > 1:
@@ -92,7 +89,7 @@ def propagate_density(params, molecule, exc):
 
     return D_mo_tpdt
 
-def unitary_propagation(params, dt, F_mo_tp12dt, D_mo_t):
+def unitary_propagation(params, molecule, F_mo_tp12dt, D_mo_t):
     """
     Propagate density matrix forward by dt using second-order Magnus expansion in MO basis.
     Computes P'(t+dt) = e^W P'(t) (e^W)^+, where W = -i dt F'(t+dt/2).
@@ -105,8 +102,6 @@ def unitary_propagation(params, dt, F_mo_tp12dt, D_mo_t):
         - tol_zero: Tolerance for numerical checks (e.g., Hermitian, unitary).
         - checklvl: Level of matrix property checks (0, 1, 2+).
         - exp_method: Method for matrix exponentiation (1 for series, 2 for diagonalization).
-    dt : float
-        Time step.
     F_mo_mid : ndarray
         Complex Fock matrix in MO basis at t + dt/2, shape (ns_mo, ns_mo).
     D_mo : ndarray
@@ -119,7 +114,7 @@ def unitary_propagation(params, dt, F_mo_tp12dt, D_mo_t):
         If F_mo_mid is not Hermitian or e^W is not unitary when checks are enabled.
     """
     # Compute W = -i dt F'(t+dt/2)
-    zdt = complex(dt, 0.0)
+    zdt = complex(params.dt, 0.0)
     W = -1.0j * zdt * F_mo_tp12dt
 
     # Choose exponentiation method
@@ -135,10 +130,10 @@ def unitary_propagation(params, dt, F_mo_tp12dt, D_mo_t):
     tol_zero = params.tol_zero
     doublecheck = params.doublecheck
     if doublecheck:
-        if not is_hermitian(F_mo_tp12dt, tol_zero):
-            raise RuntimeError("Fock matrix at t + dt/2 is not Hermitian")
-        if not is_unitary(expW, tol_zero):
-            raise RuntimeError("e^W is not unitary")
+        if not molecule.is_hermitian(F_mo_tp12dt, tol_zero):
+            raise ValueError("Fock matrix at t + dt/2 is not Hermitian")
+        if not molecule.is_unitary(expW, tol_zero):
+            raise ValueError("e^W is not unitary")
     
     # Ensure D_mo_t is complex
     if not np.iscomplexobj(D_mo_t):
@@ -185,41 +180,3 @@ def exp_diag(W):
     # Compute e^W = V @ diag(exp(evals)) @ V^(-1)
     expW = V @ np.diag(np.exp(evals)) @ np.linalg.inv(V)
     return expW
-
-def is_hermitian(A, tol):
-    """
-    Check if matrix A is Hermitian within tolerance.
-
-    Parameters:
-    -----------
-    A : ndarray
-        Matrix to check.
-    tol : float
-        Numerical tolerance.
-
-    Returns:
-    --------
-    bool
-        True if A is Hermitian within tolerance.
-    """
-    return np.allclose(A, A.conj().T, rtol=0, atol=tol)
-
-def is_unitary(U, tol):
-    """
-    Check if matrix U is unitary within tolerance (U U^+ = I).
-
-    Parameters:
-    -----------
-    U : ndarray
-        Matrix to check.
-    tol : float
-        Numerical tolerance.
-
-    Returns:
-    --------
-    bool
-        True if U is unitary within tolerance.
-    """
-    ns_mo = U.shape[0]
-    identity = np.eye(ns_mo, dtype=complex)
-    return np.allclose(U @ U.conj().T, identity, rtol=0, atol=tol)

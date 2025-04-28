@@ -28,10 +28,10 @@ def propagation(params, molecule, field, polarizability_csv):
         "\nexponential, midpoint, tr-midpoint, magnus2, or magnus4.")
 
     # Main loop
-    for index, current_time in enumerate(field.times):
+    for current_time in np.arange(len(field.times)):
         mu_arr = np.zeros(3)
         D_mo_t_plus_dt = propagate_density(params, molecule, field.field[current_time + 1])
-        D_ao_t_plus_dt = molecule.transform_D_mo_to_D_ao(D_mo_t_plus_dt, params)
+        D_ao_t_plus_dt = molecule.transform_D_mo_to_D_ao(D_mo_t_plus_dt)
 
         for i in [0, 1, 2]:
             mu_arr[i] = 2 * float((np.trace(molecule.wfn.mu[i] @ D_ao_t_plus_dt) - np.trace(molecule.wfn.mu[i] @ molecule.wfn.D[0])).real)
