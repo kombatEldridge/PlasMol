@@ -23,7 +23,7 @@ def testParams(t=np.linspace(0, 20, 1000),
     plt.title("Pulse")
     plt.show()
 
-def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
+def plotWave(peakTimes, widths, wavelengths=None):
     """
     Plot the pulse wave for multiple combinations of peakTime, width, and wavelength/frequency.
 
@@ -36,18 +36,17 @@ def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
     import numpy as np
     import matplotlib.pyplot as plt
 
+    C_NM_FS = 299.792458  # speed of light in nm/fs
+
     # Define the pulse wave function
     def pulse_wave(t, frequency, peakTime, width):
         return np.exp(1j * 2 * np.pi * frequency * (t - peakTime)) * np.exp(-width * (t - peakTime) ** 2)
-
-    if wavelengths is None and frequencies is None:
-        raise ValueError("Either wavelengths or frequencies must be provided.")
     
     # Conversion factor
-    conversionFactor = 3.378555833184493
+    conversionFactor = 1
 
     # Time range for visualization
-    t = np.linspace(0, 1, 1000)  # Time array
+    t = np.linspace(0, 60, 10000)  # Time array
 
     # Initialize the plot
     plt.figure(figsize=(12, 8))
@@ -55,24 +54,19 @@ def plotWave(peakTimes, widths, wavelengths=None, frequencies=None):
     # Generate all combinations of parameters
     for peakTime in peakTimes:
         for width in widths:
-            if wavelengths:
-                for wavelength in wavelengths:
-                    frequency = 1 / wavelength
-                    scaled_width = width * (conversionFactor**2)
-                    scaled_peakTime = peakTime 
-                    pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
-                    real_part = np.real(pulse)
-                    plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {scaled_peakTime}")
-            if frequencies:
-                for frequency in frequencies:
-                    scaled_width = width * (conversionFactor**2)
-                    scaled_peakTime = peakTime 
-                    pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
-                    real_part = np.real(pulse)
-                    plt.plot(t, real_part, label=f"Frequency: {frequency}, Width: {width}, PeakTime: {scaled_peakTime}")
+            for wavelength in wavelengths:
+                frequency = C_NM_FS / wavelength
+                scaled_width = width * (conversionFactor**2)
+                scaled_peakTime = peakTime 
+                pulse = pulse_wave(t, frequency, scaled_peakTime, scaled_width)
+                real_part = np.real(pulse)
+                imag_part = np.imag(pulse)
+                plt.plot(t, real_part, label=f"Wavelength: {wavelength}, Width: {width}, PeakTime: {scaled_peakTime}")
+                plt.plot(t, imag_part, label=f"Imaginary Part")
+
 
     # Add labels, legend, and title
-    plt.xlabel("Time (t)")
+    plt.xlabel("Time (fs)")
     plt.ylabel("Amplitude")
     plt.title("Pulse Wave Function for Multiple Parameter Sets")
     plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
@@ -123,13 +117,13 @@ def getWavelength(filePath):
     param, covariance = curve_fit(final, time, intensity, p0=initial_guess, maxfev = 1000)
     conv_fac = param[0]
 
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(time, intensity, label="Data", color='black')
-    # plt.plot(time, final(time, conv_fac), label="Fitted Wave", color='red', linestyle='--')
-    # plt.xlabel("Time (fs)")
-    # plt.ylabel("Intensity")
-    # plt.legend()
-    # plt.show()
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, intensity, label="Data", color='black')
+    plt.plot(time, final(time, conv_fac), label="Fitted Wave", color='red', linestyle='--')
+    plt.xlabel("Time (fs)")
+    plt.ylabel("Intensity")
+    plt.legend()
+    plt.show()
 
     print(f"Filename: {filePath}")
     print(f"Fitted Conversion Factor: {conv_fac}\n")
@@ -138,9 +132,9 @@ if __name__ == '__main__':
     # getWavelength('pulse_f0.5_w0.2_pT10_r1000_tT50-E-Field.csv')
     
     # Example parameters
-    peakTimes = [20]
-    widths = [0.02, 0.05]
-    wavelengths = [0.25]  # In micrometers (or equivalent)
+    peakTimes = [25]
+    widths = [0.05]
+    wavelengths = [250]  # In nanometers
 
     # Call the function
     plotWave(peakTimes, widths, wavelengths=wavelengths)

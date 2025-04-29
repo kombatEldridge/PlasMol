@@ -1,13 +1,13 @@
-import input_parser
+import bohr_internals.input_parser as input_parser
 from pyscf import gto
-import wavefunction
+import bohr_internals.wavefunction as wavefunction
 import numpy as np
 import logging
 import matrix_handler as mh
 
 class MOLECULE():
     def __init__(self, inputfile):
-        import options
+        import bohr_internals.options as options
         options = options.OPTIONS()
 
         self.molecule, self.method, basis = input_parser.read_input(inputfile, options)
