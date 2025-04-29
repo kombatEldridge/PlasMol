@@ -38,7 +38,7 @@ def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
     with open(filename, 'a', newline='') as file:
         writer = csv.writer(file)
         if not file_exists:
-            writer.writerow(["Timestamp", "X", "Y", "Z"])
+            raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'initCSV' before calling 'updateCSV'.")
         writer.writerow(row)
 
 def read_electric_field_csv(file_path):

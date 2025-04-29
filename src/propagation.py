@@ -6,7 +6,7 @@ from csv_utils import updateCSV
 
 logger = logging.getLogger("main")
 
-def propagation(params, molecule, field, polarizability_csv):
+def propagation(params, molecule, field, polarizability_csv, unit):
     """
     Note here that for Magnus2, E(t+dt) will be the most recent e field from MEEP and 
     E(t) will be the previous electric field
@@ -28,14 +28,16 @@ def propagation(params, molecule, field, polarizability_csv):
         "\nexponential, midpoint, tr-midpoint, magnus2, or magnus4.")
 
     # Main loop
-    for current_time in np.arange(len(field.times)):
+    # current time will be t+dt and be the most recent e field measured by meep
+    for index, current_time in enumerate(field.times):
         mu_arr = np.zeros(3)
-        D_mo_t_plus_dt = propagate_density(params, molecule, field.field[current_time + 1])
+        logging.info(f"Propagating the Density matrix to {current_time} {unit}.")
+        D_mo_t_plus_dt = propagate_density(params, molecule, field.field[index])
         D_ao_t_plus_dt = molecule.transform_D_mo_to_D_ao(D_mo_t_plus_dt)
 
         for i in [0, 1, 2]:
             mu_arr[i] = 2 * float((np.trace(molecule.wfn.mu[i] @ D_ao_t_plus_dt) - np.trace(molecule.wfn.mu[i] @ molecule.wfn.D[0])).real)
 
-        logging.debug(f"At {current_time} fs, combined Bohr output is {mu_arr} in au")
+        logging.debug(f"At {current_time} {unit}, combined Bohr output is {mu_arr} in au")
         updateCSV(polarizability_csv, current_time, *mu_arr)
 

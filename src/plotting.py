@@ -34,7 +34,8 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
         data_lines = [line for line in lines if not line.startswith('#') and line != header]
         from io import StringIO
         data = pd.read_csv(StringIO(''.join(data_lines)))
-        data_sorted = data.sort_values(by='Timestamps (fs)')
+        timestamp_cols = [col for col in data.columns if col.startswith("Timestamps")]
+        data_sorted = data.sort_values(by=timestamp_cols[0])
         with open(filename, 'w') as file:
             file.writelines(comments)
             file.write(header)
@@ -42,8 +43,9 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 
     sort_csv_by_first_column(eFieldFileName)
     data1 = pd.read_csv(eFieldFileName, comment='#')
-    data1 = data1.sort_values(by='Timestamps (fs)', ascending=True)
-    timestamps1 = data1['Timestamps (fs)']
+    timestamp_cols = [col for col in data1.columns if col.startswith("Timestamps")]
+    data1 = data1.sort_values(by=timestamp_cols[0], ascending=True)
+    timestamps1 = data1[timestamp_cols[0]]
     x_values1 = data1['X Values']
     y_values1 = data1['Y Values']
     z_values1 = data1['Z Values']
@@ -51,8 +53,8 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
     if pFieldFileName is not None:
         sort_csv_by_first_column(pFieldFileName)
         data2 = pd.read_csv(pFieldFileName, comment='#')
-        data2 = data2.sort_values(by='Timestamps (fs)', ascending=True)
-        timestamps2 = data2['Timestamps (fs)']
+        data2 = data2.sort_values(by=timestamp_cols[0], ascending=True)
+        timestamps2 = data2[timestamp_cols[0]]
         x_values2 = data2['X Values']
         y_values2 = data2['Y Values']
         z_values2 = data2['Z Values']
@@ -62,7 +64,7 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
         ax1.plot(timestamps1, y_values1, label='y', marker='o')
         ax1.plot(timestamps1, z_values1, label='z', marker='o')
         ax1.set_title('Incident Electric Field')
-        ax1.set_xlabel('Timestamps (fs)')
+        ax1.set_xlabel(timestamp_cols[0])
         ax1.set_ylabel('Electric Field Magnitude')
         ax1.legend()
 
@@ -70,7 +72,7 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
         ax2.plot(timestamps2, y_values2, label='y', marker='o')
         ax2.plot(timestamps2, z_values2, label='z', marker='o')
         ax2.set_title("Molecule's Response")
-        ax2.set_xlabel('Timestamps (fs)')
+        ax2.set_xlabel(timestamp_cols[0])
         ax2.set_ylabel('Polarization Field Magnitude')
         ax2.legend()
     else:
@@ -79,7 +81,7 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
         ax1.plot(timestamps1, y_values1, label='y', marker='o')
         ax1.plot(timestamps1, z_values1, label='z', marker='o')
         ax1.set_title('Incident Electric Field')
-        ax1.set_xlabel('Timestamps (fs)')
+        ax1.set_xlabel(timestamp_cols[0])
         ax1.set_ylabel('Electric Field Magnitude')
         ax1.legend()
 
@@ -87,13 +89,13 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
     if matplotlibLocationIMG is None:
         if matplotlibOutput is None:
             plt.savefig('output.png', dpi=1000)
-            logging.debug("Matplotlib image written: output.png")
+            logging.info("Matplotlib image written: output.png")
         else:
             plt.savefig(f'{matplotlibOutput}.png', dpi=1000)
-            logging.debug(f"Matplotlib image written: {matplotlibOutput}.png")
+            logging.info(f"Matplotlib image written: {matplotlibOutput}.png")
     elif matplotlibOutput is None:
         plt.savefig(f'{matplotlibLocationIMG}.png', dpi=1000)
-        logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}.png")
+        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}.png")
     else:
         plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
-        logging.debug(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
+        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")

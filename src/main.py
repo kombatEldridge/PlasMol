@@ -76,7 +76,7 @@ if __name__ == "__main__":
         logger.debug(f"Arguments given and parsed successfully: {args}")
 
         logger.debug("Building an interpolation profile with ElectricFieldInterpolator")
-        field = ELECTRICFIELD(interpolated_times, args.dir, peak_time_au=5.0, 
+        field = ELECTRICFIELD(interpolated_times, args.dir, peak_time_au=1.0, 
                               width_steps=5, dt=dt_au, shape='kick', 
                               smoothing=False, intensity_au=5e-5)
 
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
         molecule = MOLECULE(args.bohr)
 
-        propagation(params, molecule, field, polarizability_csv)
+        propagation(params, molecule, field, polarizability_csv, args.time_units)
 
         # Plot the results using the interpolated electric field data
         show_eField_pField(interpolated_e_field_csv, polarizability_csv)
