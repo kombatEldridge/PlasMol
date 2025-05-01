@@ -96,15 +96,41 @@ def fourier(filename, sigma=10, npoints=2000, output_image='spectrum.png'):
     for axis, (wl_vals, I_vals) in spectra.items():
         broads[axis] = gaussian_broaden(wl_vals, I_vals, wl_grid, sigma)
 
+    for axis in broads:
+            max_I = np.max(broads[axis])
+            if max_I > 0:
+                broads[axis] = broads[axis] / max_I
+            else:
+                print(f"Warning: {axis}-dipole spectrum has zero intensity everywhere.")
+                
     # Plot
     plt.figure(figsize=(8, 5))
     for axis, I_b in broads.items():
         plt.plot(wl_grid, I_b, label=f"{axis}-dipole")
+    ax = plt.gca()
     plt.xlabel("Wavelength (nm)")
-    plt.ylabel("Intensity (arb. units)")
+    plt.ylabel("Normalized Intensity") 
     plt.title("Absorption Spectrum with Gaussian Broadening")
-    plt.xlim(0, 2000)
+    plt.xlim(wl_min, 2000)
+    wl_left, wl_right = ax.get_xlim()
     plt.legend()
+
+    # === Add top axis in eV ===
+    HC_eVnm = 1239.841984
+    def nm_to_eV(wl_nm):   return HC_eVnm / np.maximum(wl_nm, 1e-10) 
+    def eV_to_nm(E_eV):    return HC_eVnm / np.maximum(E_eV, 1e-10)
+
+    eV_left, eV_right = nm_to_eV(wl_left), nm_to_eV(wl_right)
+
+    secax = ax.secondary_xaxis('top', functions=(nm_to_eV, eV_to_nm))
+    secax.set_xlabel('Energy (eV)')
+
+    ticks = [0.5, 1, 2, 3, 4, 5, 10]
+    labels = [str(int(tick)) if tick == int(tick) else str(tick) for tick in ticks]
+    secax.set_xticks(ticks)
+    secax.set_xticklabels(labels)
+    secax.set_xlim(eV_left, eV_right)
+
     plt.tight_layout()
     plt.savefig(output_image, dpi=300)
     plt.close()
