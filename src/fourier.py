@@ -95,18 +95,14 @@ def fourier(filename, sigma=10, npoints=2000, output_image='spectrum.png'):
     broads = {}
     for axis, (wl_vals, I_vals) in spectra.items():
         broads[axis] = gaussian_broaden(wl_vals, I_vals, wl_grid, sigma)
-
-    for axis in broads:
-            max_I = np.max(broads[axis])
-            if max_I > 0:
-                broads[axis] = broads[axis] / max_I
-            else:
-                print(f"Warning: {axis}-dipole spectrum has zero intensity everywhere.")
+    
+    # Find the global maximum across all broadened spectra
+    max_I = max(np.max(broads['X']), np.max(broads['Y']), np.max(broads['Z']))
                 
     # Plot
     plt.figure(figsize=(8, 5))
     for axis, I_b in broads.items():
-        plt.plot(wl_grid, I_b, label=f"{axis}-dipole")
+        plt.plot(wl_grid, I_b / max_I, label=f"{axis}-dipole")
     ax = plt.gca()
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Normalized Intensity") 
@@ -135,6 +131,17 @@ def fourier(filename, sigma=10, npoints=2000, output_image='spectrum.png'):
     plt.savefig(output_image, dpi=300)
     plt.close()
     print(f"Saved spectrum to {output_image}")
+    
+    # Export spectrum data to CSV
+    output_csv = filename.replace('.csv', '_spectrum.csv')
+    df = pd.DataFrame({
+        'Wavelength (nm)': wl_grid,
+        'Intensity_X': broads['X'] / max_I,
+        'Intensity_Y': broads['Y'] / max_I,
+        'Intensity_Z': broads['Z'] / max_I
+    })
+    df.to_csv(output_csv, index=False)
+    print(f"Exported spectrum data to {output_csv}")
 
 
 if __name__ == "__main__":
