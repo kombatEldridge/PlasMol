@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import bohr_internals.constants as constants
+import constants
 
 # I replaced all prints with blanks to not clog up runtime messages.
 

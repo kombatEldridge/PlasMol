@@ -28,17 +28,17 @@ def propagation(params, molecule, field, polarizability_csv):
     #     "\nexponential, midpoint, tr-midpoint, or magnus2.")
 
     for index, current_time in enumerate(field.times):
+        if current_time < molecule.current_time:
+            continue
+
         mu_arr = np.zeros(3)
-        logging.info(f"Propagating to {current_time} au.")
-
         propagate(params, molecule, field.field[index])
-
         mu = molecule.calculate_mu()
         for i in [0, 1, 2]:
-            mu_arr[i] = 2 * float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.wfn.D_ao_0)).real)
+            mu_arr[i] = 2 * float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
 
         logging.debug(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
         updateCSV(polarizability_csv, current_time, *mu_arr)
         
-        # if params.chkfile and np.mod(current_time, params.chkfile_freq) == 0:
-        #     update_chkfile(molecule.wfn, current_time)
+        if params.chkfile and np.mod(index, params.chkfile_freq) == 0:
+            update_chkfile(molecule, current_time)

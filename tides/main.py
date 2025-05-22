@@ -74,32 +74,6 @@ if __name__ == "__main__":
         logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
         logger.debug(f"Arguments given and parsed successfully: {args}")
 
-        logger.debug("Building an interpolation profile with ElectricFieldInterpolator")
-        field = ELECTRICFIELD(interpolated_times, args.dir, peak_time_au=1.0, 
-                              width_steps=5, dt=dt_au, shape='kick', 
-                              smoothing=False, intensity_au=5e-5 )# TODO: add parts of this to input file
-        interpolated_e_field_csv = "eField.csv" # TODO: add to input file
-        initCSV(interpolated_e_field_csv, "Electric Field intenstiy in atomic units")
-        # Append the interpolated data rows to the CSV file
-        with open(interpolated_e_field_csv, 'a', newline='') as csvfile:
-            import csv
-            writer = csv.writer(csvfile)
-            for t, intensity in zip(interpolated_times, field.field):
-                writer.writerow([t, intensity[0], intensity[1], intensity[2]])
-        logger.debug(f"Electric field successfully built and saved to {interpolated_e_field_csv}")
-
-        # Initialize CSV file for the polarizability field output
-        polarizability_csv = "pField.csv" # TODO: add to input file
-        initCSV(polarizability_csv, "Molecule's Polarizability Field intensity in atomic units")
-        # Log non-comment lines from the Bohr input file
-        bohr_input_path = os.path.abspath(args.bohr)
-        with open(bohr_input_path, 'r') as bohr_file:
-            for line in bohr_file:
-                if not line.strip().startswith(('#', '--', '%')):
-                    logger.info('\t%s', line.rstrip('\n'))
-
-        logger.debug(f"Moleucle's response will be saved to {polarizability_csv}")
-    
         params = PARAMS(
             pcconv=args.pcconv, 
             tol_zero=args.tol_zero, 
@@ -108,12 +82,64 @@ if __name__ == "__main__":
             dt=dt_au, 
             terms_interpol=args.terms_interpol,
             max_iter=args.max_iter, 
-            chkfile = args.chkfile,
-            chkfile_path = args.chkfile_path,
-            chkfile_freq = args.chkfile_freq,)
+            chkfile=args.chkfile,
+            chkfile_path=args.chkfile_path,
+            chkfile_freq=args.chkfile_freq,
+            peak_time_au=args.peak_time_au,
+            width_steps=args.width_steps,
+            shape=args.shape,
+            smoothing=args.smoothing,
+            intensity_au=args.intensity_au,
+            eFieldFile=args.eFieldFile,
+            pFieldFile=args.pFieldFile,
+            )
         
         molecule = MOLECULE(args.bohr, params)
 
+        logger.debug("Building an interpolation profile with ElectricFieldInterpolator")
+        field = ELECTRICFIELD(
+            interpolated_times, 
+            args.dir,
+            peak_time_au=params.peak_time_au,
+            width_steps=params.width_steps,
+            dt=dt_au,
+            shape=params.shape,
+            smoothing=params.smoothing,
+            intensity_au=params.intensity_au,
+        )
+
+        if params.chkfile is not None and os.path.exists(params.chkfile):
+            # assume the eField and pField files have already been built 
+            # and you do not need to re-initialize them
+            logger.debug(f"Checkpoint file {params.chkfile} found. Skipping electric/polarizability field generation.")
+            interpolated_e_field_csv = params.eFieldFile
+            polarizability_csv = params.pFieldFile
+        else:            
+            interpolated_e_field_csv = "eField.csv"  # TODO: add to input file
+            initCSV(interpolated_e_field_csv, "Electric Field intensity in atomic units")
+            
+            # Append the interpolated data rows to the CSV file
+            with open(interpolated_e_field_csv, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                for t, intensity in zip(interpolated_times, field.field):
+                    writer.writerow([t, intensity[0], intensity[1], intensity[2]])
+            
+            logger.debug(f"Electric field successfully built and saved to {interpolated_e_field_csv}")
+
+            # Initialize CSV file for the polarizability field output
+            polarizability_csv = "pField.csv"  # TODO: add to input file
+            initCSV(polarizability_csv, "Molecule's Polarizability Field intensity in atomic units")
+
+        # Log non-comment lines from the Bohr input file
+        logger.info("Bohr input file processed:")
+        bohr_input_path = os.path.abspath(args.bohr)
+        with open(bohr_input_path, 'r') as bohr_file:
+            for line in bohr_file:
+                if not line.strip().startswith(('#', '--', '%')):
+                    logger.info('\t%s', line.rstrip('\n'))
+
+        logger.debug(f"Moleucle's response will be saved to {polarizability_csv}")
+    
         # Main code call
         propagation(params, molecule, field, polarizability_csv)
 

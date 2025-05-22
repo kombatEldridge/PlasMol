@@ -28,8 +28,16 @@ def parse_arguments():
     parser.add_argument('-d', '--dir', type=str, default='z', help="(Optional) Direction string (x, y, or z) for the excited electric field.")
     parser.add_argument('-u', '--time_units', type=str, default="au", help="(Optional) The unit of time. Currently only support 'fs' or 'au'")
     parser.add_argument('-chk', '--chkfile', type=bool, default=True, help="(Optional) Save a checkpoint file incase job quits unexpectedly.")
-    parser.add_argument('-chkf', '--chkfile_freq', type=int, default=10, help="(Optional) Amount of time steps between saved checkpoints.")
+    parser.add_argument('-chkf', '--chkfile_freq', type=int, default=100, help="(Optional) Amount of time steps between saved checkpoints.")
     parser.add_argument('-chkp', '--chkfile_path', type=str, default="chkfile.txt", help="(Optional) Custom path to checkpoint file.")
+
+    parser.add_argument('-ptau', '--peak_time_au', type=float, default=1.0, help="(Optional) Peak time of electric field in units of au.")
+    parser.add_argument('-ws', '--width_steps', type=int, default=5, help="(Optional) Width of electric field peak in time steps.")
+    parser.add_argument('-sh', '--shape', type=str, default="kick", help="(Optional) Shape of electric field. Currently only support 'kick' or 'pulse'.")
+    parser.add_argument('-sm', '--smoothing', type=bool, default=False, help="(Optional) Whether to apply smoothing at the start.")
+    parser.add_argument('-iau', '--intensity_au', type=float, default=5e-5, help="(Optional) Intensity for electric field.")
+    parser.add_argument('-eff', '--eFieldFile', type=str, default="eField.csv", help="(Optional) Filename to place electric field output.")
+    parser.add_argument('-pff', '--pFieldFile', type=str, default="pField.csv", help="(Optional) Filename to place polarization field output.")
 
     args = parser.parse_args()
     if args.log and args.verbose == 0:

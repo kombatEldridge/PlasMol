@@ -33,7 +33,11 @@ class PARAMS:
     ----------
     The attributes correspond directly to the parameters provided during initialization.
     """
-    def __init__(self, pcconv=1e-12, tol_zero=1e-12, doublecheck=True, exp_method=1, dt=0.01, terms_interpol=2, max_iter=200, chkfile=True, chkfile_freq=10, chkfile_path='chkfile.txt'):
+    def __init__(self, pcconv=1e-12, tol_zero=1e-12, doublecheck=True, exp_method=1, 
+                 dt=0.01, terms_interpol=2, max_iter=200, chkfile=True, 
+                 chkfile_freq=10, chkfile_path='chkfile.txt', peak_time_au=1.0, 
+                 width_steps=5, shape='kick', smoothing=False, intensity_au=5e-5, 
+                 eFieldFile='eField.csv', pFieldFile='pField.csv'):
         self.pcconv = pcconv
         self.tol_zero = tol_zero
         self.doublecheck = doublecheck
@@ -44,3 +48,10 @@ class PARAMS:
         self.chkfile = chkfile
         self.chkfile_path = chkfile_path
         self.chkfile_freq = chkfile_freq
+        self.peak_time_au = peak_time_au
+        self.width_steps = width_steps
+        self.shape = shape
+        self.smoothing = smoothing
+        self.intensity_au = intensity_au
+        self.eFieldFile = eFieldFile
+        self.pFieldFile = pFieldFile
