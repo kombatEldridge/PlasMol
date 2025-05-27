@@ -9,10 +9,10 @@ from logging_utils import PRINTLOGGER
 from electric_field import ELECTRICFIELD
 
 from fourier import fourier
-from csv_utils import initCSV
 from cli import parse_arguments
 from propagation import propagation
 from plotting import show_eField_pField
+from csv_utils import initCSV, updateCSV
 
 # main.py
 if __name__ == "__main__":
@@ -108,10 +108,11 @@ if __name__ == "__main__":
             intensity_au=params.intensity_au,
         )
 
-        if params.chkfile is not None and os.path.exists(params.chkfile):
+        if params.chkfile is not None and os.path.exists(params.chkfile_path):
             # assume the eField and pField files have already been built 
             # and you do not need to re-initialize them
-            logger.debug(f"Checkpoint file {params.chkfile} found. Skipping electric/polarizability field generation.")
+            print("ere")
+            logger.debug(f"Checkpoint file {params.chkfile_path} found. Skipping electric/polarizability field generation.")
             interpolated_e_field_csv = params.eFieldFile
             polarizability_csv = params.pFieldFile
         else:            
@@ -119,10 +120,8 @@ if __name__ == "__main__":
             initCSV(interpolated_e_field_csv, "Electric Field intensity in atomic units")
             
             # Append the interpolated data rows to the CSV file
-            with open(interpolated_e_field_csv, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                for t, intensity in zip(interpolated_times, field.field):
-                    writer.writerow([t, intensity[0], intensity[1], intensity[2]])
+            for t, intensity in zip(interpolated_times, field.field):
+                updateCSV(interpolated_e_field_csv, t, intensity[0], intensity[1], intensity[2])
             
             logger.debug(f"Electric field successfully built and saved to {interpolated_e_field_csv}")
 
