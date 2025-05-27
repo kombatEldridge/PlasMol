@@ -7,6 +7,11 @@ logger = logging.getLogger("main")
 
 def propagate(params, molecule, exc):
     '''
+    Needed to resume: 
+        molecule.scf.mo_coeff
+        molecule.F_orth
+        molecule.F_orth_n12dt
+        
     C'(t+dt) = U(t+0.5dt)C'(t)
     U(t+0.5dt) = exp(-i*dt*F')
 
@@ -15,7 +20,7 @@ def propagate(params, molecule, exc):
     3. Build new F'(t+dt), interpolate new F'(t+0.5dt)
     4. Repeat propagation and interpolation until convergence
     '''
-    C_orth = molecule.rotate_coeff_to_orth(molecule.C)
+    C_orth = molecule.rotate_coeff_to_orth(molecule.scf.mo_coeff)
     F_orth_p12dt = 2 * molecule.F_orth - molecule.F_orth_n12dt
 
     max_iterations = params.max_iter
@@ -33,7 +38,7 @@ def propagate(params, molecule, exc):
         F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
 
         if (iteration > 1 and abs(np.linalg.norm(C_pdt) - np.linalg.norm(C_ao_pdt_old)) < params.pcconv):
-            molecule.C = C_pdt
+            molecule.scf.mo_coeff = C_pdt
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt
             molecule.F_orth_n12dt = F_orth_p12dt
@@ -41,5 +46,5 @@ def propagate(params, molecule, exc):
 
         F_orth_p12dt = 0.5 * (molecule.F_orth + F_orth_pdt)
         C_ao_pdt_old = C_pdt
-        molecule.C = C_pdt
+        molecule.scf.mo_coeff = C_pdt
         molecule.D_ao = D_ao_pdt

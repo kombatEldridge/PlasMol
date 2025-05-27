@@ -1,36 +1,66 @@
 # chkfile.py
-import logging
 import numpy as np
+import logging
 
 logger = logging.getLogger("main")
 
-# Added from TIDES
-def restart_from_chkfile(molecule):
-    logger.debug(f'Restarting from checkpointed file: {molecule.chkfile}')
-    with open(molecule.chkfile, 'r') as f:
-        chk_lines = f.readlines()
-        molecule.current_time = float(chk_lines[0].split()[3])
-        logger.debug(f'Starting at time {molecule.current_time} au.')
-        if molecule.nmat == 1:
-            molecule.scf.mo_coeff = np.loadtxt(chk_lines[2:], dtype=np.complex128)
-        else:
-            for idx, line in enumerate(chk_lines):
-                if 'Beta' in line:
-                    b0 = idx
-                    break
-            mo_alpha0 = np.loadtxt(chk_lines[3:b0], dtype=np.complex128)
-            mo_beta0 = np.loadtxt(chk_lines[b0+1:], dtype=np.complex128)
-            molecule.scf.mo_coeff = np.stack((mo_alpha0, mo_beta0))
-
-# Added from TIDES
 def update_chkfile(molecule, current_time):
-    logger.debug(f'Updating checkpointed file.')
-    with open(molecule.chkfile, 'w') as f:
-        f.write(f'Current Time (au): {current_time} \nMO Coeffs: \n')
-        if molecule.nmat == 1:
-            np.savetxt(f, molecule.scf.mo_coeff)
-        else:
-            f.write('Alpha \n')
-            np.savetxt(f, molecule.scf.mo_coeff[0])
-            f.write('Beta \n')
-            np.savetxt(f, molecule.scf.mo_coeff[1])
+    """
+    Save out a .npz checkpoint containing:
+      – current_time
+      – molecule.D_ao_0
+      – molecule.scf.mo_coeff
+      – molecule.F_orth
+      – plus one extra array depending on molecule.propagator
+    """
+    # ensure .npz extension
+    fn = molecule.chkfile
+    if not fn.endswith(".npz"):
+        fn = fn + ".npz"
+
+    method = molecule.propagator.lower()
+    save_dict = {
+        "current_time": current_time,
+        "D_ao_0":       molecule.D_ao_0,
+        "mo_coeff":     molecule.scf.mo_coeff,
+        "F_orth":       molecule.F_orth,
+    }
+
+    if method == "step":
+        save_dict["C_orth_ndt"] = molecule.C_orth_ndt
+    elif method == "magnus2":
+        save_dict["F_orth_n12dt"] = molecule.F_orth_n12dt
+
+    np.savez(fn, **save_dict)
+    logger.debug(f"Wrote checkpoint to {fn} with keys: {list(save_dict)}")
+
+
+def restart_from_chkfile(molecule):
+    """
+    Load from the .npz checkpoint created by update_chkfile.
+    """
+    fn = molecule.chkfile
+    if not fn.endswith(".npz"):
+        fn = fn + ".npz"
+
+    logger.debug(f"Loading checkpoint from {fn}")
+    data = np.load(fn, allow_pickle=True)
+
+    # common data
+    molecule.current_time = float(data["current_time"])
+    molecule.D_ao_0       = data["D_ao_0"]
+    molecule.scf.mo_coeff = data["mo_coeff"]
+    molecule.F_orth       = data["F_orth"]
+
+    # conditional
+    method = molecule.propagator.lower()
+    if method == "step" and "C_orth_ndt" in data:
+        molecule.C_orth_ndt = data["C_orth_ndt"]
+    elif method == "magnus2" and "F_orth_n12dt" in data:
+        molecule.F_orth_n12dt = data["F_orth_n12dt"]
+
+    logger.debug(
+        f"Restarted at t={molecule.current_time} au; "
+        f"loaded propagator='{method}', "
+        f"arrays: {list(data.keys())}"
+    )

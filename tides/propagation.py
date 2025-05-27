@@ -10,22 +10,18 @@ def propagation(params, molecule, field, polarizability_csv):
     """
     Note here that for Magnus2, E(t+dt) will be the most recent e field from MEEP and 
     E(t) will be the previous electric field
-    """
-    from magnus2 import propagate
-    
+    """    
     # Determine which propagation method to be used
-    # method = molecule.propagator.lower()
-    # if method == "exponential": 
-    #     from exponential import propagate # TODO: Build exponential method
-    # elif method == "midpoint":
-    #     from midpoint import propagate # TODO: Build midpoint method
-    # elif method == "tr-midpoint":
-    #     from tr_midpoint import propagate # TODO: Build tr_midpoint method
-    # elif method == "magnus2":
-    #     from magnus2 import propagate
-    # else:
-    #     raise ValueError("Please provide in the molecule input file one of the acceptable Density matrix propagators: " \
-    #     "\nexponential, midpoint, tr-midpoint, or magnus2.")
+    method = molecule.propagator.lower()
+    if method == "step":
+        from step import propagate
+    elif method == "magnus2":
+        from magnus2 import propagate
+    elif method == "rk4":
+        from rk4 import propagate
+    else:
+        raise ValueError("Please provide in the molecule input file one of the acceptable Density matrix propagators: " \
+        "\nstep, rk4, or magnus2.")
 
     for index, current_time in enumerate(field.times):
         if current_time < molecule.current_time:

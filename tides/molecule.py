@@ -63,7 +63,6 @@ class MOLECULE():
         # Initialize matrices and wavefunction
         self.S = self.scf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
-        self.C = self.scf.mo_coeff
         self.occ = self.scf.get_occ()
         self.D_ao_0 = self.scf.make_rdm1(mo_occ=self.occ)
 
@@ -77,14 +76,16 @@ class MOLECULE():
 
         if self.chkfile is not None and os.path.exists(self.chkfile):
             restart_from_chkfile(self)
-            self.D_ao_0 = self.scf.make_rdm1(mo_occ=self.occ)
-        
-        self.D_ao = self.D_ao_0
+            self.D_ao = self.scf.make_rdm1(mo_occ=self.occ)
+            self.F_orth = self.get_F_orth(self.D_ao)
+        else: 
+            self.D_ao = self.D_ao_0
+            self.F_orth = self.get_F_orth(self.D_ao)
+            self.F_orth_n12dt = self.F_orth
+
         if not self.is_hermitian(self.D_ao, tol=1e-12):
             raise ValueError("Initial density matrix in AO is not Hermitian")
 
-        self.F_orth = self.get_F_orth(self.D_ao)
-        self.F_orth_n12dt = self.F_orth
 
     def get_F_orth(self, D_ao, exc=None):
         F_ao = self.scf.get_fock(dm=D_ao).astype(np.complex128)
