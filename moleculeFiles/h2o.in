@@ -1,0 +1,21 @@
+start molecule
+  O      0.0000000000       0.0000000000       -0.1302052882
+  H      1.4891244004       0.0000000000        1.0332262019
+  H     -1.4891244004       0.0000000000        1.0332262019
+end molecule
+
+units bohr
+charge 0
+spin 0
+basis 6-31g 
+diis true
+e_convergence 1e-6
+d_convergence 1e-6
+maxiter 200
+nroots 50
+xc pbe0
+resplimit 1e-20
+guess_mos h2o.mos
+propagator magnus2
+
+method rttddft

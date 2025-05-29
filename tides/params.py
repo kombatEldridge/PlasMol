@@ -1,49 +1,51 @@
 # params.py
 class PARAMS:
     """
-    Class to hold parameters for the quantum simulation.
-
-    This class encapsulates the configuration settings for simulating the dynamics
-    of a molecular system under an external field. It includes the molecular structure,
-    the applied field, numerical tolerances, and simulation method specifications.
-
-    Parameters
-    ----------
-    pcconv : float, optional
-        Tolerance for the convergence  used in the propagator. Default is 1e-12.
-    tol_zero : float, optional
-        Tolerance for numerical checks, such as verifying if matrices are Hermitian
-        or unitary. This is distinct from the convergence tolerance used in the
-        propagator. Default is 1e-12.
-    doublecheck : bool, optional
-        If True, performs checks to ensure the Fock matrix is Hermitian and the
-        time evolution operator (U matrix) is unitary. Default is True.
-    exp_method : int, optional
-        Method used for computing the matrix exponential in the time propagation:
-        - 1: Series expansion method
-        - 2: Diagonalization method
-        Default is 1.
-    dt : float, optional
-        Time step for the simulation, in atomic units (au). Default is 0.01.
-    terms_interpol : int, optional
-        Number of consecutive iterations required to achieve convergence in the
-        interpolation process. Default is 2.
-
-    Attributes
-    ----------
-    The attributes correspond directly to the parameters provided during initialization.
+    Container for simulation parameters typically set via command-line arguments.
     """
-    def __init__(self, pcconv=1e-12, tol_zero=1e-12, doublecheck=True, exp_method=1, 
-                 dt=0.01, terms_interpol=2, max_iter=200, chkfile=True, 
-                 chkfile_freq=10, chkfile_path='chkfile.txt', peak_time_au=1.0, 
+    def __init__(self, pcconv=1e-12, tol_zero=1e-12, dt=0.01, max_iter=200, 
+                 chkfile=True, chkfile_freq=10, chkfile_path='chkfile.npz', peak_time_au=1.0, 
                  width_steps=5, shape='kick', smoothing=False, intensity_au=5e-5, 
                  eFieldFile='eField.csv', pFieldFile='pField.csv'):
+        """
+        Initialize the PARAMS object with simulation parameters.
+
+        Parameters:
+        pcconv : float, optional
+            Convergence criterion for predictor-corrector (default 1e-12).
+        tol_zero : float, optional
+            Numerical zero tolerance (default 1e-12).
+        dt : float, optional
+            Time step in atomic units (default 0.01).
+        max_iter : int, optional
+            Maximum iterations (default 200).
+        chkfile : bool, optional
+            Whether to use checkpoint files (default True).
+        chkfile_freq : int, optional
+            Frequency of checkpoint saves (default 10).
+        chkfile_path : str, optional
+            Path to checkpoint file (default 'chkfile.txt').
+        peak_time_au : float, optional
+            Electric field peak time in atomic units (default 1.0).
+        width_steps : int, optional
+            Electric field width in time steps (default 5).
+        shape : str, optional
+            Electric field shape ('kick' or 'pulse', default 'kick').
+        smoothing : bool, optional
+            Whether to smooth the field (default False).
+        intensity_au : float, optional
+            Field intensity in atomic units (default 5e-5).
+        eFieldFile : str, optional
+            Electric field output file (default 'eField.csv').
+        pFieldFile : str, optional
+            Polarization field output file (default 'pField.csv').
+
+        Returns:
+        None
+        """
         self.pcconv = pcconv
         self.tol_zero = tol_zero
-        self.doublecheck = doublecheck
-        self.exp_method = exp_method
         self.dt = dt
-        self.terms_interpol = terms_interpol
         self.max_iter = max_iter
         self.chkfile = chkfile
         self.chkfile_path = chkfile_path

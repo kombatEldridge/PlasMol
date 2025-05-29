@@ -4,29 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-"""
-This script reads a CSV file containing time-domain dipole signals (X, Y, Z)
-and computes an absorption spectrum in wavelength (nm) with Gaussian broadening.
-It supports two possible time units:
-  - Timestamps (au): atomic units (1 au = 2.418884e-17 s)
-  - Timestamps (fs): femtoseconds (1 fs = 1e-15 s)
-
-Usage:
-  python fourier_transform_absorption.py input.csv [--sigma SIGMA] [--npoints N]
-
-Arguments:
-  input.csv      Path to the input CSV file with headers:
-                   either ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values']
-                   or       ['Timestamps (fs)', 'X Values', 'Y Values', 'Z Values']
-
-Options:
-  --sigma SIGMA  Gaussian broadening width (in nm), default=10
-  --npoints N    Number of points in the wavelength grid, default=2000
-
-Output:
-  Displays a plot of broadened absorption spectra for X, Y, Z components
-  in the range 0-2000 nm.
-"""
 # Constants
 AU_TO_S = 2.418884e-17      # atomic unit of time to seconds
 FS_TO_S = 1e-15              # femtoseconds to seconds
@@ -35,6 +12,21 @@ C_NM_S = C_M_S * 1e9         # speed of light in nm/s
 
 
 def load_time_series(csv_path):
+    """
+    Load time series data from a CSV file.
+
+    Reads a CSV file with timestamps in either atomic units or femtoseconds,
+    converting them to seconds, and extracts X, Y, Z component values.
+
+    Parameters:
+    csv_path : str
+        Path to the CSV file.
+
+    Returns:
+    tuple
+        (t, signals) where t is an np.ndarray of times in seconds, and signals is a dict
+        with 'X', 'Y', 'Z' keys mapping to np.ndarray of corresponding values.
+    """
     df = pd.read_csv(csv_path, comment='#')
     if 'Timestamps (au)' in df.columns:
         t = df['Timestamps (au)'].values * AU_TO_S
@@ -51,13 +43,31 @@ def load_time_series(csv_path):
 
 
 def compute_spectrum(t, signal):
+    """
+    Compute the Fourier spectrum of a time series signal.
+
+    Performs FFT on the detrended signal, converting frequencies to wavelengths in nanometers.
+
+    Parameters:
+    t : np.ndarray
+        Time values in seconds.
+    signal : np.ndarray
+        Signal values corresponding to the time points.
+
+    Returns:
+    tuple
+        (wavelengths, intensities) where wavelengths is an np.ndarray in nanometers,
+        and intensities is an np.ndarray of squared FFT magnitudes.
+    """
     # detrend (remove mean)
     sig = signal - np.mean(signal)
     n = len(t)
-    dt = t[1] - t[0]
+    dt = np.diff(t)
+    if not np.allclose(dt, dt[0], rtol=1e-10):
+        raise ValueError("Time series must have uniform spacing for FFT")
     # FFT
     fft_vals = np.fft.rfft(sig)
-    freqs = np.fft.rfftfreq(n, d=dt)
+    freqs = np.fft.rfftfreq(n, d=dt[0])
     # ignore DC
     mask = freqs > 0
     freqs = freqs[mask]
@@ -68,6 +78,25 @@ def compute_spectrum(t, signal):
 
 
 def gaussian_broaden(wl, I, wl_grid, sigma):
+    """
+    Apply Gaussian broadening to a spectrum.
+
+    Broadens the spectrum intensities onto a specified wavelength grid using a Gaussian function.
+
+    Parameters:
+    wl : np.ndarray
+        Original wavelengths of the spectrum in nanometers.
+    I : np.ndarray
+        Original intensities of the spectrum.
+    wl_grid : np.ndarray
+        Target wavelength grid in nanometers for broadening.
+    sigma : float
+        Standard deviation of the Gaussian in nanometers.
+
+    Returns:
+    np.ndarray
+        Broadened intensities on wl_grid.
+    """
     # Build matrix of Gaussians: shape (len(I), len(wl_grid))
     diff = wl[:, None] - wl_grid[None, :]
     gauss = np.exp(-0.5 * (diff / sigma)**2)
@@ -76,6 +105,25 @@ def gaussian_broaden(wl, I, wl_grid, sigma):
 
 
 def fourier(filename, sigma=10, npoints=2000, output_image='spectrum.png'):
+    """
+    Compute and plot the absorption spectrum from a time series CSV file.
+
+    Loads time series data, computes the Fourier spectrum for X, Y, Z components,
+    applies Gaussian broadening, plots the result, and saves both the plot and data.
+
+    Parameters:
+    filename : str
+        Path to the input CSV file with time series data.
+    sigma : float, optional
+        Standard deviation for Gaussian broadening in nanometers (default 10).
+    npoints : int, optional
+        Number of points in the wavelength grid (default 2000).
+    output_image : str, optional
+        Path to save the output spectrum image (default 'spectrum.png').
+
+    Returns:
+    None
+    """
     # Load data
     t, signals = load_time_series(filename)
 

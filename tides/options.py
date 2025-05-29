@@ -1,44 +1,23 @@
-class OPTIONS():
-
+# options.py
+class OPTIONS:
     def __init__(self):
-      self.e_conv  = 1e-6
-      self.d_conv  = 1e-6
-      self.maxiter = 200
-      self.batch_size = 500
-      self.nroots  = 2
-      self.diis    = True
-      self.method  = "rhf"
-      self.do_tdhf = False
-      self.do_cpp  = False
-      self.do_tda  = True
-      self.relativistic = None
-      self.so_scf  = False
-      self.noscf   = False
-      self.cvs     = False
-      self.tdscf_in_core = False
-      self.direct_diagonalization = False
-      self.frequencies = None
-      self.molecule = None
-      self.grid_level = 3
-      self.guess_mos_provided = False
-      self.fourier_transform = True
-      self.cosmo = False
-      self.cosmo_epsilon = 78.3553 #water solvent 
-      self.couple_states = None
-      self.gamma = 0.25
-      self.cartesian = False
-      self.reduced_virtual = False
-      self.plus_tb = False 
-      self.akonly = False
-      self.fonly = False
-      self.jkonly = False
-      self.jonly = False
-      self.nofxc = False
-      self.spin_flip = False
-      self.roots_lookup_table = []
-      self.B_field_amplitude = 0.
-      self.E_field_amplitude  = 0. 
-      self.B_field_polarization = 2
-      self.E_field_polarization = 2
-      self.memory = 48000
-      self.swap_mos = []
+        # molecule geometry + charge/spin
+        self.molecule = {}
+        self.charge   = 0
+        self.spin     = 0
+        self.units    = "bohr"
+
+        # basis and SCF
+        self.basis            = None
+        self.diis             = True
+        self.e_conv           = 1e-6
+        self.d_conv           = 1e-6
+        self.maxiter          = 200
+
+        # TDDFT / propagation
+        self.nroots           = 5
+        self.xc               = "lda"
+        self.resplimit        = 1e-20
+        self.guess_mos        = None
+        self.propagator       = "magnus2"
+        self.method           = "rttddft"

@@ -13,6 +13,7 @@ start molecule
   H      -0.52025        3.30866       0.00000
 end molecule
 
+units angstrom
 charge 0
 spin 0
 basis 6-31g 

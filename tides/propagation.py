@@ -8,9 +8,24 @@ logger = logging.getLogger("main")
 
 def propagation(params, molecule, field, polarizability_csv):
     """
-    Note here that for Magnus2, E(t+dt) will be the most recent e field from MEEP and 
-    E(t) will be the previous electric field
-    """    
+    Perform time propagation of the molecular state.
+
+    Propagates the molecule over time using the specified method, recording polarization
+    and saving checkpoints as configured.
+
+    Parameters:
+    params : object
+        Parameters object with simulation settings.
+    molecule : object
+        Molecule object with current state.
+    field : object
+        Electric field object with time-dependent field data.
+    polarizability_csv : str
+        Path to the CSV file for recording polarization data.
+
+    Returns:
+    None
+    """
     # Determine which propagation method to be used
     method = molecule.propagator.lower()
     if method == "step":
@@ -31,10 +46,10 @@ def propagation(params, molecule, field, polarizability_csv):
         propagate(params, molecule, field.field[index])
         mu = molecule.calculate_mu()
         for i in [0, 1, 2]:
-            mu_arr[i] = 2 * float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
+            mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
 
         logging.debug(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
         updateCSV(polarizability_csv, current_time, *mu_arr)
         
-        if params.chkfile and np.mod(index, params.chkfile_freq) == 0:
+        if molecule.chkfile_path and index % params.chkfile_freq == 0:
             update_chkfile(molecule, current_time)

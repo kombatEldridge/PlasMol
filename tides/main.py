@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
         # Time step check
         if (dt_au > 0.1):
-            raise ValueError(f"The timestep for this simulation are too large to elicit physical results.")
+            logger.warning(f"The timestep for this simulation is too large to elicit physical results.")
 
         time_values = np.arange(0, t_end + dt_au, dt_au)
         interpolated_times = np.linspace(0, time_values[-1], int(len(time_values) * args.mult))
@@ -73,14 +73,22 @@ if __name__ == "__main__":
         logger.info(f"The simulation will propagate until {t_end} in au or {t_end_fs} in fs.")
         logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
         logger.debug(f"Arguments given and parsed successfully: {args}")
+        
+        if args.restart:
+            for path in ['eField.csv', 'pField.csv', 'pField_spectrum.csv', 'chkfile.npz', 'output.png', 'spectrum.png']:
+                if os.path.isfile(path):
+                    try:
+                        os.remove(path)
+                        logger.info(f"Deleted {path}")
+                    except OSError as e:
+                        logger.error(f"Error deleting {path}: {e}")
+                else:
+                    logger.debug(f"No such file: {path}")
 
         params = PARAMS(
             pcconv=args.pcconv, 
             tol_zero=args.tol_zero, 
-            doublecheck=args.doublecheck, 
-            exp_method=args.exp_method, 
             dt=dt_au, 
-            terms_interpol=args.terms_interpol,
             max_iter=args.max_iter, 
             chkfile=args.chkfile,
             chkfile_path=args.chkfile_path,
@@ -108,9 +116,9 @@ if __name__ == "__main__":
             intensity_au=params.intensity_au,
         )
 
-        if params.chkfile is not None and os.path.exists(params.chkfile_path):
+        if molecule.chkfile_path is not None and os.path.exists(molecule.chkfile_path):
             # assume the eField and pField files have already been built and you do not need to re-initialize them
-            logger.debug(f"Checkpoint file {params.chkfile_path} found. Skipping electric/polarizability field generation.")
+            logger.debug(f"Checkpoint file {molecule.chkfile_path} found. Skipping electric/polarizability field generation.")
             interpolated_e_field_csv = params.eFieldFile
             polarizability_csv = params.pFieldFile
         else:            
@@ -144,6 +152,6 @@ if __name__ == "__main__":
         show_eField_pField(interpolated_e_field_csv, polarizability_csv)
         fourier(polarizability_csv)
         logging.info("Simulation completed successfully.")
-
     except Exception as err:
-        logging.exception(f"Simulation aborted due to an error: {err}")
+        logger.error(f"Simulation failed: {err}", exc_info=True)
+        sys.exit(1)

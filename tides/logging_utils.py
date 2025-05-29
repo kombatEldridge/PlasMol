@@ -3,15 +3,22 @@ import logging
 
 class PRINTLOGGER:
     """
-    Redirects standard print statements to a logger.
+    A custom logger to redirect stdout to the logging system.
+
+    Captures print statements and logs them at a specified level.
     """
     def __init__(self, logger, level=logging.INFO):
         """
-        Initialize the PrintLogger.
+        Initialize the PRINTLOGGER with a logger and logging level.
 
         Parameters:
-            logger (logging.Logger): The logger instance.
-            level (int): Logging level.
+        logger : logging.Logger
+            The logger object to use for logging messages.
+        level : int, optional
+            The logging level for captured messages (default logging.INFO).
+
+        Returns:
+        None
         """
         self.logger = logger
         self.level = level
@@ -20,13 +27,29 @@ class PRINTLOGGER:
         """
         Write a message to the logger.
 
+        Strips trailing newlines and logs non-empty messages.
+
         Parameters:
-            message (str): The message to log.
+        message : str
+            The message to log.
+
+        Returns:
+        None
         """
         message = message.rstrip()
         if message:
             self.logger.log(self.level, message)
 
     def flush(self):
-        """Dummy flush method for compatibility."""
+        """
+        Flush the logger output.
+
+        Does nothing as logging handlers manage flushing.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         pass

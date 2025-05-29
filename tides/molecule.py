@@ -3,9 +3,8 @@ import os
 import sys
 import logging
 import numpy as np
-from pyscf import gto, scf
+from pyscf import gto, scf, lib
 from pyscf.scf import addons
-from scipy.linalg import inv
 
 import input_parser
 from chkfile import restart_from_chkfile
@@ -14,30 +13,30 @@ logger = logging.getLogger("main")
 
 class MOLECULE():
     """
-    Represents a molecule and its electronic structure, initializing the molecule using PySCF.
+    Represents a molecule in the RT-TDDFT simulation.
 
-    Attributes:
-        molecule (dict): Dictionary containing molecule parameters.
-        method (dict): Dictionary with method-related options.
+    Manages quantum mechanical properties, SCF calculations, and time propagation state.
     """
     def __init__(self, inputfile, params):
         """
-        Initializes the molecule from an input file.
+        Initialize the MOLECULE object with input file and parameters.
+
+        Sets up the molecule from the input file, performs initial SCF calculation,
+        and loads from checkpoint if available.
 
         Parameters:
-            inputfile (str): Path to the input file containing molecule data.
-        """
-        if params.chkfile:
-            self.chkfile = params.chkfile_path
-        else:
-            self.chkfile = None
+        inputfile : str
+            Path to the input file.
+        params : object
+            Parameters object with simulation settings.
 
+        Returns:
+        None
+        """
         import options
         options = options.OPTIONS()
-        self.molecule, self.method, basis = input_parser.read_input(inputfile, options)
-        options.molecule = self.molecule
-
-        self.propagator = self.method["propagator"]
+        self.molecule, options = input_parser.read_input(inputfile, options)
+        self.propagator = options.propagator
 
         # Format molecule string as required by PySCF
         atoms = self.molecule["atoms"]
@@ -50,21 +49,26 @@ class MOLECULE():
             if index != (len(atoms)-1):
                 molecule_coords += ";"
 
-        # From TIDES
         mol = gto.M(atom=molecule_coords,
-                          basis=basis["name"],
+                          basis=options.basis,
                           unit='B',
                           charge=int(options.charge),
                           spin=int(options.spin),
-                          cart=options.cartesian)
-        self.scf = scf.RHF(mol)
-        self.scf.kernel()
+                          verbose=lib.logger.QUIET)
+        self.mf = scf.RKS(mol)
+        self.mf.verbose = lib.logger.QUIET
+        self.mf.xc = options.xc
+        self.mf.kernel()
 
         # Initialize matrices and wavefunction
-        self.S = self.scf.get_ovlp()
+        self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
-        self.occ = self.scf.get_occ()
-        self.D_ao_0 = self.scf.make_rdm1(mo_occ=self.occ)
+
+        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=params.tol_zero):
+            logger.warning("Orthogonalization matrix X may not be unitary")
+            
+        self.occ = self.mf.get_occ()
+        self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
 
         if len(np.shape(self.D_ao_0)) == 3:
             self.nmat = 2
@@ -74,10 +78,11 @@ class MOLECULE():
 
         self.current_time = 0
 
-        if self.chkfile is not None and os.path.exists(self.chkfile):
+        self.chkfile_path = params.chkfile_path if params.chkfile else None
+        if self.chkfile_path is not None and os.path.exists(self.chkfile_path):
             restart_from_chkfile(self)
-            self.D_ao = self.scf.make_rdm1(mo_occ=self.occ)
-            self.F_orth = self.get_F_orth(self.D_ao)
+            self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
+            self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
         else: 
             self.D_ao = self.D_ao_0
             self.F_orth = self.get_F_orth(self.D_ao)
@@ -88,19 +93,68 @@ class MOLECULE():
 
 
     def get_F_orth(self, D_ao, exc=None):
-        F_ao = self.scf.get_fock(dm=D_ao).astype(np.complex128)
+        """
+        Compute the Fock matrix in the orthogonal basis.
+
+        Includes the effect of an external field if provided.
+
+        Parameters:
+        D_ao : np.ndarray
+            Density matrix in atomic orbital basis.
+        exc : np.ndarray, optional
+            External electric field components [x, y, z].
+
+        Returns:
+        np.ndarray
+            Fock matrix in orthogonal basis.
+        """
+        F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
         if exc is not None:
             F_ao += self.calculate_potential(exc)
         return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
 
     def rotate_coeff_to_orth(self, coeff_ao):
-        return np.matmul(inv(self.X), coeff_ao)
+        """
+        Transform molecular orbital coefficients to the orthogonal basis.
+
+        Parameters:
+        coeff_ao : np.ndarray
+            Coefficients in atomic orbital basis.
+
+        Returns:
+        np.ndarray
+            Coefficients in orthogonal basis.
+        """
+        return np.matmul(np.linalg.inv(self.X), coeff_ao)
 
     def rotate_coeff_away_from_orth(self, coeff_orth):
+        """
+        Transform molecular orbital coefficients from orthogonal to atomic orbital basis.
+
+        Parameters:
+        coeff_orth : np.ndarray
+            Coefficients in orthogonal basis.
+
+        Returns:
+        np.ndarray
+            Coefficients in atomic orbital basis.
+        """
         return np.matmul(self.X, coeff_orth)
     
     def calculate_mu(self):
-        mol = self.scf.mol
+        """
+        Calculate the dipole moment integrals for the molecule.
+
+        Sets the origin to the nuclear charge center and computes dipole integrals.
+
+        Parameters:
+        None
+
+        Returns:
+        np.ndarray
+            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
+        """
+        mol = self.mf.mol
         charges = mol.atom_charges()
         coords = mol.atom_coords()
         nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
@@ -109,23 +163,34 @@ class MOLECULE():
         return mu
 
     def calculate_potential(self, exc):
+        """
+        Calculate the potential contribution from an external electric field.
+
+        Uses dipole moment integrals to compute the field-induced potential.
+
+        Parameters:
+        exc : np.ndarray
+            External electric field components [x, y, z] in atomic units.
+
+        Returns:
+        np.ndarray
+            Potential matrix in atomic orbital basis.
+        """
         mu = self.calculate_mu()
         return -1 * np.einsum('xij,x->ij', mu, exc)
 
     def is_hermitian(self, A, tol):
         """
-        Check if matrix A is Hermitian within tolerance.
+        Check if a matrix is Hermitian within a tolerance.
 
         Parameters:
-        -----------
-        A : ndarray
+        A : np.ndarray
             Matrix to check.
         tol : float
-            Numerical tolerance.
+            Numerical tolerance for Hermitian property.
 
         Returns:
-        --------
         bool
-            True if A is Hermitian within tolerance.
+            True if the matrix is Hermitian within tolerance, False otherwise.
         """
         return np.allclose(A, A.conj().T, rtol=0, atol=tol)

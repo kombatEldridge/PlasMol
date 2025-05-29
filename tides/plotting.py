@@ -5,13 +5,22 @@ import logging
 
 def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIMG=None, matplotlibOutput=None):
     """
-    Plots the electric field and, optionally, the polarizability field from CSV files.
+    Plot electric field and optionally polarization field from CSV files.
+
+    Generates a plot with one or two subplots depending on input, saving it to a file.
 
     Parameters:
-        eFieldFileName (str): CSV file path for the electric field.
-        pFieldFileName (str, optional): CSV file path for the polarizability field.
-        matplotlibLocationIMG (str, optional): Location for saving the image.
-        matplotlibOutput (str, optional): Output name for the image.
+    eFieldFileName : str
+        Path to the electric field CSV file.
+    pFieldFileName : str, optional
+        Path to the polarization field CSV file (default None).
+    matplotlibLocationIMG : str, optional
+        Directory to save the plot image (default None).
+    matplotlibOutput : str, optional
+        Filename for the plot image (default None).
+
+    Returns:
+    None
     """
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
@@ -22,10 +31,16 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 
     def sort_csv_by_first_column(filename):
         """
-        Sorts a CSV file by the first column (timestamps) while preserving comment lines.
+        Sort a CSV file by its first column (timestamps).
+
+        Preserves comments and header while sorting data rows.
 
         Parameters:
-            filename (str): Path to the CSV file.
+        filename : str
+            Path to the CSV file to sort.
+
+        Returns:
+        None
         """
         with open(filename, 'r') as file:
             lines = file.readlines()

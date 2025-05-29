@@ -5,11 +5,19 @@ import pandas as pd
 
 def initCSV(filename, comment):
     """
-    Initializes a CSV file with a header and comment lines.
+    Initialize a CSV file with a header and comment lines.
+
+    Creates a new CSV file with comment lines prefixed by '#', followed by a header row:
+    ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values'].
 
     Parameters:
-        filename (str): Path to the CSV file.
-        comment (str): Comment to include at the beginning of the file.
+    filename : str
+        Path to the CSV file to be created.
+    comment : str
+        Comment string to include at the beginning of the file, split into lines.
+
+    Returns:
+    None
     """
     with open(filename, 'w', newline='') as file:
         for line in comment.splitlines():
@@ -21,35 +29,53 @@ def initCSV(filename, comment):
 
 def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
     """
-    Appends a row of data to a CSV file.
+    Append a row of data to an existing CSV file.
+
+    Adds a row with the timestamp and x, y, z values, defaulting to 0 if any value is not provided.
+    Raises an error if the file does not exist (i.e., not initialized with initCSV).
 
     Parameters:
-        filename (str): Path to the CSV file.
-        timestamp (float): Time stamp.
-        x_value (float, optional): Value for x component.
-        y_value (float, optional): Value for y component.
-        z_value (float, optional): Value for z component.
+    filename : str
+        Path to the CSV file.
+    timestamp : float
+        The timestamp for the data point in atomic units.
+    x_value : float, optional
+        Value for the x component, defaults to 0 if None.
+    y_value : float, optional
+        Value for the y component, defaults to 0 if None.
+    z_value : float, optional
+        Value for the z component, defaults to 0 if None.
+
+    Returns:
+    None
     """
     file_exists = os.path.exists(filename)
     row = [timestamp, x_value if x_value is not None else 0,
            y_value if y_value is not None else 0,
            z_value if z_value is not None else 0]
     
+    if not file_exists:
+        raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'initCSV' before calling 'updateCSV'.")
+    
     with open(filename, 'a', newline='') as file:
         writer = csv.writer(file)
-        if not file_exists:
-            raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'initCSV' before calling 'updateCSV'.")
         writer.writerow(row)
 
 def read_electric_field_csv(file_path):
     """
-    Reads electric field values from a CSV file.
+    Read electric field values from a CSV file.
+
+    Parses a CSV file with a header starting with 'Timestamps', returning four lists
+    for time values and electric field components (x, y, z).
 
     Parameters:
-        file_path (str): Path to the CSV file.
+    file_path : str
+        Path to the CSV file.
 
     Returns:
-        tuple: Four lists corresponding to time values, and electric field components (x, y, z).
+    tuple
+        A tuple of four lists: (time_values, electric_x, electric_y, electric_z),
+        each containing float values.
     """
     time_values, electric_x, electric_y, electric_z = [], [], [], []
     with open(file_path, mode='r', newline='') as csvfile:

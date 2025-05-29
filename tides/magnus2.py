@@ -6,45 +6,54 @@ from scipy.linalg import expm
 logger = logging.getLogger("main")
 
 def propagate(params, molecule, exc):
-    '''
-    Needed to resume: 
-        molecule.scf.mo_coeff
-        molecule.F_orth
-        molecule.F_orth_n12dt
-        
-    C'(t+dt) = U(t+0.5dt)C'(t)
-    U(t+0.5dt) = exp(-i*dt*F')
+    """
+    Propagate molecular orbitals using the Magnus2 method.
 
-    1. Extrapolate F'(t+0.5dt)
-    2. Propagate
-    3. Build new F'(t+dt), interpolate new F'(t+0.5dt)
-    4. Repeat propagation and interpolation until convergence
-    '''
-    C_orth = molecule.rotate_coeff_to_orth(molecule.scf.mo_coeff)
+    Implements a predictor-corrector scheme to propagate the density matrix over one time step,
+    using extrapolation and iterative refinement until convergence.
+
+    Parameters:
+    params : object
+        Parameters object with dt, max_iter, and pcconv attributes.
+    molecule : object
+        Molecule object with current state data.
+    exc : np.ndarray
+        External electric field at the current time step.
+
+    Returns:
+    None
+    """
+    C_orth = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
     F_orth_p12dt = 2 * molecule.F_orth - molecule.F_orth_n12dt
-
+    
     max_iterations = params.max_iter
+    C_ao_pdt_old = None
     iteration = 0
-    converged = False
-    while not converged:
+    while True:
         iteration += 1
         if iteration > max_iterations:
             raise RuntimeError(f"Failed to converge within {max_iterations} iterations")
 
+        # 1) predictor
         U = expm(-1j * params.dt * F_orth_p12dt)
         C_orth_pdt = np.matmul(U, C_orth)
         C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
-        D_ao_pdt = molecule.scf.make_rdm1(mo_coeff=C_pdt, mo_occ=molecule.occ)
+        
+        # 2) compute new Fock
+        D_ao_pdt = molecule.mf.make_rdm1(mo_coeff=C_pdt, mo_occ=molecule.occ)
         F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
-
-        if (iteration > 1 and abs(np.linalg.norm(C_pdt) - np.linalg.norm(C_ao_pdt_old)) < params.pcconv):
-            molecule.scf.mo_coeff = C_pdt
+        
+        # 3) only check convergence if we have a previous value
+        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < params.pcconv:
+            molecule.mf.mo_coeff = C_pdt
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt
             molecule.F_orth_n12dt = F_orth_p12dt
-            converged = True
+            logger.debug(f'Magnus2 converged in {iteration} iterations.')
+            break
 
+        # 4) update history for next iteration
         F_orth_p12dt = 0.5 * (molecule.F_orth + F_orth_pdt)
         C_ao_pdt_old = C_pdt
-        molecule.scf.mo_coeff = C_pdt
+        molecule.mf.mo_coeff = C_pdt
         molecule.D_ao = D_ao_pdt
