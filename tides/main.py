@@ -8,7 +8,6 @@ from molecule import MOLECULE
 from logging_utils import PRINTLOGGER
 from electric_field import ELECTRICFIELD
 
-from fourier import fourier
 from cli import parse_arguments
 from propagation import propagation
 from plotting import show_eField_pField
@@ -150,7 +149,6 @@ if __name__ == "__main__":
 
         # Plot the results using the interpolated electric field data
         show_eField_pField(interpolated_e_field_csv, polarizability_csv)
-        fourier(polarizability_csv)
         logging.info("Simulation completed successfully.")
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)

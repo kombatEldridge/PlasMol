@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 import numpy as np
-from pyscf import gto, scf, lib
+from pyscf import gto, dft
 from pyscf.scf import addons
 
 import input_parser
@@ -53,12 +53,15 @@ class MOLECULE():
                           basis=options.basis,
                           unit='B',
                           charge=int(options.charge),
-                          spin=int(options.spin),
-                          verbose=lib.logger.QUIET)
-        self.mf = scf.RKS(mol)
-        self.mf.verbose = lib.logger.QUIET
+                          spin=int(options.spin))
+        self.mf = dft.RKS(mol)
         self.mf.xc = options.xc
         self.mf.kernel()
+
+        charges = self.mf.mol.atom_charges()
+        coords = self.mf.mol.atom_coords()
+        nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
+        self.mf.mol.set_common_orig_(nuc_charge_center)
 
         # Initialize matrices and wavefunction
         self.S = self.mf.get_ovlp()
@@ -154,12 +157,7 @@ class MOLECULE():
         np.ndarray
             Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
         """
-        mol = self.mf.mol
-        charges = mol.atom_charges()
-        coords = mol.atom_coords()
-        nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
-        mol.set_common_orig_(nuc_charge_center)
-        mu = -1 * mol.intor('int1e_r', comp=3)
+        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
         return mu
 
     def calculate_potential(self, exc):

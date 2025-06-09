@@ -1,0 +1,1517 @@
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/chkfile.py
+# chkfile.py
+import numpy as np
+import logging
+import _pickle
+
+logger = logging.getLogger("main")
+
+def update_chkfile(molecule, current_time):
+    """
+    Save a checkpoint file containing the current state of the simulation.
+
+    This function creates a .npz file with simulation data including the current time,
+    initial density matrix, molecular orbital coefficients, Fock matrix in orthogonal basis,
+    and an additional array based on the propagator method ('step' or 'magnus2').
+    The file is saved with the name specified in molecule.chkfile_path, appending .npz if not present.
+
+    Parameters:
+    molecule : object
+        The molecule object containing simulation data.
+    current_time : float
+        The current time in the simulation in atomic units.
+
+    Returns:
+    None
+    """
+    # ensure .npz extension
+    if not molecule.chkfile_path.endswith(".npz"):
+        molecule.chkfile_path = molecule.chkfile_path + ".npz"
+    fn = molecule.chkfile_path
+
+    method = molecule.propagator.lower()
+    save_dict = {
+        "current_time": current_time,
+        "D_ao_0":       molecule.D_ao_0,
+        "mo_coeff":     molecule.mf.mo_coeff,
+    }
+
+    if method == "step":
+        save_dict["C_orth_ndt"] = molecule.C_orth_ndt
+    elif method == "magnus2":
+        save_dict["F_orth_n12dt"] = molecule.F_orth_n12dt
+
+    try:
+        np.savez(fn, **save_dict)
+    except IOError as e:
+        logger.error(f"Failed to write checkpoint file {fn}: {e}")
+        raise
+
+    logger.debug(f"Wrote checkpoint to {fn} with keys: {list(save_dict)}")
+
+
+def restart_from_chkfile(molecule):
+    """
+    Load the simulation state from a checkpoint file.
+
+    This function loads data from a .npz checkpoint file specified in molecule.chkfile_path,
+    updating the molecule object with the saved state. It includes common data and
+    propagator-specific arrays based on the method ('step' or 'magnus2').
+
+    Parameters:
+    molecule : object
+        The molecule object to be updated with checkpoint data.
+
+    Returns:
+    None
+    """
+    fn = molecule.chkfile_path
+
+    try:
+        data = np.load(fn, allow_pickle=True)
+    except FileNotFoundError:
+        logger.error(f"Checkpoint file {fn} not found.")
+        raise
+    except KeyError as e:
+        logger.error(f"Missing key in checkpoint file {fn}: {e}")
+        raise
+    except (_pickle.UnpicklingError, ValueError):
+        logger.error(f"{fn} is not a valid checkpoint archive.")
+        raise
+    
+    logger.debug(f"Loading checkpoint from {fn}")
+
+    # common data
+    molecule.current_time = float(data["current_time"])
+    molecule.D_ao_0       = data["D_ao_0"]
+    molecule.mf.mo_coeff = data["mo_coeff"]
+
+    # conditional
+    method = molecule.propagator.lower()
+    if method == "step" and "C_orth_ndt" in data:
+        molecule.C_orth_ndt = data["C_orth_ndt"]
+    elif method == "magnus2" and "F_orth_n12dt" in data:
+        molecule.F_orth_n12dt = data["F_orth_n12dt"]
+
+    logger.debug(
+        f"Restarted at t={molecule.current_time} au; "
+        f"loaded propagator='{method}', "
+        f"arrays: {list(data.keys())}"
+    )
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/cli.py
+# cli.py
+import argparse
+
+def parse_arguments():
+    """
+    Parse command-line arguments for the RT-TDDFT simulation.
+
+    This function sets up an argument parser with options for simulation parameters,
+    file paths, and verbosity levels, returning the parsed arguments.
+
+    Parameters:
+    None
+
+    Returns:
+    argparse.Namespace
+        An object containing the parsed command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Meep simulation with Bohr dipole moment calculation.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    # required inputs
+    parser.add_argument('-b', '--bohr', type=str, required=True, help="Path to the Bohr input file.")
+    
+    # general controls
+    parser.add_argument('-m', '--mult', type=float, default=1, help="Multiplier for electric field interpolator resolution.")
+    parser.add_argument('-l', '--log', help="Log file name.")
+    parser.add_argument('-v', '--verbose', action='count', default=0, help="Increase verbosity (use up to -vv).")
+    
+    # numeric tolerances & iterations
+    parser.add_argument('--pcconv', type=float, default=1e-12, help="Convergence for Predictor‑Corrector (Magnus).")
+    parser.add_argument('--tol_zero', type=float, default=1e-12, help="Tolerance for Hermitian/unitary checks.")
+    parser.add_argument('--max_iter', type=int, default=200, help="Max SCF iterations before failure.")
+   
+    # time settings
+    parser.add_argument('--dt', type=float, default=0.01, help="Time step (unit via -u).")
+    parser.add_argument('-t', '--t_end', type=float, default=50, help="Simulation duration (unit via -u).")
+    parser.add_argument('-d', '--dir', type=str, default='z', help="Field direction: x, y or z.")
+    parser.add_argument('-u', '--time_units', type=str, default="au", help="Time unit: 'au' or 'fs'.")
+
+    # checkpointing
+    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Removes eField.csv, pField.csv, pField_spectrum.csv, chkfile.npz, output.png, and spectrum.png.")
+    parser.add_argument('--nochkfile', dest='chkfile', action='store_false', help="Do not save checkpoints.")
+    parser.add_argument('--chkfile_freq', type=int, default=100, help="Steps between checkpoint saves.")
+    parser.add_argument('--chkfile_path', type=str, default="chkfile.npz", help="Custom path for checkpoint file.")
+
+    # electric field shape
+    parser.add_argument('--peak_time_au', type=float, default=1.0, help="Field peak time (au).")
+    parser.add_argument('-w', '--width_steps', type=int, default=5, help="Field width in time steps.")
+    parser.add_argument('-s', '--shape', type=str, default="kick", help="Field shape: 'kick' or 'pulse'.")
+    
+    parser.set_defaults(smoothing=True)
+    parser.add_argument('--smoothing', action='store_true', help="Apply smoothing ramp.")
+    parser.add_argument('--nosmoothing', dest='smoothing', action='store_false', help="Disable smoothing ramp.")
+
+    # output filenames
+    parser.add_argument('--intensity_au', type=float, default=5e-5, help="Electric field intensity (au).")
+    parser.add_argument('--eFieldFile', type=str, default="eField.csv", help="Filename for electric field CSV.")
+    parser.add_argument('--pFieldFile', type=str, default="pField.csv", help="Filename for polarization CSV.")
+
+    args = parser.parse_args()
+    if args.log and args.verbose == 0:
+        args.verbose = 1
+
+    return args
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/constants.py
+# constants.py
+Z = {  "H" : 1, \
+ "HE" : 2,  "LI" : 3,  "BE" : 4,  "B" : 5,  "C" : 6, \
+ "N" : 7,  "O" : 8,  "F" : 9,  "NE" : 10,  "NA" : 11, \
+ "MG" : 12,  "AL" : 13,  "SI" : 14,  "P" : 15,  "S" : 16, \
+ "CL" : 17,  "AR" : 18,  "K" : 19,  "CA" : 20,  "SC" : 21, \
+ "TI" : 22,  "V" : 23,  "CR" : 24,  "MN" : 25,  "FE" : 26, \
+ "CO" : 27,  "NI" : 28,  "CU" : 29,  "ZN" : 30,  "GA" : 31, \
+ "GE" : 32,  "AS" : 33,  "SE" : 34,  "BR" : 35,  "KR" : 36, \
+ "RB" : 37,  "SR" : 38,  "Y" : 39,  "ZR" : 40,  "NB" : 41, \
+ "MO" : 42,  "TC" : 43,  "RU" : 44,  "RH" : 45,  "PD" : 46, \
+ "AG" : 47,  "CD" : 48,  "IN" : 49,  "SN" : 50,  "SB" : 51, \
+ "TE" : 52,  "I" : 53,  "XE" : 54,  "CS" : 55,  "BA" : 56, \
+ "LA" : 57,  "CE" : 58,  "PR" : 59,  "ND" : 60,  "PM" : 61, \
+ "SM" : 62,  "EU" : 63,  "GD" : 64,  "TB" : 65,  "DY" : 66, \
+ "HO" : 67,  "ER" : 68,  "TM" : 69,  "YB" : 70,  "LU" : 71, \
+ "HF" : 72,  "TA" : 73,  "W" : 74,  "RE" : 75,  "OS" : 76, \
+ "IR" : 77,  "PT" : 78,  "AU" : 79,  "HG" : 80,  "TL" : 81, \
+ "PB" : 82,  "BI" : 83,  "PO" : 84,  "AT" : 85,  "RN" : 86, \
+ "FR" : 87,  "RA" : 88,  "AC" : 89,  "TH" : 90,  "PA" : 91, \
+ "U" : 92,  "NP" : 93,  "PU" : 94,  "AM" : 95,  "CM" : 96, \
+ "BK" : 97,  "CF" : 98,  "ES" : 99,  "FM" : 100,  "MD" : 101, \
+ "NO" : 102,  "LR" : 103,  "RF" : 104,  "DB" : 105}
+
+Slater_radii = {  "H" : 0.66, \
+ "HE" : 0.66,  "LI" : 2.74,  "BE" : 1.98,  "B" : 1.61,  "C" : 1.32, \
+ "N" : 1.23,  "O" : 1.13,  "F" : 0.94,  "NE" : 0.94,  "NA" : 3.40, \
+ "MG" : 2.83,  "AL" : 2.36,  "SI" : 2.08,  "P" : 1.89,  "S" : 1.89, \
+ "CL" : 1.89,  "AR" : 1.89,  "K" : 4.16,  "CA" : 3.40,  "SC" : 3.02, \
+ "TI" : 2.65,  "V" : 2.55,  "CR" : 2.65,  "MN" : 2.65,  "FE" : 2.65, \
+ "CO" : 2.55,  "NI" : 2.55,  "CU" : 2.55,  "ZN" : 2.55,  "GA" : 2.46, \
+ "GE" : 2.36,  "AS" : 2.17,  "SE" : 2.17,  "BR" : 2.17,  "KR" : 2.17, \
+ "RB" : 4.44,  "SR" : 3.78,  "Y" : 3.40,  "ZR" : 2.93,  "NB" : 2.74, \
+ "MO" : 2.74,  "TC" : 2.55,  "RU" : 2.46,  "RH" : 2.55,  "PD" : 2.65, \
+ "AG" : 3.02,  "CD" : 2.93,  "IN" : 2.93,  "SN" : 2.74,  "SB" : 2.74, \
+ "TE" : 2.65,  "I" : 2.65,  "XE" : 2.65,  "CS" : 4.91,  "BA" : 4.06, \
+ "LA" : 3.68,  "CE" : 3.50,  "PR" : 3.50,  "ND" : 3.50,  "PM" : 3.50, \
+ "SM" : 3.50,  "EU" : 3.50,  "GD" : 3.40,  "TB" : 3.31,  "DY" : 3.31, \
+ "HO" : 3.31,  "ER" : 3.31,  "TM" : 3.31,  "YB" : 3.31,  "LU" : 3.31, \
+ "HF" : 2.93,  "TA" : 2.74,  "W" : 2.55,  "RE" : 2.55,  "OS" : 2.46, \
+ "IR" : 2.55,  "PT" : 2.55,  "AU" : 2.55,  "HG" : 2.83,  "TL" : 3.59, \
+ "PB" : 3.40,  "BI" : 3.02,  "PO" : 3.59,  "AT" : 3.59,  "RN" : 3.59, \
+ "FR" : 4.91,  "RA" : 4.06,  "AC" : 3.68,  "TH" : 3.40,  "PA" : 3.40, \
+ "U" : 3.31,  "NP" : 3.31,  "PU" : 3.31,  "AM" : 3.31,  "CM" : 3.31, \
+ "BK" : 3.31,  "CF" : 3.31,  "ES" : 3.31,  "FM" : 3.31,  "MD" : 3.31, \
+ "NO" : 3.31,  "LR" : 3.31,  "RF" : 2.93,  "DB" : 2.93}
+
+masses = {  "H" : 1.00782e+00, \
+ "HE" : 4.00260e+00,  "LI" : 7.01600e+00,  "BE" : 9.01218e+00,  "B" : 1.10093e+01,  "C" : 1.20000e+01, \
+ "N" : 1.40031e+01,  "O" : 1.59949e+01,  "F" : 1.89984e+01,  "NE" : 1.99924e+01,  "NA" : 2.29898e+01, \
+ "MG" : 2.39850e+01,  "AL" : 2.69815e+01,  "SI" : 2.79769e+01,  "P" : 3.09738e+01,  "S" : 3.19721e+01, \
+ "CL" : 3.49689e+01,  "AR" : 3.99624e+01,  "K" : 3.89637e+01,  "CA" : 3.99626e+01,  "SC" : 4.49559e+01, \
+ "TI" : 4.59480e+01,  "V" : 5.09440e+01,  "CR" : 5.19405e+01,  "MN" : 5.49381e+01,  "FE" : 5.59349e+01, \
+ "CO" : 5.89332e+01,  "NI" : 5.79353e+01,  "CU" : 6.29298e+01,  "ZN" : 6.39291e+01,  "GA" : 6.89257e+01, \
+ "GE" : 7.39219e+01,  "AS" : 7.49216e+01,  "SE" : 7.89183e+01,  "BR" : 7.99165e+01,  "KR" : 8.39120e+01, \
+ "RB" : 8.49117e+01,  "SR" : 8.79056e+01,  "Y" : 8.89054e+01,  "ZR" : 8.99043e+01,  "NB" : 9.29060e+01, \
+ "MO" : 9.79055e+01,  "TC" : 9.79072e+01,  "RU" : 1.01904e+02,  "RH" : 1.02905e+02,  "PD" : 1.05903e+02, \
+ "AG" : 1.06905e+02,  "CD" : 1.13904e+02,  "IN" : 1.14904e+02,  "SN" : 1.17902e+02,  "SB" : 1.20904e+02, \
+ "TE" : 1.29907e+02,  "I" : 1.26900e+02,  "XE" : 1.31904e+02,  "CS" : 1.32905e+02,  "BA" : 1.37905e+02, \
+ "LA" : 1.38906e+02,  "CE" : 1.39905e+02,  "PR" : 1.40907e+02,  "ND" : 1.43910e+02,  "PM" : 1.44913e+02, \
+ "SM" : 1.51919e+02,  "EU" : 1.52921e+02,  "GD" : 1.57924e+02,  "TB" : 1.59925e+02,  "DY" : 1.63929e+02, \
+ "HO" : 1.64930e+02,  "ER" : 1.65930e+02,  "TM" : 1.68934e+02,  "YB" : 1.73939e+02,  "LU" : 1.74941e+02, \
+ "HF" : 1.79947e+02,  "TA" : 1.80948e+02,  "W" : 1.83951e+02,  "RE" : 1.86956e+02,  "OS" : 1.89959e+02, \
+ "IR" : 1.92963e+02,  "PT" : 1.94965e+02,  "AU" : 1.96967e+02,  "HG" : 2.01971e+02,  "TL" : 2.04975e+02, \
+ "PB" : 2.07977e+02,  "BI" : 2.08980e+02,  "PO" : 2.09983e+02,  "AT" : 2.10988e+02,  "RN" : 2.22018e+02, \
+ "FR" : 2.23020e+02,  "RA" : 2.26025e+02,  "AC" : 2.27028e+02,  "TH" : 2.32038e+02,  "PA" : 2.31036e+02, \
+ "U" : 2.38051e+02,  "NP" : 2.37048e+02,  "PU" : 2.44064e+02,  "AM" : 2.43061e+02,  "CM" : 2.47070e+02, \
+ "BK" : 2.47070e+02,  "CF" : 2.51080e+02,  "ES" : 2.52083e+02,  "FM" : 2.57095e+02,  "MD" : 2.58099e+02, \
+ "NO" : 2.59101e+02,  "LR" : 2.62110e+02,  "RF" : 2.61109e+02,  "DB" : 2.62114e+02}
+
+eta = {"SI" : 4.1551, "CL" : 5.8662}
+tbw = {"SI" : -0.0144 , "CL" : -0.0161}
+
+#Useful maps
+bset_angmom_map = {"S" : "S", "SP" : ["S", "P"], "P" : "P", "D" : "D", "F" : "F"}
+angmom_list = {"S" : 0, "P" : 1, "D" : 2, "F" : 3}
+shells_list = {1 : ["S"], 2: ["S", "P"], 3: ["S", "P", "D"], 4: ["S", "P", "D", "F"]}
+orbital_angmom_list = {"S" : [[0,0,0]], "P" : [[1,0,0],[0,1,0],[0,0,1]], "D" : [[2,0,0],[1,1,0],[1,0,1],[0,2,0],[0,1,1],[0,0,2]], "F" : [[3,0,0],[2,1,0],[1,2,0],[0,3,0],[2,0,1],[1,1,1],[0,2,1],[1,0,2],[0,1,2],[0,0,3]]}
+
+grid = {'H' : [11, 20], 'O' : [11,25]}
+
+angs2bohr = 1.0/0.52917721067
+ev2au = 1./27.21138
+au2ev = 1./ev2au
+
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/csv_utils.py
+# csv_utils.py
+import os
+import csv
+import pandas as pd
+
+def initCSV(filename, comment):
+    """
+    Initialize a CSV file with a header and comment lines.
+
+    Creates a new CSV file with comment lines prefixed by '#', followed by a header row:
+    ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values'].
+
+    Parameters:
+    filename : str
+        Path to the CSV file to be created.
+    comment : str
+        Comment string to include at the beginning of the file, split into lines.
+
+    Returns:
+    None
+    """
+    with open(filename, 'w', newline='') as file:
+        for line in comment.splitlines():
+            file.write(f"# {line}\n")
+        file.write("\n")
+        writer = csv.writer(file)
+        header = ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values']
+        writer.writerow(header)
+
+def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
+    """
+    Append a row of data to an existing CSV file.
+
+    Adds a row with the timestamp and x, y, z values, defaulting to 0 if any value is not provided.
+    Raises an error if the file does not exist (i.e., not initialized with initCSV).
+
+    Parameters:
+    filename : str
+        Path to the CSV file.
+    timestamp : float
+        The timestamp for the data point in atomic units.
+    x_value : float, optional
+        Value for the x component, defaults to 0 if None.
+    y_value : float, optional
+        Value for the y component, defaults to 0 if None.
+    z_value : float, optional
+        Value for the z component, defaults to 0 if None.
+
+    Returns:
+    None
+    """
+    file_exists = os.path.exists(filename)
+    row = [timestamp, x_value if x_value is not None else 0,
+           y_value if y_value is not None else 0,
+           z_value if z_value is not None else 0]
+    
+    if not file_exists:
+        raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'initCSV' before calling 'updateCSV'.")
+    
+    with open(filename, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(row)
+
+def read_electric_field_csv(file_path):
+    """
+    Read electric field values from a CSV file.
+
+    Parses a CSV file with a header starting with 'Timestamps', returning four lists
+    for time values and electric field components (x, y, z).
+
+    Parameters:
+    file_path : str
+        Path to the CSV file.
+
+    Returns:
+    tuple
+        A tuple of four lists: (time_values, electric_x, electric_y, electric_z),
+        each containing float values.
+    """
+    time_values, electric_x, electric_y, electric_z = [], [], [], []
+    with open(file_path, mode='r', newline='') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            if row and row[0].startswith("Timestamps"):
+                break
+        for row in reader:
+            if len(row) < 4:
+                continue
+            time_values.append(float(row[0]))
+            electric_x.append(float(row[1]))
+            electric_y.append(float(row[2]))
+            electric_z.append(float(row[3]))
+    return time_values, electric_x, electric_y, electric_z
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/electric_field.py
+# electric_field.py
+import numpy as np
+import logging 
+
+logger = logging.getLogger("main")
+
+C_NM_FS = 299.792458    # Speed of light in nm/fs
+A0 = 5.29177210903e-11  # Bohr radius in m
+D_AU_NM = 1e-9 / A0     # Distance conv in au/nm
+D_NM_CM = 1e-7          # Distance conv in nm/cm
+T_AU_FS = 41.3413733    # Time conv in au/fs
+E_EV_AU = 27.21138602   # Energy conv in eV/au
+E_NM_EV = 1239.84193    # Energy conv in eV nm
+C_AU = 137.035999       # Speed of light in atomic units
+
+class ELECTRICFIELD:
+    """
+    A class to generate and manage electric field components over time.
+
+    Supports Gaussian-enveloped oscillatory ('pulse') or Gaussian ('kick') field shapes.
+    """
+    def __init__(self, times, dir, wavelength_nm=None, frequency_cm1=None, energy_ev=None, energy_au=None,
+                 peak_time_au=None, peak_time_fs=None, width_steps=None, width_duration_au=None, 
+                 width_duration_fs=None, dt=None, smoothing=True, shape='pulse', intensity_au=0.05,
+                 smoothing_ramp_duration_au=None, smoothing_ramp_duration_fs=10):
+        """
+        Initialize the electric field object.
+
+        Configures the field based on shape, intensity, and timing parameters. For 'pulse',
+        exactly one energy/wavelength parameter must be provided. All times are converted to atomic units.
+
+        Parameters:
+        times : np.ndarray
+            Array of time points in atomic units where the field is evaluated.
+        dir : str
+            Direction of the field ('x', 'y', or 'z').
+        wavelength_nm : float, optional
+            Wavelength in nanometers (for 'pulse').
+        frequency_cm1 : float, optional
+            Frequency in cm^-1 (for 'pulse').
+        energy_ev : float, optional
+            Energy in electron volts (for 'pulse').
+        energy_au : float, optional
+            Energy in atomic units (for 'pulse').
+        peak_time_au : float, optional
+            Time of pulse peak in atomic units.
+        peak_time_fs : float, optional
+            Time of pulse peak in femtoseconds.
+        width_steps : int, optional
+            Number of time steps for field width.
+        width_duration_au : float, optional
+            Field width duration in atomic units.
+        width_duration_fs : float, optional
+            Field width duration in femtoseconds.
+        dt : float, optional
+            Time step in atomic units (required with width_steps).
+        smoothing : bool, optional
+            Whether to apply smoothing (default True, disabled for 'kick').
+        shape : str, optional
+            Field shape ('pulse' or 'kick', default 'pulse').
+        intensity_au : float, optional
+            Field intensity in atomic units (default 0.05).
+        smoothing_ramp_duration_au : float, optional
+            Smoothing ramp duration in atomic units.
+        smoothing_ramp_duration_fs : float, optional
+            Smoothing ramp duration in femtoseconds (default 10).
+
+        Returns:
+        None
+        """
+        self.exc_store = {}
+        self.empty = np.array([0.0, 0.0, 0.0])
+
+        self.shape = shape
+        if intensity_au == 0.05:
+            logger.debug("Warning: Intensity of Electric field being set to default value of 0.05 au.")
+        self.intensity_au = intensity_au
+
+        self.smoothing = smoothing
+        if self.smoothing:
+            if smoothing_ramp_duration_au is not None:
+                self.ramp_duration_au = smoothing_ramp_duration_au
+            else:
+                self.ramp_duration_au = smoothing_ramp_duration_fs * T_AU_FS
+
+        provided = sum([wavelength_nm is not None, frequency_cm1 is not None, energy_ev is not None, energy_au is not None])
+        if shape == 'pulse':
+            if provided != 1:
+                raise ValueError("For shape='pulse', exactly one of wavelength_nm, frequency_cm1, energy_ev, or energy_au must be provided.")
+            if wavelength_nm is not None:
+                self.wavelength_nm = wavelength_nm
+            elif frequency_cm1 is not None:
+                self.wavelength_nm = D_NM_CM / frequency_cm1
+            elif energy_ev is not None:
+                self.wavelength_nm = E_NM_EV / energy_ev
+            elif energy_au is not None:
+                E_ev = energy_au * E_EV_AU 
+                self.wavelength_nm = E_NM_EV / E_ev
+            self.wavelength_au = self.wavelength_nm * D_AU_NM
+        elif shape == 'kick':
+            if provided > 0:
+                logger.debug("Warning: For shape='kick', wavelength_nm, frequency_cm1, energy_ev, energy_au are not used.")
+            if self.smoothing:
+                logger.debug("Smoothing turned off for shape='kick'")
+                self.smoothing = False
+        else:
+            raise ValueError("Invalid shape. Must be 'pulse' or 'kick'.")
+
+        provided = sum([peak_time_fs is not None, peak_time_au is not None])
+        if provided != 1:
+            raise ValueError("Exactly one of peak_time_fs or peak_time_au must be provided.")
+        if (peak_time_fs is not None):
+            self.peak_time_au = peak_time_fs * T_AU_FS
+        elif (peak_time_au is not None):
+            self.peak_time_au = peak_time_au
+
+        provided = sum([width_steps is not None, width_duration_fs is not None, width_duration_au is not None])
+        if provided != 1:
+            raise ValueError("Exactly one of width_steps, width_duration_fs, or width_duration_au must be provided.")
+        if (width_steps is not None):
+            if (dt is None):
+                raise ValueError(f"You must provide dt when specifying width_steps.")
+            self.width_au = width_steps * dt
+        elif (width_duration_fs is not None):
+            self.width_au = width_duration_fs * T_AU_FS
+        elif (width_duration_au is not None):
+            self.width_au = width_duration_au
+
+        self.times = times
+        self.dir = dir
+        self.field = self.build_field(self.times, self.dir)
+
+    def build_field(self, times, dir):
+        """
+        Compute the electric field for a given array of times.
+
+        Generates the field based on the shape: 'pulse' (oscillatory) or 'kick' (Gaussian),
+        applying it along the specified direction with optional smoothing.
+
+        Parameters:
+        times : np.ndarray
+            Array of times in atomic units.
+        dir : str
+            Direction of the field ('x', 'y', or 'z').
+
+        Returns:
+        np.ndarray
+            Array of shape (len(times), 3) with field components [x, y, z].
+        """
+        t = np.asarray(times) # must be in au
+        if self.shape == 'pulse':
+            omega = 2 * np.pi * C_AU / self.wavelength_au
+            carrier  = np.exp(1j * omega * (t - self.peak_time_au))
+            envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
+            active_component = self.intensity_au * np.real(carrier * envelope)
+        elif self.shape == 'kick':
+            envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
+            active_component = self.intensity_au * envelope
+
+        if self.smoothing:
+            t_start = t[0]
+            window = np.ones_like(t)
+            mask = t < (t_start + self.ramp_duration_au)
+            window[mask] = 0.5 * (1 - np.cos(np.pi * (t[mask] - t_start) / self.ramp_duration_au))
+            active_component *= window
+
+        field = np.zeros((len(t), 3))
+        dir = dir.lower()
+        if dir == 'x':
+            field[:, 0] = active_component
+        elif dir == 'y':
+            field[:, 1] = active_component
+        elif dir == 'z':
+            field[:, 2] = active_component
+        else:
+            raise ValueError("Invalid direction. Must be 'x', 'y', or 'z'.")
+        return field
+
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/fourier.py
+# fourier.py
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+init_w_eV = float(0)
+final_w_eV = float(35)
+step_w_eV = float(0.1)
+nw = int(final_w_eV/step_w_eV)
+freq_eV = np.arange(init_w_eV, final_w_eV, step_w_eV)
+
+def fourier(ofn, fn):
+    data           = np.load(ofn, allow_pickle=True)
+    dipole         = data["dipole_moment"]
+    time           = data["time_points"]
+    dt             = float(data["dt"])
+    print(f"{ofn} with {data['basis']} basis, using RT-TD{data['method']} with {len(time)} time points.")
+
+    damp = 0.010
+    print("Damping factor gamma: %f",damp)
+
+    abs_real = [[],[],[]]
+    abs_imag = [[],[],[]]
+
+    for axis in (0, 1, 2):
+        print(f"Starting direction { {0:'x', 1:'y', 2:'z'}[axis] }")
+        for step_num in range(nw):
+            w = freq_eV[step_num]/27.21138 # converted to au
+            S = 0j
+            for k in range(len(time)):
+                S += dipole[axis][k] * np.exp(-1j * w * time[k]) * np.exp(-damp * time[k]) * dt
+
+            abs_real[axis].append(S.real)
+            abs_imag[axis].append(S.imag)
+            
+    print("Fourier transform done!")
+    for i in range(3):
+        abs_real[i] = np.array(abs_real[i])
+        abs_imag[i] = np.array(abs_imag[i])
+
+    np.savez(fn, abs_imag)
+    return abs_imag
+
+fourier("rttddft.npz", "transformed-rttddft.npz")
+rttddft = np.load("transformed-rttddft.npz")
+rttddft = rttddft['arr_0']
+
+# nwchem
+data_nwchem = pd.read_fwf('nwchem-lr-tddft.txt').values
+f_nwchem = data_nwchem[:,0]
+y_nwchem = data_nwchem[:,1]
+
+from scipy.constants import speed_of_light, physical_constants
+SPEED_OF_LIGHT = speed_of_light/physical_constants["atomic unit of velocity"][0]
+
+def absorption(imag):
+    fullsum = imag[0] + imag[1] + imag[2]
+    return - 4 * np.pi * freq_eV / 3 / SPEED_OF_LIGHT * fullsum
+
+abs_rttddft = absorption(rttddft)
+
+fig = plt.figure(figsize=(14, 8))
+plt.plot(freq_eV, abs_rttddft/max(abs(abs_rttddft)), color='blue', label='RT-TDDFT')
+plt.plot(f_nwchem, y_nwchem/max(y_nwchem), '--', color='green', label='LR-TDDFT')
+plt.xlabel('Angular frequency ω (eV)')
+plt.ylabel('Absorption')
+plt.title('Fourier Transform of μ(t)')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/input_parser.py
+# input_parser.py
+import constants
+import numpy as np
+
+def read_input(inputfile, options):
+    with open(inputfile) as f:
+        in_mol = False
+        atoms, coords = [], {}
+        for line in f:
+            parts = line.split()
+            if not parts: continue
+
+            # geometry block
+            if parts[0] == "start" and parts[1] == "molecule":
+                in_mol = True
+                continue
+            if parts[0] == "end" and parts[1] == "molecule":
+                in_mol = False
+                continue
+            if in_mol:
+                symbol, x, y, z = parts
+                atoms.append(symbol)
+                coords[f"{symbol}{len(atoms)}"] = np.array([float(x),float(y),float(z)])
+                continue
+
+            # simple key = value lines
+            key = parts[0].lower()
+            val = parts[1]
+            if key == "charge":
+                options.charge = int(val)
+            elif key == "spin":
+                options.spin = int(val)
+            elif key == "basis":
+                options.basis = val
+            elif key == "diis":
+                options.diis = (val.lower() == "true")
+            elif key in ("e_convergence","e_conv"):
+                options.e_conv = float(val)
+            elif key in ("d_convergence","d_conv"):
+                options.d_conv = float(val)
+            elif key == "maxiter":
+                options.maxiter = int(val)
+            elif key == "nroots":
+                options.nroots = int(val)
+            elif key == "xc":
+                options.xc = val
+            elif key == "resplimit":
+                options.resplimit = float(val)
+            elif key == "guess_mos":
+                options.guess_mos = val
+            elif key == "propagator":
+                options.propagator = val.lower()
+            elif key == "method":
+                options.method = val.lower()
+            elif key == "units":
+                options.units = val
+
+    options.molecule["atoms"] = atoms
+    options.molecule["coords"] = convert_to_bohr(coords, options.units)
+    return options.molecule, options
+
+
+def convert_to_bohr(coords, units):
+    """
+    coords: dict mapping labels (e.g. "O1") → numpy.array([x,y,z])
+    units: "angstrom" or "bohr"
+    Returns a new dict with all coordinates in Bohr.
+    """
+    if units.lower().startswith("angstrom"):
+        factor = constants.angs2bohr
+    elif units.lower().startswith("bohr"):
+        factor = 1.0
+    else:
+        raise ValueError(f"Unknown units '{units}', must be 'angstrom' or 'bohr'")
+    return { label: xyz * factor for label, xyz in coords.items() }
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/logging_utils.py
+# logging_utils.py
+import logging
+
+class PRINTLOGGER:
+    """
+    A custom logger to redirect stdout to the logging system.
+
+    Captures print statements and logs them at a specified level.
+    """
+    def __init__(self, logger, level=logging.INFO):
+        """
+        Initialize the PRINTLOGGER with a logger and logging level.
+
+        Parameters:
+        logger : logging.Logger
+            The logger object to use for logging messages.
+        level : int, optional
+            The logging level for captured messages (default logging.INFO).
+
+        Returns:
+        None
+        """
+        self.logger = logger
+        self.level = level
+
+    def write(self, message):
+        """
+        Write a message to the logger.
+
+        Strips trailing newlines and logs non-empty messages.
+
+        Parameters:
+        message : str
+            The message to log.
+
+        Returns:
+        None
+        """
+        message = message.rstrip()
+        if message:
+            self.logger.log(self.level, message)
+
+    def flush(self):
+        """
+        Flush the logger output.
+
+        Does nothing as logging handlers manage flushing.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
+        pass
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/magnus2.py
+# magnus2.py
+import logging
+import numpy as np
+from scipy.linalg import expm
+
+logger = logging.getLogger("main")
+
+def propagate(params, molecule, exc):
+    """
+    Propagate molecular orbitals using the Magnus2 method.
+
+    Implements a predictor-corrector scheme to propagate the density matrix over one time step,
+    using extrapolation and iterative refinement until convergence.
+
+    Parameters:
+    params : object
+        Parameters object with dt, max_iter, and pcconv attributes.
+    molecule : object
+        Molecule object with current state data.
+    exc : np.ndarray
+        External electric field at the current time step.
+
+    Returns:
+    None
+    """
+    C_orth = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
+    F_orth_p12dt = 2 * molecule.F_orth - molecule.F_orth_n12dt
+    
+    max_iterations = params.max_iter
+    C_ao_pdt_old = None
+    iteration = 0
+    while True:
+        iteration += 1
+        if iteration > max_iterations:
+            raise RuntimeError(f"Failed to converge within {max_iterations} iterations")
+
+        # 1) predictor
+        U = expm(-1j * params.dt * F_orth_p12dt)
+        C_orth_pdt = np.matmul(U, C_orth)
+        C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
+        
+        # 2) compute new Fock
+        D_ao_pdt = molecule.mf.make_rdm1(mo_coeff=C_pdt, mo_occ=molecule.occ)
+        F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
+        
+        # 3) only check convergence if we have a previous value
+        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < params.pcconv:
+            molecule.mf.mo_coeff = C_pdt
+            molecule.D_ao = D_ao_pdt
+            molecule.F_orth = F_orth_pdt
+            molecule.F_orth_n12dt = F_orth_p12dt
+            logger.debug(f'Magnus2 converged in {iteration} iterations.')
+            break
+
+        # 4) update history for next iteration
+        F_orth_p12dt = 0.5 * (molecule.F_orth + F_orth_pdt)
+        C_ao_pdt_old = C_pdt
+        molecule.mf.mo_coeff = C_pdt
+        molecule.D_ao = D_ao_pdt
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/main.py
+import os
+import sys
+import logging
+import numpy as np
+
+from params import PARAMS
+from molecule import MOLECULE
+from logging_utils import PRINTLOGGER
+from electric_field import ELECTRICFIELD
+
+from cli import parse_arguments
+from propagation import propagation
+from plotting import show_eField_pField
+from csv_utils import initCSV, updateCSV
+
+# main.py
+if __name__ == "__main__":
+    try:
+        # Set up logging
+        log_format = '%(levelname)s: %(message)s'
+        args = parse_arguments()
+        logger = logging.getLogger()
+        # Clear any pre-existing handlers.
+        if logger.hasHandlers():
+            logger.handlers.clear()
+
+        # Set log level based on verbosity.
+        if args.verbose >= 2:
+            logger.setLevel(logging.DEBUG)
+        elif args.verbose == 1:
+            logger.setLevel(logging.INFO)
+        else:
+            logger.setLevel(logging.WARNING)
+
+        # Use FileHandler if a log file is specified; otherwise, use StreamHandler.
+        if args.log:
+            handler = logging.FileHandler(args.log, mode='w')
+        else:
+            handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(log_format))
+        logger.addHandler(handler)
+
+        # Optional: Prevent propagation to avoid duplicate logging
+        logger.propagate = False
+    
+        sys.stdout = PRINTLOGGER(logger, logging.INFO)
+        logging.getLogger("h5py").setLevel(logging.INFO)
+    
+        T_AU_FS = 41.3413733  # Time units in au/fs
+
+        # Convert time in fs to au
+        if (args.time_units == 'fs'):
+            dt_au = args.dt * T_AU_FS
+            dt_fs = args.dt
+            t_end = args.t_end * T_AU_FS
+            t_end_fs = args.t_end
+        elif (args.time_units == 'au'):
+            dt_au = args.dt
+            dt_fs = args.dt / T_AU_FS
+            t_end = args.t_end
+            t_end_fs = args.t_end / T_AU_FS
+        else: 
+            raise ValueError(f"The timestep unit for this simulation should only either be 'fs' or 'au'.")
+
+        # Time step check
+        if (dt_au > 0.1):
+            logger.warning(f"The timestep for this simulation is too large to elicit physical results.")
+
+        time_values = np.arange(0, t_end + dt_au, dt_au)
+        interpolated_times = np.linspace(0, time_values[-1], int(len(time_values) * args.mult))
+        logger.info(f"The timestep for this simulation is {dt_au} in au or {dt_fs} in fs.")
+        logger.info(f"The simulation will propagate until {t_end} in au or {t_end_fs} in fs.")
+        logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
+        logger.debug(f"Arguments given and parsed successfully: {args}")
+        
+        if args.restart:
+            for path in ['eField.csv', 'pField.csv', 'pField_spectrum.csv', 'chkfile.npz', 'output.png', 'spectrum.png']:
+                if os.path.isfile(path):
+                    try:
+                        os.remove(path)
+                        logger.info(f"Deleted {path}")
+                    except OSError as e:
+                        logger.error(f"Error deleting {path}: {e}")
+                else:
+                    logger.debug(f"No such file: {path}")
+
+        params = PARAMS(
+            pcconv=args.pcconv, 
+            tol_zero=args.tol_zero, 
+            dt=dt_au, 
+            max_iter=args.max_iter, 
+            chkfile=args.chkfile,
+            chkfile_path=args.chkfile_path,
+            chkfile_freq=args.chkfile_freq,
+            peak_time_au=args.peak_time_au,
+            width_steps=args.width_steps,
+            shape=args.shape,
+            smoothing=args.smoothing,
+            intensity_au=args.intensity_au,
+            eFieldFile=args.eFieldFile,
+            pFieldFile=args.pFieldFile,
+            )
+        
+        molecule = MOLECULE(args.bohr, params)
+
+        logger.debug("Building an interpolation profile with ElectricFieldInterpolator")
+        field = ELECTRICFIELD(
+            interpolated_times, 
+            args.dir,
+            peak_time_au=params.peak_time_au,
+            width_steps=params.width_steps,
+            dt=dt_au,
+            shape=params.shape,
+            smoothing=params.smoothing,
+            intensity_au=params.intensity_au,
+        )
+
+        if molecule.chkfile_path is not None and os.path.exists(molecule.chkfile_path):
+            # assume the eField and pField files have already been built and you do not need to re-initialize them
+            logger.debug(f"Checkpoint file {molecule.chkfile_path} found. Skipping electric/polarizability field generation.")
+            interpolated_e_field_csv = params.eFieldFile
+            polarizability_csv = params.pFieldFile
+        else:            
+            interpolated_e_field_csv = "eField.csv"  # TODO: add to input file
+            initCSV(interpolated_e_field_csv, "Electric Field intensity in atomic units")
+
+            # Initialize CSV file for the polarizability field output
+            polarizability_csv = "pField.csv"  # TODO: add to input file
+            initCSV(polarizability_csv, "Molecule's Polarizability Field intensity in atomic units")
+            
+        # Append the interpolated data rows to the CSV file
+        for t, intensity in zip(interpolated_times, field.field):
+            updateCSV(interpolated_e_field_csv, t, intensity[0], intensity[1], intensity[2])
+        
+        logger.debug(f"Electric field successfully built and saved to {interpolated_e_field_csv}")
+
+        # Log non-comment lines from the Bohr input file
+        logger.info("Bohr input file processed:")
+        bohr_input_path = os.path.abspath(args.bohr)
+        with open(bohr_input_path, 'r') as bohr_file:
+            for line in bohr_file:
+                if not line.strip().startswith(('#', '--', '%')):
+                    logger.info('\t%s', line.rstrip('\n'))
+
+        logger.debug(f"Moleucle's response will be saved to {polarizability_csv}")
+    
+        # Main code call
+        propagation(params, molecule, field, polarizability_csv)
+
+        # Plot the results using the interpolated electric field data
+        show_eField_pField(interpolated_e_field_csv, polarizability_csv)
+        logging.info("Simulation completed successfully.")
+    except Exception as err:
+        logger.error(f"Simulation failed: {err}", exc_info=True)
+        sys.exit(1)
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/molecule.py
+# molecule.py
+import os
+import sys
+import logging
+import numpy as np
+from pyscf import gto, scf, lib
+from pyscf.scf import addons
+
+import input_parser
+from chkfile import restart_from_chkfile
+
+logger = logging.getLogger("main")
+
+class MOLECULE():
+    """
+    Represents a molecule in the RT-TDDFT simulation.
+
+    Manages quantum mechanical properties, SCF calculations, and time propagation state.
+    """
+    def __init__(self, inputfile, params):
+        """
+        Initialize the MOLECULE object with input file and parameters.
+
+        Sets up the molecule from the input file, performs initial SCF calculation,
+        and loads from checkpoint if available.
+
+        Parameters:
+        inputfile : str
+            Path to the input file.
+        params : object
+            Parameters object with simulation settings.
+
+        Returns:
+        None
+        """
+        import options
+        options = options.OPTIONS()
+        self.molecule, options = input_parser.read_input(inputfile, options)
+        self.propagator = options.propagator
+
+        # Format molecule string as required by PySCF
+        atoms = self.molecule["atoms"]
+        molecule_coords = ""
+        for index, atom in enumerate(atoms):
+            molecule_coords += " " + atom
+            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][0])
+            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][1])
+            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][2])
+            if index != (len(atoms)-1):
+                molecule_coords += ";"
+
+        mol = gto.M(atom=molecule_coords,
+                          basis=options.basis,
+                          unit='B',
+                          charge=int(options.charge),
+                          spin=int(options.spin))
+        self.mf = scf.RKS(mol)
+        self.mf.xc = options.xc
+        self.mf.kernel()
+
+        charges = self.mf.mol.atom_charges()
+        coords = self.mf.mol.atom_coords()
+        nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
+        self.mf.mol.set_common_orig_(nuc_charge_center)
+
+        # Initialize matrices and wavefunction
+        self.S = self.mf.get_ovlp()
+        self.X = addons.canonical_orth_(self.S)
+
+        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=params.tol_zero):
+            logger.warning("Orthogonalization matrix X may not be unitary")
+            
+        self.occ = self.mf.get_occ()
+        self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
+
+        if len(np.shape(self.D_ao_0)) == 3:
+            self.nmat = 2
+            sys.exit("nmat == 2")
+        else:
+            self.nmat = 1
+
+        self.current_time = 0
+
+        self.chkfile_path = params.chkfile_path if params.chkfile else None
+        if self.chkfile_path is not None and os.path.exists(self.chkfile_path):
+            restart_from_chkfile(self)
+            self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
+            self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
+        else: 
+            self.D_ao = self.D_ao_0
+            self.F_orth = self.get_F_orth(self.D_ao)
+            self.F_orth_n12dt = self.F_orth
+
+        if not self.is_hermitian(self.D_ao, tol=1e-12):
+            raise ValueError("Initial density matrix in AO is not Hermitian")
+
+
+    def get_F_orth(self, D_ao, exc=None):
+        """
+        Compute the Fock matrix in the orthogonal basis.
+
+        Includes the effect of an external field if provided.
+
+        Parameters:
+        D_ao : np.ndarray
+            Density matrix in atomic orbital basis.
+        exc : np.ndarray, optional
+            External electric field components [x, y, z].
+
+        Returns:
+        np.ndarray
+            Fock matrix in orthogonal basis.
+        """
+        F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
+        if exc is not None:
+            F_ao += self.calculate_potential(exc)
+        return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
+
+    def rotate_coeff_to_orth(self, coeff_ao):
+        """
+        Transform molecular orbital coefficients to the orthogonal basis.
+
+        Parameters:
+        coeff_ao : np.ndarray
+            Coefficients in atomic orbital basis.
+
+        Returns:
+        np.ndarray
+            Coefficients in orthogonal basis.
+        """
+        return np.matmul(np.linalg.inv(self.X), coeff_ao)
+
+    def rotate_coeff_away_from_orth(self, coeff_orth):
+        """
+        Transform molecular orbital coefficients from orthogonal to atomic orbital basis.
+
+        Parameters:
+        coeff_orth : np.ndarray
+            Coefficients in orthogonal basis.
+
+        Returns:
+        np.ndarray
+            Coefficients in atomic orbital basis.
+        """
+        return np.matmul(self.X, coeff_orth)
+    
+    def calculate_mu(self):
+        """
+        Calculate the dipole moment integrals for the molecule.
+
+        Sets the origin to the nuclear charge center and computes dipole integrals.
+
+        Parameters:
+        None
+
+        Returns:
+        np.ndarray
+            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
+        """
+        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
+        return mu
+
+    def calculate_potential(self, exc):
+        """
+        Calculate the potential contribution from an external electric field.
+
+        Uses dipole moment integrals to compute the field-induced potential.
+
+        Parameters:
+        exc : np.ndarray
+            External electric field components [x, y, z] in atomic units.
+
+        Returns:
+        np.ndarray
+            Potential matrix in atomic orbital basis.
+        """
+        mu = self.calculate_mu()
+        return -1 * np.einsum('xij,x->ij', mu, exc)
+
+    def is_hermitian(self, A, tol):
+        """
+        Check if a matrix is Hermitian within a tolerance.
+
+        Parameters:
+        A : np.ndarray
+            Matrix to check.
+        tol : float
+            Numerical tolerance for Hermitian property.
+
+        Returns:
+        bool
+            True if the matrix is Hermitian within tolerance, False otherwise.
+        """
+        return np.allclose(A, A.conj().T, rtol=0, atol=tol)
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/options.py
+# options.py
+class OPTIONS:
+    def __init__(self):
+        # molecule geometry + charge/spin
+        self.molecule = {}
+        self.charge   = 0
+        self.spin     = 0
+        self.units    = "bohr"
+
+        # basis and SCF
+        self.basis            = None
+        self.diis             = True
+        self.e_conv           = 1e-6
+        self.d_conv           = 1e-6
+        self.maxiter          = 200
+
+        # TDDFT / propagation
+        self.nroots           = 5
+        self.xc               = "lda"
+        self.resplimit        = 1e-20
+        self.guess_mos        = None
+        self.propagator       = "magnus2"
+        self.method           = "rttddft"
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/params.py
+# params.py
+class PARAMS:
+    """
+    Container for simulation parameters typically set via command-line arguments.
+    """
+    def __init__(self, pcconv=1e-12, tol_zero=1e-12, dt=0.01, max_iter=200, 
+                 chkfile=True, chkfile_freq=10, chkfile_path='chkfile.npz', peak_time_au=1.0, 
+                 width_steps=5, shape='kick', smoothing=False, intensity_au=5e-5, 
+                 eFieldFile='eField.csv', pFieldFile='pField.csv'):
+        """
+        Initialize the PARAMS object with simulation parameters.
+
+        Parameters:
+        pcconv : float, optional
+            Convergence criterion for predictor-corrector (default 1e-12).
+        tol_zero : float, optional
+            Numerical zero tolerance (default 1e-12).
+        dt : float, optional
+            Time step in atomic units (default 0.01).
+        max_iter : int, optional
+            Maximum iterations (default 200).
+        chkfile : bool, optional
+            Whether to use checkpoint files (default True).
+        chkfile_freq : int, optional
+            Frequency of checkpoint saves (default 10).
+        chkfile_path : str, optional
+            Path to checkpoint file (default 'chkfile.txt').
+        peak_time_au : float, optional
+            Electric field peak time in atomic units (default 1.0).
+        width_steps : int, optional
+            Electric field width in time steps (default 5).
+        shape : str, optional
+            Electric field shape ('kick' or 'pulse', default 'kick').
+        smoothing : bool, optional
+            Whether to smooth the field (default False).
+        intensity_au : float, optional
+            Field intensity in atomic units (default 5e-5).
+        eFieldFile : str, optional
+            Electric field output file (default 'eField.csv').
+        pFieldFile : str, optional
+            Polarization field output file (default 'pField.csv').
+
+        Returns:
+        None
+        """
+        self.pcconv = pcconv
+        self.tol_zero = tol_zero
+        self.dt = dt
+        self.max_iter = max_iter
+        self.chkfile = chkfile
+        self.chkfile_path = chkfile_path
+        self.chkfile_freq = chkfile_freq
+        self.peak_time_au = peak_time_au
+        self.width_steps = width_steps
+        self.shape = shape
+        self.smoothing = smoothing
+        self.intensity_au = intensity_au
+        self.eFieldFile = eFieldFile
+        self.pFieldFile = pFieldFile
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/plotting.py
+# plotting.py
+import matplotlib.pyplot as plt
+import pandas as pd
+import logging
+
+def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIMG=None, matplotlibOutput=None):
+    """
+    Plot electric field and optionally polarization field from CSV files.
+
+    Generates a plot with one or two subplots depending on input, saving it to a file.
+
+    Parameters:
+    eFieldFileName : str
+        Path to the electric field CSV file.
+    pFieldFileName : str, optional
+        Path to the polarization field CSV file (default None).
+    matplotlibLocationIMG : str, optional
+        Directory to save the plot image (default None).
+    matplotlibOutput : str, optional
+        Filename for the plot image (default None).
+
+    Returns:
+    None
+    """
+    logging.getLogger('matplotlib').setLevel(logging.INFO)
+
+    if pFieldFileName is not None:
+        logging.debug(f"Reading CSV files: {eFieldFileName} and {pFieldFileName}")
+    else:
+        logging.debug(f"Reading CSV file: {eFieldFileName}")
+
+    def sort_csv_by_first_column(filename):
+        """
+        Sort a CSV file by its first column (timestamps).
+
+        Preserves comments and header while sorting data rows.
+
+        Parameters:
+        filename : str
+            Path to the CSV file to sort.
+
+        Returns:
+        None
+        """
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+        comments = [line for line in lines if line.startswith('#')]
+        header = next(line for line in lines if not line.startswith('#'))
+        data_lines = [line for line in lines if not line.startswith('#') and line != header]
+        from io import StringIO
+        data = pd.read_csv(StringIO(''.join(data_lines)))
+        timestamp_cols = [col for col in data.columns if col.startswith("Timestamps")]
+        data_sorted = data.sort_values(by=timestamp_cols[0])
+        with open(filename, 'w') as file:
+            file.writelines(comments)
+            file.write(header)
+            data_sorted.to_csv(file, index=False)
+
+    sort_csv_by_first_column(eFieldFileName)
+    data1 = pd.read_csv(eFieldFileName, comment='#')
+    timestamp_cols = [col for col in data1.columns if col.startswith("Timestamps")]
+    data1 = data1.sort_values(by=timestamp_cols[0], ascending=True)
+    timestamps1 = data1[timestamp_cols[0]]
+    x_values1 = data1['X Values']
+    y_values1 = data1['Y Values']
+    z_values1 = data1['Z Values']
+
+    if pFieldFileName is not None:
+        sort_csv_by_first_column(pFieldFileName)
+        data2 = pd.read_csv(pFieldFileName, comment='#')
+        data2 = data2.sort_values(by=timestamp_cols[0], ascending=True)
+        timestamps2 = data2[timestamp_cols[0]]
+        x_values2 = data2['X Values']
+        y_values2 = data2['Y Values']
+        z_values2 = data2['Z Values']
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        ax1.plot(timestamps1, x_values1, label='x', marker='o')
+        ax1.plot(timestamps1, y_values1, label='y', marker='o')
+        ax1.plot(timestamps1, z_values1, label='z', marker='o')
+        ax1.set_title('Incident Electric Field')
+        ax1.set_xlabel(timestamp_cols[0])
+        ax1.set_ylabel('Electric Field Magnitude')
+        ax1.legend()
+
+        ax2.plot(timestamps2, x_values2, label='x', marker='o')
+        ax2.plot(timestamps2, y_values2, label='y', marker='o')
+        ax2.plot(timestamps2, z_values2, label='z', marker='o')
+        ax2.set_title("Molecule's Response")
+        ax2.set_xlabel(timestamp_cols[0])
+        ax2.set_ylabel('Polarization Field Magnitude')
+        ax2.legend()
+    else:
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        ax1.plot(timestamps1, x_values1, label='x', marker='o')
+        ax1.plot(timestamps1, y_values1, label='y', marker='o')
+        ax1.plot(timestamps1, z_values1, label='z', marker='o')
+        ax1.set_title('Incident Electric Field')
+        ax1.set_xlabel(timestamp_cols[0])
+        ax1.set_ylabel('Electric Field Magnitude')
+        ax1.legend()
+
+    plt.tight_layout()
+    if matplotlibLocationIMG is None:
+        if matplotlibOutput is None:
+            plt.savefig('output.png', dpi=1000)
+            logging.info("Matplotlib image written: output.png")
+        else:
+            plt.savefig(f'{matplotlibOutput}.png', dpi=1000)
+            logging.info(f"Matplotlib image written: {matplotlibOutput}.png")
+    elif matplotlibOutput is None:
+        plt.savefig(f'{matplotlibLocationIMG}.png', dpi=1000)
+        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}.png")
+    else:
+        plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
+        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/propagation.py
+# propagation.py
+import logging 
+import numpy as np 
+from chkfile import update_chkfile
+from csv_utils import updateCSV
+
+logger = logging.getLogger("main")
+
+def propagation(params, molecule, field, polarizability_csv):
+    """
+    Perform time propagation of the molecular state.
+
+    Propagates the molecule over time using the specified method, recording polarization
+    and saving checkpoints as configured.
+
+    Parameters:
+    params : object
+        Parameters object with simulation settings.
+    molecule : object
+        Molecule object with current state.
+    field : object
+        Electric field object with time-dependent field data.
+    polarizability_csv : str
+        Path to the CSV file for recording polarization data.
+
+    Returns:
+    None
+    """
+    # Determine which propagation method to be used
+    method = molecule.propagator.lower()
+    if method == "step":
+        from step import propagate
+    elif method == "magnus2":
+        from magnus2 import propagate
+    elif method == "rk4":
+        from rk4 import propagate
+    else:
+        raise ValueError("Please provide in the molecule input file one of the acceptable Density matrix propagators: " \
+        "\nstep, rk4, or magnus2.")
+
+    for index, current_time in enumerate(field.times):
+        if current_time < molecule.current_time:
+            continue
+
+        mu_arr = np.zeros(3)
+        propagate(params, molecule, field.field[index])
+        mu = molecule.calculate_mu()
+        for i in [0, 1, 2]:
+            mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
+
+        logging.debug(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
+        updateCSV(polarizability_csv, current_time, *mu_arr)
+        
+        if molecule.chkfile_path and index % params.chkfile_freq == 0:
+            update_chkfile(molecule, current_time)
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/rk4.py
+# rk4.py
+import logging
+import numpy as np
+from scipy.linalg import expm
+
+logger = logging.getLogger("main")
+
+def propagate(params, molecule, exc):
+    """
+    Propagate molecular orbitals using the Runge-Kutta 4 method.
+
+    Parameters:
+    params : object
+        Parameters object with dt attribute.
+    molecule : object
+        Molecule object with current state data.
+    exc : np.ndarray
+        External electric field at the current time step.
+
+    Returns:
+    None
+    """
+    C_orth = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
+    F_orth = molecule.F_orth
+
+    # k1
+    k1 = -1j * params.dt * (np.matmul(F_orth, C_orth))
+    C_orth_1 = C_orth + 1/2 * k1
+
+    # k2
+    k2 = -1j * params.dt * (np.matmul(F_orth, C_orth_1))
+    C_orth_2 = C_orth + 1/2 * k2
+
+    # k3
+    k3 = -1j * params.dt * (np.matmul(F_orth, C_orth_2))
+    C_orth_3 = C_orth + k3
+
+    # k4
+    k4 = -1j * params.dt * (np.matmul(F_orth, C_orth_3))
+
+    C_orth_pdt = C_orth + (k1/6 + k2/3 + k3/3 + k4/6)
+    C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
+    D_ao_pdt = molecule.mf.make_rdm1(mo_coeff=C_pdt, mo_occ=molecule.occ)
+    F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
+
+    molecule.mf.mo_coeff = C_pdt
+    molecule.D_ao = D_ao_pdt
+    molecule.F_orth = F_orth_pdt
+
+
+# File: /Users/bldrdge1/Downloads/repos/PlasMol/tides/step.py
+# step.py
+import logging
+import numpy as np
+from scipy.linalg import expm
+
+logger = logging.getLogger("main")
+
+def propagate(params, molecule, exc):
+    """
+    Propagate molecular orbitals using the step method.
+    
+    C'(t+dt) = U(t)C'(t-dt)
+    U(t) = exp(-i*2dt*F')
+
+    Parameters:
+    params : object
+        Parameters object with dt attribute.
+    molecule : object
+        Molecule object with current state data.
+    exc : np.ndarray
+        External electric field at the current time step.
+
+    Returns:
+    None
+    """
+    if hasattr(molecule, 'C_orth_ndt'):
+        C_orth_ndt = molecule.C_orth_ndt
+    else:
+        C_orth_ndt = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
+
+    F_orth = molecule.F_orth
+
+    U = expm(-1j * 2 * params.dt * F_orth)
+    
+    C_orth_pdt = np.matmul(U, C_orth_ndt)
+    C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
+    D_ao_pdt = molecule.mf.make_rdm1(mo_coeff=C_pdt, mo_occ=molecule.occ)
+    F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
+    
+    molecule.mf.mo_coeff = C_pdt
+    molecule.C_orth_ndt = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
+    molecule.D_ao = D_ao_pdt
+    molecule.F_orth = F_orth_pdt
+
+
