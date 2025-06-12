@@ -1,18 +1,13 @@
 start source
-    source_type chirped
+    sourceType chirped
     sourceCenter -0.04
     sourceSize 0 0.1 0.1
     frequency 5
     width 0.1
     peakTime 5
     chirpRate -0.5
-    is_integrated True
+    isIntegrated True
 end source
-
--- start molecule
---     center 0 0 0
---     directionCalculation z
--- end molecule
 
 start simulation
     resolution 2000
@@ -30,3 +25,45 @@ start matplotlib
     CSVlocation csv/
     IMGlocation img/
 end matplotlib
+
+start molecule
+    moleculeCenter 0 0 0
+    directionCalculation z
+    start geometry
+        O      0.0000000000       0.0000000000       -0.1302052882
+        H      1.4891244004       0.0000000000        1.0332262019
+        H     -1.4891244004       0.0000000000        1.0332262019
+    end geometry
+    units bohr
+    pc_convergence 1e-12
+    check_tolerance 1e-12
+    maxiter 200
+    charge 0
+    spin 0
+    basis 6-31g 
+    xc pbe0
+    resplimit 1e-20
+    propagator magnus2
+end molecule
+
+start settings
+    log plasmol.log
+    moleculeInputFile h2o.in
+    verbosity 2
+    timestep 0.01
+    totalTime 40 fs
+    restart True
+    start chkfile
+        frequency 100
+        path chkfile.npz
+    end chkfile
+    start abs_spec
+        peak_time_au 0.1
+        width_steps 5
+        shape kick
+        smoothing True
+        intensity_au 5e-5
+    end abs_spec
+    eFieldFile eField.csv
+    pFieldFile pField.csv
+end settings

@@ -6,7 +6,7 @@ import numpy as np
 from pyscf import gto, dft
 from pyscf.scf import addons
 
-import input_parser
+import molecule_parser
 from chkfile import restart_from_chkfile
 
 logger = logging.getLogger("main")
@@ -33,10 +33,9 @@ class MOLECULE():
         Returns:
         None
         """
-        import options
-        options = options.OPTIONS()
-        self.molecule, options = input_parser.read_input(inputfile, options)
-        self.propagator = options.propagator
+        self.molecule = molecule_parser.read_input(inputfile)
+        
+        self.propagator = self.molecule.propagator
 
         # Format molecule string as required by PySCF
         atoms = self.molecule["atoms"]
@@ -50,12 +49,12 @@ class MOLECULE():
                 molecule_coords += ";"
 
         mol = gto.M(atom=molecule_coords,
-                          basis=options.basis,
+                          basis=self.molecule.basis,
                           unit='B',
-                          charge=int(options.charge),
-                          spin=int(options.spin))
+                          charge=int(self.molecule.charge),
+                          spin=int(self.molecule.spin))
         self.mf = dft.RKS(mol)
-        self.mf.xc = options.xc
+        self.mf.xc = self.molecule.xc
         self.mf.kernel()
 
         charges = self.mf.mol.atom_charges()
