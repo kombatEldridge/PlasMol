@@ -4,7 +4,7 @@ import meep as mp
 import sys
 from gif import make_gif
 from meep.materials import Au_JC_visible as Au
-import bohr
+import driver_rttddft
 from scipy import constants
 
 # Location of molecule's input file in Psi4 format
@@ -156,7 +156,7 @@ def callBohr(sim):
         if (averageFields[componentName] >= responseCutOff):
             print(f"Calling Bohr at time step {sim.timestep()}")
             print(f'\tElectric field given to Bohr: {electricFieldArray}')
-            bohrResults = bohr.run(
+            bohrResults = driver_rttddft.run(
                 inputfile,
                 electricFieldArray['x'],
                 electricFieldArray['y'],

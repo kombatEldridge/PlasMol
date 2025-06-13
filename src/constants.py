@@ -82,4 +82,5 @@ grid = {'H' : [11, 20], 'O' : [11,25]}
 angs2bohr = 1.0/0.52917721067
 ev2au = 1./27.21138
 au2ev = 1./ev2au
+T_AU_FS = 41.3413733  # Time units in au/fs
 

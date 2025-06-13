@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import meep as mp
 import gif
-import bohr
+import driver_rttddft
 from collections import defaultdict
 from csv_handler import initCSV, updateCSV, show_eField_pField
 
@@ -73,8 +73,7 @@ class Simulation:
         self.convertTimeMeep2fs = 10 / 3
         self.convertTimeAtomic2fs = 0.024188843
         self.convertTimeMeep2Atomic = self.convertTimeMeep2fs / self.convertTimeAtomic2fs
-        self.convertFieldMeep2Atomic = 1 / 1e-6 / \
-            8.8541878128e-12 / 299792458.0 / 0.51422082e12
+        self.convertFieldMeep2Atomic = 1 / 1e-6 / 8.8541878128e-12 / 299792458.0 / 0.51422082e12
         self.convertMomentAtomic2Meep = 8.4783536198e-30 * 299792458.0 / 1 / 1e-6 / 1e-6
 
         # Simulation runtime variables
@@ -128,8 +127,7 @@ class Simulation:
         )
 
         self.timeStepMeep = self.sim.Courant / self.sim.resolution
-        self.timeStepBohr = 2 * self.timeStepMeep * \
-            self.convertTimeMeep2fs / self.convertTimeAtomic2fs
+        self.timeStepBohr = 2 * self.timeStepMeep * self.convertTimeMeep2fs / self.convertTimeAtomic2fs
 
         # Determine the number of decimal places for time stepså
         halfTimeStepString = str(self.timeStepMeep / 2)
@@ -248,7 +246,7 @@ class Simulation:
                 logging.debug(f'Electric field given to Bohr: {eArr} in atomic units')
 
                 # Will be expecting a matrix of [p_x, p_y, p_z] where p is the dipole moment
-                bohrResults, energy = bohr.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
+                bohrResults, energy = driver_rttddft.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
                 logging.debug(f"Bohr calculation results: {bohrResults} in atomic units")
                 
                 for componentName in self.xyz:

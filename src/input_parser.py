@@ -2,7 +2,7 @@
 # import os
 import re
 # import sys
-# import logging
+import logging
 # import sources
 # import argparse
 # import meep as mp
@@ -10,8 +10,49 @@ import numpy as np
 # import simulation as sim
 # from datetime import datetime
 
+logger = logging.getLogger("main")
+
+def inputFilePrepare(pmif, mif, qif):
+    # Declare priority of input format
+    if sum(x is not None for x in (pmif, mif, qif)) >= 2:
+        raise RuntimeError("Note, you have submitted too many input file paths. If you want to run a PlasMol simulation (Meep + RT-TDDFT), please use '-p' or '--pmif'. \nIf you want to just run a Meep simulation, please use '-m' or '--mif'. If you want to just run a RT-TDDFT simulation, please use '-q' or '--qif'.")
+    elif sum(x is not None for x in (pmif, mif, qif)) == 0:
+        raise RuntimeError("You haven't submitted any input file paths. If you want to run a PlasMol simulation (Meep + RT-TDDFT), please use '-p' or '--pmif'. \nIf you want to just run a Meep simulation, please use '-m' or '--mif'. If you want to just run a RT-TDDFT simulation, please use '-q' or '--qif'.")
+
+    # Values given in input files will be overwritten by args given in cli
+    if pmif is not None:
+        building_params = parsePlasMolInputFile(pmif)
+        if not hasattr(building_params, 'simulation'):
+            raise RuntimeError("No 'simulation' block found in PlasMol input file. Is this a RT-TDDFT only input file? Please use '-q' or '--qif' to submit the RT-TDDFT (Quantum) Input File (aka qif).")
+        if hasattr(building_params, 'molecule'):
+            simulation_type = 'PlasMol'
+            if not minimum_molecule_sufficiency(building_params.get('rttddft', None)):
+                if not hasattr(building_params['molecule'], 'quantumInputFile'):
+                    raise RuntimeError("No geometry nor quantumInputFile path found, but molecule block found. Please either specify the RT-TDDFT parameters, or remover the 'molecule' block.")
+                else:
+                    logger.warning("Minimum RT-TDDFT parameters not found in PlasMol input file. Using given quantumInputFile instead.")
+                    qif_params = parseRTTDDFTInputFile(building_params['molecule']['quantumInputFile'])
+                    logger.info("Ignoring RT-TDDFT relevant parameters in PlasMol.")
+                    for key in qif_params:
+                        building_params["molecule"][key] = qif_params[key]
+            elif hasattr(building_params['molecule'], 'quantumInputFile'):
+                logger.warning("Minimum RT-TDDFT parameters found in PlasMol input file. Ignoring given quantumInputFile.")
+        else:
+            logger.warning("No molecule block found in PlasMol input file. This simulation will only include a Meep simulation. In the future, please input a meep input file only using the '-m' or '--mif' flag.")
+            simulation_type = 'Meep'
+    elif qif is not None:
+        logger.info("Only RT-TDDFT input file given. Running RT-TDDFT simulation only.")
+        building_params = parseRTTDDFTInputFile(qif)
+        simulation_type = 'RT-TDDFT'
+    elif mif is not None:
+        logger.info("Only Meep input file given. Running Meep simulation only.")
+        building_params = parsePlasMolInputFile(mif)
+        simulation_type = 'Meep'
+    else:
+        raise RuntimeError("The minimum required parameters were not given. Please check guidelines for information on minimal requirements.")
     
-import re
+    return simulation_type, simulation_type
+
 
 def parsePlasMolInputFile(filepath):
     """
@@ -60,8 +101,8 @@ def parsePlasMolInputFile(filepath):
             parts = line.split()
             kw = parts[0]
 
-            # entering a geometry block under molecule?
-            if kw == 'start' and len(parts) == 2 and parts[1] == 'geometry' and stack and stack[-1][0] == 'molecule':
+            # entering a geometry block under rttddft?
+            if kw == 'start' and len(parts) == 2 and parts[1] == 'geometry' and stack and stack[-1][0] == 'rttddft':
                 geom_dict = {}
                 stack[-1][1]['geometry'] = geom_dict
                 stack.append(('geometry', geom_dict))
@@ -122,13 +163,16 @@ def parsePlasMolInputFile(filepath):
     if stack:
         open_secs = ", ".join(n for n,_ in stack)
         raise ValueError(f"Unclosed section(s): {open_secs}")
-    
-    params['molecule_coords'] = prepareCoordinates(params['molecule']['geometry']['atoms'], params['molecule']['geometry']['coords'])
+
+    try:
+        params['molecule_coords'] = prepareCoordinates(params['rttddft']['geometry']['atoms'], params['rttddft']['geometry']['coords'])
+    except:
+        pass
 
     return params
 
 
-def parseTDDFTInputFile(filepath):
+def parseRTTDDFTInputFile(filepath):
     def convert_to_bohr(coords, units):
         """
         coords: dict mapping labels (e.g. "O1") -> numpy.array([x,y,z])
@@ -217,6 +261,10 @@ def prepareCoordinates(atoms, coords):
         if index != (len(atoms)-1):
             molecule_coords += ";"
     return molecule_coords
+
+
+def minimum_molecule_sufficiency(params):
+    return True
 
 
 # def setParameters(parameters):

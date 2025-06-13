@@ -25,14 +25,13 @@ def propagate(params, molecule, exc):
     """
     C_orth = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
     F_orth_p12dt = 2 * molecule.F_orth - molecule.F_orth_n12dt
-    
-    max_iterations = params.max_iter
     C_ao_pdt_old = None
+
     iteration = 0
     while True:
         iteration += 1
-        if iteration > max_iterations:
-            raise RuntimeError(f"Failed to converge within {max_iterations} iterations")
+        if iteration > params.max_iter:
+            raise RuntimeError(f"Failed to converge within {params.max_iter} iterations")
 
         # 1) predictor
         U = expm(-1j * params.dt * F_orth_p12dt)
@@ -44,7 +43,7 @@ def propagate(params, molecule, exc):
         F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
         
         # 3) only check convergence if we have a previous value
-        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < params.pcconv:
+        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < params.pc_convergence:
             molecule.mf.mo_coeff = C_pdt
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt

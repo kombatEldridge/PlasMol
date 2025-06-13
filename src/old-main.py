@@ -1,41 +1,28 @@
-# /Users/bldrdge1/.conda/envs/meep1.29/bin/python /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -l plasmol.log -vv
 import os
 import sys
 import logging
 import numpy as np
-
-import os
-import re
-import sys
-import sources
-import logging
-import argparse
-import meep as mp
-import simulation as sim
-from datetime import datetime
 
 from params import PARAMS
 from molecule import MOLECULE
 from logging_utils import PRINTLOGGER
 from electric_field import ELECTRICFIELD
 
-from cli import parse_arguments, minimum_sufficiency
+from cli import parse_arguments
 from propagation import propagation
 from plotting import show_eField_pField
 from csv_utils import initCSV, updateCSV
-from input_parser import parsePlasMolInputFile, parseTDDFTInputFile
 
 # main.py
 if __name__ == "__main__":
     try:
         # Set up logging
         log_format = '%(levelname)s: %(message)s'
+        args = parse_arguments()
         logger = logging.getLogger()
+        # Clear any pre-existing handlers.
         if logger.hasHandlers():
             logger.handlers.clear()
-
-        # Step 1: Identify parsing workflow by grabbing cli args.
-        args = parse_arguments()
 
         # Set log level based on verbosity.
         if args.verbose >= 2:
@@ -44,34 +31,6 @@ if __name__ == "__main__":
             logger.setLevel(logging.INFO)
         else:
             logger.setLevel(logging.WARNING)
-
-        # Declare priority of input format
-        if sum(x is not None for x in (args.pmif, args.mif, args.qif)) >= 2:
-            raise RuntimeError("Note, you have submitted too many input file paths. If you want to run a PlasMol simulation (Meep + RT-TDDFT), please use '-pmif'. \nIf you want to just run a Meep simulation, please use '-mif'. If you want to just run a RT-TDDFT simulation, please use '-qif'.")
-
-        # Values given in input files will be overwritten by args given in cli
-        if args.pmif is not None:
-            pmif_params = parsePlasMolInputFile(args.pmif)
-            if hasattr(pmif_params, 'molecule'):
-                if not hasattr(pmif_params['molecule'], 'geometry'):
-                    if not hasattr(pmif_params['settings'], 'moleculeInputFile')
-                        raise RuntimeError("No geometry for molecule nor molecule file path found.")
-                    else:
-                        logger.warning("No geometry for molecule found in PlasMol input file. Using given file in PlasMol settings block.")
-                        qif_params = parseTDDFTInputFile(pmif_params['settings']['moleculeInputFile'])
-            else:
-                logger.warning("No molecule position found in PlasMol input file. This simulation will only include Meep parameters. In the future, please input a meep input file only using the '-mif' flag.")
-        elif args.qif is not None:
-            logger.info("Only RT-TDDFT input file given. Running RT-TDDFT simulation only.")
-            qif_params = parseTDDFTInputFile(args.qif)
-        elif args.mif is not None:
-            logger.info("Only Meep input file given. Running Meep simulation only.")
-            mif_params = parsePlasMolInputFile(args.mif)
-        elif minimum_sufficiency(args):
-            # TODO
-        else:
-            raise RuntimeError("The minimum required parameters were not given. Please check guidelines for information on minimal requirements.")
-            
 
         # Use FileHandler if a log file is specified; otherwise, use StreamHandler.
         if args.log:
@@ -86,12 +45,26 @@ if __name__ == "__main__":
     
         sys.stdout = PRINTLOGGER(logger, logging.INFO)
         logging.getLogger("h5py").setLevel(logging.INFO)
-
+    
         T_AU_FS = 41.3413733  # Time units in au/fs
-        dt_au = args.dt
-        dt_fs = args.dt / T_AU_FS
-        t_end = args.t_end
-        t_end_fs = args.t_end / T_AU_FS
+
+        # Convert time in fs to au
+        if (args.time_units == 'fs'):
+            dt_au = args.dt * T_AU_FS
+            dt_fs = args.dt
+            t_end = args.t_end * T_AU_FS
+            t_end_fs = args.t_end
+        elif (args.time_units == 'au'):
+            dt_au = args.dt
+            dt_fs = args.dt / T_AU_FS
+            t_end = args.t_end
+            t_end_fs = args.t_end / T_AU_FS
+        else: 
+            raise ValueError(f"The timestep unit for this simulation should only either be 'fs' or 'au'.")
+
+        # Time step check
+        if (dt_au > 0.1):
+            logger.warning(f"The timestep for this simulation is too large to elicit physical results.")
 
         time_values = np.arange(0, t_end + dt_au, dt_au)
         interpolated_times = np.linspace(0, time_values[-1], int(len(time_values) * args.mult))
@@ -173,16 +146,6 @@ if __name__ == "__main__":
     
         # Main code call
         propagation(params, molecule, field, polarizability_csv)
-
-        # from driver.py
-        # -----------------------
-        meepinputfile = args.meep
-        bohrinputfile = args.bohr if args.bohr else None
-        simDriver = parseInputFile(meepinputfile)
-        logging.info("Input file successfully parsed. Beginnin" \
-        "g simulation")
-        simDriver.run()
-        # -----------------------
 
         # Plot the results using the interpolated electric field data
         show_eField_pField(interpolated_e_field_csv, polarizability_csv)

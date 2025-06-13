@@ -17,7 +17,7 @@ class MOLECULE():
 
     Manages quantum mechanical properties, SCF calculations, and time propagation state.
     """
-    def __init__(self, inputfile, params):
+    def __init__(self, params):
         """
         Initialize the MOLECULE object with input file and parameters.
 
@@ -25,36 +25,20 @@ class MOLECULE():
         and loads from checkpoint if available.
 
         Parameters:
-        inputfile : str
-            Path to the input file.
         params : object
             Parameters object with simulation settings.
 
         Returns:
         None
         """
-        self.molecule = molecule_parser.read_input(inputfile)
-        
-        self.propagator = self.molecule.propagator
-
         # Format molecule string as required by PySCF
-        atoms = self.molecule["atoms"]
-        molecule_coords = ""
-        for index, atom in enumerate(atoms):
-            molecule_coords += " " + atom
-            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][0])
-            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][1])
-            molecule_coords += " " + str(self.molecule["coords"][atom+str(index+1)][2])
-            if index != (len(atoms)-1):
-                molecule_coords += ";"
-
-        mol = gto.M(atom=molecule_coords,
-                          basis=self.molecule.basis,
-                          unit='B',
-                          charge=int(self.molecule.charge),
-                          spin=int(self.molecule.spin))
+        mol = gto.M(atom=params.molecule_coords,
+                    basis=params.basis,
+                    unit='B',
+                    charge=int(params.charge),
+                    spin=int(params.spin))
         self.mf = dft.RKS(mol)
-        self.mf.xc = self.molecule.xc
+        self.mf.xc = params.xc
         self.mf.kernel()
 
         charges = self.mf.mol.atom_charges()
@@ -80,8 +64,7 @@ class MOLECULE():
 
         self.current_time = 0
 
-        self.chkfile_path = params.chkfile_path if params.chkfile else None
-        if self.chkfile_path is not None and os.path.exists(self.chkfile_path):
+        if params.chkfile_path is not None and os.path.exists(params.chkfile_path):
             restart_from_chkfile(self)
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
