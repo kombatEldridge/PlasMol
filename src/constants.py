@@ -84,3 +84,16 @@ ev2au = 1./27.21138
 au2ev = 1./ev2au
 T_AU_FS = 41.3413733  # Time units in au/fs
 
+epsilon_0 = 8.8541878128e-12
+c = 299792458.0
+
+convertTimeMeeptoSI = 10 / 3  # t_Meep * convertTimeMeeptoSI = t_SI
+convertTimeBohrtoSI = 0.024188843  # t_Bohr * convertTimeBohrtoSI = t_SI
+convertFieldMeeptoSI = 1 / 1e-6 / epsilon_0 / c / 0.51422082e12
+responseCutOff = 1e-12
+
+convertTimeMeep2fs = 10 / 3 
+convertTimeAtomic2fs = 0.024188843
+convertTimeMeep2Atomic = convertTimeMeep2fs / convertTimeAtomic2fs
+convertFieldMeep2Atomic = 1 / 1e-6 / epsilon_0 / c / 0.51422082e12
+convertMomentAtomic2Meep = 8.4783536198e-30 * c / 1 / 1e-6 / 1e-6

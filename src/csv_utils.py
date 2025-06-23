@@ -61,12 +61,12 @@ def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
         writer = csv.writer(file)
         writer.writerow(row)
 
-def read_electric_field_csv(file_path):
+def read_field_csv(file_path):
     """
-    Read electric field values from a CSV file.
+    Read field values from a CSV file.
 
     Parses a CSV file with a header starting with 'Timestamps', returning four lists
-    for time values and electric field components (x, y, z).
+    for time values and field components (x, y, z).
 
     Parameters:
     file_path : str
@@ -74,10 +74,10 @@ def read_electric_field_csv(file_path):
 
     Returns:
     tuple
-        A tuple of four lists: (time_values, electric_x, electric_y, electric_z),
+        A tuple of four lists: (time_values, x, y, z),
         each containing float values.
     """
-    time_values, electric_x, electric_y, electric_z = [], [], [], []
+    time_values, x, y, z = [], [], [], []
     with open(file_path, mode='r', newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
@@ -87,7 +87,7 @@ def read_electric_field_csv(file_path):
             if len(row) < 4:
                 continue
             time_values.append(float(row[0]))
-            electric_x.append(float(row[1]))
-            electric_y.append(float(row[2]))
-            electric_z.append(float(row[3]))
-    return time_values, electric_x, electric_y, electric_z
+            x.append(float(row[1]))
+            y.append(float(row[2]))
+            z.append(float(row[3]))
+    return time_values, x, y, z

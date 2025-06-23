@@ -7,12 +7,12 @@ class ContinuousSource:
                  sourceCenter,
                  sourceSize,
                  frequency=None,
+                 wavelength=None,
                  start_time=0,
                  end_time=1e+20,
                  width=0,
                  fwidth=float("inf"),
                  slowness=3.0,
-                 wavelength=None,
                  is_integrated=True,
                  component='z'):
         """
@@ -53,12 +53,12 @@ class GaussianSource:
                  sourceCenter,
                  sourceSize,
                  frequency=None,
+                 wavelength=None,
                  width=0,
                  fwidth=float("inf"),
                  start_time=0,
                  cutoff=5.0,
                  is_integrated=True,
-                 wavelength=None,
                  component='z'):
         """
         Initializes a GaussianSource object.
@@ -121,7 +121,6 @@ class ChirpedSource:
             component (mp.Vector3): The component of the electric field for the source.
         """
         logging.debug(f"Initializing ChirpedSource")
-        
         char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         self.component = char_to_field[component]
         self.conversionFactor = 3.378555833184493 # from many tests in PulseTest

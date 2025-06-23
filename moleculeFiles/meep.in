@@ -32,34 +32,77 @@ start molecule
     quantumInputFile h2o.in
 end molecule
 
-start rttddft
-    start geometry
-        O      0.0000000000       0.0000000000       -0.1302052882
-        H      1.4891244004       0.0000000000        1.0332262019
-        H     -1.4891244004       0.0000000000        1.0332262019
-    end geometry
-    units bohr
-    pc_convergence 1e-12
-    check_tolerance 1e-12
-    maxiter 200
-    charge 0
-    spin 0
-    basis 6-31g 
-    xc pbe0
-    resplimit 1e-20
-    propagator magnus2
-end rttddft
-
-start settings
-    log plasmol.log
-    timestep 0.01 -- fix at some point
-    restart True
-    start chkfile
-        frequency 100
-        path chkfile.npz
-    end chkfile
-    eField_path eField.csv
-    pField_path pField.csv
-    pField_Transform_path output.png
-    eField_vs_pField_path spectrum.png
-end settings
+-- meep
+-- simulation
+--     cellLength
+--     pmlThickness
+--     resolution
+--     responseCutOff
+--     surroundingMaterialIndex
+--     totalTime
+--     totalTimeUnit
+--     timeLength
+--     symmetries
+-- molecule
+-- source
+--     source_type
+--     continuous
+--         sourceCenter
+--         sourceSize
+--         frequency
+--         start_time
+--         end_time
+--         width
+--         fwidth
+--         slowness
+--         wavelength
+--         is_integrated
+--         component
+--     gaussian
+--         sourceCenter
+--         sourceSize
+--         frequency
+--         width
+--         fwidth
+--         start_time
+--         cutoff
+--         is_integrated
+--         wavelength
+--         component
+--     chirped
+--         sourceCenter
+--         sourceSize
+--         frequency
+--         wavelength
+--         width
+--         peakTime
+--         chirpRate
+--         start_time
+--         end_time
+--         is_integrated
+--         component
+--     pulse
+--         sourceCenter
+--         sourceSize
+--         frequency
+--         wavelength
+--         width
+--         peakTime
+--         start_time
+--         end_time
+--         is_integrated
+--         component
+-- object
+--     material
+--     radius
+--     center
+-- outputPNG
+--     timestepsBetween
+--     intensityMin
+--     intensityMax
+--     imageDirName
+-- matplotlib
+--     output
+--     CSVlocation
+--     IMGlocation
+-- verbose

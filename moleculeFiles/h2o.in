@@ -24,7 +24,7 @@ width_steps
 shape kick 
 
 
--- 
+-- RT-TDDFT
 dt
 t_end
 restart
@@ -49,3 +49,5 @@ qif
 propagator
 max_iter
 pc_convergence
+
+-- MEEP

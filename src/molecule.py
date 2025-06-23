@@ -50,7 +50,7 @@ class MOLECULE():
         self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
 
-        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=params.tol_zero):
+        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=params.check_tolerance):
             logger.warning("Orthogonalization matrix X may not be unitary")
             
         self.occ = self.mf.get_occ()
