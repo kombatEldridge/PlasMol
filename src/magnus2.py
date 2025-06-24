@@ -14,7 +14,7 @@ def propagate(params, molecule, exc):
 
     Parameters:
     params : object
-        Parameters object with dt, max_iter, and pcconv attributes.
+        Parameters object with dt, maxiter, and pcconv attributes.
     molecule : object
         Molecule object with current state data.
     exc : np.ndarray
@@ -30,8 +30,8 @@ def propagate(params, molecule, exc):
     iteration = 0
     while True:
         iteration += 1
-        if iteration > params.max_iter:
-            raise RuntimeError(f"Failed to converge within {params.max_iter} iterations")
+        if iteration > params.maxiter:
+            raise RuntimeError(f"Failed to converge within {params.maxiter} iterations")
 
         # 1) predictor
         U = expm(-1j * params.dt * F_orth_p12dt)

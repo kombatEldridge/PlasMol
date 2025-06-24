@@ -32,6 +32,9 @@ class PARAMS:
         self.spin = self.preparams["rttddft"]['spin']
         self.xc = self.preparams["rttddft"]['xc']
         self.check_tolerance = self.preparams["rttddft"]['check_tolerance']
+        self.propagator = self.preparams["rttddft"]["propagator"]
+        self.maxiter = self.preparams["rttddft"]["maxiter"]
+        self.pc_convergence = self.preparams["rttddft"]["pc_convergence"]
 
         if self.type == 'PlasMol':
             self.buildRttddftParams()

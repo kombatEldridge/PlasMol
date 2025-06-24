@@ -36,19 +36,20 @@ def propagation(params, molecule, field):
         raise ValueError("Please provide in the molecule input file one of the acceptable Density matrix propagators: " \
         "\nstep, rk4, or magnus2.")
 
-    for index, current_time in enumerate(field.times):
-        if current_time < molecule.current_time:
-            continue
+    # for index, current_time in enumerate(field.times):
+    #     if current_time < molecule.current_time:
+    #         continue
 
-        mu_arr = np.zeros(3)
+    mu_arr = np.zeros(3)
 
-        propagate(params, molecule, field.field[index])
-        mu = molecule.calculate_mu()
-        for i in [0, 1, 2]:
-            mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
+    propagate(params, molecule, field)
+    mu = molecule.calculate_mu()
+    for i in [0, 1, 2]:
+        mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
 
-        logging.debug(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
-        updateCSV(params.pField_path, current_time, *mu_arr)
-        
-        if params.chkfile_path and index % params.chkfile_freq == 0:
-            update_chkfile(molecule, current_time)
+    return mu_arr
+    # logging.debug(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
+    # updateCSV(params.pField_path, current_time, *mu_arr)
+    
+    # if params.chkfile_path and index % params.chkfile_freq == 0:
+    #     update_chkfile(molecule, current_time)

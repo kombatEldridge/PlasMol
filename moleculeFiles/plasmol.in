@@ -1,7 +1,7 @@
 
 -- general section
-dt 0.01 -- au
-t_end 50 -- au
+dt 0.1 -- au
+t_end 50  -- au
 log plasmol.log
 eField_path eField.csv
 pField_path pField.csv
@@ -12,13 +12,13 @@ eV_spectrum_path spectrum.png
 -- meep portion
 start meep
     start source
-        sourceType chirped
+        sourceType continuous
         sourceCenter -0.04
         sourceSize 0 0.1 0.1
         frequency 5
-        width 0.1
-        peakTime 5
-        chirpRate -0.5
+        -- width 0.1
+        -- peakTime 5
+        -- chirpRate -0.5
         isIntegrated True
     end source
 
@@ -32,7 +32,7 @@ start meep
 
     start object
         material Au
-        radius 0.5
+        radius 0.03
         center 0 0 0
     end object
 

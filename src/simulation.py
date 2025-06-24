@@ -3,34 +3,32 @@ import meep as mp
 import numpy as np
 import constants
 from collections import defaultdict
-
-
+import matplotlib.pyplot as plt
 
 from csv_utils import updateCSV
+from propagation import propagation
 
 class Simulation:
     def __init__(self, params, molecule):
+        self.params = params
         self.molecule = molecule
-        self.eField_path = params.eField_path
-        self.pField_path = params.pField_path
-        self.dt = params.dt
-        self.dt_meep = self.dt / constants.convertTimeMeep2Atomic
-        self.t_end = params.t_end
-        self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
+
+        self.dt_meep = self.params.dt / constants.convertTimeMeep2Atomic
+        self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
 
         # Define simulation parameters
-        self.cellLength = params.simParams['cellLength']
-        self.pmlThickness = params.simParams['pmlThickness']
-        self.resolution = params.simParams['resolution']
-        self.eFieldCutOff = params.simParams['eFieldCutOff']
+        self.cellLength = self.params.simParams['cellLength']
+        self.pmlThickness = self.params.simParams['pmlThickness']
+        self.resolution = self.params.simParams['resolution']
+        self.eFieldCutOff = self.params.simParams['eFieldCutOff']
 
         logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
         
-        self.moleculeBool = True if params.meepmolecule else None
+        self.moleculeBool = True if self.params.meepmolecule else None
         self.positionMolecule = mp.Vector3(
-            params.meepmolecule['center'][0],
-            params.meepmolecule['center'][1],
-            params.meepmolecule['center'][2]) if self.moleculeBool else None
+            self.params.meepmolecule['center'][0],
+            self.params.meepmolecule['center'][1],
+            self.params.meepmolecule['center'][2]) if self.moleculeBool else None
         
         self.hdf5Bool = True if params.hdf5 else None
         self.imageDirName = params.hdf5['imageDirName'] if self.hdf5Bool else None
@@ -72,14 +70,14 @@ class Simulation:
             )
             logging.debug("Emitter for the molecule added to simulation")
         
-        self.sourceType = params.sourceType
+        self.sourceType = self.params.sourceType
         if self.sourceType is not None:
             self.sourcesList.append(self.sourceType.source)
 
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
-        self.symmetries = params.symmetries
-        self.objectList = [params.objectNP] if params.objectNP is not None else []
-        self.default_material = mp.Medium(index=params.simParams['surroundingMaterialIndex'])
+        self.symmetries = self.params.symmetries
+        self.objectList = [self.params.objectNP] if self.params.objectNP is not None else []
+        self.default_material = mp.Medium(index=self.params.simParams['surroundingMaterialIndex'])
 
         self.sim = mp.Simulation(
             resolution=self.resolution,
@@ -92,7 +90,7 @@ class Simulation:
         )
 
         # Determine the number of decimal places for time steps
-        halfTimeStepString = str(params.dt / 2)
+        halfTimeStepString = str(self.params.dt / 2)
         self.decimalPlaces = len(halfTimeStepString.split('.')[1])
 
     def chirpx(self, t):
@@ -141,7 +139,7 @@ class Simulation:
             self.callBohr(sim, eField)
 
         timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
-        updateCSV(self.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
+        updateCSV(self.params.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
 
     def callBohr(self, sim, eField):
         """
@@ -150,26 +148,24 @@ class Simulation:
         Args:
             sim (mp.Simulation): The Meep simulation object.
         """
-        if sim.timestep() > 2:
-            if any(abs(eField[component]) >= self.eFieldCutOff for component in self.xyz):
-                logging.info(f"Calling Bohr at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+        # if sim.timestep() > 2:  
+            # if any(abs(eField[component]) >= self.eFieldCutOff for component in self.xyz):
+        logging.info(f"Calling Bohr at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
 
-                eArr = [eField['x'],eField['y'],eField['z']]
-                logging.debug(f'Electric field given to Bohr: {eArr} in au')
-                
-                # TODO:::::::::
-                ind_dipole = driver_rttddft.run(self.timeStepBohr, eArr, self.method, self.coords, self.wfn, self.D_mo_0)
-                # ::::::::::::::
+        eArr = [eField['x'],eField['y'],eField['z']]
+        logging.debug(f'Electric field given to Bohr: {eArr} in au')
+        
+        ind_dipole = propagation(self.params, self.molecule, eArr)
 
-                logging.debug(f"Bohr calculation results: {ind_dipole} in au")
-                
-                for componentName in self.xyz:
-                    for offset in [0.5 * self.dt_meep, self.dt_meep]:
-                        timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
-                        self.measuredDipoleResponse[componentName][timestamp] = ind_dipole[self.mapDirectionToDigit[componentName]]
+        logging.debug(f"Bohr calculation results: {ind_dipole} in au")
+        
+        for componentName in self.xyz:
+            for offset in [0.5 * self.dt_meep, self.dt_meep]:
+                timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
+                self.measuredDipoleResponse[componentName][timestamp] = ind_dipole[self.mapDirectionToDigit[componentName]]
 
-            timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
-            updateCSV(self.pField_path, timestamp, ind_dipole[0], ind_dipole[1], ind_dipole[2])
+        timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
+        updateCSV(self.params.pField_path, timestamp, ind_dipole[0], ind_dipole[1], ind_dipole[2])
 
     def run(self):
         """
@@ -185,8 +181,28 @@ class Simulation:
             run_functions = [mp.at_every(self.dt_meep, self.getElectricField)]
             if self.hdf5Bool:
                 run_functions.append(mp.at_every(self.timestepsBetween * self.dt_meep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
+            
+            self.sim.run(*run_functions, until=self.t_end_meep)
 
-            self.sim.run(*run_functions, until=self.t_end_meep * self.dt_meep)
+            # import plotly.graph_objects as go
+            # eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cellVolume, component=mp.Dielectric)
+            # nx, ny, nz = eps_data.shape
+            # x, y, z = np.mgrid[0:nx, 0:ny, 0:nz]
+            # iso_value = 4
+            # fig = go.Figure(data=go.Isosurface(
+            #     x=x.flatten(),
+            #     y=y.flatten(),
+            #     z=z.flatten(),
+            #     value=eps_data.flatten(),
+            #     isomin=iso_value,
+            #     isomax=iso_value,
+            #     colorscale=[[0, 'gold'], [1, 'gold']],  # Single color for the surface
+            #     showscale=False,  # Hide color scale since it's a single surface
+            #     opacity=0.8,
+            #     caps=dict(x_show=False, y_show=False, z_show=False)  # Hide caps for cleaner view
+            # ))
+            # fig.show()
+
             logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
@@ -194,3 +210,5 @@ class Simulation:
             if self.hdf5Bool:
                 from gif import make_gif
                 make_gif(self.imageDirName)
+                import os 
+                os.chdir('../')

@@ -42,8 +42,10 @@ if __name__ == "__main__":
 
         logger.propagate = False
     
-        # sys.stdout = PRINTLOGGER(logger, logging.INFO)
+        sys.stdout = PRINTLOGGER(logger, logging.INFO)
         logging.getLogger("h5py").setLevel(logging.INFO)
+        logging.getLogger("matplotlib").setLevel(logging.INFO)
+        logging.getLogger("PIL").setLevel(logging.INFO)
 
         # Step 2: Identify parsing workflow from CLI args
         preparams = inputFilePrepare(args)

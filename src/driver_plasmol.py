@@ -12,7 +12,6 @@ from csv_utils import initCSV, read_field_csv
 def run(params):
     try:
         logger = logging.getLogger("main")
-        
         if params.restart:
             for path in [params.eField_path, params.pField_path, params.pField_Transform_path, params.chkfile_path, params.eField_vs_pField_path, params.eV_spectrum_path]:
                 if os.path.isfile(path):
