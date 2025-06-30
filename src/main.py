@@ -1,4 +1,3 @@
-# /Users/bldrdge1/.conda/envs/meep1.29/bin/python /Users/bldrdge1/Downloads/repos/PlasMol/bohr/driver.py -m meep.in -b pyridine.in -l plasmol.log -vv
 import sys
 import logging
 import numpy as np
@@ -49,11 +48,15 @@ if __name__ == "__main__":
 
         # Step 2: Identify parsing workflow from CLI args
         preparams = inputFilePrepare(args)
-        
+        logger.debug(f"Arguments given and pre-parsed successfully: f{preparams}")
+
         # Step 3: Merge all found parameters
         logger.debug("Merging parameters from input file(s) with the CLI inputs. CLI takes priority for duplicate values.")
         params = PARAMS(preparams)
-        logger.debug(f"Arguments given and parsed successfully: {params}")
+        
+        logger.debug(f"Arguments given and parsed successfully: ")
+        for key, value in vars(params).items():
+            logger.debug(f"\t\t{key}: {value}")
 
         time_values = np.arange(0, params.t_end + params.dt, params.dt)
         interpolated_times = np.linspace(0, time_values[-1], len(time_values))
@@ -64,7 +67,7 @@ if __name__ == "__main__":
         # Step 4: Execute proper workflow
         if params.type == 'PlasMol':
             driver_plasmol.run(params)
-        elif params.type == 'RT-TDDFT':
+        elif params.type == 'Quantum':
             driver_rttddft.run(params)
         elif params.type == 'Meep':
             driver_meep.run(params)

@@ -1,0 +1,78 @@
+
+-- general section
+start general
+    dt 0.1 -- au
+    t_end 4000  -- au
+    eField_path eField.csv
+end general
+
+-- meep portion
+start meep
+    start source
+        sourceType continuous
+        sourceCenter -0.04
+        sourceSize 0 0.1 0.1
+        frequency 5
+        -- width 0.1
+        -- peakTime 5
+        -- chirpRate -0.5
+        isIntegrated True
+    end source
+
+    start simulation
+        eFieldCutOff 1e-12
+        cellLength 0.1
+        pmlThickness 0.01
+        symmetries Y 1 Z -1
+        surroundingMaterialIndex 1.33
+    end simulation
+
+    start object
+        material Au
+        radius 0.03
+        center 0 0 0
+    end object
+
+    start hdf5
+        timestepsBetween 1
+        intensityMin 3
+        intensityMax 10
+        imageDirName hello
+    end hdf5
+
+    start molecule
+        center 0 0 0
+    end molecule
+end meep
+
+-- rt-tddft portion
+start quantum
+    start rttddft
+        start geometry
+            O      0.0000000000       0.0000000000       -0.1302052882
+            H      1.4891244004       0.0000000000        1.0332262019
+            H     -1.4891244004       0.0000000000        1.0332262019
+        end geometry
+        units bohr
+        check_tolerance 1e-12
+        charge 0
+        spin 0
+        basis 6-31g
+        xc pbe0
+        resplimit 1e-20
+        propagator magnus2
+        pc_convergence 1e-12
+        maxiter 200
+    end rttddft
+
+    start files
+        start chkfile
+            frequency 100
+            path chkfile.npz
+        end chkfile
+        pField_path pField.csv
+        pField_Transform_path pField-transformed.csv
+        eField_vs_pField_path output.png
+        eV_spectrum_path spectrum.png
+    end files
+end quantum

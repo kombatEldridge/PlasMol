@@ -8,14 +8,14 @@ logger = logging.getLogger("main")
 
 def inputFilePrepare(args):
     input = args.input
-    meep, quantum, general = parseSections(input)
-    general_params = parseMeepSection(general)
-    meep_params = parseMeepSection(meep)
-    quantum_params = parseQuantumSection(quantum)
+    meep, quantum, settings = parseSections(input)
+    settings_params = parseMeepSection(settings)
+    meep_params = parseMeepSection(meep) if meep is not None else None
+    quantum_params = parseQuantumSection(quantum) if quantum is not None else None
 
-    if not 'dt' in general_params:
+    if not 'dt' in settings_params:
         raise RuntimeError("No 'dt' value given in settings file. This value is required.")
-    if not 't_end' in general_params:
+    if not 't_end' in settings_params:
         raise RuntimeError("No 't_end' value given in settings file. This value is required.")
 
     if meep_params is not None and quantum_params is not None:
@@ -25,7 +25,7 @@ def inputFilePrepare(args):
         if not 'molecule' in meep_params:
             raise RuntimeError("No 'molecule' block found in Meep block, but Quantum block found. Please specify the 'molecule' parameters in the Meep block.")
     elif quantum_params is not None:
-        simulation_type = 'RT-TDDFT'
+        simulation_type = 'Quantum'
         logger.info("Only RT-TDDFT input file given. Running RT-TDDFT simulation only.")
     elif meep_params is not None:
         if not 'simulation' in meep_params:
@@ -35,23 +35,17 @@ def inputFilePrepare(args):
     else:
         raise RuntimeError("The minimum required parameters were not given. Please check guidelines for information on minimal requirements.")
     
-    overlapping_keys = set(meep_params.keys()) & set(general_params.keys())
-    if overlapping_keys:
-        raise ValueError(f"Duplicate keys found: {overlapping_keys}")
-    preparams = {**meep_params, **general_params}
-
-    overlapping_keys = set(preparams.keys()) & set(quantum_params.keys())
-    if overlapping_keys:
-        raise ValueError(f"Duplicate keys found: {overlapping_keys}")
-    preparams = {**preparams, **quantum_params}
+    preparams = {}
+    preparams["settings"] = settings_params
+    if meep_params is not None:
+        preparams["meep"] = meep_params 
+    if quantum_params is not None:
+        preparams["quantum"] = quantum_params
 
     args = vars(args)
     args = {k: v for k, v in args.items() if v is not None}
-    overlapping_keys = set(preparams.keys()) & set(args.keys())
-    if overlapping_keys:
-        raise ValueError(f"Duplicate keys found: {overlapping_keys}")
-    preparams = {**preparams, **args}
-
+    preparams["args"] = args
+    
     preparams["simulation_type"] = simulation_type
     return preparams
 
@@ -61,9 +55,10 @@ def parseSections(input_file):
 
     in_meep_section = False
     in_quantum_section = False
+    in_settings_section = False
     meep_section = None
     quantum_section = None
-    general_section = ""
+    settings_section = ""
 
     with open(input_file) as f:
         for raw_line in f:
@@ -87,15 +82,25 @@ def parseSections(input_file):
             elif parts[0] == 'end' and parts[1] == 'quantum' and len(parts) == 2:
                 in_quantum_section = False
                 continue
+            elif parts[0] == 'start' and (parts[1] == 'settings' or parts[1] == 'general') and len(parts) == 2:
+                in_settings_section = True
+                settings_section = ""
+                continue
+            elif parts[0] == 'end' and (parts[1] == 'settings' or parts[1] == 'general') and len(parts) == 2:
+                in_settings_section = False
+                continue
+
 
             if in_meep_section:
                 meep_section += line + "\n"
             elif in_quantum_section:
                 quantum_section += line + "\n"
+            elif in_settings_section:
+                settings_section += line + "\n"
             else:
-                general_section += line + "\n"
+                settings_section += line + "\n"
 
-    return meep_section, quantum_section, general_section
+    return meep_section, quantum_section, settings_section
 
 
 def evaluate_expression(expression):

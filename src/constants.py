@@ -97,3 +97,12 @@ convertTimeAtomic2fs = 0.024188843
 convertTimeMeep2Atomic = convertTimeMeep2fs / convertTimeAtomic2fs
 convertFieldMeep2Atomic = 1 / 1e-6 / epsilon_0 / c / 0.51422082e12
 convertMomentAtomic2Meep = 8.4783536198e-30 * c / 1 / 1e-6 / 1e-6
+
+C_NM_FS = 299.792458    # Speed of light in nm/fs
+A0 = 5.29177210903e-11  # Bohr radius in m
+D_AU_NM = 1e-9 / A0     # Distance conv in au/nm
+D_NM_CM = 1e-7          # Distance conv in nm/cm
+T_AU_FS = 41.3413733    # Time conv in au/fs
+E_EV_AU = 27.21138602   # Energy conv in eV/au
+E_NM_EV = 1239.84193    # Energy conv in eV nm
+C_AU = 137.035999       # Speed of light in atomic units

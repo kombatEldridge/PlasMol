@@ -12,6 +12,16 @@ class Simulation:
     def __init__(self, params, molecule):
         self.params = params
         self.molecule = molecule
+        
+        if self.params.propagator == "step":
+            from step import propagate
+            self.propagate = propagate
+        elif self.params.propagator == "magnus2":
+            from magnus2 import propagate
+            self.propagate = propagate
+        elif self.params.propagator == "rk4":
+            from rk4 import propagate
+            self.propagate = propagate
 
         self.dt_meep = self.params.dt / constants.convertTimeMeep2Atomic
         self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
@@ -155,7 +165,7 @@ class Simulation:
         eArr = [eField['x'],eField['y'],eField['z']]
         logging.debug(f'Electric field given to Bohr: {eArr} in au')
         
-        ind_dipole = propagation(self.params, self.molecule, eArr)
+        ind_dipole = propagation(self.params, self.molecule, eArr, self.propagate)
 
         logging.debug(f"Bohr calculation results: {ind_dipole} in au")
         

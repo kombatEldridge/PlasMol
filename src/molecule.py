@@ -63,9 +63,9 @@ class MOLECULE():
             self.nmat = 1
 
         self.current_time = 0
-
+        
         if params.chkfile_path is not None and os.path.exists(params.chkfile_path):
-            restart_from_chkfile(self)
+            restart_from_chkfile(self, params)
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
         else: 

@@ -5,7 +5,7 @@ import _pickle
 
 logger = logging.getLogger("main")
 
-def update_chkfile(molecule, current_time):
+def update_chkfile(params, molecule, current_time):
     """
     Save a checkpoint file containing the current state of the simulation.
 
@@ -24,11 +24,11 @@ def update_chkfile(molecule, current_time):
     None
     """
     # ensure .npz extension
-    if not molecule.chkfile_path.endswith(".npz"):
-        molecule.chkfile_path = molecule.chkfile_path + ".npz"
-    fn = molecule.chkfile_path
+    if not params.chkfile_path.endswith(".npz"):
+        params.chkfile_path = params.chkfile_path + ".npz"
+    fn = params.chkfile_path
 
-    method = molecule.propagator.lower()
+    method = params.propagator.lower()
     save_dict = {
         "current_time": current_time,
         "D_ao_0":       molecule.D_ao_0,
@@ -49,7 +49,7 @@ def update_chkfile(molecule, current_time):
     logger.debug(f"Wrote checkpoint to {fn} with keys: {list(save_dict)}")
 
 
-def restart_from_chkfile(molecule):
+def restart_from_chkfile(molecule, params):
     """
     Load the simulation state from a checkpoint file.
 
@@ -64,7 +64,7 @@ def restart_from_chkfile(molecule):
     Returns:
     None
     """
-    fn = molecule.chkfile_path
+    fn = params.chkfile_path
 
     try:
         data = np.load(fn, allow_pickle=True)
@@ -86,7 +86,7 @@ def restart_from_chkfile(molecule):
     molecule.mf.mo_coeff = data["mo_coeff"]
 
     # conditional
-    method = molecule.propagator.lower()
+    method = params.propagator.lower()
     if method == "step" and "C_orth_ndt" in data:
         molecule.C_orth_ndt = data["C_orth_ndt"]
     elif method == "magnus2" and "F_orth_n12dt" in data:

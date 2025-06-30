@@ -13,15 +13,16 @@ def run(params):
     try:
         logger = logging.getLogger("main")
         if params.restart:
-            for path in [params.eField_path, params.pField_path, params.pField_Transform_path, params.chkfile_path, params.eField_vs_pField_path, params.eV_spectrum_path]:
-                if os.path.isfile(path):
-                    try:
-                        os.remove(path)
-                        logger.info(f"Deleted {path}")
-                    except OSError as e:
-                        logger.error(f"Error deleting {path}: {e}")
-                else:
-                    logger.debug(f"No such file: {path}")
+            for path in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
+                if hasattr(params, path):
+                    if os.path.isfile(path):
+                        try:
+                            os.remove(path)
+                            logger.info(f"Deleted {path}")
+                        except OSError as e:
+                            logger.error(f"Error deleting {path}: {e}")
+                    else:
+                        logger.debug(f"No such file: {path}")
         
         molecule = MOLECULE(params)
 
