@@ -1,0 +1,20 @@
+site_name: PlasMol Documentation
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage: usage.md
+  - Tutorials: tutorials.md
+  - API Reference: api-reference.md
+  - Contributing: contributing.md
+  - About: about.md
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - toc.follow
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
