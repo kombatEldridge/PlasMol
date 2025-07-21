@@ -1,3 +1,4 @@
 .DS_Store
-jobs
-site/
+jobs/
+doc/site/
+.vscode/
