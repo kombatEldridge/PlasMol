@@ -9,18 +9,22 @@
       
       
       
+        <link rel="prev" href="../usage/">
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+        <link rel="next" href="../api-reference/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
     
     
       
-        <title>PlasMol Documentation</title>
+        <title>Tutorials - PlasMol Documentation</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -39,7 +43,7 @@
       
     
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -57,6 +61,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#tutorials" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -69,7 +78,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -89,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Tutorials
             
           </span>
         </div>
@@ -167,7 +176,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -185,7 +194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -207,7 +216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -229,7 +238,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/usage/" class="md-nav__link">
+      <a href="../usage/" class="md-nav__link">
         
   
   
@@ -248,10 +257,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/tutorials/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -262,6 +293,44 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-1-simple-meep-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorial 1: Simple Meep Simulation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-3-hybrid-plasmol" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorial 3: Hybrid PlasMol
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -273,7 +342,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/api-reference/" class="md-nav__link">
+      <a href="../api-reference/" class="md-nav__link">
         
   
   
@@ -295,7 +364,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -317,7 +386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/about/" class="md-nav__link">
+      <a href="../about/" class="md-nav__link">
         
   
   
@@ -349,6 +418,34 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-1-simple-meep-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorial 1: Simple Meep Simulation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-3-hybrid-plasmol" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorial 3: Hybrid PlasMol
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -360,8 +457,77 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+
+<h1 id="tutorials">Tutorials</h1>
+<p>These tutorials demonstrate core workflows. Assume you've installed PlasMol.</p>
+<h2 id="tutorial-1-simple-meep-simulation">Tutorial 1: Simple Meep Simulation</h2>
+<ol>
+<li>Create <code>input.meep</code>:
+   ```
+start meep
+simulation
+  cellLength = 10
+  resolution = 20
+  pmlThickness = 1.0
+end
+source
+  sourceType = 'gaussian'
+  frequency = 0.5
+  [etc.]
+end
+<div class="highlight"><pre><span></span><code>2. Run:
+   ```bash
+   python -m src.main -f input.meep
+   ```
+3. View outputs: Check eField.csv and GIF.
+
+Expected: Simulates Gaussian pulse propagation.
+
+## Tutorial 2: RT-TDDFT Quantum Simulation
+1. Create `input.quantum`:
+   ```
+start quantum
+  rttddft
+    basis = &#39;sto-3g&#39;
+    xc = &#39;lda&#39;
+    geometry
+      H 0 0 0.0 0.0
+      O 1.0 0.0 0.0
+    end geometry
+  end
+  propagator = &#39;rk4&#39;
+end
+source
+  shape = &#39;pulse&#39;
+  wavelength_nm = 400
+  [etc.]
+end
+</code></pre></div></li>
+<li>Run**:
+   <code>bash
+  python -m src.main -f input.quantum -v</code></li>
+<li>Analyze: Use plotting.py to visualize fields; apply fourier.transform for spectrum.</li>
+</ol>
+<p>Expected: Propagates density matrix, outputs polarization and HOMO-LUMO jumps.</p>
+<h2 id="tutorial-3-hybrid-plasmol">Tutorial 3: Hybrid PlasMol</h2>
+<p>Combine Meep and quantum inputs. Run similarly.</p>
+<p>[TODO: Add more detailed examples, code snippets, or Jupyter notebook links.]</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -397,10 +563,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/", "features": ["navigation.sections", "toc.follow"], "search": "/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "toc.follow"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
       
     
   </body>

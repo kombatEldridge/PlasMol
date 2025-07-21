@@ -9,20 +9,22 @@
       
       
       
+        <link rel="prev" href="..">
       
-        <link rel="next" href="installation/">
+      
+        <link rel="next" href="../usage/">
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
     
     
       
-        <title>PlasMol Documentation</title>
+        <title>Installation - PlasMol Documentation</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -41,7 +43,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -60,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-plasmol-documentation" class="md-skip">
+        <a href="#installation-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -76,7 +78,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -96,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Installation
             
           </span>
         </div>
@@ -174,7 +176,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -184,6 +186,28 @@
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
     
       
       
@@ -206,7 +230,7 @@
   
   
   <span class="md-ellipsis">
-    Home
+    Installation
     
   </span>
   
@@ -214,12 +238,12 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="." class="md-nav__link md-nav__link--active">
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
-    Home
+    Installation
     
   </span>
   
@@ -242,27 +266,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Key Features
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#step-1-clone-the-repository" class="md-nav__link">
     <span class="md-ellipsis">
-      Quick Start
+      Step 1: Clone the Repository
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-structure" class="md-nav__link">
+  <a href="#step-2-create-a-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
-      Project Structure
+      Step 2: Create a Virtual Environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Install Dependencies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-install-plasmol-as-a-package-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Install PlasMol as a Package (Optional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Verify Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
     </span>
   </a>
   
@@ -283,29 +343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Installation
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="usage/" class="md-nav__link">
+      <a href="../usage/" class="md-nav__link">
         
   
   
@@ -327,7 +365,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/" class="md-nav__link">
+      <a href="../tutorials/" class="md-nav__link">
         
   
   
@@ -349,7 +387,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api-reference/" class="md-nav__link">
+      <a href="../api-reference/" class="md-nav__link">
         
   
   
@@ -371,7 +409,7 @@
   
   
     <li class="md-nav__item">
-      <a href="contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -393,7 +431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/" class="md-nav__link">
+      <a href="../about/" class="md-nav__link">
         
   
   
@@ -435,27 +473,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Key Features
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#step-1-clone-the-repository" class="md-nav__link">
     <span class="md-ellipsis">
-      Quick Start
+      Step 1: Clone the Repository
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-structure" class="md-nav__link">
+  <a href="#step-2-create-a-virtual-environment" class="md-nav__link">
     <span class="md-ellipsis">
-      Project Structure
+      Step 2: Create a Virtual Environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Install Dependencies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-install-plasmol-as-a-package-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Install PlasMol as a Package (Optional)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-verify-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Verify Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
     </span>
   </a>
   
@@ -477,28 +551,54 @@
 
 
 
-<h1 id="welcome-to-plasmol-documentation">Welcome to PlasMol Documentation</h1>
-<p>PlasMol is a Python-based simulation framework for combining plasmonics (via Meep) with real-time time-dependent density functional theory (RT-TDDFT) simulations. It enables hybrid simulations of electromagnetic fields interacting with quantum molecular systems, useful for applications in plasmon-enhanced spectroscopy, nanophotonics, and quantum chemistry.</p>
-<h2 id="key-features">Key Features</h2>
+<h1 id="installation-guide">Installation Guide</h1>
+<p>PlasMol requires Python 3.8+ and several scientific libraries. Follow these steps to set up the environment.</p>
+<h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li><strong>Simulation Modes</strong>: Pure Meep (electromagnetics), pure RT-TDDFT (quantum), or hybrid PlasMol.</li>
-<li><strong>Quantum Components</strong>: Molecule handling with PySCF, electric field interactions, density matrix propagation (step, magnus2, rk4 methods), checkpointing, and HOMO-LUMO analysis.</li>
-<li><strong>Meep Integration</strong>: Custom sources (continuous, Gaussian, chirped, pulse), symmetries, PML boundaries, and HDF5 output for visualizations.</li>
-<li><strong>Utilities</strong>: CSV handling for fields, Fourier transforms for spectra, plotting (e.g., electric vs. polarization fields), GIF generation, and logging.</li>
-<li><strong>Input Handling</strong>: CLI arguments, input file parsing (Meep and Quantum sections), parameter merging.</li>
+<li>Python 3.8 or higher.</li>
+<li>Git (for cloning the repository).</li>
+<li>Optional: Conda or virtualenv for isolated environments.</li>
 </ul>
-<h2 id="quick-start">Quick Start</h2>
-<ol>
-<li>Install dependencies: <code>pip install pyscf meep numpy matplotlib pandas scipy</code>.</li>
-<li>Run a simulation: <code>python -m src.main -f path/to/input.in -v</code>.</li>
-</ol>
-<p>For more, see <a href="installation/">Installation</a> and <a href="usage/">Usage</a>.</p>
-<h2 id="project-structure">Project Structure</h2>
+<h2 id="step-1-clone-the-repository">Step 1: Clone the Repository</h2>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/PlasMol.git<span class="w">  </span><span class="c1"># [TODO: Replace with actual repo URL]</span>
+<span class="nb">cd</span><span class="w"> </span>PlasMol
+</code></pre></div>
+<h2 id="step-2-create-a-virtual-environment">Step 2: Create a Virtual Environment</h2>
+<p>Using virtualenv:
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>env
+<span class="nb">source</span><span class="w"> </span>env/bin/activate<span class="w">  </span><span class="c1"># On Windows: env\Scripts\activate</span>
+</code></pre></div></p>
+<p>Or with Conda:
+<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>plasmol<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12
+conda<span class="w"> </span>activate<span class="w"> </span>plasmol
+</code></pre></div></p>
+<h2 id="step-3-install-dependencies">Step 3: Install Dependencies</h2>
+<p>PlasMol uses:
+- PySCF for quantum calculations.
+- Meep for electromagnetics.
+- NumPy, SciPy, Pandas, Matplotlib for data handling and plotting.</p>
+<p>Install via pip:
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyscf<span class="w"> </span>meep<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>logging<span class="w"> </span>argparse
+<span class="c1"># Optional for advanced features: torch (ML), biopython (if bio-related), etc.</span>
+<span class="c1"># [TODO: Add any other dependencies from your requirements.txt if available]</span>
+</code></pre></div></p>
+<h2 id="step-4-install-plasmol-as-a-package-optional">Step 4: Install PlasMol as a Package (Optional)</h2>
+<p>To make it importable system-wide:
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div>
+This assumes a <code>setup.py</code> or <code>pyproject.toml</code> in the root (e.g., for editable install).</p>
+<h2 id="step-5-verify-installation">Step 5: Verify Installation</h2>
+<p>Run a test:
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>--help
+</code></pre></div>
+If you see the CLI help message, it's working.</p>
+<h2 id="common-issues">Common Issues</h2>
 <ul>
-<li><code>src/</code>: Core codebase with modular directories (drivers/, quantum/, meep/, input/, utils/).</li>
-<li>Organized for scalability, with relative imports and package <code>__init__.py</code> files.</li>
+<li><strong>Meep Installation</strong>: On some systems, Meep requires additional setup (e.g., <code>conda install -c conda-forge meep</code> for binaries).</li>
+<li><strong>PySCF Errors</strong>: Ensure OpenBLAS or MKL is installed for performance.</li>
+<li><strong>Import Errors</strong>: Run as a module (<code>python -m src.main</code>) from the project root to resolve relative imports.</li>
 </ul>
-<p>[TODO: Add project logo or screenshot of a simulation output here.]</p>
+<p>[TODO: Add platform-specific notes, e.g., for macOS/Linux/Windows.]</p>
 
 
 
@@ -547,10 +647,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": ".", "features": ["navigation.sections", "toc.follow"], "search": "assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "toc.follow"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
       
     
   </body>

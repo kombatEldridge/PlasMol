@@ -9,18 +9,22 @@
       
       
       
+        <link rel="prev" href="../installation/">
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+        <link rel="next" href="../tutorials/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
     
     
       
-        <title>PlasMol Documentation</title>
+        <title>Usage - PlasMol Documentation</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
       
 
@@ -39,7 +43,7 @@
       
     
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -57,6 +61,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#usage-guide" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -69,7 +78,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-header__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -89,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Usage
             
           </span>
         </div>
@@ -167,7 +176,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
+    <a href=".." title="PlasMol Documentation" class="md-nav__button md-logo" aria-label="PlasMol Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -185,7 +194,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -207,7 +216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -226,10 +235,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/usage/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Usage
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -240,6 +271,71 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Arguments
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input File Format
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-simulations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Simulations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Options
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -251,7 +347,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/tutorials/" class="md-nav__link">
+      <a href="../tutorials/" class="md-nav__link">
         
   
   
@@ -273,7 +369,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/api-reference/" class="md-nav__link">
+      <a href="../api-reference/" class="md-nav__link">
         
   
   
@@ -295,7 +391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -317,7 +413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/about/" class="md-nav__link">
+      <a href="../about/" class="md-nav__link">
         
   
   
@@ -349,6 +445,61 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cli-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI Arguments
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input File Format
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-simulations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Simulations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Options
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -360,8 +511,84 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+
+<h1 id="usage-guide">Usage Guide</h1>
+<p>PlasMol is run via the command-line interface (CLI) from <code>src/main.py</code>. It supports three simulation types: Meep (electromagnetics), Quantum (RT-TDDFT), and PlasMol (hybrid).</p>
+<h2 id="cli-arguments">CLI Arguments</h2>
+<p><div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>&lt;input_file&gt;<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
+</code></pre></div>
+- <code>-f, --input &lt;file&gt;</code>: Path to the input file (required).
+- <code>-l, --log &lt;file&gt;</code>: Log file name.
+- <code>-v, --verbose</code>: Increase verbosity (up to -vv<code>for debug).
+-</code>-r, --restart`: Restart simulation (deletes previous outputs).</p>
+<h2 id="input-file-format">Input File Format</h2>
+<p>Input files are divided into sections like <code>start meep</code> / <code>end meep</code>, <code>start quantum</code> / <code>end quantum</code>, and <code>start settings</code> / <code>end settings</code>. See examples in <code>templates/</code>.</p>
+<p>Example snippet:
+<div class="highlight"><pre><span></span><code>start settings
+dt = 0.01
+t_end = 100.0
+eField_path = eField.csv
+end settings
+
+start meep
+[simulation parameters like cellLength, resolution]
+end meep
+
+start quantum
+[basis, xc, geometry, etc.]
+end quantum
+</code></pre></div></p>
+<h2 id="running-simulations">Running Simulations</h2>
+<ul>
+<li>
+<p><strong>Pure Meep</strong>:
+  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-meep.in<span class="w"> </span>-v
+</code></pre></div>
+  Outputs electric fields, HDF5 images, GIF (if enabled).</p>
+</li>
+<li>
+<p><strong>Pure RT-TDDFT</strong>:
+  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-quantum.in<span class="w"> </span>-v
+</code></pre></div>
+  polarization fields, spectra, checkpoints.</p>
+</li>
+<li>
+<p><strong>Hybrid PlasMol</strong>:
+  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-plasmol.in<span class="w"> </span>-vv
+</code></pre></div>
+  Combines both, with molecule-field interactions.</p>
+</li>
+</ul>
+<h2 id="output-files">Output Files</h2>
+<ul>
+<li>CSV: eField.csv, pField.csv for fields.</li>
+<li>Plots: output.png (eV_spectrum.png for spectra).</li>
+<li>Checkpoint: .npz for resuming.</li>
+<li>GIF: Simulation visualizations if HDF5 enabled.</li>
+</ul>
+<h2 id="advanced-options">Advanced Options</h2>
+<ul>
+<li>Propagators: Set in quantum input (step, magnus2, rk4).</li>
+<li>Sources: Continuous, Gaussian, chirped, pulse in meep section.</li>
+<li>Restart: Use <code>-r</code> to clear old files and resume from checkpoint.</li>
+</ul>
+<p>[TODO: Add example input files or screenshots of output.]</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -397,10 +624,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/", "features": ["navigation.sections", "toc.follow"], "search": "/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "toc.follow"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/assets/javascripts/bundle.56ea9cef.min.js"></script>
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
       
     
   </body>
