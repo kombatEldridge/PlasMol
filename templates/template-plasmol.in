@@ -2,7 +2,7 @@
 -- general section
 start general
     dt 0.1 -- au
-    t_end 4000  -- au
+    t_end 40  -- au
     eField_path eField.csv
 end general
 

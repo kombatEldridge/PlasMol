@@ -2,15 +2,14 @@ import sys
 import logging
 import numpy as np
 
-import constants
-import driver_meep
-import driver_rttddft
-import driver_plasmol
+from . import constants
 
-from params import PARAMS
-from cli import parse_arguments
-from logging_utils import PRINTLOGGER
-from input_parser import inputFilePrepare
+from .drivers import *
+from .input.params import PARAMS
+from .utils.logging import PRINTLOGGER
+
+from .input.cli import parse_arguments
+from .input.parser import inputFilePrepare
 
 # main.py
 if __name__ == "__main__":
@@ -66,11 +65,11 @@ if __name__ == "__main__":
 
         # Step 4: Execute proper workflow
         if params.type == 'PlasMol':
-            driver_plasmol.run(params)
+            run_plasmol(params)
         elif params.type == 'Quantum':
-            driver_rttddft.run(params)
+            run_rttddft(params)
         elif params.type == 'Meep':
-            driver_meep.run(params)
+            run_meep(params)
         
         logger.info("Simulation completed successfully.")
     except Exception as err:

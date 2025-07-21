@@ -37,8 +37,4 @@ start meep
         intensityMax 10
         imageDirName hello
     end hdf5
-
-    start molecule
-        center 0 0 0
-    end molecule
 end meep

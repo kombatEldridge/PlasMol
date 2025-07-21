@@ -1,7 +1,7 @@
 
 -- general section
-dt 0.01 -- au
-t_end 4000  -- au
+dt 0.001 -- au
+t_end 40  -- au
 eField_path eField.csv
 
 -- rt-tddft portion
@@ -22,7 +22,7 @@ start quantum
         propagator magnus2
         pc_convergence 1e-12
         maxiter 200
-        transform 
+        -- transform 
     end rttddft
 
     start files
