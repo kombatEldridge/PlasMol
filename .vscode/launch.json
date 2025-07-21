@@ -5,20 +5,15 @@
             "name": "Debug DriverQM",
             "type": "python",
             "request": "launch",
-            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/tides/main.py",
+            "program": "/Users/bldrdge1/Downloads/repos/PlasMol/src/main.py",
             "args": [
-                "-b", "h2o.in",
+                "-p", "plasmol.in",
                 "-vv",
-                "--pcconv", "1e-12",
-                "-l", "tides.log",
-                "--dt", "0.1",
-                "-d", "x",
-                "-t", "4000"
             ],
             "env": {
                 "PYTHONPATH": "/Users/bldrdge1/.conda/envs/meep1.29/lib/python3.9/site-packages"
             },
-            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/jobs/h2o",
+            "cwd": "/Users/bldrdge1/Downloads/repos/PlasMol/moleculeFiles",
             "python": "/Users/bldrdge1/.conda/envs/meep1.29/bin/python",
             "console": "integratedTerminal"
         }

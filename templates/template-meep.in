@@ -1,0 +1,40 @@
+
+-- general section
+dt 0.1 -- au
+t_end 50  -- au
+eField_path eField.csv
+
+-- meep portion
+start meep
+    start source
+        sourceType continuous
+        sourceCenter -0.04
+        sourceSize 0 0.1 0.1
+        frequency 5
+        -- width 0.1
+        -- peakTime 5
+        -- chirpRate -0.5
+        isIntegrated True
+    end source
+
+    start simulation
+        eFieldCutOff 1e-12
+        cellLength 0.1
+        pmlThickness 0.01
+        symmetries Y 1 Z -1
+        surroundingMaterialIndex 1.33
+    end simulation
+
+    start object
+        material Au
+        radius 0.03
+        center 0 0 0
+    end object
+
+    start hdf5
+        timestepsBetween 1
+        intensityMin 3
+        intensityMax 10
+        imageDirName hello
+    end hdf5
+end meep
