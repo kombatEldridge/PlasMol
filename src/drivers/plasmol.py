@@ -1,9 +1,9 @@
-# driver_plasmol.py
+# drivers/plasmol.py
 import os
 import sys
 import logging
 
-from ..meep.simulation import Simulation
+from ..classical.simulation import Simulation
 from ..quantum.molecule import MOLECULE
 from ..utils.plotting import show_eField_pField
 from ..utils.csv import initCSV, read_field_csv

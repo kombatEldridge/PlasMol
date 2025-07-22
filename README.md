@@ -2,6 +2,10 @@
 
 PlasMol is a simulation framework that integrates finite-difference time-domain (FDTD) electromagnetic simulations using Meep with real-time time-dependent density functional theory (RT-TDDFT) calculations using PySCF. It enables the study of plasmon-molecule interactions, pure electromagnetic simulations, or standalone quantum simulations. The project supports various propagators for RT-TDDFT, checkpointing, data visualization, and spectrum analysis via Fourier transforms.
 
+## Documentation
+
+Many of the features and code snippets described here are better elaborated on in the docs: [https://kombatEldridge.github.io/PlasMol/](https://kombatEldridge.github.io/PlasMol/)
+
 ## Key Features
 
 - **Hybrid Simulations (PlasMol Mode)**: Combines Meep FDTD for plasmonic structures with RT-TDDFT for molecular responses, allowing self-consistent coupling between electromagnetic fields and molecular polarization.

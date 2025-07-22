@@ -1,4 +1,4 @@
-# step.py
+# quantum/propagators/step.py
 import logging
 import numpy as np
 from scipy.linalg import expm
@@ -8,6 +8,8 @@ logger = logging.getLogger("main")
 def propagate(params, molecule, exc):
     """
     Propagate molecular orbitals using the step method.
+    This method is also known as the modified midpoint unitary transformation (MMUT)
+    scheme from https://doi.org/10.1039/B415849K
     
     C'(t+dt) = U(t)C'(t-dt)
     U(t) = exp(-i*2dt*F')

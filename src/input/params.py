@@ -1,4 +1,4 @@
-# params.py
+# input/params.py
 import logging
 import numpy as np
 
@@ -16,11 +16,11 @@ class PARAMS:
 
         if self.type == 'PlasMol':
             self.buildQuantumParams()
-            self.buildMeepParams()
+            self.buildclassicalParams()
         elif self.type == 'Quantum':
             self.buildQuantumParams()
-        elif self.type == 'Meep':
-            self.buildMeepParams()
+        elif self.type == 'classical':
+            self.buildclassicalParams()
 
         delattr(self, 'preparams')
 
@@ -45,7 +45,7 @@ class PARAMS:
 
         if 'source' in self.preparams['quantum']:
             if not self.type == 'Quantum':
-                logger.warning("Source block found in quantum section, but full PlasMol simulation is available. Ignoring source in quantum section. For full PlasMol simulation, please add source to meep section.")
+                logger.warning("Source block found in quantum section, but full PlasMol simulation is available. Ignoring source in quantum section. For full PlasMol simulation, please add source to classical section.")
             else:
                 self.shape = self.preparams["quantum"]["source"]['shape']
                 self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm']
@@ -53,6 +53,7 @@ class PARAMS:
                 self.width_steps = self.preparams["quantum"]["source"]['width_steps']
                 self.intensity_au = self.preparams["quantum"]["source"]['intensity_au']
                 self.dir = self.preparams["quantum"]["source"]['dir']
+                # if you want to add a custom shape you must add support for the relevant parameters here
 
         if self.propagator == 'step':
             pass
@@ -66,50 +67,50 @@ class PARAMS:
         
 
 
-    def buildMeepParams(self):
+    def buildclassicalParams(self):
         import meep as mp
 
         def getMolecule(self):
-            if self.preparams['meep'].get("molecule", None) is None:
+            if self.preparams['classical'].get("molecule", None) is None:
                 logger.info('No molecule chosen for simulation. Continuing without it.')
                 return None
             
-            return self.preparams['meep']['molecule']
+            return self.preparams['classical']['molecule']
 
         def getSimulation(self):
-            if self.preparams['meep'].get("simulation", None) is None:
+            if self.preparams['classical'].get("simulation", None) is None:
                 raise RuntimeError('No simulation parameters chosen for simulation. Exiting.')
             
-            return self.preparams['meep']["simulation"]
+            return self.preparams['classical']["simulation"]
 
         def getSource(self):
-            from ..meep import sources
+            from ..classical import sources
 
-            if self.preparams['meep'].get("source", None) is None:
+            if self.preparams['classical'].get("source", None) is None:
                 logger.info('No source chosen for simulation. Continuing without it.')
                 return None
 
-            source_type = self.preparams['meep']['source']['sourceType']
+            source_type = self.preparams['classical']['source']['sourceType']
             if source_type == 'continuous':
                 source_params = {
-                    key: value for key, value in self.preparams['meep']['source'].items()
+                    key: value for key, value in self.preparams['classical']['source'].items()
                     if key in ['frequency', 'wavelength', 'start_time', 'end_time', 
                             'width', 'fwidth', 'slowness', 'is_integrated', 'component']
                 }
                 source = sources.ContinuousSource(
-                    sourceCenter=self.preparams['meep']['source']['sourceCenter'],
-                    sourceSize=self.preparams['meep']['source']['sourceSize'],
+                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
+                    sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
             elif source_type == 'gaussian':
                 source_params = {
-                    key: value for key, value in self.preparams['meep']['source'].items()
+                    key: value for key, value in self.preparams['classical']['source'].items()
                     if key in ['frequency', 'wavelength', 'width', 'fwidth', 'start_time', 
                             'cutoff', 'is_integrated', 'component']
                 }
                 source = sources.GaussianSource(
-                    sourceCenter=self.preparams['meep']['source']['sourceCenter'],
-                    sourceSize=self.preparams['meep']['source']['sourceSize'],
+                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
+                    sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
             elif source_type == 'chirped':
@@ -125,13 +126,13 @@ class PARAMS:
                 )
             elif source_type == 'pulse':
                 source_params = {
-                    key: value for key, value in self.preparams['meep']['source'].items()
+                    key: value for key, value in self.preparams['classical']['source'].items()
                     if key in ['frequency', 'wavelength', 'width', 'peakTime', 'start_time', 'end_time', 'is_integrated', 'component']
                 }
 
                 source = sources.PulseSource(
-                    sourceCenter=self.preparams['meep']['source']['sourceCenter'],
-                    sourceSize=self.preparams['meep']['source']['sourceSize'],
+                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
+                    sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
             else:
@@ -140,28 +141,28 @@ class PARAMS:
             return source
 
         def getObject(self):
-            if self.preparams['meep'].get("object", None) is None:
+            if self.preparams['classical'].get("object", None) is None:
                 logger.info('No object chosen for simulation. Continuing without it.')
                 return None
 
-            if self.preparams['meep']['object']['material'] == 'Au':
+            if self.preparams['classical']['object']['material'] == 'Au':
                 from meep.materials import Au_JC_visible as Au
                 material = Au
-            elif self.preparams['meep']['object']['material'] == 'Ag':
+            elif self.preparams['classical']['object']['material'] == 'Ag':
                 from meep.materials import Ag
                 material = Ag
             else:
-                raise ValueError(f"Unsupported material type: {self.preparams['meep']['object']['material']}")
+                raise ValueError(f"Unsupported material type: {self.preparams['classical']['object']['material']}")
 
-            objectNP = mp.Sphere(radius=self.preparams['meep']['object']['radius'], center=self.preparams['meep']['object']['center'], material=material)
+            objectNP = mp.Sphere(radius=self.preparams['classical']['object']['radius'], center=self.preparams['classical']['object']['center'], material=material)
             return objectNP
 
         def getSymmetry(self):
-            if self.preparams['meep']['simulation'].get("symmetries", None) is None:
+            if self.preparams['classical']['simulation'].get("symmetries", None) is None:
                 logger.info('No symmetries chosen for simulation. Continuing without them.')
                 return None
             
-            sym = self.preparams['meep']['simulation']['symmetries']
+            sym = self.preparams['classical']['simulation']['symmetries']
             symmetries = []
             for i in range(len(sym)):
                 if sym[i] in ['X', 'Y', 'Z']:
@@ -186,23 +187,23 @@ class PARAMS:
                 return symmetries
 
         def gethdf5(self):
-            if self.preparams['meep'].get("hdf5", None) is None:
+            if self.preparams['classical'].get("hdf5", None) is None:
                 logger.info('No picture output chosen for simulation. Continuing without it.')
                 return None
 
-            if any(key not in self.preparams['meep']['hdf5'] for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
+            if any(key not in self.preparams['classical']['hdf5'] for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
                 raise ValueError("If you want to generate pictures, you must provide timestepsBetween, intensityMin, and intensityMax.")
 
-            if 'imageDirName' not in self.preparams['meep']['hdf5']:
+            if 'imageDirName' not in self.preparams['classical']['hdf5']:
                 import os 
                 from datetime import datetime
-                self.preparams['meep']['hdf5']['imageDirName'] = f"meep-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
-                logger.info(f"Directory for images: {os.path.abspath(self.preparams['meep']['hdf5']['imageDirName'])}")
+                self.preparams['classical']['hdf5']['imageDirName'] = f"classical-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
+                logger.info(f"Directory for images: {os.path.abspath(self.preparams['classical']['hdf5']['imageDirName'])}")
 
-            return self.preparams['meep']['hdf5']
+            return self.preparams['classical']['hdf5']
         
         self.simParams = getSimulation(self)
-        self.meepmolecule = getMolecule(self)
+        self.classicalmolecule = getMolecule(self)
         self.sourceType = getSource(self)
         self.symmetries = getSymmetry(self)
         self.objectNP = getObject(self)

@@ -1,4 +1,4 @@
-# electric_field.py
+# quantum/electric_field.py
 import logging 
 import numpy as np
 
@@ -20,6 +20,9 @@ class ELECTRICFIELD:
             self.wavelength_au = self.wavelength_nm * constants.D_AU_NM
         elif self.shape == 'kick':
             pass
+        # elif self.shape == 'custom_shape'...
+        #   if additional parameters need to be added for your custom shape
+        #   you must add support for them in the input/params.py method: buildQuantumParams()
         else:
             raise ValueError("Invalid shape. Must be 'pulse' or 'kick'.")
         
@@ -52,6 +55,13 @@ class ELECTRICFIELD:
         elif self.shape == 'kick':
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
             active_component = self.intensity_au * envelope
+        # ------------------------------------ #
+        #              Additional              #
+        #    custom sources can be defined     #
+        #      here and supported above        #
+        #             as commented             #
+        # ------------------------------------ #
+
 
         field = np.zeros((len(t), 3))
         dir = self.dir.lower()

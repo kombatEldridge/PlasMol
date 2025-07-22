@@ -1,4 +1,4 @@
-# input_parser.py
+# input/parser.py
 import re
 import logging
 import numpy as np
@@ -7,9 +7,9 @@ logger = logging.getLogger("main")
 
 def inputFilePrepare(args):
     input = args.input
-    meep, quantum, settings = parseSections(input)
-    settings_params = parseMeepSection(settings)
-    meep_params = parseMeepSection(meep) if meep is not None else None
+    classical, quantum, settings = parseSections(input)
+    settings_params = parseclassicalSection(settings)
+    classical_params = parseclassicalSection(classical) if classical is not None else None
     quantum_params = parseQuantumSection(quantum) if quantum is not None else None
 
     if not 'dt' in settings_params:
@@ -17,27 +17,27 @@ def inputFilePrepare(args):
     if not 't_end' in settings_params:
         raise RuntimeError("No 't_end' value given in settings file. This value is required.")
 
-    if meep_params is not None and quantum_params is not None:
+    if classical_params is not None and quantum_params is not None:
         simulation_type = 'PlasMol'
-        if not 'simulation' in meep_params:
-            raise RuntimeError("No 'simulation' block found in Meep block. Please specify the 'simulation' parameters in the Meep block.")
-        if not 'molecule' in meep_params:
-            raise RuntimeError("No 'molecule' block found in Meep block, but Quantum block found. Please specify the 'molecule' parameters in the Meep block.")
+        if not 'simulation' in classical_params:
+            raise RuntimeError("No 'simulation' block found in classical block. Please specify the 'simulation' parameters in the classical block.")
+        if not 'molecule' in classical_params:
+            raise RuntimeError("No 'molecule' block found in classical block, but Quantum block found. Please specify the 'molecule' parameters in the classical block.")
     elif quantum_params is not None:
         simulation_type = 'Quantum'
         logger.info("Only RT-TDDFT input file given. Running RT-TDDFT simulation only.")
-    elif meep_params is not None:
-        if not 'simulation' in meep_params:
-            raise RuntimeError("No 'simulation' block found in Meep block. Please specify the 'simulation' parameters in the Meep block.")
-        simulation_type = 'Meep'
-        logger.info("Only Meep input file given. Running Meep simulation only.")
+    elif classical_params is not None:
+        if not 'simulation' in classical_params:
+            raise RuntimeError("No 'simulation' block found in classical block. Please specify the 'simulation' parameters in the classical block.")
+        simulation_type = 'Classical'
+        logger.info("Only classical input file given. Running classical simulation only.")
     else:
         raise RuntimeError("The minimum required parameters were not given. Please check guidelines for information on minimal requirements.")
     
     preparams = {}
     preparams["settings"] = settings_params
-    if meep_params is not None:
-        preparams["meep"] = meep_params 
+    if classical_params is not None:
+        preparams["classical"] = classical_params 
     if quantum_params is not None:
         preparams["quantum"] = quantum_params
 
@@ -52,10 +52,10 @@ def inputFilePrepare(args):
 def parseSections(input_file):
     comment_pattern = re.compile(r"(#|--|%)(.*)$")
 
-    in_meep_section = False
+    in_classical_section = False
     in_quantum_section = False
     in_settings_section = False
-    meep_section = None
+    classical_section = None
     quantum_section = None
     settings_section = ""
 
@@ -67,12 +67,12 @@ def parseSections(input_file):
 
             parts = line.split()
 
-            if parts[0] == 'start' and parts[1] == 'meep' and len(parts) == 2:
-                in_meep_section = True
-                meep_section = ""
+            if parts[0] == 'start' and parts[1] == 'classical' and len(parts) == 2:
+                in_classical_section = True
+                classical_section = ""
                 continue
-            elif parts[0] == 'end' and parts[1] == 'meep' and len(parts) == 2:
-                in_meep_section = False
+            elif parts[0] == 'end' and parts[1] == 'classical' and len(parts) == 2:
+                in_classical_section = False
                 continue
             elif parts[0] == 'start' and parts[1] == 'quantum' and len(parts) == 2:
                 in_quantum_section = True
@@ -89,8 +89,8 @@ def parseSections(input_file):
                 in_settings_section = False
                 continue
 
-            if in_meep_section:
-                meep_section += line + "\n"
+            if in_classical_section:
+                classical_section += line + "\n"
             elif in_quantum_section:
                 quantum_section += line + "\n"
             elif in_settings_section:
@@ -98,7 +98,7 @@ def parseSections(input_file):
             else:
                 settings_section += line + "\n"
 
-    return meep_section, quantum_section, settings_section
+    return classical_section, quantum_section, settings_section
 
 
 def evaluate_expression(expression):
@@ -136,7 +136,7 @@ def parse_value_token(token):
             return token
 
 
-def parseMeepSection(input):
+def parseclassicalSection(input):
     comment_pattern = re.compile(r"(#|--|%)(.*)$")
     params = {}
     stack = []  # Stack of tuples: (section_name, section_dict)

@@ -1,4 +1,4 @@
-# rk4.py
+# quantum/propagators/rk4.py
 import logging
 import numpy as np
 from scipy.linalg import expm

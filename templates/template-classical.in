@@ -4,8 +4,8 @@ dt 0.1 -- au
 t_end 50  -- au
 eField_path eField.csv
 
--- meep portion
-start meep
+-- classical portion
+start classical
     start source
         sourceType continuous
         sourceCenter -0.04
@@ -37,4 +37,4 @@ start meep
         intensityMax 10
         imageDirName hello
     end hdf5
-end meep
+end classical

@@ -1,4 +1,4 @@
-# molecule.py
+# quantum/molecule.py
 import os
 import sys
 import math
@@ -133,39 +133,6 @@ class MOLECULE():
         """
         return np.matmul(self.X, coeff_orth)
     
-    def calculate_mu(self):
-        """
-        Calculate the dipole moment integrals for the molecule.
-
-        Sets the origin to the nuclear charge center and computes dipole integrals.
-
-        Parameters:
-        None
-
-        Returns:
-        np.ndarray
-            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
-        """
-        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
-        return mu
-
-    def calculate_potential(self, exc):
-        """
-        Calculate the potential contribution from an external electric field.
-
-        Uses dipole moment integrals to compute the field-induced potential.
-
-        Parameters:
-        exc : np.ndarray
-            External electric field components [x, y, z] in atomic units.
-
-        Returns:
-        np.ndarray
-            Potential matrix in atomic orbital basis.
-        """
-        mu = self.calculate_mu()
-        return -1 * np.einsum('xij,x->ij', mu, exc)
-
     def is_hermitian(self, A, tol):
         """
         Check if a matrix is Hermitian within a tolerance.
@@ -194,3 +161,45 @@ class MOLECULE():
             
         # Dividing by 0.14818471 Å³ will set the volume to atomic units.
         return volume / constants.V_AU_AA3
+    
+    # ------------------------------------ #
+    #              Additional              #
+    #      measurables can be defined      #
+    #    here and added mid-simulation     #
+    #      in quantum/propagation.py       #
+    # ------------------------------------ #
+
+    def calculate_mu(self):
+        """
+        Calculate the dipole moment integrals for the molecule.
+
+        Sets the origin to the nuclear charge center and computes dipole integrals.
+
+        Parameters:
+        None
+
+        Returns:
+        np.ndarray
+            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
+        """
+        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
+        return mu
+    
+    def calculate_potential(self, exc):
+        """
+        Calculate the potential contribution from an external electric field.
+
+        Uses dipole moment integrals to compute the field-induced potential.
+
+        Parameters:
+        exc : np.ndarray
+            External electric field components [x, y, z] in atomic units.
+
+        Returns:
+        np.ndarray
+            Potential matrix in atomic orbital basis.
+        """
+        mu = self.calculate_mu()
+        return -1 * np.einsum('xij,x->ij', mu, exc)
+
+    # define more contractions with the density matrix below...

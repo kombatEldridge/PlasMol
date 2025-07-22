@@ -1,4 +1,4 @@
-# magnus2.py
+# quantum/propagators/magnus2.py
 import logging
 import numpy as np
 from scipy.linalg import expm

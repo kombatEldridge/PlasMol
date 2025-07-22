@@ -1,3 +1,4 @@
+# main.py
 import sys
 import logging
 import numpy as np
@@ -67,9 +68,9 @@ if __name__ == "__main__":
         if params.type == 'PlasMol':
             run_plasmol(params)
         elif params.type == 'Quantum':
-            run_rttddft(params)
-        elif params.type == 'Meep':
-            run_meep(params)
+            run_quantum(params)
+        elif params.type == 'Classical':
+            run_classical(params)
         
         logger.info("Simulation completed successfully.")
     except Exception as err:

@@ -1,4 +1,4 @@
-# gif.py
+# utils/gif.py
 import os
 import logging
 from PIL import Image

@@ -1,8 +1,8 @@
-# driver_meep.py
+# drivers/classical.py
 import os
 import sys
 import logging
-from ..meep.simulation import Simulation
+from ..classical.simulation import Simulation
 
 def run(params):
     try:

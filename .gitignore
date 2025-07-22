@@ -2,3 +2,10 @@
 .vscode
 jobs/
 doc/site/
+src/__pycache__
+src/classical/__pycache__
+src/drivers/__pycache__
+src/input/__pycache__
+src/quantum/__pycache__
+src/quantum/propagators/__pycache__
+src/utils/__pycache__

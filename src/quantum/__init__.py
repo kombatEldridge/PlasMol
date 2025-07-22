@@ -1,3 +1,4 @@
+# quantum/__init__.py
 from .molecule import MOLECULE
 from .electric_field import ELECTRICFIELD
 from .propagation import propagation

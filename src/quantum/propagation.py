@@ -1,4 +1,4 @@
-# propagation.py
+# quantum/propagation.py
 import logging 
 import numpy as np 
 

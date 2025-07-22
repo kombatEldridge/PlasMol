@@ -8,13 +8,15 @@ nav:
   - Contributing: contributing.md
   - About: about.md
 theme:
-  name: material
-  features:
-    - navigation.sections
-    - toc.follow
+  name: readthedocs
 plugins:
   - search
 markdown_extensions:
   - admonition
   - pymdownx.highlight
   - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true  # Allows generic $...$ delimiters
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js  # MathJax CDN for LaTeX

@@ -6,8 +6,8 @@ start general
     eField_path eField.csv
 end general
 
--- meep portion
-start meep
+-- classical portion
+start classical
     start source
         sourceType continuous
         sourceCenter -0.04
@@ -43,7 +43,7 @@ start meep
     start molecule
         center 0 0 0
     end molecule
-end meep
+end classical
 
 -- rt-tddft portion
 start quantum

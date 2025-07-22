@@ -1,3 +1,4 @@
+# classical/simulation.py
 import logging
 import meep as mp
 import numpy as np
@@ -5,8 +6,8 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 from .. import constants
-from ..quantum.propagators import *
 from ..utils.csv import updateCSV
+from ..quantum.propagators import *
 from ..quantum.propagation import propagation
 
 class Simulation:
@@ -176,6 +177,16 @@ class Simulation:
         timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
         updateCSV(self.params.pField_path, timestamp, ind_dipole[0], ind_dipole[1], ind_dipole[2])
 
+    # ------------------------------------ #
+    #              Additional              #
+    #      custom tracking functions       #
+    #          can be defined here         #
+    #     similar to getElectricField()    #
+    #   and added to the simulation loop   #
+    #          as commented below          #
+    # ------------------------------------ #
+
+
     def run(self):
         """
         Runs the Meep simulation and generates a GIF of the electric field evolution.
@@ -192,9 +203,19 @@ class Simulation:
                 run_functions.append(mp.at_every(self.timestepsBetween * self.dt_meep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
             if self.moleculeBool:
                 run_functions.append(mp.at_every(self.dt_meep, self.getElectricField))
+            # ------------------------------------ #
+            #              Additional              #
+            #      custom tracking functions       #
+            #           can be added here          #
+            # ------------------------------------ #
+
 
             self.sim.run(*run_functions, until=self.t_end_meep)
 
+            # ------------------------------------ #
+            #         Example custom block         #
+            #         to show 3D map of NP         #
+            # ------------------------------------ #
             # import plotly.graph_objects as go
             # eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cellVolume, component=mp.Dielectric)
             # nx, ny, nz = eps_data.shape
