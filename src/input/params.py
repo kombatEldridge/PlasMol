@@ -135,6 +135,14 @@ class PARAMS:
                     sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
+            # elif ....
+                # ------------------------------------ #
+                #          Additional custom           #
+                #         classes for sources          #
+                #           can be added to            #
+                #        `classical/sources.py`        #
+                #    and then added here for support   #
+                # ------------------------------------ #
             else:
                 raise ValueError(f"Unsupported source type: {source_type}")
 

@@ -1,10 +1,11 @@
 # API Reference
 
-This page documents key classes and methods.
+This page documents key classes and methods, especially portions that can support custom injections for user's complete control over the simulation. If your changes to the code are a good fit for public use, feel free to read the [contributing](contributing.md) page.
 
 ## Directory Tree
 
 ```
+PlasMol
 |
 |_ docs
 |  |_ *files for these docs*
@@ -37,7 +38,6 @@ This page documents key classes and methods.
 |  |  |_ electric_field.py
 |  |  |_ molecule.py
 |  |  |_ propagation.py
-|  |  |
 |  |  |_ propagators
 |  |     |_ __init__.py
 |  |     |_ magnus2.py
@@ -47,10 +47,10 @@ This page documents key classes and methods.
 |  |_ utils
 |  |  |_ __init__.py
 |  |  |_ csv.py
-|  |   |_ fourier.py
-|  |   |_ gif.py
-|  |   |_ logging.py
-|  |   |_ plotting.py
+|  |  |_ fourier.py
+|  |  |_ gif.py
+|  |  |_ logging.py
+|  |  |_ plotting.py
 |
 |_ templates
    |_ template-classical.in
@@ -60,17 +60,35 @@ This page documents key classes and methods.
 
 ## quantum/
 
+This directory contains all files necessary to simulate a molecule in PlasMol. Included in it is the file to build the molecule (`molecule.py`), the file to build the electric field for just a quantum simulation (`electric_field.py`), the file to continually update the checkpoint files if called for (`chkfile.py`), and the files for propagating the density matrix of the molecule (`propagation.py` and `propagators/*`).
+
 ### `molecule.py`
 
 - Initializes molecule with PySCF, handles SCF, Fock matrix, dipole calculations.
-- Additional methods can be injected at the bottom of this class to track other quantum properties. For example, we track the induced dipole using the `calculate_mu()` method and then inject the call to this method in the `quantum/propagation.py` file.
+- Additional methods can be injected at the bottom of this class to track other quantum properties. For example, we track the induced dipole using the `calculate_mu()` method and then inject the call to this method in the `propagation.py` file.
 
 ### `electric_field.py`
 
 - Builds electric fields (pulse or kick shapes) for the molecule to feel *only* when a quantum simulation is chosen. If classical or full PlasMol simulation is running, the electric field is generated inside the Meep simulation (using `classical/sources.py`).
 - Other electric field shapes for quantum simulations can be added to the `build_field()` method using the other two shapes as templates.
 
+### `propagation.py` 
+
+- Is called every time step, either by the quantum simulation in `drivers/quantum.py` or during the classical or full PlasMol simulations in `classical/simulation.py` inside of `callQuantum()`.
+- Additional methods can be injected into `molecule.py` to track other quantum properties and called at the bottom of this file.
+
+### `chkfile.py` 
+
+- Save a checkpoint file containing the current state of the simulation, as specified by the chkfile frequency in the input file.
+- Always saves the timestamp $t$, ground state density matrix $\mathbf{D}_{\text{AO}}(0)$, and the coefficient matrix at the timestamp $\mathbf{C}(t)$.
+- Additionally saves 
+    - the orthogonalized coefficient matrix at the previous timestamp $\mathbf{C}_{\text{ortho}}(t-\Delta t)$ for the Magnus step propagator.
+    - the orthogonalized Fock matrix at the previous half timestamp $\mathbf{F}_{\text{ortho}}(t-\frac{1}{2}\Delta t)$ for the 2nd order Magnus propagator.
+- If a new propagator is added, any necessary quantities will need to be added to this file.
+
 ## quantum/propagators/
+
+To complete the main loop of RT-TDDFT, the density matrix (here propagated using the coefficient matrix) should be propagated under some perturbative field. PlasMol has three propagators available. The Magnus step method (`step.py`) and the Runge-Kutta 4 (`rk4.py`) methods both do a fairly poor job at propagating at small time steps, but are given here as a comparative tool to the superior 2nd order Magnus (with a Predictor-Corrector loop) method (`Magnus2.py`). Though the 2nd order Magnus method is the field's standard, shorter and lower resolution simulations can be run for debugging using the former two methods.
 
 ### `step.py`
 
@@ -149,6 +167,8 @@ The updated $\mathbf{F}_{\text{orth }}(t+\Delta t / 2)$ is stored for extrapolat
 
 ## classical/
 
+This directory contains all files necessary to simulate a nanoparticle in PlasMol. Included in it is the main file that runs both the classical and full PlasMol simulations (`simulation.py`) as well as the file used to build the electric fields in the simulations from input parameters (`sources.py`).
+
 ### `simulation.py`
 
 - Runs Meep and full PlasMol simulation, handles sources, PML, symmetries.
@@ -184,24 +204,32 @@ The updated $\mathbf{F}_{\text{orth }}(t+\Delta t / 2)$ is stored for extrapolat
         $$
         - where $f$ is the carrier frequency, $t_p$ is the peak time, and $a$ is the width parameter determining the pulse duration.
 
-- Other electric field shapes for quantum simulations can be supported using the other two shapes as templates, but additional options for the sources will need to be added to the input file parser in the `input/params.py` file under the `getSource()` method (found in the `buildclassicalParams()` method).
+- Other electric field shapes for the classical and full PlasMol simulations can be supported using these four as templates, but additional options for the sources will need to be added to the input file parser in the `input/params.py` file under the `getSource()` method (found in the `buildclassicalParams()` method).
 
 ## drivers/
 
+For each type of simulation running, a surface-level file determines what steps to take to acheive the desired results. The reasonings for each type of simulation can be found on the [Usage](usage.md) page.
+
 ### `classical.py`
-- Runs Meep simulation.
+- Is chosen to run a MEEP simulation when only classical parameters are specified in the input file.
+- A classical run has the capability to construct and run a MEEP simulation, as well as produce 2D cross sections of the simulation at the center of the NP if the `hdf5` block is added to the input file.
+- As previous discussed, other methods can be injected in the `classical/simulation.py` file to track other properties (like the commented out `getElectricField()` method which can track the electric field intensity at any pre-determined, hard-coded point).
 
 ### `quantum.py`
-- Runs RT-TDDFT, supports multi-threading for transforms.
+- Is chosen to run a RT-TDDFT simulation when only quantum parameters are specified in the input file.
+- A quantum run by default will perform a single RT-TDDFT simulation given a molecule and an incident electric field.
+- However, if `transform` is specified in the `rttddft` block of the input file, the simulation ignores any given electric field and instead performs a real time absorption spectrum calculation with three multi-threaded simulations, one for each directional Gaussian pulse, and then a Fourier transform is performed to give the absorption spectrum. 
 
 ### `plasmol.py`
-- Hybrid run.
+- Is chosen to run a full PlasMol simulation when both classical and quantum parameters are specified in the input file.
+- This is the main purpose of PlasMol. A Meep simulation will begin with a molecule inside, whose initial electronic structure is built by PySCF. Every time step, the electric field at the molecule's position is measured and sent to the "quantum" portion of the code where the density matrix is propagated by the electric field. As an end result, the induced dipole moment of the molecule can be calculated. Finally, the induced dipole moment is fed back into the Meep simulation as the intensity of a point dipole at the position of the molecule.
+
 
 
 ## utils/
 
+This directory stores files that add utilities to the PlasMol codebase, but are too large or cumbersome to be placed inside other files. Such files include the handler for reading and writing to csv files (`csv.py`), the handler for creating a gif from the generated hdf5 files (`gif.py`), the handler for logging (`logging.py`), the handler for plotting data found in csv files (`plotting.py`),  and the methods for fourier transforming the data for the absorption spectra (`fourier.py`).
+
 - `utils.csv.initCSV(filename, comment)`, `updateCSV(...)`.
 - `utils.plotting.show_eField_pField(eFieldFile, pFieldFile)`.
 - `utils.fourier.transform(...)`: Fourier transform and absorption spectrum.
-
-[TODO: Add full parameter lists, return types, or use Sphinx for auto-gen docs.]

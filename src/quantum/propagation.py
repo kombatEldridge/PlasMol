@@ -28,4 +28,11 @@ def propagation(params, molecule, field, propagate):
     for i in [0, 1, 2]:
         mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
 
+    # ------------------------------------ #
+    #              Additional              #
+    #      custom tracking functions       #
+    #           can be added here          #
+    #  similar to molecule.calculate_mu()  #
+    # ------------------------------------ #
+
     return mu_arr

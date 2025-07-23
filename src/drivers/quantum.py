@@ -10,8 +10,9 @@ import numpy as np
 from ..quantum.molecule import MOLECULE
 from ..quantum.electric_field import ELECTRICFIELD
 
-from ..quantum.chkfile import update_chkfile
+from ..quantum.propagators import *
 from ..quantum.propagation import propagation
+from ..quantum.chkfile import update_chkfile
 
 from ..utils.fourier import transform
 from ..utils.plotting import show_eField_pField
@@ -64,11 +65,11 @@ def run(params):
         
             # Select propagator
             if params_instance.propagator == "step":
-                from propagators.step import propagate
+                propagate = propagate_step
             elif params_instance.propagator == "magnus2":
-                from propagators.magnus2 import propagate
+                propagate = propagate_magnus2
             elif params_instance.propagator == "rk4":
-                from propagators.rk4 import propagate
+                propagate = propagate_rk4
 
             for index, current_time in enumerate(field.times):
                 if current_time < molecule.chkpoint_time:
@@ -80,10 +81,6 @@ def run(params):
                     update_chkfile(params_instance, molecule, current_time)
 
             # show_eField_pField(params_instance.eField_path, params_instance.pField_path)
-            import matplotlib.pyplot as plt
-            plt.plot(field.times, molecule.homo_lumo_jump_over_time)
-            plt.savefig("homo_lumo.png")
-            plt.show()
 
         except Exception as err:
             logger.error(f"RT-TDDFT failed: {err}", exc_info=True)

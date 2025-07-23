@@ -147,7 +147,7 @@ class ChirpedSource:
             size=self.sourceSize,
         )
 
-        
+
 class PulseSource:
     def __init__(self,
                  sourceCenter,
@@ -199,6 +199,14 @@ class PulseSource:
         )
 
 
+# ------------------------------------ #
+#          Additional custom           #
+#         classes for sources          #
+#          can be added here           #
+#        and need to be added to       #
+#   the `input/params.py` file under   #
+#       the `getSource()` method       #
+# ------------------------------------ #
 
 
 
