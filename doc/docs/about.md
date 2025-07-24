@@ -11,7 +11,7 @@ PlasMol is developed for simulating plasmon-molecule interactions, blending clas
 
 ## Call For Contributions
 
-(as of July 22nd, 2025) This project has been a stepping stone for me in developing my expertise in modern quantum chemistry and computational methods. That being said, when I began work on PlasMol, I had loftier plans than just posting a minimal working version on GitHub, but plans and priorities change. As of the release of v1.0.0, work has paused on this project.
+(as of July 24th, 2025) This project has been a stepping stone for me in developing my expertise in modern quantum chemistry and computational methods. That being said, when I began work on PlasMol, I had loftier plans than just posting a minimal working version on GitHub, but plans and priorities change. As of the release of v1.0.0, work has paused on this project.
 
 For students in the same or adjacent fields, perhaps the PlasMol skeleton can inspire you to pick it up for your lab's specific desired outcomes. As is the nature of DFT work, one can track many things as a NP + Molecule simulation propagates by contracting the corresponding operator with the current density matrix. Empty commented sections are left in certain files to make adding custom functions easier.
 

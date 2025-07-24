@@ -1,7 +1,7 @@
 
 -- general section
-dt 0.001 -- au
-t_end 40  -- au
+dt 0.05 -- au
+t_end 1000  -- au
 eField_path eField.csv
 
 -- rt-tddft portion
@@ -26,10 +26,10 @@ start quantum
     end rttddft
 
     start files
-        start chkfile
-            frequency 100
-            path chkfile.npz
-        end chkfile
+        -- start chkfile
+        --     frequency 100
+        --     path chkfile.npz
+        -- end chkfile
         pField_path pField.csv
         pField_Transform_path pField-transformed.npz
         eField_vs_pField_path output.png
@@ -37,10 +37,10 @@ start quantum
     end files
 
     start source
-        shape kick --pulse
-        wavelength_nm 500
-        peak_time_au 0.1
-        width_steps 5
+        shape pulse
+        peak_time_au 200
+        width_steps 1000
+        wavelength_nm 400 -- nm
         intensity_au 5e-5
         dir z
     end source  

@@ -18,18 +18,18 @@ class Simulation:
         self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
 
         # Define simulation parameters
-        self.cellLength = self.params.simParams['cellLength']
-        self.pmlThickness = self.params.simParams['pmlThickness']
-        self.resolution = self.params.simParams['resolution']
-        self.eFieldCutOff = self.params.simParams['eFieldCutOff']
+        self.cellLength = self.params.simulation_params['cellLength']
+        self.pmlThickness = self.params.simulation_params['pmlThickness']
+        self.resolution = self.params.simulation_params['resolution']
+        self.eFieldCutOff = self.params.simulation_params['eFieldCutOff']
 
         logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
         
-        self.moleculeBool = True if self.params.meepmolecule else False
+        self.moleculeBool = True if self.params.molecule_position else False
         self.positionMolecule = mp.Vector3(
-            self.params.meepmolecule['center'][0],
-            self.params.meepmolecule['center'][1],
-            self.params.meepmolecule['center'][2]) if self.moleculeBool else None
+            self.params.molecule_position['center'][0],
+            self.params.molecule_position['center'][1],
+            self.params.molecule_position['center'][2]) if self.moleculeBool else None
         
         if self.moleculeBool:
             self.molecule = molecule
@@ -80,22 +80,22 @@ class Simulation:
             )
             logging.debug("Emitter for the molecule added to simulation")
         
-        self.sourceType = self.params.sourceType
-        if self.sourceType is not None:
-            self.sourcesList.append(self.sourceType.source)
+        self.source = self.params.source
+        if self.source is not None:
+            self.sourcesList.append(self.source.source)
 
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
-        self.symmetries = self.params.symmetries
-        self.objectList = [self.params.objectNP] if self.params.objectNP is not None else []
-        self.default_material = mp.Medium(index=self.params.simParams['surroundingMaterialIndex'])
+        self.symmetry = self.params.symmetry
+        self.nanoparticle = [self.params.nanoparticle] if self.params.nanoparticle is not None else []
+        self.default_material = mp.Medium(index=self.params.simulation_params['surroundingMaterialIndex'])
 
         self.sim = mp.Simulation(
             resolution=self.resolution,
             cell_size=self.cellVolume,
             boundary_layers=self.pmlList,
             sources=self.sourcesList,
-            symmetries=self.symmetries,
-            geometry=self.objectList,
+            symmetries=self.symmetry,
+            geometry=self.nanoparticle,
             default_material=self.default_material
         )
 
@@ -222,6 +222,7 @@ class Simulation:
 
             self.sim.run(*run_functions, until=self.t_end_meep)
             # show3Dmap(self.sim)
+            # show2Dmap(self.sim)
 
             logging.info("Simulation completed successfully!")
         except Exception as e:
@@ -255,4 +256,31 @@ def show3Dmap(sim):
         opacity=0.8,
         caps=dict(x_show=False, y_show=False, z_show=False)
     ))
+    fig.show()
+
+# ------------------------------------ #
+#         Example custom block         #
+#         to show 2D map of NP         #
+# ------------------------------------ #
+def show2Dmap(sim):
+    import plotly.graph_objects as go
+    import numpy as np
+    eps_data = sim.get_array(center=mp.Vector3(), size=sim.cell_size, component=mp.Dielectric)
+    nx, ny, nz = eps_data.shape
+    z_mid = nz // 2
+    eps_slice = eps_data[:, :, z_mid]
+    iso_value = 4
+    # Binary mask: 1 where >= iso_value (dielectric), 0 otherwise
+    z_plot = np.where(eps_slice >= iso_value, 1, 0)
+    fig = go.Figure(data=go.Heatmap(
+        z=z_plot,
+        colorscale=[[0, 'white'], [1, 'black']],
+        showscale=False
+    ))
+    fig.update_layout(
+        title='2D Slice of Dielectric (XY plane at Z midpoint)',
+        xaxis_title='X',
+        yaxis_title='Y',
+        yaxis=dict(scaleanchor='x')  # Make aspect ratio square
+    )
     fig.show()

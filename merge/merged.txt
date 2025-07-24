@@ -1,13 +1,9 @@
 // File: /Users/bldrdge1/Downloads/repos/PlasMol/src/__init__.py
 # __init__.py
-
 __version__ = "1.0.0"  
 __author__ = "Brinton King Eldridge" 
 
-from . import main
 from .drivers import *
-
-__all__ = ['main']
 
 
 
@@ -39,18 +35,18 @@ class Simulation:
         self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
 
         # Define simulation parameters
-        self.cellLength = self.params.simParams['cellLength']
-        self.pmlThickness = self.params.simParams['pmlThickness']
-        self.resolution = self.params.simParams['resolution']
-        self.eFieldCutOff = self.params.simParams['eFieldCutOff']
+        self.cellLength = self.params.simulation_params['cellLength']
+        self.pmlThickness = self.params.simulation_params['pmlThickness']
+        self.resolution = self.params.simulation_params['resolution']
+        self.eFieldCutOff = self.params.simulation_params['eFieldCutOff']
 
         logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
         
-        self.moleculeBool = True if self.params.meepmolecule else False
+        self.moleculeBool = True if self.params.molecule_position else False
         self.positionMolecule = mp.Vector3(
-            self.params.meepmolecule['center'][0],
-            self.params.meepmolecule['center'][1],
-            self.params.meepmolecule['center'][2]) if self.moleculeBool else None
+            self.params.molecule_position['center'][0],
+            self.params.molecule_position['center'][1],
+            self.params.molecule_position['center'][2]) if self.moleculeBool else None
         
         if self.moleculeBool:
             self.molecule = molecule
@@ -101,22 +97,22 @@ class Simulation:
             )
             logging.debug("Emitter for the molecule added to simulation")
         
-        self.sourceType = self.params.sourceType
-        if self.sourceType is not None:
-            self.sourcesList.append(self.sourceType.source)
+        self.source = self.params.source
+        if self.source is not None:
+            self.sourcesList.append(self.source.source)
 
         self.pmlList = [mp.PML(thickness=self.pmlThickness)]
-        self.symmetries = self.params.symmetries
-        self.objectList = [self.params.objectNP] if self.params.objectNP is not None else []
-        self.default_material = mp.Medium(index=self.params.simParams['surroundingMaterialIndex'])
+        self.symmetry = self.params.symmetry
+        self.nanoparticle = [self.params.nanoparticle] if self.params.nanoparticle is not None else []
+        self.default_material = mp.Medium(index=self.params.simulation_params['surroundingMaterialIndex'])
 
         self.sim = mp.Simulation(
             resolution=self.resolution,
             cell_size=self.cellVolume,
             boundary_layers=self.pmlList,
             sources=self.sourcesList,
-            symmetries=self.symmetries,
-            geometry=self.objectList,
+            symmetries=self.symmetry,
+            geometry=self.nanoparticle,
             default_material=self.default_material
         )
 
@@ -151,9 +147,9 @@ class Simulation:
         logging.debug(f"chirpz being called at {round(t * constants.convertTimeMeep2Atomic, self.decimalPlaces)} au. Emitting {self.measuredDipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0) * constants.convertFieldMeep2Atomic} in au.")
         return self.measuredDipoleResponse['z'].get(str(round(t, self.decimalPlaces)), 0) * constants.convertMomentAtomic2Meep
 
-    def getElectricField(self, sim):
+    def callPropagation(self, sim):
         """
-        Retrieves the electric field values at the molecule's position during the simulation.
+        Calls Quantum calculations if the electric field exceeds the response cutoff.
 
         Args:
             sim (mp.Simulation): The Meep simulation object.
@@ -166,37 +162,58 @@ class Simulation:
                                           size=mp.Vector3(1E-20, 1E-20, 1E-20)))
             eField[componentName] = field * constants.convertFieldMeep2Atomic
 
-        if self.moleculeBool:
-            self.callBohr(sim, eField)
+        if any(abs(eField[component]) >= self.eFieldCutOff for component in self.xyz):
+            logging.info(f"Calling propagator at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+
+            eArr = [eField['x'],eField['y'],eField['z']]
+            logging.debug(f'Electric field given to propagator: {eArr} in au')
+            
+            ind_dipole = propagation(self.params, self.molecule, eArr, self.propagate)
+
+            logging.debug(f"Propagation calculation results: {ind_dipole} in au")
+            
+            for componentName in self.xyz:
+                for offset in [0.5 * self.dt_meep, self.dt_meep]:
+                    timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
+                    self.measuredDipoleResponse[componentName][timestamp] = ind_dipole[self.mapDirectionToDigit[componentName]]
+
+            timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
+            updateCSV(self.params.pField_path, timestamp, ind_dipole[0], ind_dipole[1], ind_dipole[2])
 
         timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
         updateCSV(self.params.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
 
-    def callBohr(self, sim, eField):
-        """
-        Calls Bohr calculations if the electric field exceeds the response cutoff.
+    # ------------------------------------ #
+    #              Additional              #
+    #      custom tracking functions       #
+    #          can be defined here         #
+    #     similar to callPropagation()     #
+    #   and added to the simulation loop   #
+    #          as commented below          #
+    #                                      #
+    #     i.e. getElectricField() does     #
+    #   the same as callPropagation() but  #
+    #    without calling the propagation   #
+    # ------------------------------------ #
+    # def getElectricField(self, sim):
+    #     """
+    #     Retrieves the electric field values at the molecule's position during the simulation.
 
-        Args:
-            sim (mp.Simulation): The Meep simulation object.
-        """
-        # if sim.timestep() > 2:  
-            # if any(abs(eField[component]) >= self.eFieldCutOff for component in self.xyz):
-        logging.info(f"Calling Bohr at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+    #     Args:
+    #         sim (mp.Simulation): The Meep simulation object.
+    #     """
+    #     logging.info(f"Getting Electric Field at the molecule at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+    #     eField = {component: [] for component in self.xyz}
+    #     for componentName in self.xyz:
+    #         field = np.mean(sim.get_array(component=self.char_to_field[componentName],
+    #                                       center=self.positionMolecule,
+    #                                       size=mp.Vector3(1E-20, 1E-20, 1E-20)))
+    #         eField[componentName] = field * constants.convertFieldMeep2Atomic
 
-        eArr = [eField['x'],eField['y'],eField['z']]
-        logging.debug(f'Electric field given to Bohr: {eArr} in au')
-        
-        ind_dipole = propagation(self.params, self.molecule, eArr, self.propagate)
+    #     timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
+    #     updateCSV(self.params.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
 
-        logging.debug(f"Bohr calculation results: {ind_dipole} in au")
-        
-        for componentName in self.xyz:
-            for offset in [0.5 * self.dt_meep, self.dt_meep]:
-                timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
-                self.measuredDipoleResponse[componentName][timestamp] = ind_dipole[self.mapDirectionToDigit[componentName]]
 
-        timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
-        updateCSV(self.params.pField_path, timestamp, ind_dipole[0], ind_dipole[1], ind_dipole[2])
 
     def run(self):
         """
@@ -213,28 +230,16 @@ class Simulation:
             if self.hdf5Bool:
                 run_functions.append(mp.at_every(self.timestepsBetween * self.dt_meep, mp.output_png(mp.Ez, f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered")))
             if self.moleculeBool:
-                run_functions.append(mp.at_every(self.dt_meep, self.getElectricField))
+                run_functions.append(mp.at_every(self.dt_meep, self.callPropagation))
+            # ------------------------------------ #
+            #              Additional              #
+            #      custom tracking functions       #
+            #           can be added here          #
+            # ------------------------------------ #
 
             self.sim.run(*run_functions, until=self.t_end_meep)
-
-            # import plotly.graph_objects as go
-            # eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cellVolume, component=mp.Dielectric)
-            # nx, ny, nz = eps_data.shape
-            # x, y, z = np.mgrid[0:nx, 0:ny, 0:nz]
-            # iso_value = 4
-            # fig = go.Figure(data=go.Isosurface(
-            #     x=x.flatten(),
-            #     y=y.flatten(),
-            #     z=z.flatten(),
-            #     value=eps_data.flatten(),
-            #     isomin=iso_value,
-            #     isomax=iso_value,
-            #     colorscale=[[0, 'gold'], [1, 'gold']],  # Single color for the surface
-            #     showscale=False,  # Hide color scale since it's a single surface
-            #     opacity=0.8,
-            #     caps=dict(x_show=False, y_show=False, z_show=False)  # Hide caps for cleaner view
-            # ))
-            # fig.show()
+            # show3Dmap(self.sim)
+            # show2Dmap(self.sim)
 
             logging.info("Simulation completed successfully!")
         except Exception as e:
@@ -246,6 +251,56 @@ class Simulation:
                 import os 
                 os.chdir('../')
 
+# ------------------------------------ #
+#         Example custom block         #
+#         to show 3D map of NP         #
+# ------------------------------------ #
+def show3Dmap(sim):
+    import plotly.graph_objects as go
+    eps_data = sim.get_array(center=mp.Vector3(), size=self.cellVolume, component=mp.Dielectric)
+    nx, ny, nz = eps_data.shape
+    x, y, z = np.mgrid[0:nx, 0:ny, 0:nz]
+    iso_value = 4
+    fig = go.Figure(data=go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=eps_data.flatten(),
+        isomin=iso_value,
+        isomax=iso_value,
+        colorscale=[[0, 'gold'], [1, 'gold']],
+        showscale=False,
+        opacity=0.8,
+        caps=dict(x_show=False, y_show=False, z_show=False)
+    ))
+    fig.show()
+
+# ------------------------------------ #
+#         Example custom block         #
+#         to show 2D map of NP         #
+# ------------------------------------ #
+def show2Dmap(sim):
+    import plotly.graph_objects as go
+    import numpy as np
+    eps_data = sim.get_array(center=mp.Vector3(), size=sim.cell_size, component=mp.Dielectric)
+    nx, ny, nz = eps_data.shape
+    z_mid = nz // 2
+    eps_slice = eps_data[:, :, z_mid]
+    iso_value = 4
+    # Binary mask: 1 where >= iso_value (dielectric), 0 otherwise
+    z_plot = np.where(eps_slice >= iso_value, 1, 0)
+    fig = go.Figure(data=go.Heatmap(
+        z=z_plot,
+        colorscale=[[0, 'white'], [1, 'black']],
+        showscale=False
+    ))
+    fig.update_layout(
+        title='2D Slice of Dielectric (XY plane at Z midpoint)',
+        xaxis_title='X',
+        yaxis_title='Y',
+        yaxis=dict(scaleanchor='x')  # Make aspect ratio square
+    )
+    fig.show()
 
 // File: /Users/bldrdge1/Downloads/repos/PlasMol/src/classical/sources.py
 # classical/sources.py
@@ -397,6 +452,7 @@ class ChirpedSource:
             size=self.sourceSize,
         )
 
+
 class PulseSource:
     def __init__(self,
                  sourceCenter,
@@ -448,6 +504,14 @@ class PulseSource:
         )
 
 
+# ------------------------------------ #
+#          Additional custom           #
+#         classes for sources          #
+#          can be added here           #
+#        and need to be added to       #
+#   the `input/params.py` file under   #
+#       the `getSource()` method       #
+# ------------------------------------ #
 
 
 
@@ -506,17 +570,6 @@ from ..classical.simulation import Simulation
 def run(params):
     try:
         logger = logging.getLogger("main")
-        if params.restart:
-            for path in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
-                if hasattr(params, path):
-                    if os.path.isfile(path):
-                        try:
-                            os.remove(path)
-                            logger.info(f"Deleted {path}")
-                        except OSError as e:
-                            logger.error(f"Error deleting {path}: {e}")
-                    else:
-                        logger.debug(f"No such file: {path}")
                 
         simDriver = Simulation(params)
         simDriver.run()
@@ -540,17 +593,6 @@ from ..utils.csv import initCSV, read_field_csv
 def run(params):
     try:
         logger = logging.getLogger("main")
-        if params.restart:
-            for path in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
-                if hasattr(params, path):
-                    if os.path.isfile(path):
-                        try:
-                            os.remove(path)
-                            logger.info(f"Deleted {path}")
-                        except OSError as e:
-                            logger.error(f"Error deleting {path}: {e}")
-                    else:
-                        logger.debug(f"No such file: {path}")
         
         molecule = MOLECULE(params)
 
@@ -589,8 +631,9 @@ import numpy as np
 from ..quantum.molecule import MOLECULE
 from ..quantum.electric_field import ELECTRICFIELD
 
-from ..quantum.chkfile import update_chkfile
+from ..quantum.propagators import *
 from ..quantum.propagation import propagation
+from ..quantum.chkfile import update_chkfile
 
 from ..utils.fourier import transform
 from ..utils.plotting import show_eField_pField
@@ -605,19 +648,6 @@ def run(params):
 
             time_values = np.arange(0, params_instance.t_end + params_instance.dt, params_instance.dt)
             times = np.linspace(0, time_values[-1], int(len(time_values)))
-
-            if params_instance.restart:
-                for path in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
-                    if hasattr(params_instance, path):
-                        file_path = getattr(params_instance, path)
-                        if os.path.isfile(file_path):
-                            try:
-                                os.remove(file_path)
-                                logger.info(f"Deleted {file_path}")
-                            except OSError as e:
-                                logger.error(f"Error deleting {file_path}: {e}")
-                        else:
-                            logger.debug(f"No such file: {file_path}")
 
             molecule = MOLECULE(params_instance)
             field = ELECTRICFIELD(times, params_instance)
@@ -643,11 +673,11 @@ def run(params):
         
             # Select propagator
             if params_instance.propagator == "step":
-                from propagators.step import propagate
+                propagate = propagate_step
             elif params_instance.propagator == "magnus2":
-                from propagators.magnus2 import propagate
+                propagate = propagate_magnus2
             elif params_instance.propagator == "rk4":
-                from propagators.rk4 import propagate
+                propagate = propagate_rk4
 
             for index, current_time in enumerate(field.times):
                 if current_time < molecule.chkpoint_time:
@@ -658,11 +688,7 @@ def run(params):
                 if params_instance.chkfile_path and index % params_instance.chkfile_freq == 0:
                     update_chkfile(params_instance, molecule, current_time)
 
-            # show_eField_pField(params_instance.eField_path, params_instance.pField_path)
-            import matplotlib.pyplot as plt
-            plt.plot(field.times, molecule.homo_lumo_jump_over_time)
-            plt.savefig("homo_lumo.png")
-            plt.show()
+            show_eField_pField(params_instance.eField_path, params_instance.pField_path)
 
         except Exception as err:
             logger.error(f"RT-TDDFT failed: {err}", exc_info=True)
@@ -743,7 +769,7 @@ def parse_arguments():
     parser.add_argument('-f', '--input', required=True, type=str, help="Path to the PlasMol input file.")
     parser.add_argument('-l', '--log', help="Log file name.")
     parser.add_argument('-v', '--verbose', action='count', default=1, help="Increase verbosity (use up to -vv).")
-    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Removes eField.csv, pField.csv, pField_spectrum.csv, pField-transformed.csv, chkfile.npz, output.png, and spectrum.png.")
+    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Before simulation starts, removes old files: eField_path, pField_path, pField_Transform_path, chkfile_path, eField_vs_pField_path, and eV_spectrum_path.")
 
     args = parser.parse_args()
     if args.log and args.verbose == 0:
@@ -774,7 +800,7 @@ class PARAMS:
             self.buildclassicalParams()
         elif self.type == 'Quantum':
             self.buildQuantumParams()
-        elif self.type == 'classical':
+        elif self.type == 'Classical':
             self.buildclassicalParams()
 
         delattr(self, 'preparams')
@@ -785,8 +811,8 @@ class PARAMS:
         self.pField_Transform_path = self.preparams["quantum"]["files"]["pField_Transform_path"]
         self.eField_vs_pField_path = self.preparams["quantum"]["files"]["eField_vs_pField_path"]
         self.eV_spectrum_path = self.preparams["quantum"]["files"]["eV_spectrum_path"]
-        self.chkfile_path = self.preparams["quantum"]["files"]["chkfile"]["path"]
-        self.chkfile_freq = self.preparams["quantum"]["files"]["chkfile"]["frequency"]
+        self.chkfile_path = self.preparams["quantum"]["files"]["chkfile"]["path"] if "chkfile" in self.preparams["quantum"]["files"] else None
+        self.chkfile_freq = self.preparams["quantum"]["files"]["chkfile"]["frequency"] if "chkfile" in self.preparams["quantum"]["files"] else None
         self.molecule_coords = self.preparams["quantum"]["rttddft"]["geometry"]["molecule_coords"]
         self.molecule_atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
         self.atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
@@ -803,11 +829,12 @@ class PARAMS:
                 logger.warning("Source block found in quantum section, but full PlasMol simulation is available. Ignoring source in quantum section. For full PlasMol simulation, please add source to classical section.")
             else:
                 self.shape = self.preparams["quantum"]["source"]['shape']
-                self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm']
                 self.peak_time_au = self.preparams["quantum"]["source"]['peak_time_au']
                 self.width_steps = self.preparams["quantum"]["source"]['width_steps']
                 self.intensity_au = self.preparams["quantum"]["source"]['intensity_au']
-                self.dir = self.preparams["quantum"]["source"]['dir']
+                self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm'] if self.shape == 'pulse' else None
+                self.dir = self.preparams["quantum"]["source"]['dir'] if not self.transform else None
+                # if you want to add a custom shape you must add support for the relevant parameters here
 
         if self.propagator == 'step':
             pass
@@ -824,14 +851,14 @@ class PARAMS:
     def buildclassicalParams(self):
         import meep as mp
 
-        def getMolecule(self):
+        def getMoleculeLocation(self):
             if self.preparams['classical'].get("molecule", None) is None:
                 logger.info('No molecule chosen for simulation. Continuing without it.')
                 return None
             
             return self.preparams['classical']['molecule']
 
-        def getSimulation(self):
+        def getSimulationParams(self):
             if self.preparams['classical'].get("simulation", None) is None:
                 raise RuntimeError('No simulation parameters chosen for simulation. Exiting.')
             
@@ -889,12 +916,20 @@ class PARAMS:
                     sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
+            # elif ....
+                # ------------------------------------ #
+                #          Additional custom           #
+                #         classes for sources          #
+                #           can be added to            #
+                #        `classical/sources.py`        #
+                #    and then added here for support   #
+                # ------------------------------------ #
             else:
                 raise ValueError(f"Unsupported source type: {source_type}")
 
             return source
 
-        def getObject(self):
+        def getNanoparticle(self):
             if self.preparams['classical'].get("object", None) is None:
                 logger.info('No object chosen for simulation. Continuing without it.')
                 return None
@@ -956,23 +991,23 @@ class PARAMS:
 
             return self.preparams['classical']['hdf5']
         
-        self.simParams = getSimulation(self)
-        self.classicalmolecule = getMolecule(self)
-        self.sourceType = getSource(self)
-        self.symmetries = getSymmetry(self)
-        self.objectNP = getObject(self)
+        self.simulation_params = getSimulationParams(self)
+        self.molecule_position = getMoleculeLocation(self)
+        self.source = getSource(self)
+        self.symmetry = getSymmetry(self)
+        self.nanoparticle = getNanoparticle(self)
         self.hdf5 = gethdf5(self)
 
         from .. import constants
-        if 'resolution' in self.simParams:
-            dtAlt = (0.5 / self.simParams["resolution"]) * constants.convertTimeMeep2Atomic
+        if 'resolution' in self.simulation_params:
+            dtAlt = (0.5 / self.simulation_params["resolution"]) * constants.convertTimeMeep2Atomic
             if not np.isclose(dtAlt, self.dt):
                 logger.info(f"Resolution given in simulation parameters does not generate given time step 'dt'. Ignoring given resolution, using new resolution: {newResolution}")
                 newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-                self.simParams["resolution"] = newResolution
+                self.simulation_params["resolution"] = newResolution
         else:
             newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-            self.simParams["resolution"] = newResolution
+            self.simulation_params["resolution"] = newResolution
 
 
     def buildSettingsParams(self):
@@ -1276,7 +1311,16 @@ def parseQuantumSection(input):
 
 // File: /Users/bldrdge1/Downloads/repos/PlasMol/src/main.py
 # main.py
+import os
 import sys
+
+# Dynamically set up package context for direct execution (python main.py)
+if __name__ == "__main__" and __package__ is None:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    sys.path.insert(0, parent_dir)
+    __package__ = os.path.basename(current_dir)  # Sets __package__ to "src" (or whatever your directory is named)
+
 import logging
 import numpy as np
 
@@ -1325,7 +1369,7 @@ if __name__ == "__main__":
 
         # Step 2: Identify parsing workflow from CLI args
         preparams = inputFilePrepare(args)
-        logger.debug(f"Arguments given and pre-parsed successfully: f{preparams}")
+        logger.debug(f"Arguments given and pre-parsed successfully: {preparams}")
 
         # Step 3: Merge all found parameters
         logger.debug("Merging parameters from input file(s) with the CLI inputs. CLI takes priority for duplicate values.")
@@ -1334,6 +1378,19 @@ if __name__ == "__main__":
         logger.debug(f"Arguments given and parsed successfully: ")
         for key, value in vars(params).items():
             logger.debug(f"\t\t{key}: {value}")
+
+        if params.restart:
+            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
+                if hasattr(params, attr):
+                    file_path = getattr(params, attr)
+                    if file_path is not None and os.path.isfile(file_path):
+                        try:
+                            os.remove(file_path)
+                            logger.info(f"Deleted {file_path}")
+                        except OSError as e:
+                            logger.error(f"Error deleting {file_path}: {e}")
+                    else:
+                        logger.debug(f"No such file: {file_path}")
 
         time_values = np.arange(0, params.t_end + params.dt, params.dt)
         interpolated_times = np.linspace(0, time_values[-1], len(time_values))
@@ -1348,8 +1405,7 @@ if __name__ == "__main__":
             run_quantum(params)
         elif params.type == 'Classical':
             run_classical(params)
-        
-        logger.info("Simulation completed successfully.")
+
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)
         sys.exit(1)
@@ -1487,6 +1543,9 @@ class ELECTRICFIELD:
             self.wavelength_au = self.wavelength_nm * constants.D_AU_NM
         elif self.shape == 'kick':
             pass
+        # elif self.shape == 'custom_shape'...
+        #   if additional parameters need to be added for your custom shape
+        #   you must add support for them in the input/params.py method: buildQuantumParams()
         else:
             raise ValueError("Invalid shape. Must be 'pulse' or 'kick'.")
         
@@ -1519,6 +1578,13 @@ class ELECTRICFIELD:
         elif self.shape == 'kick':
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
             active_component = self.intensity_au * envelope
+        # ------------------------------------ #
+        #              Additional              #
+        #    custom sources can be defined     #
+        #      here and supported above        #
+        #             as commented             #
+        # ------------------------------------ #
+
 
         field = np.zeros((len(t), 3))
         dir = self.dir.lower()
@@ -1670,39 +1736,6 @@ class MOLECULE():
         """
         return np.matmul(self.X, coeff_orth)
     
-    def calculate_mu(self):
-        """
-        Calculate the dipole moment integrals for the molecule.
-
-        Sets the origin to the nuclear charge center and computes dipole integrals.
-
-        Parameters:
-        None
-
-        Returns:
-        np.ndarray
-            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
-        """
-        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
-        return mu
-
-    def calculate_potential(self, exc):
-        """
-        Calculate the potential contribution from an external electric field.
-
-        Uses dipole moment integrals to compute the field-induced potential.
-
-        Parameters:
-        exc : np.ndarray
-            External electric field components [x, y, z] in atomic units.
-
-        Returns:
-        np.ndarray
-            Potential matrix in atomic orbital basis.
-        """
-        mu = self.calculate_mu()
-        return -1 * np.einsum('xij,x->ij', mu, exc)
-
     def is_hermitian(self, A, tol):
         """
         Check if a matrix is Hermitian within a tolerance.
@@ -1731,6 +1764,48 @@ class MOLECULE():
             
         # Dividing by 0.14818471 Å³ will set the volume to atomic units.
         return volume / constants.V_AU_AA3
+    
+    # ------------------------------------ #
+    #              Additional              #
+    #      measurables can be defined      #
+    #    here and added mid-simulation     #
+    #      in quantum/propagation.py       #
+    # ------------------------------------ #
+
+    def calculate_mu(self):
+        """
+        Calculate the dipole moment integrals for the molecule.
+
+        Sets the origin to the nuclear charge center and computes dipole integrals.
+
+        Parameters:
+        None
+
+        Returns:
+        np.ndarray
+            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
+        """
+        mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
+        return mu
+    
+    def calculate_potential(self, exc):
+        """
+        Calculate the potential contribution from an external electric field.
+
+        Uses dipole moment integrals to compute the field-induced potential.
+
+        Parameters:
+        exc : np.ndarray
+            External electric field components [x, y, z] in atomic units.
+
+        Returns:
+        np.ndarray
+            Potential matrix in atomic orbital basis.
+        """
+        mu = self.calculate_mu()
+        return -1 * np.einsum('xij,x->ij', mu, exc)
+
+    # define more contractions with the density matrix below...
 
 // File: /Users/bldrdge1/Downloads/repos/PlasMol/src/quantum/propagation.py
 # quantum/propagation.py
@@ -1762,6 +1837,13 @@ def propagation(params, molecule, field, propagate):
     mu = molecule.calculate_mu()
     for i in [0, 1, 2]:
         mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
+
+    # ------------------------------------ #
+    #              Additional              #
+    #      custom tracking functions       #
+    #           can be added here          #
+    #  similar to molecule.calculate_mu()  #
+    # ------------------------------------ #
 
     return mu_arr
 
@@ -1897,6 +1979,8 @@ logger = logging.getLogger("main")
 def propagate(params, molecule, exc):
     """
     Propagate molecular orbitals using the step method.
+    This method is also known as the modified midpoint unitary transformation (MMUT)
+    scheme from https://doi.org/10.1039/B415849K
     
     C'(t+dt) = U(t)C'(t-dt)
     U(t) = exp(-i*2dt*F')
@@ -2157,7 +2241,7 @@ from PIL import Image
 
 logger = logging.getLogger("main")
 
-# run ulimit -n 4096 on linux first
+# run ulimit -n 4096 on linux first if this errors
 def clear_directory(directory_path):
     try:
         files = os.listdir(directory_path)
@@ -2180,7 +2264,7 @@ def make_gif(frame_folder):
     frames = [Image.open(image) for image in sorted_items]
     frame_one = frames[0]
     frame_one.save(f"{frame_folder}.gif", format="GIF", append_images=frames[1:],
-               save_all=True, duration=100, loop=0)
+               save_all=True, duration=25, loop=0)
     logging.info(f"File Saved: {frame_folder}.gif")
 
 // File: /Users/bldrdge1/Downloads/repos/PlasMol/src/utils/logging.py

@@ -5,7 +5,7 @@ from PIL import Image
 
 logger = logging.getLogger("main")
 
-# run ulimit -n 4096 on linux first
+# run ulimit -n 4096 on linux first if this errors
 def clear_directory(directory_path):
     try:
         files = os.listdir(directory_path)
@@ -28,5 +28,5 @@ def make_gif(frame_folder):
     frames = [Image.open(image) for image in sorted_items]
     frame_one = frames[0]
     frame_one.save(f"{frame_folder}.gif", format="GIF", append_images=frames[1:],
-               save_all=True, duration=100, loop=0)
+               save_all=True, duration=25, loop=0)
     logging.info(f"File Saved: {frame_folder}.gif")

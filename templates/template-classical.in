@@ -1,7 +1,7 @@
 
 -- general section
 dt 0.1 -- au
-t_end 50  -- au
+t_end 1  -- au
 eField_path eField.csv
 
 -- classical portion
@@ -10,10 +10,7 @@ start classical
         sourceType continuous
         sourceCenter -0.04
         sourceSize 0 0.1 0.1
-        frequency 5
-        -- width 0.1
-        -- peakTime 5
-        -- chirpRate -0.5
+        frequency 20
         isIntegrated True
     end source
 
@@ -34,7 +31,7 @@ start classical
     start hdf5
         timestepsBetween 1
         intensityMin 3
-        intensityMax 10
+        intensityMax 4
         imageDirName hello
     end hdf5
 end classical

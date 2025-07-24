@@ -23,7 +23,7 @@ def parse_arguments():
     parser.add_argument('-f', '--input', required=True, type=str, help="Path to the PlasMol input file.")
     parser.add_argument('-l', '--log', help="Log file name.")
     parser.add_argument('-v', '--verbose', action='count', default=1, help="Increase verbosity (use up to -vv).")
-    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Removes eField.csv, pField.csv, pField_spectrum.csv, pField-transformed.csv, chkfile.npz, output.png, and spectrum.png.")
+    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Before simulation starts, removes old files: eField_path, pField_path, pField_Transform_path, chkfile_path, eField_vs_pField_path, and eV_spectrum_path.")
 
     args = parser.parse_args()
     if args.log and args.verbose == 0:

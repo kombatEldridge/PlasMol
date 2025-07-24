@@ -28,19 +28,6 @@ def run(params):
             time_values = np.arange(0, params_instance.t_end + params_instance.dt, params_instance.dt)
             times = np.linspace(0, time_values[-1], int(len(time_values)))
 
-            if params_instance.restart:
-                for path in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
-                    if hasattr(params_instance, path):
-                        file_path = getattr(params_instance, path)
-                        if os.path.isfile(file_path):
-                            try:
-                                os.remove(file_path)
-                                logger.info(f"Deleted {file_path}")
-                            except OSError as e:
-                                logger.error(f"Error deleting {file_path}: {e}")
-                        else:
-                            logger.debug(f"No such file: {file_path}")
-
             molecule = MOLECULE(params_instance)
             field = ELECTRICFIELD(times, params_instance)
 
@@ -80,7 +67,7 @@ def run(params):
                 if params_instance.chkfile_path and index % params_instance.chkfile_freq == 0:
                     update_chkfile(params_instance, molecule, current_time)
 
-            # show_eField_pField(params_instance.eField_path, params_instance.pField_path)
+            show_eField_pField(params_instance.eField_path, params_instance.pField_path)
 
         except Exception as err:
             logger.error(f"RT-TDDFT failed: {err}", exc_info=True)

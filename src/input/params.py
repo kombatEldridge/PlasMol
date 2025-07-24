@@ -19,7 +19,7 @@ class PARAMS:
             self.buildclassicalParams()
         elif self.type == 'Quantum':
             self.buildQuantumParams()
-        elif self.type == 'classical':
+        elif self.type == 'Classical':
             self.buildclassicalParams()
 
         delattr(self, 'preparams')
@@ -30,8 +30,8 @@ class PARAMS:
         self.pField_Transform_path = self.preparams["quantum"]["files"]["pField_Transform_path"]
         self.eField_vs_pField_path = self.preparams["quantum"]["files"]["eField_vs_pField_path"]
         self.eV_spectrum_path = self.preparams["quantum"]["files"]["eV_spectrum_path"]
-        self.chkfile_path = self.preparams["quantum"]["files"]["chkfile"]["path"]
-        self.chkfile_freq = self.preparams["quantum"]["files"]["chkfile"]["frequency"]
+        self.chkfile_path = self.preparams["quantum"]["files"]["chkfile"]["path"] if "chkfile" in self.preparams["quantum"]["files"] else None
+        self.chkfile_freq = self.preparams["quantum"]["files"]["chkfile"]["frequency"] if "chkfile" in self.preparams["quantum"]["files"] else None
         self.molecule_coords = self.preparams["quantum"]["rttddft"]["geometry"]["molecule_coords"]
         self.molecule_atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
         self.atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
@@ -48,11 +48,11 @@ class PARAMS:
                 logger.warning("Source block found in quantum section, but full PlasMol simulation is available. Ignoring source in quantum section. For full PlasMol simulation, please add source to classical section.")
             else:
                 self.shape = self.preparams["quantum"]["source"]['shape']
-                self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm']
                 self.peak_time_au = self.preparams["quantum"]["source"]['peak_time_au']
                 self.width_steps = self.preparams["quantum"]["source"]['width_steps']
                 self.intensity_au = self.preparams["quantum"]["source"]['intensity_au']
-                self.dir = self.preparams["quantum"]["source"]['dir']
+                self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm'] if self.shape == 'pulse' else None
+                self.dir = self.preparams["quantum"]["source"]['dir'] if not self.transform else None
                 # if you want to add a custom shape you must add support for the relevant parameters here
 
         if self.propagator == 'step':
@@ -70,14 +70,14 @@ class PARAMS:
     def buildclassicalParams(self):
         import meep as mp
 
-        def getMolecule(self):
+        def getMoleculeLocation(self):
             if self.preparams['classical'].get("molecule", None) is None:
                 logger.info('No molecule chosen for simulation. Continuing without it.')
                 return None
             
             return self.preparams['classical']['molecule']
 
-        def getSimulation(self):
+        def getSimulationParams(self):
             if self.preparams['classical'].get("simulation", None) is None:
                 raise RuntimeError('No simulation parameters chosen for simulation. Exiting.')
             
@@ -148,7 +148,7 @@ class PARAMS:
 
             return source
 
-        def getObject(self):
+        def getNanoparticle(self):
             if self.preparams['classical'].get("object", None) is None:
                 logger.info('No object chosen for simulation. Continuing without it.')
                 return None
@@ -210,23 +210,23 @@ class PARAMS:
 
             return self.preparams['classical']['hdf5']
         
-        self.simParams = getSimulation(self)
-        self.classicalmolecule = getMolecule(self)
-        self.sourceType = getSource(self)
-        self.symmetries = getSymmetry(self)
-        self.objectNP = getObject(self)
+        self.simulation_params = getSimulationParams(self)
+        self.molecule_position = getMoleculeLocation(self)
+        self.source = getSource(self)
+        self.symmetry = getSymmetry(self)
+        self.nanoparticle = getNanoparticle(self)
         self.hdf5 = gethdf5(self)
 
         from .. import constants
-        if 'resolution' in self.simParams:
-            dtAlt = (0.5 / self.simParams["resolution"]) * constants.convertTimeMeep2Atomic
+        if 'resolution' in self.simulation_params:
+            dtAlt = (0.5 / self.simulation_params["resolution"]) * constants.convertTimeMeep2Atomic
             if not np.isclose(dtAlt, self.dt):
                 logger.info(f"Resolution given in simulation parameters does not generate given time step 'dt'. Ignoring given resolution, using new resolution: {newResolution}")
                 newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-                self.simParams["resolution"] = newResolution
+                self.simulation_params["resolution"] = newResolution
         else:
             newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-            self.simParams["resolution"] = newResolution
+            self.simulation_params["resolution"] = newResolution
 
 
     def buildSettingsParams(self):

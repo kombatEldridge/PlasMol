@@ -1,5 +1,14 @@
 # main.py
+import os
 import sys
+
+# Dynamically set up package context for direct execution (python main.py)
+if __name__ == "__main__" and __package__ is None:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    sys.path.insert(0, parent_dir)
+    __package__ = os.path.basename(current_dir)  # Sets __package__ to "src" (or whatever your directory is named)
+
 import logging
 import numpy as np
 
@@ -48,7 +57,7 @@ if __name__ == "__main__":
 
         # Step 2: Identify parsing workflow from CLI args
         preparams = inputFilePrepare(args)
-        logger.debug(f"Arguments given and pre-parsed successfully: f{preparams}")
+        logger.debug(f"Arguments given and pre-parsed successfully: {preparams}")
 
         # Step 3: Merge all found parameters
         logger.debug("Merging parameters from input file(s) with the CLI inputs. CLI takes priority for duplicate values.")
@@ -57,6 +66,19 @@ if __name__ == "__main__":
         logger.debug(f"Arguments given and parsed successfully: ")
         for key, value in vars(params).items():
             logger.debug(f"\t\t{key}: {value}")
+
+        if params.restart:
+            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
+                if hasattr(params, attr):
+                    file_path = getattr(params, attr)
+                    if file_path is not None and os.path.isfile(file_path):
+                        try:
+                            os.remove(file_path)
+                            logger.info(f"Deleted {file_path}")
+                        except OSError as e:
+                            logger.error(f"Error deleting {file_path}: {e}")
+                    else:
+                        logger.debug(f"No such file: {file_path}")
 
         time_values = np.arange(0, params.t_end + params.dt, params.dt)
         interpolated_times = np.linspace(0, time_values[-1], len(time_values))
@@ -71,8 +93,7 @@ if __name__ == "__main__":
             run_quantum(params)
         elif params.type == 'Classical':
             run_classical(params)
-        
-        logger.info("Simulation completed successfully.")
+
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)
         sys.exit(1)

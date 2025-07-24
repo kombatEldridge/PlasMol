@@ -1,233 +1,128 @@
-# PlasMol
+# PlasMol: Simulating Plasmon-Molecule Interactions
 
-PlasMol is a simulation framework that integrates finite-difference time-domain (FDTD) electromagnetic simulations using Meep with real-time time-dependent density functional theory (RT-TDDFT) calculations using PySCF. It enables the study of plasmon-molecule interactions, pure electromagnetic simulations, or standalone quantum simulations. The project supports various propagators for RT-TDDFT, checkpointing, data visualization, and spectrum analysis via Fourier transforms.
+![PlasMol Logo](PlasMol.png) <!-- Replace with your actual logo if available -->
 
-## Documentation
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
+[![Python Version](https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg)](https://www.python.org/downloads/)
+[![GitHub Issues](https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg)](https://github.com/kombatEldridge/PlasMol/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social)](https://github.com/kombatEldridge/PlasMol/stargazers) <!-- Placeholders: Update with real badges or remove -->
 
-Many of the features and code snippets described here are better elaborated on in the docs: [https://kombatEldridge.github.io/PlasMol/](https://kombatEldridge.github.io/PlasMol/)
+PlasMol is an open-source tool for simulating plasmon-molecule interactions, combining classical Finite-Difference Time-Domain (FDTD) electromagnetics with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT). Built on [Meep](https://meep.readthedocs.io/) for FDTD and [PySCF](https://pyscf.org/) for quantum calculations, it enables studies of nanoparticle-molecule systems, such as plasmon-enhanced spectroscopy or SERS.
+
+Whether you're running isolated NP simulations, molecular RT-TDDFT, or full hybrid PlasMol runs, this package provides a flexible framework. For more details, see the [About page](about.md).
 
 ## Key Features
 
-- **Hybrid Simulations (PlasMol Mode)**: Combines Meep FDTD for plasmonic structures with RT-TDDFT for molecular responses, allowing self-consistent coupling between electromagnetic fields and molecular polarization.
-- **Standalone Modes**:
-  - Quantum-only: RT-TDDFT simulations with propagators like step, Magnus2, or Runge-Kutta 4 (RK4).
-  - Meep-only: Pure FDTD simulations for electromagnetic wave propagation.
-- **Electric Field Sources**: Supports continuous, Gaussian, chirped, and pulse sources with customizable parameters (e.g., wavelength, frequency, peak time).
-- **Propagators for RT-TDDFT**: Options include 'step', 'magnus2' (with predictor-corrector convergence), and 'rk4'.
-- **Checkpointing and Restarting**: Save and resume simulations using `.npz` checkpoint files.
-- **Data Output and Visualization**: Exports electric and polarization fields to CSV; generates plots of fields over time and absorption spectra.
-- **Fourier Transform Analysis**: Computes absorption spectra from polarization data in multi-directional simulations.
-- **Material Support**: Predefined materials like Au (gold) and Ag (silver) for plasmonic objects.
-- **Symmetries and PML Boundaries**: Configurable symmetries and perfectly matched layers (PML) for efficient simulations.
-- **GIF Generation**: Optional output of simulation frames as HDF5 and compilation into GIFs for visualization.
+- **Simulation Modes**:
+    - Classical FDTD: Simulate nanoparticles (e.g., gold/silver spheres) with custom sources.
+    - Quantum RT-TDDFT: Compute molecular responses like induced dipoles or absorption spectra.
+    - Full PlasMol: Couple FDTD and RT-TDDFT for plasmon-molecule dynamics.
+- **Customizable Sources**: Continuous, Gaussian, chirped, or pulsed fields.
+- **Outputs**: CSVs for fields/dipoles, HDF5 images/GIFs, absorption spectra, and checkpoints.
+- **Propagators**: Step, RK4, or 2nd-order Magnus for RT-TDDFT.
+- **Extensible**: Add custom tracking (e.g., SERS) via code injections—see [API Reference](api-reference.md).
 
-## Technologies Used
+## Quick Start
 
-- **Python**: Version 3.x (core language).
-- **Meep**: For FDTD electromagnetic simulations.
-- **PySCF**: For quantum chemistry calculations, including RT-TDDFT.
-- **NumPy & SciPy**: Matrix operations, linear algebra, and exponentials.
-- **Pandas**: Data handling for CSV I/O.
-- **Matplotlib**: Plotting fields and spectra.
-- **Other Libraries**: PIL (for GIF creation), threading (for parallel directional simulations).
-- **Constants and Units**: Handles conversions between atomic units (au), femtoseconds (fs), nanometers (nm), etc.
+### Installation
 
-Note: The project assumes a pre-configured environment with these libraries (no internet access for installations during runtime).
+PlasMol requires Python 3.8+ and dependencies like Meep and PySCF. For full steps, see the [Installation Guide](installation.md).
 
-## Prerequisites
-
-- Python 3.x or higher.
-- Required Python packages (install via pip if needed):
-  ```
-  pip install meep pyscf numpy scipy pandas matplotlib pillow
-  ```
-- For Meep materials: Ensure Meep is compiled with material libraries (e.g., for Au and Ag).
-- Sufficient computational resources: Simulations can be memory- and CPU-intensive, especially in hybrid mode.
-- Optional: Graphviz or similar for visualizing project structure (not required for running).
-
-Potential error: If Meep or PySCF is not installed correctly, you may encounter import errors. Ensure your environment matches the listed versions.
-
-## Detailed Step-by-Step Installation Guide
-
-1. **Clone the Repository**:
-   ```
-   git clone https://github.com/yourusername/PlasMol.git
-   cd PlasMol
-   ```
-
-2. **Set Up a Virtual Environment** (recommended):
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**:
-   - Install core libraries:
-     ```
-     pip install meep pyscf numpy scipy pandas matplotlib pillow
-     ```
-   - Note: Meep may require additional system dependencies (e.g., HDF5, MPI). Refer to [Meep documentation](https://meep.readthedocs.io/en/latest/Installation/) for platform-specific instructions.
-   - PySCF may need BLAS/LAPACK for performance; install via `pip install pyscf[blas]`.
-
-4. **Verify Installation**:
-   - Run a simple test:
-     ```
-     python -c "import meep; import pyscf; print('Installation successful!')"
-     ```
-   - If errors occur (e.g., missing modules), reinstall the affected package.
-
-5. **Environment Variables**:
-   - Set `PYTHONPATH` to include the project root if running scripts directly:
-     ```
-     export PYTHONPATH=$PYTHONPATH:/path/to/PlasMol
-     ```
-   - For logging: Optionally set `LOG_LEVEL` (e.g., `export LOG_LEVEL=DEBUG`) to control verbosity.
-
-6. **Common Issues**:
-   - **Error: "No module named 'meep'"**: Ensure Meep is installed in your active environment.
-   - **Permission Issues**: Run with `sudo` if needed, but prefer virtual environments.
-   - **Memory Errors**: Reduce simulation resolution or time steps for large systems.
-
-## Usage Examples
-
-PlasMol is run via the command line, providing an input file. Use `-v` for verbosity, `-r` for restart (deletes output files), and `-l` for logging to a file.
-
-### Basic Command
-```
-python src/main.py -f path/to/input_file.inp
+```bash
+git clone https://github.com/kombatEldridge/PlasMol.git
+cd PlasMol
+pip install -e .
 ```
 
-### Example 1: Hybrid PlasMol Simulation
-Input file (`input.inp`):
-```
-start settings
-dt 0.01
-t_end 100.0
-eField_path eField.csv
-end settings
+### Basic Usage
 
-start meep
-start simulation
-cellLength 10
-pmlThickness 1.0
-resolution 20
-surroundingMaterialIndex 1.0
-eFieldCutOff 1e-6
-end simulation
-start molecule
-center 0 0 0
-end molecule
-start source
-sourceType gaussian
-sourceCenter 0 0 0
-sourceSize 1 1 1
-frequency 0.1
-width 0.2
-component z
-end source
-start object
-material Au
-radius 0.5
-center 0 0 0
-end object
-end meep
+Run simulations via command line with an input file (e.g., from `templates/`):
+
+```bash
+python src/main.py -f templates/template-plasmol.in -vv -l plasmol.log -r
+```
+
+- `-f`: Input file path.
+- `-vv`: Debug logging.
+- `-l`: Log file.
+- `-r`: Restart (clears old outputs).
+
+For detailed instructions and examples, see [Usage](usage.md) and [Tutorials](tutorials.md).
+
+#### Example: Full PlasMol Simulation
+
+Input snippet (from `template-plasmol.in`):
+
+```lua
+start general
+    dt 0.1
+    t_end 4000
+end general
 
 start quantum
-start rttddft
-basis sto-3g
-xc b3lyp
-charge 0
-spin 0
-propagator magnus2
-maxiter 10
-pc_convergence 1e-8
-units angstrom
-end rttddft
-start geometry
-H 0 0 0
-H 0 1 0
-end geometry
+    start rttddft
+        start geometry
+            O 0.0 0.0 -0.13
+            H 1.49 0.0 1.03
+            H -1.49 0.0 1.03
+        end geometry
+        units bohr
+        basis 6-31g
+        xc pbe0
+        propagator magnus2
+    end rttddft
 end quantum
-```
-Run: `python src/main.py -f input.inp -v -r`
 
-Output: Generates `eField.csv`, `pField.csv`, plots, and optionally a GIF.
-
-### Example 2: Quantum-Only (RT-TDDFT)
-Omit the `meep` section in the input file. Use `shape pulse` or `kick` in the quantum source block.
-
-### Example 3: Meep-Only
-Omit the `quantum` section.
-
-### CLI Options
-- `-f/--input`: Required path to input file.
-- `-l/--log`: Log file name.
-- `-v/--verbose`: Increase verbosity (e.g., `-vv` for debug).
-- `-r/--restart`: Delete existing output files and restart.
-
-### Error Messages
-- "No 'dt' value given in settings file": Ensure `dt` and `t_end` are specified.
-- "Simulation failed: Unsupported propagator": Choose 'step', 'rk4', or 'magnus2'.
-- "Checkpoint file not found": Verify `chkfile_path` exists for restarts.
-
-## Configuration (if applicable)
-
-Configuration is done via the input file with sections: `settings`, `meep`, `quantum`.
-
-- **Settings Block**: `dt` (time step in au), `t_end` (end time in au), `eField_path` (output CSV).
-- **Meep Block**: Sub-blocks for `simulation` (cell size, PML, resolution), `source` (type, params), `object` (material, shape), `molecule` (position), `hdf5` (for GIF output).
-- **Quantum Block**: `rttddft` (basis, xc, charge, spin, propagator), `geometry` (atomic coordinates), optional `source` for field shape.
-- **Files**: `chkfile` (path and frequency for checkpoints), output paths for fields and spectra.
-
-For multi-directional transforms, set `transform true` in quantum section.
-
-## Project Structure Explanation
-
-```
-PlasMol/
-├── src/
-│   ├── __init__.py          # Package init with version/author
-│   ├── constants.py         # Physical constants and unit conversions
-│   ├── drivers/             # Simulation drivers
-│   │   ├── __init__.py
-│   │   ├── meep.py          # Meep-only driver
-│   │   ├── plasmol.py       # Hybrid PlasMol driver
-│   │   └── rttddft.py       # Quantum-only driver with threading for directions
-│   ├── input/               # Input parsing and params
-│   │   ├── __init__.py
-│   │   ├── cli.py           # CLI argument parser
-│   │   ├── params.py        # PARAMS class for merging inputs
-│   │   └── parser.py        # Parses input file sections
-│   ├── main.py              # Entry point: parses args, runs simulation
-│   ├── meep/                # Meep-specific modules
-│   │   ├── __init__.py
-│   │   ├── simulation.py    # Meep simulation class with custom sources
-│   │   └── sources.py       # Source classes (Continuous, Gaussian, etc.)
-│   ├── quantum/             # Quantum modules
-│   │   ├── __init__.py
-│   │   ├── chkfile.py       # Checkpoint save/load
-│   │   ├── electric_field.py# Electric field generation
-│   │   ├── molecule.py      # Molecule class with PySCF integration
-│   │   ├── propagation.py   # Propagation wrapper
-│   │   └── propagators/     # RT-TDDFT propagators
-│   │       ├── __init__.py
-│   │       ├── magnus2.py   # Magnus2 propagator
-│   │       ├── rk4.py       # RK4 propagator
-│   │       └── step.py      # Step propagator
-│   └── utils/               # Utilities
-│       ├── __init__.py
-│       ├── csv.py           # CSV init/update/read
-│       ├── fourier.py       # Fourier transform for spectra
-│       ├── gif.py           # GIF creation from frames
-│       ├── logging.py       # Custom logger for stdout
-│       └── plotting.py      # Field plotting
-└── README.md                # This file
+start classical
+    start source
+        sourceType continuous
+        sourceCenter -0.04
+        sourceSize 0 0.1 0.1
+        frequency 5
+    end source
+    start simulation
+        cellLength 0.1
+        pmlThickness 0.01
+    end simulation
+    start object
+        material Au
+        radius 0.03
+        center 0 0 0
+    end object
+end classical
 ```
 
-## Contributing Guidelines
+Outputs include field CSVs and optional GIFs/spectra.
 
-(Not explicitly found in the codebase. If contributing, follow standard practices: fork the repo, create a feature branch, submit a pull request with clear descriptions. Ensure code style matches (e.g., PEP8) and add tests if possible.)
+## Documentation
 
-## License Information
+- [Installation Guide](installation.md): Step-by-step setup.
+- [Usage](usage.md): Input file structure and parameters.
+- [Tutorials](tutorials.md): Hands-on examples for classical, quantum, and full simulations.
+- [API Reference](api-reference.md): Code details for customization.
+- [Contributing](contributing.md): How to add features or report issues.
+- [About](about.md): Project history, releases, and citations.
 
-(Not found in the codebase. Assume open-source under MIT License unless specified otherwise. Check for a LICENSE file in the repository.)
+## Contributing
+
+Contributions are welcome! Whether fixing bugs, adding propagators/sources, or improving docs, check the [Contributing Guide](contributing.md) for details. Open an issue or PR on [GitHub](https://github.com/kombatEldridge/PlasMol).
+
+We especially need help with test suites, new nanoparticle shapes, and SERS tracking.
+
+## License
+
+[GPL-3.0 License](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE).
+
+## Acknowledgments
+
+- Built on [Meep](https://meep.readthedocs.io/), [PySCF](https://pyscf.org/), NumPy, and more.
+- Contributors: [Brinton Eldridge](https://github.com/kombatEldridge).
+- Advisors: Dr. Daniel Nascimento, Dr. Yongmei Wang.
+
+## Contact
+
+- Email: [bldrdge1@memphis.edu](mailto:bldrdge1@memphis.edu)
+- GitHub: [kombatEldridge](https://github.com/kombatEldridge)
+- LinkedIn: [Brinton Eldridge](https://www.linkedin.com/in/brinton-eldridge/)
+
+Star the repo if you find it useful! ⭐
