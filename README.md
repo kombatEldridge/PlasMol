@@ -1,11 +1,13 @@
 # PlasMol: Simulating Plasmon-Molecule Interactions
 
-![PlasMol Logo](PlasMol.png) <!-- Replace with your actual logo if available -->
+![PlasMol Logo](doc/docs/PlasMol.png) <!-- Replace with your actual logo if available -->
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg)](https://www.python.org/downloads/)
 [![GitHub Issues](https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg)](https://github.com/kombatEldridge/PlasMol/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social)](https://github.com/kombatEldridge/PlasMol/stargazers) <!-- Placeholders: Update with real badges or remove -->
+
+Read the docs: [https://kombateldridge.github.io/PlasMol/](https://kombateldridge.github.io/PlasMol/)
 
 PlasMol is an open-source tool for simulating plasmon-molecule interactions, combining classical Finite-Difference Time-Domain (FDTD) electromagnetics with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT). Built on [Meep](https://meep.readthedocs.io/) for FDTD and [PySCF](https://pyscf.org/) for quantum calculations, it enables studies of nanoparticle-molecule systems, such as plasmon-enhanced spectroscopy or SERS.
 
