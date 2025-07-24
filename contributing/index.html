@@ -56,19 +56,19 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../api-reference/">API Reference</a>
                 </li>
               </ul>
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Contributing</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#development-setup">Development Setup</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#code-organization">Code Organization</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#adding-features">Adding Features</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#coding-standards">Coding Standards</a>
+    <li class="toctree-l2"><a class="reference internal" href="#most-needed-contributions">Most needed contributions</a>
     </li>
     </ul>
                 </li>
@@ -101,36 +101,13 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="contributing-guide">Contributing Guide</h1>
-<p>Welcome contributors! Follow these steps to contribute.</p>
-<h2 id="development-setup">Development Setup</h2>
-<ul>
-<li>Fork the repo.</li>
-<li>Install dev deps: <code>pip install black pre-commit pytest</code>.</li>
-<li>Run <code>pre-commit install</code> for hooks.</li>
-</ul>
-<h2 id="code-organization">Code Organization</h2>
-<ul>
-<li><code>drivers/</code>: Simulation entry points (meep.py, etc.).</li>
-<li><code>quantum/</code>: Molecule, propagation, propagators/.</li>
-<li><code>meep/</code>: Simulation and sources.</li>
-<li><code>input/</code>: Parsing and params.</li>
-<li><code>utils/</code>: CSV, logging, plotting, etc.</li>
-<li>Use relative imports (e.g., <code>from ..quantum import MOLECULE</code>).</li>
-</ul>
+<p>As of the release of v1.0.0, work has paused on this project.</p>
+<p>For students in the same or adjacent fields, perhaps the PlasMol skeleton can inspire you to pick it up for your lab's specific desired outcomes. As is the nature of DFT work, one can track many things as a NP + Molecule simulation propagates by contracting the corresponding operator with the current density matrix. Empty commented sections are left in certain files to make adding custom functions easier.</p>
+<p>Particular work on monitoring SERS enhancements could put this code to great use, especially given that this was the original intention of the code.</p>
 <h2 id="adding-features">Adding Features</h2>
-<ul>
-<li>Create branch: <code>git checkout -b feature/new-prop</code>.</li>
-<li>Write tests in <code>tests/</code>.</li>
-<li>Update docs in <code>docs/</code>.</li>
-<li>Submit PR with changelog entry.</li>
-</ul>
-<h2 id="coding-standards">Coding Standards</h2>
-<ul>
-<li>PEP 8 with Black formatter.</li>
-<li>Type hints and docstrings.</li>
-<li>Tests: <code>pytest</code>.</li>
-</ul>
-<p>[TODO: Add issue templates or specific guidelines.]</p>
+<p>For contributors who want their code added to the main branch, submitting a PR would be good. General guidelines for doing so can be found on <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request">GitHub's docs</a>.</p>
+<h2 id="most-needed-contributions">Most needed contributions</h2>
+<p>Of course, bolstering the list of supported nanoparticle shapes or the supported electric field shapes (for the classical side and quantum side) would be nice, but the main concern is a test suite right now for those contributions to be helpful.</p>
               
             </div>
           </div><footer>

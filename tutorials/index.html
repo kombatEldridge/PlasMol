@@ -54,11 +54,19 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Tutorials</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#tutorial-1-simple-meep-simulation">Tutorial 1: Simple Meep Simulation</a>
+    <li class="toctree-l2"><a class="reference internal" href="#tutorial-1-classical-np-simulation-fdtd-only">Tutorial 1: Classical NP Simulation (FDTD Only)</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#tutorial-3-hybrid-plasmol">Tutorial 3: Hybrid PlasMol</a>
+    <li class="toctree-l2"><a class="reference internal" href="#tutorial-2-quantum-molecule-simulation-rt-tddft-only">Tutorial 2: Quantum Molecule Simulation (RT-TDDFT Only)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag">Tutorial 3: Molecular Absorption Spectrum (RT-TDDFT with transform flag)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tutorial-4-full-plasmol-simulation-np-molecule">Tutorial 4: Full PlasMol Simulation (NP + Molecule)</a>
     </li>
     </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
                 </li>
               </ul>
               <ul>
@@ -97,65 +105,335 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="tutorials">Tutorials</h1>
-<p>These tutorials demonstrate core workflows. Assume you've installed PlasMol.</p>
-<h2 id="tutorial-1-simple-meep-simulation">Tutorial 1: Simple Meep Simulation</h2>
+<p>This section provides hands-on tutorials for using PlasMol. Each tutorial uses a template input file from the <code>templates/</code> directory. Run commands from your project root, e.g.:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.p<span class="w"> </span>-f<span class="w"> </span>templates/template-classical.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log
+</code></pre></div>
+<p>Outputs will appear in your working directory (e.g., CSVs, images).</p>
+<h2 id="tutorial-1-classical-np-simulation-fdtd-only">Tutorial 1: Classical NP Simulation (FDTD Only)</h2>
+<p>Simulate a gold nanoparticle interacting with a continuous electric field. This demonstrates basic FDTD output, including the optional cross-section images.</p>
 <ol>
-<li>Create <code>input.meep</code>:
-   ```
-start meep
-simulation
-  cellLength = 10
-  resolution = 20
-  pmlThickness = 1.0
-end
-source
-  sourceType = 'gaussian'
-  frequency = 0.5
-  [etc.]
-end
-<div class="highlight"><pre><span></span><code>2. Run:
-   ```bash
-   python -m src.main -f input.meep
-   ```
-3. View outputs: Check eField.csv and GIF.
-
-Expected: Simulates Gaussian pulse propagation.
-
-## Tutorial 2: RT-TDDFT Quantum Simulation
-1. Create `input.quantum`:
-   ```
-start quantum
-  rttddft
-    basis = &#39;sto-3g&#39;
-    xc = &#39;lda&#39;
-    geometry
-      H 0 0 0.0 0.0
-      O 1.0 0.0 0.0
-    end geometry
-  end
-  propagator = &#39;rk4&#39;
-end
-source
-  shape = &#39;pulse&#39;
-  wavelength_nm = 400
-  [etc.]
-end
-</code></pre></div></li>
-<li>Run**:
-   <code>bash
-  python -m src.main -f input.quantum -v</code></li>
-<li>Analyze: Use plotting.py to visualize fields; apply fourier.transform for spectrum.</li>
+<li><strong>Prepare Input</strong>: Copy <code>template-classical.in</code> and adjust parameters (e.g., increase <code>t_end</code> for longer simulation). Example snippet:</li>
 </ol>
-<p>Expected: Propagates density matrix, outputs polarization and HOMO-LUMO jumps.</p>
-<h2 id="tutorial-3-hybrid-plasmol">Tutorial 3: Hybrid PlasMol</h2>
-<p>Combine Meep and quantum inputs. Run similarly.</p>
-<p>[TODO: Add more detailed examples, code snippets, or Jupyter notebook links.]</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="nv">start</span><span class="w"> </span><span class="nv">general</span><span class="w"> </span><span class="c1">-- &#39;general&#39; block wrappers are not necessary</span>
+<span class="w">      </span><span class="nv">dt</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="c1">-- au</span>
+<span class="w">      </span><span class="nv">t_end</span><span class="w"> </span><span class="mi">50</span><span class="w">  </span><span class="c1">-- au</span>
+<span class="w">      </span><span class="nv">eField_path</span><span class="w"> </span><span class="nv">eField</span><span class="p">.</span><span class="py">csv</span>
+<span class="w">  </span><span class="kr">end</span><span class="w"> </span><span class="nv">general</span>
+
+<span class="w">  </span><span class="c1">-- classical portion</span>
+<span class="w">  </span><span class="nv">start</span><span class="w"> </span><span class="nv">classical</span>
+<span class="w">      </span><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">          </span><span class="nv">sourceType</span><span class="w"> </span><span class="nv">continuous</span>
+<span class="w">          </span><span class="nv">sourceCenter</span><span class="w"> </span><span class="o">-</span><span class="mf">0.04</span>
+<span class="w">          </span><span class="nv">sourceSize</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">          </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">      </span><span class="kr">end</span><span class="w"> </span><span class="nv">source</span>
+
+<span class="w">      </span><span class="nv">start</span><span class="w"> </span><span class="nv">simulation</span>
+<span class="w">          </span><span class="nv">cellLength</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">          </span><span class="nv">pmlThickness</span><span class="w"> </span><span class="mf">0.01</span>
+<span class="w">          </span><span class="c1">-- spherical objects with an incident electric field propagating in the</span>
+<span class="w">          </span><span class="c1">-- +y direction with a z electric component will have the following symmetry</span>
+<span class="w">          </span><span class="nv">symmetries</span><span class="w"> </span><span class="nv">Y</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">Z</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span>
+<span class="w">          </span><span class="nv">surroundingMaterialIndex</span><span class="w"> </span><span class="mf">1.33</span><span class="w"> </span><span class="c1">-- surrounds NP in water</span>
+<span class="w">      </span><span class="kr">end</span><span class="w"> </span><span class="nv">simulation</span>
+
+<span class="w">      </span><span class="nv">start</span><span class="w"> </span><span class="nv">object</span>
+<span class="w">          </span><span class="nv">material</span><span class="w"> </span><span class="nv">Au</span>
+<span class="w">          </span><span class="nv">radius</span><span class="w"> </span><span class="mf">0.03</span>
+<span class="w">          </span><span class="nv">center</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">      </span><span class="kr">end</span><span class="w"> </span><span class="nv">object</span>
+
+<span class="w">      </span><span class="nv">start</span><span class="w"> </span><span class="nv">hdf5</span>
+<span class="w">          </span><span class="nv">timestepsBetween</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="c1">-- saves a picture every timestep</span>
+<span class="w">          </span><span class="nv">intensityMin</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">          </span><span class="nv">intensityMax</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">          </span><span class="nv">imageDirName</span><span class="w"> </span><span class="nv">hello</span><span class="w"> </span><span class="c1">-- saves images to path hello/.</span>
+<span class="w">      </span><span class="kr">end</span><span class="w"> </span><span class="nv">hdf5</span>
+<span class="w">  </span><span class="kr">end</span><span class="w"> </span><span class="nv">classical</span>
+</code></pre></div>
+<ol>
+<li><strong>Run Simulation</strong>:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>/path/to/classical.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>/path/to/classical.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log
+</code></pre></div>
+<ol>
+<li>
+<p><strong>View Outputs</strong>:</p>
+<ul>
+<li><code>eField.csv</code>: Electric field data. Path defined in input file.</li>
+<li>
+<p><code>hello/</code>: PNG cross-sections (if HDF5 enabled); a GIF is auto-generated.
+<img alt="Cross-section of NP simulation" src="../classical.gif" />
+<em>Cross-section of a spherical nanoparticle in the xy-plane receiving incident light, whose electric component is measured in the z-direction. Dashed outline added for clarity.</em></p>
+</li>
+<li>
+<p>For extinction spectra, add custom tracking in <code>src/classical/simulation.py</code> (see <a href="../api-reference/">API Reference</a>).
+<img alt="FDTD Qext spectrum" src="../MEEPvsDDSCAT.png" />
+<em>Using instructions from <a href="https://meep.readthedocs.io/en/master/Python_Tutorials/Basics/#mie-scattering-of-a-lossless-dielectric-sphere">MEEP's documentation</a> and <a href="https://github.com/NanoComp/meep/blob/04ae6b786ab145a35ab8d290ede4cdce105d0677/python/examples/mie_scattering.py">code examples</a>, one can compare the Qext spectrum between the FDTD and DDA methods, implemented using MEEP and DDSCAT respectively.</em></p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="tutorial-2-quantum-molecule-simulation-rt-tddft-only">Tutorial 2: Quantum Molecule Simulation (RT-TDDFT Only)</h2>
+<p>Compute the induced dipole of a water molecule using a pulsed field. This uses only RT-TDDFT.</p>
+<ol>
+<li>
+<p><strong>Prepare Input</strong>: Copy <code>template-quantum.in</code>. Unless you want an absorption spectrum (see <a href="#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag">Tutorial 3</a>), do <em>not</em> add <code>transform</code> to rttddft block.</p>
+<p>Example snippet:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">general</span><span class="w"> </span><span class="c1">-- &#39;general&#39; block wrappers are not necessary</span>
+<span class="w">    </span><span class="nv">dt</span><span class="w"> </span><span class="mf">0.05</span><span class="w"> </span><span class="c1">-- au</span>
+<span class="w">    </span><span class="nv">t_end</span><span class="w"> </span><span class="mi">1000</span><span class="w">  </span><span class="c1">-- au</span>
+<span class="w">    </span><span class="nv">eField_path</span><span class="w"> </span><span class="nv">eField</span><span class="p">.</span><span class="py">csv</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">general</span>
+
+<span class="c1">-- rt-tddft portion</span>
+<span class="nv">start</span><span class="w"> </span><span class="nv">quantum</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">rttddft</span>
+<span class="w">        </span><span class="nv">start</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">            </span><span class="nv">O</span><span class="w">      </span><span class="mf">0.0000000000</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">       </span><span class="o">-</span><span class="mf">0.1302052882</span>
+<span class="w">            </span><span class="nv">H</span><span class="w">      </span><span class="mf">1.4891244004</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">        </span><span class="mf">1.0332262019</span>
+<span class="w">            </span><span class="nv">H</span><span class="w">     </span><span class="o">-</span><span class="mf">1.4891244004</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">        </span><span class="mf">1.0332262019</span>
+<span class="w">        </span><span class="kr">end</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">        </span><span class="nv">units</span><span class="w"> </span><span class="nv">bohr</span>
+<span class="w">        </span><span class="nv">check_tolerance</span><span class="w"> </span><span class="mf">1e-12</span>
+<span class="w">        </span><span class="nv">charge</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nv">spin</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nv">basis</span><span class="w"> </span><span class="mi">6</span><span class="o">-</span><span class="mi">31</span><span class="nv">g</span>
+<span class="w">        </span><span class="nv">xc</span><span class="w"> </span><span class="nv">pbe0</span>
+<span class="w">        </span><span class="nv">resplimit</span><span class="w"> </span><span class="mf">1e-20</span>
+<span class="w">        </span><span class="nv">propagator</span><span class="w"> </span><span class="nv">magnus2</span>
+<span class="w">        </span><span class="nv">pc_convergence</span><span class="w"> </span><span class="mf">1e-12</span>
+<span class="w">        </span><span class="nv">maxiter</span><span class="w"> </span><span class="mi">200</span>
+<span class="w">        </span><span class="nv">transform</span><span class="w"> </span><span class="c1">-- important to include this flag for abs spectrum simulation</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">rttddft</span>
+
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">files</span>
+<span class="w">        </span><span class="nv">start</span><span class="w"> </span><span class="nv">chkfile</span><span class="w"> </span><span class="c1">-- in case simulation crashes</span>
+<span class="w">            </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">100</span>
+<span class="w">            </span><span class="nv">path</span><span class="w"> </span><span class="nv">chkfile</span><span class="p">.</span><span class="py">npz</span>
+<span class="w">        </span><span class="kr">end</span><span class="w"> </span><span class="nv">chkfile</span>
+<span class="w">        </span><span class="nv">pField_path</span><span class="w"> </span><span class="nv">pField</span><span class="p">.</span><span class="py">csv</span>
+<span class="w">        </span><span class="nv">pField_Transform_path</span><span class="w"> </span><span class="nv">pField</span><span class="o">-</span><span class="nv">transformed</span><span class="p">.</span><span class="py">npz</span>
+<span class="w">        </span><span class="nv">eField_vs_pField_path</span><span class="w"> </span><span class="nv">output</span><span class="p">.</span><span class="py">png</span>
+<span class="w">        </span><span class="nv">eV_spectrum_path</span><span class="w"> </span><span class="nv">spectrum</span><span class="p">.</span><span class="py">png</span><span class="w"> </span><span class="c1">-- this image will display the absorption spectrum</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">files</span>
+
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">        </span><span class="nv">shape</span><span class="w"> </span><span class="nv">pulse</span>
+<span class="w">        </span><span class="nv">peak_time_au</span><span class="w"> </span><span class="mi">200</span>
+<span class="w">        </span><span class="nv">width_steps</span><span class="w"> </span><span class="mi">1000</span>
+<span class="w">        </span><span class="nv">wavelength_nm</span><span class="w"> </span><span class="mi">400</span><span class="w"> </span><span class="c1">-- nm</span>
+<span class="w">        </span><span class="nv">intensity_au</span><span class="w"> </span><span class="mf">5e-5</span>
+<span class="w">        </span><span class="nv">dir</span><span class="w"> </span><span class="nv">z</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">source</span><span class="w">  </span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">quantum</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Run Simulation</strong>:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>/path/to/quantum.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>/path/to/quantum.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+</li>
+<li>
+<p><strong>View Outputs</strong>:</p>
+<ul>
+<li><code>eField.csv</code>: Incident field; plots using <code>src/utils/plotting.py</code> for visualization.</li>
+<li><code>pField.csv</code>: Induced dipole (polarization) data.</li>
+</ul>
+<p><img alt="Electric field vs. polarization plot" src="../eFieldvpField.png" />
+<em>Example spectra comparing a pulse felt by the molecule (left) with the molecule's induced dipole (right). Inset highlights molecules small oscillations due to excitement.</em></p>
+</li>
+</ol>
+<h2 id="tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag">Tutorial 3: Molecular Absorption Spectrum (RT-TDDFT with <code>transform</code> flag)</h2>
+<p>Compute the absorption spectrum of a water molecule using three Dirac delta kicks. This uses multithreaded RT-TDDFT and Fourier transform.</p>
+<ol>
+<li>
+<p><strong>Prepare Input</strong>: Copy <code>template-quantum.in</code>. Enable <code>transform</code> for spectrum calculation.</p>
+<p>Example snippet:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">general</span><span class="w"> </span><span class="c1">-- &#39;general&#39; block wrappers are not necessary</span>
+<span class="w">    </span><span class="nv">dt</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="c1">-- au</span>
+<span class="w">    </span><span class="nv">t_end</span><span class="w"> </span><span class="mi">4000</span><span class="w">  </span><span class="c1">-- au</span>
+<span class="w">    </span><span class="nv">eField_path</span><span class="w"> </span><span class="nv">eField</span><span class="p">.</span><span class="py">csv</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">general</span>
+
+<span class="c1">-- rt-tddft portion</span>
+<span class="nv">start</span><span class="w"> </span><span class="nv">quantum</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">rttddft</span>
+<span class="w">        </span><span class="nv">start</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">            </span><span class="nv">O</span><span class="w">      </span><span class="mf">0.0000000000</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">       </span><span class="o">-</span><span class="mf">0.1302052882</span>
+<span class="w">            </span><span class="nv">H</span><span class="w">      </span><span class="mf">1.4891244004</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">        </span><span class="mf">1.0332262019</span>
+<span class="w">            </span><span class="nv">H</span><span class="w">     </span><span class="o">-</span><span class="mf">1.4891244004</span><span class="w">       </span><span class="mf">0.0000000000</span><span class="w">        </span><span class="mf">1.0332262019</span>
+<span class="w">        </span><span class="kr">end</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">        </span><span class="nv">units</span><span class="w"> </span><span class="nv">bohr</span>
+<span class="w">        </span><span class="nv">check_tolerance</span><span class="w"> </span><span class="mf">1e-12</span>
+<span class="w">        </span><span class="nv">charge</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nv">spin</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="nv">basis</span><span class="w"> </span><span class="mi">6</span><span class="o">-</span><span class="mi">31</span><span class="nv">g</span>
+<span class="w">        </span><span class="nv">xc</span><span class="w"> </span><span class="nv">pbe0</span>
+<span class="w">        </span><span class="nv">resplimit</span><span class="w"> </span><span class="mf">1e-20</span>
+<span class="w">        </span><span class="nv">propagator</span><span class="w"> </span><span class="nv">magnus2</span>
+<span class="w">        </span><span class="nv">pc_convergence</span><span class="w"> </span><span class="mf">1e-12</span>
+<span class="w">        </span><span class="nv">maxiter</span><span class="w"> </span><span class="mi">200</span>
+<span class="w">        </span><span class="nv">transform</span><span class="w"> </span><span class="c1">-- important to include this flag for abs spectrum simulation</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">rttddft</span>
+
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">files</span>
+<span class="w">        </span><span class="nv">start</span><span class="w"> </span><span class="nv">chkfile</span><span class="w"> </span><span class="c1">-- in case simulation crashes</span>
+<span class="w">            </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">100</span>
+<span class="w">            </span><span class="nv">path</span><span class="w"> </span><span class="nv">chkfile</span><span class="p">.</span><span class="py">npz</span>
+<span class="w">        </span><span class="kr">end</span><span class="w"> </span><span class="nv">chkfile</span>
+<span class="w">        </span><span class="nv">pField_path</span><span class="w"> </span><span class="nv">pField</span><span class="p">.</span><span class="py">csv</span>
+<span class="w">        </span><span class="nv">pField_Transform_path</span><span class="w"> </span><span class="nv">pField</span><span class="o">-</span><span class="nv">transformed</span><span class="p">.</span><span class="py">npz</span>
+<span class="w">        </span><span class="nv">eField_vs_pField_path</span><span class="w"> </span><span class="nv">output</span><span class="p">.</span><span class="py">png</span>
+<span class="w">        </span><span class="nv">eV_spectrum_path</span><span class="w"> </span><span class="nv">spectrum</span><span class="p">.</span><span class="py">png</span><span class="w"> </span><span class="c1">-- this image will display the absorption spectrum</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">files</span>
+
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">        </span><span class="nv">shape</span><span class="w"> </span><span class="nv">kick</span><span class="w"> </span><span class="c1">-- needs to be a delta &#39;kick&#39;, not &#39;pulse&#39;</span>
+<span class="w">        </span><span class="nv">peak_time_au</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">        </span><span class="nv">width_steps</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">        </span><span class="nv">intensity_au</span><span class="w"> </span><span class="mf">5e-5</span>
+<span class="w">        </span><span class="c1">-- dir z -- do not need to specify direction when transform flag used</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">source</span><span class="w">  </span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">quantum</span>
+</code></pre></div>
+</li>
+<li>
+<p><strong>Run Simulation</strong>:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>/path/to/abs_spectrum.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>/path/to/abs_spectrum.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+</li>
+<li>
+<p><strong>View Outputs</strong>:</p>
+<ul>
+<li><code>pField.csv</code>: Induced dipole (polarization) data.</li>
+<li><code>spectrum.png</code>: Absorption spectrum plot.</li>
+</ul>
+<p><img alt="Absorption spectrum of water molecule" src="../Final-Comparison.png" />
+<em>Absorption spectrum run as compared to an LR-TDDFT standard from nwchem.</em></p>
+</li>
+</ol>
+<h2 id="tutorial-4-full-plasmol-simulation-np-molecule">Tutorial 4: Full PlasMol Simulation (NP + Molecule)</h2>
+<p>Simulate a gold NP with a water molecule inside, tracking plasmon-molecule interactions.</p>
+<ol>
+<li>
+<p><strong>Prepare Input</strong>: Copy <code>template-plasmol.in</code>. Combine classical NP with quantum molecule.
+    Example snippet:</p>
+<p>```lua
+    start general -- 'general' block wrappers are not necessary
+        dt 0.1 -- au
+        t_end 4000  -- au
+        eField_path eField.csv
+    end general</p>
+<div class="highlight"><pre><span></span><code>-- rt-tddft portion
+start quantum
+    start rttddft
+        start geometry
+            O      0.0000000000       0.0000000000       -0.1302052882
+            H      1.4891244004       0.0000000000        1.0332262019
+            H     -1.4891244004       0.0000000000        1.0332262019
+        end geometry
+        units bohr
+        check_tolerance 1e-12
+        charge 0
+        spin 0
+        basis 6-31g
+        xc pbe0
+        resplimit 1e-20
+        propagator magnus2
+        pc_convergence 1e-12
+        maxiter 200
+        transform -- important to include this flag for abs spectrum simulation
+    end rttddft
+
+    start files
+        start chkfile -- in case simulation crashes
+            frequency 100
+            path chkfile.npz
+        end chkfile
+        pField_path pField.csv
+        pField_Transform_path pField-transformed.npz
+        eField_vs_pField_path output.png
+        eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
+    end files
+
+    -- if source is given in quantum block but a classical block is found, 
+    -- this source will be ignored.
+    -- start source
+        -- shape kick
+        -- peak_time_au 0.1
+        -- width_steps 5
+        -- intensity_au 5e-5
+    -- end source  
+end quantum
+
+-- classical portion
+start classical
+    start source
+        sourceType continuous
+        sourceCenter -0.04
+        sourceSize 0 0.1 0.1
+        frequency 5
+    end source
+
+    start simulation
+        cellLength 0.1
+        pmlThickness 0.01
+        -- spherical objects with an incident electric field propagating in the
+        -- +y direction with a z electric component will have the following symmetry
+        symmetries Y 1 Z -1
+        surroundingMaterialIndex 1.33 -- surrounds NP in water
+    end simulation
+
+    start object
+        material Au
+        radius 0.03
+        center 0 0 0
+    end object
+
+    start hdf5
+        timestepsBetween 1 -- saves a picture every timestep
+        intensityMin 3
+        intensityMax 10
+        imageDirName hello -- saves images to path hello/.
+    end hdf5
+end classical
+</code></pre></div>
+<p>```</p>
+</li>
+<li>
+<p><strong>Run Simulation</strong>:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>/path/to/plasmol.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>/path/to/plasmol.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+</li>
+<li>
+<p><strong>View Outputs</strong>:</p>
+<ul>
+<li>Similar images, gifs, and spectra to the tutorials above can be found in this instance too.</li>
+<li>For SERS or other metrics, inject custom functions (see <a href="../api-reference/">API Reference</a>).</li>
+</ul>
+</li>
+</ol>
+<p>These tutorials cover basics—experiment with parameters and check logs for issues. For advanced topics, see <a href="../api-reference/">API Reference</a>.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../usage/" class="btn btn-neutral float-left" title="Usage"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../api-reference/" class="btn btn-neutral float-right" title="API Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../methodology/" class="btn btn-neutral float-right" title="Methodology">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -181,7 +459,7 @@ end
       <span><a href="../usage/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../api-reference/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../methodology/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

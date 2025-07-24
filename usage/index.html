@@ -50,21 +50,47 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Usage</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#cli-arguments">CLI Arguments</a>
+    <li class="toctree-l2"><a class="reference internal" href="#general-process-for-creating-an-input-file">General Process for Creating an Input File</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#input-file-format">Input File Format</a>
+    <li class="toctree-l2"><a class="reference internal" href="#input-blocks-and-parameters">Input Blocks and Parameters</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#generalsettings-block">General/Settings Block</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#running-simulations">Running Simulations</a>
+    <li class="toctree-l3"><a class="reference internal" href="#classical-block">Classical Block</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#source-sub-block">Source Sub-Block</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#output-files">Output Files</a>
+    <li class="toctree-l4"><a class="reference internal" href="#simulation-sub-block">Simulation Sub-Block</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#advanced-options">Advanced Options</a>
+    <li class="toctree-l4"><a class="reference internal" href="#object-sub-block">Object Sub-Block</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#hdf5-sub-block">HDF5 Sub-Block</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#molecule-sub-block">Molecule Sub-Block</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#quantum-block">Quantum Block</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#rttddft-sub-block">RTTDDFT Sub-Block</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#files-sub-block">Files Sub-Block</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#source-sub-block-quantum-only">Source Sub-Block (Quantum-Only)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
     </li>
     </ul>
                 </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
                 </li>
               </ul>
               <ul>
@@ -102,67 +128,235 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="usage-guide">Usage Guide</h1>
-<p>PlasMol is run via the command-line interface (CLI) from <code>src/main.py</code>. It supports three simulation types: Meep (electromagnetics), Quantum (RT-TDDFT), and PlasMol (hybrid).</p>
-<h2 id="cli-arguments">CLI Arguments</h2>
-<p><div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>&lt;input_file&gt;<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
-</code></pre></div>
-- <code>-f, --input &lt;file&gt;</code>: Path to the input file (required).
-- <code>-l, --log &lt;file&gt;</code>: Log file name.
-- <code>-v, --verbose</code>: Increase verbosity (up to -vv<code>for debug).
--</code>-r, --restart`: Restart simulation (deletes previous outputs).</p>
-<h2 id="input-file-format">Input File Format</h2>
-<p>Input files are divided into sections like <code>start meep</code> / <code>end meep</code>, <code>start quantum</code> / <code>end quantum</code>, and <code>start settings</code> / <code>end settings</code>. See examples in <code>templates/</code>.</p>
-<p>Example snippet:
-<div class="highlight"><pre><span></span><code>start settings
-dt = 0.01
-t_end = 100.0
-eField_path = eField.csv
-end settings
-
-start meep
-[simulation parameters like cellLength, resolution]
-end meep
-
-start quantum
-[basis, xc, geometry, etc.]
-end quantum
-</code></pre></div></p>
-<h2 id="running-simulations">Running Simulations</h2>
-<ul>
+                <h1 id="usage">Usage</h1>
+<p>PlasMol is designed to be run from the command line, with most parameters specified in a single input file. This page explains how to create and structure an input file, as well as details on each supported block and parameter. For step-by-step examples, see the <a href="../tutorials/">Tutorials</a> page.</p>
+<h2 id="general-process-for-creating-an-input-file">General Process for Creating an Input File</h2>
+<ol>
 <li>
-<p><strong>Pure Meep</strong>:
-  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-meep.in<span class="w"> </span>-v
-</code></pre></div>
-  Outputs electric fields, HDF5 images, GIF (if enabled).</p>
+<p><strong>Determine Simulation Type</strong>: PlasMol supports three modes based on your input file:</p>
+<ul>
+<li><strong>Classical Only</strong>: Simulate a nanoparticle (NP) using FDTD (via MEEP). Include a <code>classical</code> block but no <code>quantum</code> block.</li>
+<li><strong>Quantum Only</strong>: Simulate a molecule using RT-TDDFT (via PySCF). Include a <code>quantum</code> block but no <code>classical</code> block.</li>
+<li><strong>PlasMol (Full)</strong>: Simulate NP-molecule interactions. Include both <code>classical</code> and <code>quantum</code> blocks.</li>
+</ul>
 </li>
 <li>
-<p><strong>Pure RT-TDDFT</strong>:
-  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-quantum.in<span class="w"> </span>-v
-</code></pre></div>
-  polarization fields, spectra, checkpoints.</p>
+<p><strong>Structure the Input File</strong>: The file uses a block-based format with <code>start</code> and <code>end</code> keywords. Comments start with <code>#</code>, <code>--</code>, or <code>%</code>. Sections can be nested.</p>
+<ul>
+<li>Always start with a <code>general</code> or <code>settings</code> block (these two keywords are interchangeable) for shared parameters (e.g., time step, end time).</li>
+<li>Add <code>classical</code> and/or <code>quantum</code> blocks as needed.</li>
+<li>Use templates from the <code>templates/</code> directory as starting points:<ul>
+<li><a href="https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-classical.in">template-classical.in</a></li>
+<li><a href="https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-quantum.in">template-quantum.in</a></li>
+<li><a href="https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-plasmol.in">template-plasmol.in</a></li>
+</ul>
+</li>
+</ul>
 </li>
 <li>
-<p><strong>Hybrid PlasMol</strong>:
-  <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>templates/template-plasmol.in<span class="w"> </span>-vv
+<p><strong>Run PlasMol</strong>: From the command line:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>/path/to/plasmol.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
 </code></pre></div>
-  Combines both, with molecule-field interactions.</p>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>-f<span class="w"> </span>/path/to/plasmol.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
+<ul>
+<li>Common options: <code>-v</code> (verbose), <code>-vv</code> (debug), <code>-l log.txt</code> (log file), <code>-r</code> (restart, deletes old output files).</li>
+<li>See <code>src/input/cli.py</code> or run <code>python src/main.py --help</code> for full options.</li>
+</ul>
 </li>
-</ul>
-<h2 id="output-files">Output Files</h2>
+<li>
+<p><strong>Output Files</strong>: PlasMol can generate CSVs (e.g., <code>eField.csv</code>, <code>pField.csv</code>), images (e.g., via HDF5 or plots), and checkpoint files (<code>.npz</code>). For details, see the <code>files</code> block below.</p>
+</li>
+<li>
+<p><strong>Units and Conventions</strong>: Times are in atomic units (au) unless specified. Coordinates are in Bohr or Angstrom (specify in <code>units</code>). Electric fields are in au.</p>
+</li>
+<li>
+<p><strong>Customization</strong>: For advanced tweaks (e.g., custom sources or propagators), modify the code as noted in <a href="../api-reference/">API Reference</a>.</p>
+</li>
+</ol>
+<h2 id="input-blocks-and-parameters">Input Blocks and Parameters</h2>
+<p>Below are details on each block, drawn from the code and templates. Parameters are listed with defaults (if any), types, and descriptions. Required parameters are marked with *.</p>
+<h3 id="generalsettings-block">General/Settings Block</h3>
+<p>Shared simulation parameters. Use <code>start general</code> or <code>start settings</code> (interchangeable). This block is required.</p>
 <ul>
-<li>CSV: eField.csv, pField.csv for fields.</li>
-<li>Plots: output.png (eV_spectrum.png for spectra).</li>
-<li>Checkpoint: .npz for resuming.</li>
-<li>GIF: Simulation visualizations if HDF5 enabled.</li>
+<li><code>dt</code>*: Float. Time step in au (e.g., <code>0.001</code>).</li>
+<li><code>t_end</code>*: Float. End time in au (e.g., <code>40</code>).</li>
+<li><code>eField_path</code>: String. Path to output CSV for electric field (e.g., <code>eField.csv</code>).</li>
 </ul>
-<h2 id="advanced-options">Advanced Options</h2>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">general</span>
+<span class="w">    </span><span class="nv">dt</span><span class="w"> </span><span class="mf">0.001</span>
+<span class="w">    </span><span class="nv">t_end</span><span class="w"> </span><span class="mi">40</span>
+<span class="w">    </span><span class="nv">eField_path</span><span class="w"> </span><span class="nv">eField</span><span class="p">.</span><span class="py">csv</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">general</span>
+</code></pre></div>
+<h3 id="classical-block">Classical Block</h3>
+<p>For NP simulations (FDTD via MEEP). Required for classical or full PlasMol modes.</p>
+<h4 id="source-sub-block">Source Sub-Block</h4>
+<p>Defines the incident electric field. Required for most simulations. For more information about these sources, visit <a href="https://meep.readthedocs.io/en/master/Python_User_Interface/#source">MEEP's documentation</a>.</p>
 <ul>
-<li>Propagators: Set in quantum input (step, magnus2, rk4).</li>
-<li>Sources: Continuous, Gaussian, chirped, pulse in meep section.</li>
-<li>Restart: Use <code>-r</code> to clear old files and resume from checkpoint.</li>
+<li><code>sourceType</code>*: String. One of: <code>continuous</code>, <code>gaussian</code>, <code>chirped</code>, <code>pulse</code>.</li>
+<li><code>sourceCenter</code>*: Float or list (microns) (e.g., <code>-0.04</code> or <code>-0.04 0 0</code>). Center position. If one component given, assumed in the 'x' direction.</li>
+<li><code>sourceSize</code>*: List of 3 floats (microns) (e.g., <code>0 0.1 0.1</code>). Size dimensions.</li>
+<li><code>frequency</code>: Float. Frequency (au); mutually exclusive with <code>wavelength</code>.</li>
+<li><code>wavelength</code>: Float. Wavelength (microns); mutually exclusive with <code>frequency</code>.</li>
+<li><code>width</code>: Float (default 0). Gaussian width.</li>
+<li><code>fwidth</code>: Float (default inf). Frequency width (alternative to <code>width</code>).</li>
+<li><code>start_time</code>: Float (default 0 or -inf). Start time.</li>
+<li><code>end_time</code>: Float (default inf). End time.</li>
+<li><code>cutoff</code>: Float (default 5.0, for Gaussian). Truncation cutoff.</li>
+<li><code>slowness</code>: Float (default 3.0, for Continuous). Ramp-up slowness.</li>
+<li><code>peakTime</code>: Float (for Chirped/Pulse). Peak time.</li>
+<li><code>chirpRate</code>: Float (for Chirped). Chirp rate.</li>
+<li><code>is_integrated</code>: Boolean (default True). Integrate source over time.</li>
+<li><code>component</code>: String (default 'z'). Field component ('x', 'y', 'z').</li>
 </ul>
-<p>[TODO: Add example input files or screenshots of output.]</p>
+<p>Example (Continuous):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">    </span><span class="nv">sourceType</span><span class="w"> </span><span class="nv">continuous</span>
+<span class="w">    </span><span class="nv">sourceCenter</span><span class="w"> </span><span class="o">-</span><span class="mf">0.04</span>
+<span class="w">    </span><span class="nv">sourceSize</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">    </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">    </span><span class="nv">isIntegrated</span><span class="w"> </span><span class="nv">True</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">source</span>
+</code></pre></div>
+<h4 id="simulation-sub-block">Simulation Sub-Block</h4>
+<p>Core FDTD parameters. For more information about these parameters, visit <a href="https://meep.readthedocs.io/en/master/">MEEP's documentation</a>.</p>
+<ul>
+<li><code>cellLength</code>*: Float (e.g., <code>0.1</code>). Simulation cell size.</li>
+<li><code>pmlThickness</code>*: Float (e.g., <code>0.01</code>). PML boundary thickness.</li>
+<li><code>eFieldCutOff</code>: Float (e.g., <code>1e-12</code>). Threshold to trigger quantum propagation. Ignored if no quantum blocked defined.</li>
+<li><code>symmetries</code>: List (e.g., <code>Y 1 Z -1</code>). Mirror symmetries (X/Y/Z with phase ±1).</li>
+<li><code>surroundingMaterialIndex</code>: Float (default 1.0). Refractive index of medium.</li>
+<li><code>resolution</code>: Float (optional). Spatial resolution; auto-calculated from <code>dt</code> if omitted.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">simulation</span>
+<span class="w">    </span><span class="nv">cellLength</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">    </span><span class="nv">pmlThickness</span><span class="w"> </span><span class="mf">0.01</span>
+<span class="w">    </span><span class="nv">eFieldCutOff</span><span class="w"> </span><span class="mf">1e-12</span>
+<span class="w">    </span><span class="nv">symmetries</span><span class="w"> </span><span class="nv">Y</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="nv">Z</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span>
+<span class="w">    </span><span class="nv">surroundingMaterialIndex</span><span class="w"> </span><span class="mf">1.33</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">simulation</span>
+</code></pre></div>
+<h4 id="object-sub-block">Object Sub-Block</h4>
+<p>Defines the NP (currently supports spheres only).</p>
+<ul>
+<li><code>material</code>*: String. Either <code>Au</code> or <code>Ag</code>. Material type.</li>
+<li><code>radius</code>*: Float (microns) (e.g., <code>0.03</code>). Sphere radius.</li>
+<li><code>center</code>*: List of 3 floats (e.g., <code>0 0 0</code>). Center position.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">object</span>
+<span class="w">    </span><span class="nv">material</span><span class="w"> </span><span class="nv">Au</span>
+<span class="w">    </span><span class="nv">radius</span><span class="w"> </span><span class="mf">0.03</span>
+<span class="w">    </span><span class="nv">center</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">object</span>
+</code></pre></div>
+<h4 id="hdf5-sub-block">HDF5 Sub-Block</h4>
+<p>For generating 2D cross-section images of the simulation.</p>
+<ul>
+<li><code>timestepsBetween</code>*: Integer (e.g., <code>1</code>). Interval for image output.</li>
+<li><code>intensityMin</code>*: Float (e.g., <code>3</code>). Min intensity for color scale.</li>
+<li><code>intensityMax</code>*: Float (e.g., <code>10</code>). Max intensity for color scale.</li>
+<li><code>imageDirName</code>: String (optional, auto-generated if omitted). Output directory.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">hdf5</span>
+<span class="w">    </span><span class="nv">timestepsBetween</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="nv">intensityMin</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="nv">intensityMax</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">    </span><span class="nv">imageDirName</span><span class="w"> </span><span class="nv">images</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">hdf5</span>
+</code></pre></div>
+<h4 id="molecule-sub-block">Molecule Sub-Block</h4>
+<p>Places a molecule in the simulation (required for full PlasMol).</p>
+<ul>
+<li><code>center</code>*: List of 3 floats (microns) (e.g., <code>0 0 0</code>). Molecule position.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">molecule</span>
+<span class="w">    </span><span class="nv">center</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">molecule</span>
+</code></pre></div>
+<h3 id="quantum-block">Quantum Block</h3>
+<p>For molecule simulations (RT-TDDFT). Required for quantum or full PlasMol modes.</p>
+<h4 id="rttddft-sub-block">RTTDDFT Sub-Block</h4>
+<p>Core quantum parameters.</p>
+<ul>
+<li>Geometry sub-sub-block*:<ul>
+<li>Atom coordinates. Inline after <code>start geometry</code>.</li>
+</ul>
+</li>
+<li><code>units</code>*: String (<code>bohr</code> or <code>angstrom</code>).</li>
+<li><code>check_tolerance</code>: Float (default 1e-12). Tolerance for matrix checks for hermiticity.</li>
+<li><code>charge</code>*: Integer (default 0).</li>
+<li><code>spin</code>*: Integer (default 0).</li>
+<li><code>basis</code>*: String (e.g., <code>6-31g</code>).</li>
+<li><code>xc</code>*: String (e.g., <code>pbe0</code>). Exchange-correlation functional.</li>
+<li><code>propagator</code>*: String, one of <code>step</code>, <code>rk4</code>, or <code>magnus2</code>.</li>
+<li><code>pc_convergence</code>: Float (only for magnus2, e.g., <code>1e-12</code>).</li>
+<li><code>maxiter</code>: Integer (only for magnus2, e.g., <code>200</code>).</li>
+<li><code>transform</code>: (No value needed). Enables absorption spectrum calculation. See the <a href="../api-reference/#quantumpy">API Reference</a> and <a href="../tutorials/#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag">Tutorial #3</a> for more details.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">rttddft</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">        </span><span class="nv">O</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">-</span><span class="mf">0.13</span>
+<span class="w">        </span><span class="nv">H</span><span class="w"> </span><span class="mf">1.49</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">1.03</span>
+<span class="w">        </span><span class="nv">H</span><span class="w"> </span><span class="o">-</span><span class="mf">1.49</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">1.03</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">    </span><span class="nv">units</span><span class="w"> </span><span class="nv">bohr</span>
+<span class="w">    </span><span class="nv">basis</span><span class="w"> </span><span class="mi">6</span><span class="o">-</span><span class="mi">31</span><span class="nv">g</span>
+<span class="w">    </span><span class="nv">xc</span><span class="w"> </span><span class="nv">pbe0</span>
+<span class="w">    </span><span class="nv">propagator</span><span class="w"> </span><span class="nv">magnus2</span>
+<span class="w">    </span><span class="nv">transform</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">rttddft</span>
+</code></pre></div>
+<h4 id="files-sub-block">Files Sub-Block</h4>
+<p>Output paths.</p>
+<ul>
+<li><code>chkfile</code> sub-sub-block:<ul>
+<li><code>frequency</code> int (e.g., <code>100</code>). Number of time steps between checkpoints.</li>
+<li><code>path</code> string (e.g., <code>chkfile.npz</code>). Path to checkpoint file.</li>
+</ul>
+</li>
+<li><code>pField_path</code>: String (e.g., <code>pField.csv</code>). Polarization field CSV.</li>
+<li><code>eField_vs_pField_path</code>: String (e.g., <code>output.png</code>). Plot of fields.</li>
+<li><code>pField_Transform_path</code>: String (e.g., <code>pField-transformed.npz</code>). Transformed data (for spectrum).</li>
+<li><code>eV_spectrum_path</code>: String (e.g., <code>spectrum.png</code>). Absorption spectrum plot.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">files</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">chkfile</span>
+<span class="w">        </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">100</span>
+<span class="w">        </span><span class="nv">path</span><span class="w"> </span><span class="nv">chkfile</span><span class="p">.</span><span class="py">npz</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">chkfile</span>
+<span class="w">    </span><span class="nv">pField_path</span><span class="w"> </span><span class="nv">pField</span><span class="p">.</span><span class="py">csv</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">files</span>
+</code></pre></div>
+<h4 id="source-sub-block-quantum-only">Source Sub-Block (Quantum-Only)</h4>
+<p>Electric field for standalone quantum simulations.</p>
+<ul>
+<li><code>shape</code>*: String (<code>pulse</code> or <code>kick</code>).</li>
+<li><code>wavelength_nm</code>: Float (for pulse).</li>
+<li><code>peak_time_au</code>: Float.</li>
+<li><code>width_steps</code>: Integer.</li>
+<li><code>intensity_au</code>: Float.</li>
+<li><code>dir</code>: String (<code>x</code>, <code>y</code>, <code>z</code>).</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">    </span><span class="nv">shape</span><span class="w"> </span><span class="nv">pulse</span>
+<span class="w">    </span><span class="nv">wavelength_nm</span><span class="w"> </span><span class="mi">500</span>
+<span class="w">    </span><span class="nv">peak_time_au</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">    </span><span class="nv">width_steps</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">    </span><span class="nv">intensity_au</span><span class="w"> </span><span class="mf">5e-5</span>
+<span class="w">    </span><span class="nv">dir</span><span class="w"> </span><span class="nv">z</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">source</span>
+</code></pre></div>
+<p>For more details on code internals, see <a href="../api-reference/">API Reference</a>.</p>
               
             </div>
           </div><footer>

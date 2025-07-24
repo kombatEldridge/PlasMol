@@ -45,8 +45,26 @@
     <li class="toctree-l2"><a class="reference internal" href="#key-features">Key Features</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#installation">Installation</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#project-structure">Project Structure</a>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic Usage</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#example-full-plasmol-simulation">Example: Full PlasMol Simulation</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#acknowledgments">Acknowledgments</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#contact">Contact</a>
     </li>
     </ul>
                 </li>
@@ -61,6 +79,10 @@
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="methodology/">Methodology</a>
                 </li>
               </ul>
               <ul>
@@ -98,28 +120,112 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="welcome-to-plasmol-documentation">Welcome to PlasMol Documentation</h1>
-<p>PlasMol is a Python-based simulation framework for combining plasmonics (via Meep) with real-time time-dependent density functional theory (RT-TDDFT) simulations. It enables hybrid simulations of electromagnetic fields interacting with quantum molecular systems, useful for applications in plasmon-enhanced spectroscopy, nanophotonics, and quantum chemistry.</p>
+                <h1 id="plasmol-simulating-plasmon-molecule-interactions">PlasMol: Simulating Plasmon-Molecule Interactions</h1>
+<p><img alt="PlasMol Logo" src="PlasMol.png" /> <!-- Replace with your actual logo if available --></p>
+<p><a href="https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" /></a>
+<a href="https://www.python.org/downloads/"><img alt="Python Version" src="https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg" /></a>
+<a href="https://github.com/kombatEldridge/PlasMol/issues"><img alt="GitHub Issues" src="https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg" /></a>
+<a href="https://github.com/kombatEldridge/PlasMol/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social" /></a> <!-- Placeholders: Update with real badges or remove --></p>
+<p>PlasMol is an open-source tool for simulating plasmon-molecule interactions, combining classical Finite-Difference Time-Domain (FDTD) electromagnetics with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT). Built on <a href="https://meep.readthedocs.io/">Meep</a> for FDTD and <a href="https://pyscf.org/">PySCF</a> for quantum calculations, it enables studies of nanoparticle-molecule systems, such as plasmon-enhanced spectroscopy or SERS.</p>
+<p>Whether you're running isolated NP simulations, molecular RT-TDDFT, or full hybrid PlasMol runs, this package provides a flexible framework. For more details, see the <a href="about/">About page</a>.</p>
 <h2 id="key-features">Key Features</h2>
 <ul>
-<li><strong>Simulation Modes</strong>: Pure Meep (electromagnetics), pure RT-TDDFT (quantum), or hybrid PlasMol.</li>
-<li><strong>Quantum Components</strong>: Molecule handling with PySCF, electric field interactions, density matrix propagation (step, magnus2, rk4 methods), checkpointing, and HOMO-LUMO analysis.</li>
-<li><strong>Meep Integration</strong>: Custom sources (continuous, Gaussian, chirped, pulse), symmetries, PML boundaries, and HDF5 output for visualizations.</li>
-<li><strong>Utilities</strong>: CSV handling for fields, Fourier transforms for spectra, plotting (e.g., electric vs. polarization fields), GIF generation, and logging.</li>
-<li><strong>Input Handling</strong>: CLI arguments, input file parsing (Meep and Quantum sections), parameter merging.</li>
+<li><strong>Simulation Modes</strong>:<ul>
+<li>Classical FDTD: Simulate nanoparticles (e.g., gold/silver spheres) with custom sources.</li>
+<li>Quantum RT-TDDFT: Compute molecular responses like induced dipoles or absorption spectra.</li>
+<li>Full PlasMol: Couple FDTD and RT-TDDFT for plasmon-molecule dynamics.</li>
+</ul>
+</li>
+<li><strong>Customizable Sources</strong>: Continuous, Gaussian, chirped, or pulsed fields.</li>
+<li><strong>Outputs</strong>: CSVs for fields/dipoles, HDF5 images/GIFs, absorption spectra, and checkpoints.</li>
+<li><strong>Propagators</strong>: Step, RK4, or 2nd-order Magnus for RT-TDDFT.</li>
+<li><strong>Extensible</strong>: Add custom tracking (e.g., SERS) via code injections—see <a href="api-reference/">API Reference</a>.</li>
 </ul>
 <h2 id="quick-start">Quick Start</h2>
-<ol>
-<li>Install dependencies: <code>pip install pyscf meep numpy matplotlib pandas scipy</code>.</li>
-<li>Run a simulation: <code>python -m src.main -f path/to/input.in -v</code>.</li>
-</ol>
-<p>For more, see <a href="installation/">Installation</a> and <a href="usage/">Usage</a>.</p>
-<h2 id="project-structure">Project Structure</h2>
+<h3 id="installation">Installation</h3>
+<p>PlasMol requires Python 3.8+ and dependencies like Meep and PySCF. For full steps, see the <a href="installation/">Installation Guide</a>.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kombatEldridge/PlasMol.git
+<span class="nb">cd</span><span class="w"> </span>PlasMol
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div>
+<h3 id="basic-usage">Basic Usage</h3>
+<p>Run simulations via command line with an input file (e.g., from <code>templates/</code>):</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>src/main.py<span class="w"> </span>-f<span class="w"> </span>templates/template-plasmol.in<span class="w"> </span>-vv<span class="w"> </span>-l<span class="w"> </span>plasmol.log<span class="w"> </span>-r
+</code></pre></div>
 <ul>
-<li><code>src/</code>: Core codebase with modular directories (drivers/, quantum/, meep/, input/, utils/).</li>
-<li>Organized for scalability, with relative imports and package <code>__init__.py</code> files.</li>
+<li><code>-f</code>: Input file path.</li>
+<li><code>-vv</code>: Debug logging.</li>
+<li><code>-l</code>: Log file.</li>
+<li><code>-r</code>: Restart (clears old outputs).</li>
 </ul>
-<p>[TODO: Add project logo or screenshot of a simulation output here.]</p>
+<p>For detailed instructions and examples, see <a href="usage/">Usage</a> and <a href="tutorials/">Tutorials</a>.</p>
+<h4 id="example-full-plasmol-simulation">Example: Full PlasMol Simulation</h4>
+<p>Input snippet (from <code>template-plasmol.in</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">start</span><span class="w"> </span><span class="nv">general</span>
+<span class="w">    </span><span class="nv">dt</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">    </span><span class="nv">t_end</span><span class="w"> </span><span class="mi">4000</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">general</span>
+
+<span class="nv">start</span><span class="w"> </span><span class="nv">quantum</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">rttddft</span>
+<span class="w">        </span><span class="nv">start</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">            </span><span class="nv">O</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="o">-</span><span class="mf">0.13</span>
+<span class="w">            </span><span class="nv">H</span><span class="w"> </span><span class="mf">1.49</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">1.03</span>
+<span class="w">            </span><span class="nv">H</span><span class="w"> </span><span class="o">-</span><span class="mf">1.49</span><span class="w"> </span><span class="mf">0.0</span><span class="w"> </span><span class="mf">1.03</span>
+<span class="w">        </span><span class="kr">end</span><span class="w"> </span><span class="nv">geometry</span>
+<span class="w">        </span><span class="nv">units</span><span class="w"> </span><span class="nv">bohr</span>
+<span class="w">        </span><span class="nv">basis</span><span class="w"> </span><span class="mi">6</span><span class="o">-</span><span class="mi">31</span><span class="nv">g</span>
+<span class="w">        </span><span class="nv">xc</span><span class="w"> </span><span class="nv">pbe0</span>
+<span class="w">        </span><span class="nv">propagator</span><span class="w"> </span><span class="nv">magnus2</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">rttddft</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">quantum</span>
+
+<span class="nv">start</span><span class="w"> </span><span class="nv">classical</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">        </span><span class="nv">sourceType</span><span class="w"> </span><span class="nv">continuous</span>
+<span class="w">        </span><span class="nv">sourceCenter</span><span class="w"> </span><span class="o">-</span><span class="mf">0.04</span>
+<span class="w">        </span><span class="nv">sourceSize</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mf">0.1</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">        </span><span class="nv">frequency</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">source</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">simulation</span>
+<span class="w">        </span><span class="nv">cellLength</span><span class="w"> </span><span class="mf">0.1</span>
+<span class="w">        </span><span class="nv">pmlThickness</span><span class="w"> </span><span class="mf">0.01</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">simulation</span>
+<span class="w">    </span><span class="nv">start</span><span class="w"> </span><span class="nv">object</span>
+<span class="w">        </span><span class="nv">material</span><span class="w"> </span><span class="nv">Au</span>
+<span class="w">        </span><span class="nv">radius</span><span class="w"> </span><span class="mf">0.03</span>
+<span class="w">        </span><span class="nv">center</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="kr">end</span><span class="w"> </span><span class="nv">object</span>
+<span class="kr">end</span><span class="w"> </span><span class="nv">classical</span>
+</code></pre></div>
+<p>Outputs include field CSVs and optional GIFs/spectra.</p>
+<h2 id="documentation">Documentation</h2>
+<ul>
+<li><a href="installation/">Installation Guide</a>: Step-by-step setup.</li>
+<li><a href="usage/">Usage</a>: Input file structure and parameters.</li>
+<li><a href="tutorials/">Tutorials</a>: Hands-on examples for classical, quantum, and full simulations.</li>
+<li><a href="api-reference/">API Reference</a>: Code details for customization.</li>
+<li><a href="contributing/">Contributing</a>: How to add features or report issues.</li>
+<li><a href="about/">About</a>: Project history, releases, and citations.</li>
+</ul>
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are welcome! Whether fixing bugs, adding propagators/sources, or improving docs, check the <a href="contributing/">Contributing Guide</a> for details. Open an issue or PR on <a href="https://github.com/kombatEldridge/PlasMol">GitHub</a>.</p>
+<p>We especially need help with test suites, new nanoparticle shapes, and SERS tracking.</p>
+<h2 id="license">License</h2>
+<p><a href="https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE">GPL-3.0 License</a>.</p>
+<h2 id="acknowledgments">Acknowledgments</h2>
+<ul>
+<li>Built on <a href="https://meep.readthedocs.io/">Meep</a>, <a href="https://pyscf.org/">PySCF</a>, NumPy, and more.</li>
+<li>Contributors: <a href="https://github.com/kombatEldridge">Brinton Eldridge</a>.</li>
+<li>Advisors: Dr. Daniel Nascimento, Dr. Yongmei Wang.</li>
+</ul>
+<h2 id="contact">Contact</h2>
+<ul>
+<li>Email: <a href="mailto:bldrdge1@memphis.edu">bldrdge1@memphis.edu</a></li>
+<li>GitHub: <a href="https://github.com/kombatEldridge">kombatEldridge</a></li>
+<li>LinkedIn: <a href="https://www.linkedin.com/in/brinton-eldridge/">Brinton Eldridge</a></li>
+</ul>
+<p>Star the repo if you find it useful! ⭐</p>
               
             </div>
           </div><footer>
@@ -170,5 +276,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2025-07-22 22:33:20.970730+00:00
+Build Date UTC : 2025-07-24 21:25:29.651776+00:00
 -->

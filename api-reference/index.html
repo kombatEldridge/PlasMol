@@ -55,28 +55,14 @@
                 <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
                 </li>
               </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                </li>
+              </ul>
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">API Reference</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#directory-tree">Directory Tree</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#quantum">quantum/</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#moleculepy">molecule.py</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#electric_fieldpy">electric_field.py</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#quantumpropagators">quantum/propagators/</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#steppy">step.py</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#rk4py">rk4.py</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#magnus2py">magnus2.py</a>
-    </li>
-        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#classical">classical/</a>
         <ul>
@@ -93,6 +79,38 @@
     <li class="toctree-l3"><a class="reference internal" href="#quantumpy">quantum.py</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#plasmolpy">plasmol.py</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#input">input/</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#clipy">cli.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parserpy">parser.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#paramspy">params.py</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantum">quantum/</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#moleculepy">molecule.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#electric_fieldpy">electric_field.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#propagationpy">propagation.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#chkfilepy">chkfile.py</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantumpropagators">quantum/propagators/</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#steppy">step.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rk4py">rk4.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#magnus2py">magnus2.py</a>
     </li>
         </ul>
     </li>
@@ -133,9 +151,10 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="api-reference">API Reference</h1>
-<p>This page documents key classes and methods.</p>
+<p>This page documents key classes and methods, especially portions that can support custom injections for user's complete control over the simulation. If your changes to the code are a good fit for public use, feel free to read the <a href="../contributing/">contributing</a> page.</p>
 <h2 id="directory-tree">Directory Tree</h2>
-<div class="highlight"><pre><span></span><code>|
+<div class="highlight"><pre><span></span><code>PlasMol
+|
 |_ docs
 |  |_ *files for these docs*
 |  
@@ -167,7 +186,6 @@
 |  |  |_ electric_field.py
 |  |  |_ molecule.py
 |  |  |_ propagation.py
-|  |  |
 |  |  |_ propagators
 |  |     |_ __init__.py
 |  |     |_ magnus2.py
@@ -177,28 +195,151 @@
 |  |_ utils
 |  |  |_ __init__.py
 |  |  |_ csv.py
-|  |   |_ fourier.py
-|  |   |_ gif.py
-|  |   |_ logging.py
-|  |   |_ plotting.py
+|  |  |_ fourier.py
+|  |  |_ gif.py
+|  |  |_ logging.py
+|  |  |_ plotting.py
 |
-|_ templates
-   |_ template-classical.in
-   |_ template-plasmol.in
-   |_ template-quantum.in
+|_ templates 
+   |_ *files for Tutorial section*
 </code></pre></div>
+<h2 id="classical">classical/</h2>
+<p>This directory contains all files necessary to simulate a nanoparticle in PlasMol. Included in it is the main file that runs both the classical and full PlasMol simulations (<code>simulation.py</code>) as well as the file used to build the electric fields in the simulations from input parameters (<code>sources.py</code>).</p>
+<h3 id="simulationpy"><code>simulation.py</code></h3>
+<ul>
+<li>Runs Meep and full PlasMol simulation, handles sources, PML, symmetries.</li>
+<li>For those who want to add tracking to certain parameters, a commented section can be found in the <code>run()</code> method and right above it.</li>
+<li>An example code block is added (but commented out) to the <code>run()</code> method to graph the 3D model of the NP.</li>
+</ul>
+<h3 id="sourcespy"><code>sources.py</code></h3>
+<ul>
+<li>
+<p>Currently supports</p>
+<ul>
+<li><code>ContinuousSource</code><ul>
+<li>The <code>ContinuousSource</code> provides a continuous-wave electromagnetic source with constant frequency and amplitude that activates abruptly at the start time and persists until the optional end time.
+$$
+    s(t)=\theta\left(t-t_{\text {start}}\right) \exp (-i \omega t)
+$$</li>
+<li>where <span class="arithmatex">\(\theta\)</span> is the Heaviside step function, <span class="arithmatex">\(t_{\text {start}}\)</span> is the start time (default 0), and <span class="arithmatex">\(\omega=2 \pi f\)</span> with <span class="arithmatex">\(f\)</span> being the specified frequency.</li>
+</ul>
+</li>
+<li><code>GaussianSource</code><ul>
+<li>The <code>GaussianSource</code> generates a pulsed electromagnetic source with a Gaussian temporal envelope modulating a carrier wave, designed for broadband frequency excitation while minimizing truncation effects through a shifted peak.
+$$
+    s(t)=\exp \left(-\frac{\left(t-t_0\right)^2}{2 w^2}\right) \exp (-i \omega t)
+$$</li>
+<li>where <span class="arithmatex">\(w\)</span> is the width parameter, <span class="arithmatex">\(t_0=t_{\text {start}}+c \cdot w\)</span> with <span class="arithmatex">\(c\)</span> being the cutoff (default 5.0) to shift the peak and avoid abrupt truncation at <span class="arithmatex">\(t=t_{\text {start}}\)</span>, and <span class="arithmatex">\(\omega=2 \pi f\)</span> with <span class="arithmatex">\(f\)</span> being the center frequency.</li>
+</ul>
+</li>
+<li><code>ChirpedSource</code><ul>
+<li>The <code>ChirpedSource</code> is a custom pulsed source featuring a Gaussian envelope with an added quadratic phase term to produce a linearly chirped frequency sweep, useful for applications requiring time varying frequency content.
+$$
+    s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2+i b\left(t-t_p\right)^2\right)
+$$</li>
+<li>where <span class="arithmatex">\(f\)</span> is the base frequency, <span class="arithmatex">\(t_p\)</span> is the peak time, <span class="arithmatex">\(a\)</span> is the width parameter controlling the envelope decay, and <span class="arithmatex">\(b\)</span> is the chirp rate introducing quadratic phase for frequency modulation.</li>
+</ul>
+</li>
+<li><code>PulseSource</code><ul>
+<li>When simulating an absorption spectrum, this source is required.</li>
+<li>The <code>PulseSource</code> creates a custom Gaussian-enveloped pulse with a sinusoidal carrier wave peaked at a specified time, suitable for simulating short electromagnetic bursts in time-domain simulations.
+$$
+    s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2\right)
+$$</li>
+<li>where <span class="arithmatex">\(f\)</span> is the carrier frequency, <span class="arithmatex">\(t_p\)</span> is the peak time, and <span class="arithmatex">\(a\)</span> is the width parameter determining the pulse duration.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Other electric field shapes for the classical and full PlasMol simulations can be supported using these four as templates, but additional options for the sources will need to be added to the input file parser in the <code>input/params.py</code> file under the <code>getSource()</code> method (found in the <code>buildclassicalParams()</code> method).</p>
+</li>
+</ul>
+<h2 id="drivers">drivers/</h2>
+<p>For each type of simulation running, a surface-level file determines what steps to take to achieve the desired results. The reasoning for each type of simulation can be found on the <a href="../usage/">Usage</a> page.</p>
+<h3 id="classicalpy"><code>classical.py</code></h3>
+<ul>
+<li>Is chosen to run a MEEP simulation when only classical parameters are specified in the input file.</li>
+<li>A classical run has the capability to construct and run a MEEP simulation, as well as produce 2D cross-sections of the simulation at the center of the NP if the <code>hdf5</code> block is added to the input file.</li>
+<li>As previous discussed, other methods can be injected in the <code>classical/simulation.py</code> file to track other properties (like the commented out <code>getElectricField()</code> method which can track the electric field intensity at any pre-determined, hard-coded point).</li>
+</ul>
+<h3 id="quantumpy"><code>quantum.py</code></h3>
+<ul>
+<li>Is chosen to run an RT-TDDFT simulation when only quantum parameters are specified in the input file.</li>
+<li>A quantum run by default will perform a single RT-TDDFT simulation given a molecule and an incident electric field.</li>
+<li>However, if <code>transform</code> is specified in the <code>rttddft</code> block of the input file, the simulation should be given an ultrafast pulse to perform a real time absorption spectrum calculation with three multithreaded simulations, one for each directional Gaussian pulse, and then a Fourier transform is performed to give the absorption spectrum (see <a href="../tutorials/#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag">Tutorial #3</a>).</li>
+</ul>
+<h3 id="plasmolpy"><code>plasmol.py</code></h3>
+<ul>
+<li>Is chosen to run a full PlasMol simulation when both classical and quantum parameters are specified in the input file.</li>
+<li>This is the main purpose of PlasMol. A Meep simulation will begin with a molecule inside, whose initial electronic structure is built by PySCF. Every time step, the electric field at the molecule's position is measured and sent to the "quantum" portion of the code where the density matrix is propagated by the electric field. As an end result, the induced dipole moment of the molecule can be calculated. Finally, the induced dipole moment is fed back into the Meep simulation as the intensity of a point dipole at the position of the molecule.</li>
+</ul>
+<h2 id="input">input/</h2>
+<p>Users should mainly interact with PlasMol through command line, calling upon the <code>main.py</code> script. To feed parameters into the simulation, users only have a few command line options (controlled by <code>cli.py</code>) and one input file (initially parsed by <code>parser.py</code> and then fit for the PlasMol codebase using <code>params.py</code>).</p>
+<h3 id="clipy"><code>cli.py</code></h3>
+<ul>
+<li>Enumerates command line flags to be included when running PlasMol.</li>
+<li>Command line options include<ul>
+<li><code>--input</code> (or <code>-f</code> for file): Path to the PlasMol input file.</li>
+<li><code>--log</code> (or <code>-l</code>): Path to the log file. If not specified, log prints to terminal and is not saved.</li>
+<li><code>--verbose</code> (or <code>-v</code> and <code>-vv</code>): Specifies verbosity levels.<ul>
+<li>Not specified: logs only <code>logger.warning</code> calls.</li>
+<li><code>-v</code>: logs up to <code>logger.info</code> calls.</li>
+<li><code>-vv</code>: logs up to <code>logger.debug</code> calls.</li>
+</ul>
+</li>
+<li><code>--restart</code> (or <code>-r</code>): Tries to remove the following files from current working directory in case they are leftover from previous runs. Actual file names for these can be specified in the input file.<ul>
+<li>eField_path</li>
+<li>pField_path</li>
+<li>chkfile path</li>
+<li>pField_Transform_path</li>
+<li>eField_vs_pField_path</li>
+<li>eV_spectrum_path</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="parserpy"><code>parser.py</code></h3>
+<ul>
+<li>Reads input file to determine what type of simulation is needed (classical, quantum, PlasMol).</li>
+<li>If needed, users should add new input line support to this file, as well as <code>params.py</code>.</li>
+</ul>
+<h3 id="paramspy"><code>params.py</code></h3>
+<ul>
+<li>After being told what type of simulation to run, this file prepares the <code>PARAMS</code> class which holds all necessary parameters for the simulations.</li>
+<li>If needed, users should add new input line support to this file, as well as <code>parser.py</code>.</li>
+</ul>
 <h2 id="quantum">quantum/</h2>
+<p>This directory contains all files necessary to simulate a molecule in PlasMol. Included in it is the file to build the molecule (<code>molecule.py</code>), the file to build the electric field for just a quantum simulation (<code>electric_field.py</code>), the file to continually update the checkpoint files if called for (<code>chkfile.py</code>), and the files for propagating the density matrix of the molecule (<code>propagation.py</code> and <code>propagators/*</code>).</p>
 <h3 id="moleculepy"><code>molecule.py</code></h3>
 <ul>
 <li>Initializes molecule with PySCF, handles SCF, Fock matrix, dipole calculations.</li>
-<li>Additional methods can be injected at the bottom of this class to track other quantum properties. For example, we track the induced dipole using the <code>calculate_mu()</code> method and then inject the call to this method in the <code>quantum/propagation.py</code> file.</li>
+<li>Additional methods can be injected at the bottom of this class to track other quantum properties. For example, we track the induced dipole using the <code>calculate_mu()</code> method and then inject the call to this method in the <code>propagation.py</code> file.</li>
 </ul>
 <h3 id="electric_fieldpy"><code>electric_field.py</code></h3>
 <ul>
 <li>Builds electric fields (pulse or kick shapes) for the molecule to feel <em>only</em> when a quantum simulation is chosen. If classical or full PlasMol simulation is running, the electric field is generated inside the Meep simulation (using <code>classical/sources.py</code>).</li>
 <li>Other electric field shapes for quantum simulations can be added to the <code>build_field()</code> method using the other two shapes as templates.</li>
 </ul>
+<h3 id="propagationpy"><code>propagation.py</code></h3>
+<ul>
+<li>Is called every time step, either by the quantum simulation in <code>drivers/quantum.py</code> or during the classical or full PlasMol simulations in <code>classical/simulation.py</code> inside <code>callQuantum()</code>.</li>
+<li>Additional methods can be injected into <code>molecule.py</code> to track other quantum properties and called at the bottom of this file.</li>
+</ul>
+<h3 id="chkfilepy"><code>chkfile.py</code></h3>
+<ul>
+<li>Save a checkpoint file containing the current state of the simulation, as specified by the chkfile frequency in the input file.</li>
+<li>Always saves the timestamp <span class="arithmatex">\(t\)</span>, ground state density matrix <span class="arithmatex">\(\mathbf{D}_{\text{AO}}(0)\)</span>, and the coefficient matrix at the timestamp <span class="arithmatex">\(\mathbf{C}(t)\)</span>.</li>
+<li>Additionally, it will save<ul>
+<li>the orthogonalized coefficient matrix at the previous timestamp <span class="arithmatex">\(\mathbf{C}_{\text{ortho}}(t-\Delta t)\)</span> for the Magnus step propagator.</li>
+<li>the orthogonalized Fock matrix at the previous half timestamp <span class="arithmatex">\(\mathbf{F}_{\text{ortho}}(t-\frac{1}{2}\Delta t)\)</span> for the 2nd order Magnus propagator.</li>
+</ul>
+</li>
+<li>If a new propagator is added, any necessary quantities will need to be added to this file.</li>
+</ul>
 <h2 id="quantumpropagators">quantum/propagators/</h2>
+<p>To complete the main loop of RT-TDDFT, the density matrix (here propagated using the coefficient matrix) should be propagated under some incident field. PlasMol has three propagators available. The Magnus step method (<code>step.py</code>) and the Runge-Kutta 4 (<code>rk4.py</code>) methods both do a fairly poor job at propagating at small time steps, but are given here as a comparative tool to the superior 2nd order Magnus (with a Predictor-Corrector loop) method (<code>Magnus2.py</code>). Though the 2nd order Magnus method is the field's standard, shorter and lower resolution simulations can be run for debugging using the former two methods.</p>
 <h3 id="steppy"><code>step.py</code></h3>
 <ul>
 <li>Propagates molecular orbitals using the Magnus step method.</li>
@@ -270,82 +411,13 @@
     \end{gathered}
 \]</div>
 <p>The updated <span class="arithmatex">\(\mathbf{F}_{\text{orth }}(t+\Delta t / 2)\)</span> is stored for extrapolation in the next time step.</p>
-<h2 id="classical">classical/</h2>
-<h3 id="simulationpy"><code>simulation.py</code></h3>
-<ul>
-<li>Runs Meep and full PlasMol simulation, handles sources, PML, symmetries.</li>
-<li>For those who want to add tracking to certain parameters, a commented section can be found in the <code>run()</code> method and right above it.</li>
-<li>An example code block is added (but commented out) to the <code>run()</code> method to graph the 3D model of the NP.</li>
-</ul>
-<h3 id="sourcespy"><code>sources.py</code></h3>
-<ul>
-<li>
-<p>Currently supports </p>
-<ul>
-<li><code>ContinuousSource</code><ul>
-<li>The <code>ContinuousSource</code> provides a continuous-wave electromagnetic source with constant frequency and amplitude that activates abruptly at the start time and persists until the optional end time.
-$$
-    s(t)=\theta\left(t-t_{\text {start}}\right) \exp (-i \omega t)
-$$</li>
-<li>where <span class="arithmatex">\(\theta\)</span> is the Heaviside step function, <span class="arithmatex">\(t_{\text {start}}\)</span> is the start time (default 0 ), and <span class="arithmatex">\(\omega=2 \pi f\)</span> with <span class="arithmatex">\(f\)</span> being the specified frequency.</li>
-</ul>
-</li>
-<li><code>GaussianSource</code><ul>
-<li>The <code>GaussianSource</code> generates a pulsed electromagnetic source with a Gaussian temporal envelope modulating a carrier wave, designed for broadband frequency excitation while minimizing truncation effects through a shifted peak.
-$$ 
-    s(t)=\exp \left(-\frac{\left(t-t_0\right)^2}{2 w^2}\right) \exp (-i \omega t)
-$$</li>
-<li>where <span class="arithmatex">\(w\)</span> is the width parameter, <span class="arithmatex">\(t_0=t_{\text {start}}+c \cdot w\)</span> with <span class="arithmatex">\(c\)</span> being the cutoff (default 5.0) to shift the peak and avoid abrupt truncation at <span class="arithmatex">\(t=t_{\text {start}}\)</span>, and <span class="arithmatex">\(\omega=2 \pi f\)</span> with <span class="arithmatex">\(f\)</span> being the center frequency.</li>
-</ul>
-</li>
-<li><code>ChirpedSource</code><ul>
-<li>The <code>ChirpedSource</code> is a custom pulsed source featuring a Gaussian envelope with an added quadratic phase term to produce a linearly chirped frequency sweep, useful for applications requiring timevarying frequency content.
-$$
-    s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2+i b\left(t-t_p\right)^2\right)
-$$</li>
-<li>where <span class="arithmatex">\(f\)</span> is the base frequency, <span class="arithmatex">\(t_p\)</span> is the peak time, <span class="arithmatex">\(a\)</span> is the width parameter controlling the envelope decay, and <span class="arithmatex">\(b\)</span> is the chirp rate introducing quadratic phase for frequency modulation.</li>
-</ul>
-</li>
-<li><code>PulseSource</code><ul>
-<li>When simulating an absorption spectrum, this source is required.</li>
-<li>The <code>PulseSource</code> creates a custom Gaussian-enveloped pulse with a sinusoidal carrier wave peaked at a specified time, suitable for simulating short electromagnetic bursts in time-domain simulations.
-$$
-    s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2\right)
-$$</li>
-<li>where <span class="arithmatex">\(f\)</span> is the carrier frequency, <span class="arithmatex">\(t_p\)</span> is the peak time, and <span class="arithmatex">\(a\)</span> is the width parameter determining the pulse duration.</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>
-<p>Other electric field shapes for quantum simulations can be supported using the other two shapes as templates, but additional options for the sources will need to be added to the input file parser in the <code>input/params.py</code> file under the <code>getSource()</code> method (found in the <code>buildclassicalParams()</code> method).</p>
-</li>
-</ul>
-<h2 id="drivers">drivers/</h2>
-<h3 id="classicalpy"><code>classical.py</code></h3>
-<ul>
-<li>Runs Meep simulation.</li>
-</ul>
-<h3 id="quantumpy"><code>quantum.py</code></h3>
-<ul>
-<li>Runs RT-TDDFT, supports multi-threading for transforms.</li>
-</ul>
-<h3 id="plasmolpy"><code>plasmol.py</code></h3>
-<ul>
-<li>Hybrid run.</li>
-</ul>
 <h2 id="utils">utils/</h2>
-<ul>
-<li><code>utils.csv.initCSV(filename, comment)</code>, <code>updateCSV(...)</code>.</li>
-<li><code>utils.plotting.show_eField_pField(eFieldFile, pFieldFile)</code>.</li>
-<li><code>utils.fourier.transform(...)</code>: Fourier transform and absorption spectrum.</li>
-</ul>
-<p>[TODO: Add full parameter lists, return types, or use Sphinx for auto-gen docs.]</p>
+<p>This directory stores files that add utilities to the PlasMol codebase, but are too large or cumbersome to be placed inside other files. Such files include the handler for reading and writing to csv files (<code>csv.py</code>), the handler for creating a gif from the generated hdf5 files (<code>gif.py</code>), the handler for logging (<code>logging.py</code>), the handler for plotting data found in csv files (<code>plotting.py</code>), and the methods for Fourier transforming the data for the absorption spectra (<code>fourier.py</code>).</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../tutorials/" class="btn btn-neutral float-left" title="Tutorials"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../methodology/" class="btn btn-neutral float-left" title="Methodology"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../contributing/" class="btn btn-neutral float-right" title="Contributing">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -369,7 +441,7 @@ $$</li>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../tutorials/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../methodology/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../contributing/" style="color: #fcfcfc">Next &raquo;</a></span>

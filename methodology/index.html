@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Methodology - PlasMol Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Methodology";
+        var mkdocs_page_input_path = "methodology.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> PlasMol Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Methodology</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#classical-component-fdtd-with-meep">Classical Component: FDTD with MEEP</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#supported-features">Supported Features</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quantum-component-rt-tddft-with-pyscf">Quantum Component: RT-TDDFT with PySCF</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#density-matrix-evolution">Density Matrix Evolution</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#supported-propagators">Supported Propagators</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#absorption-spectra">Absorption Spectra</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#coupling-mechanism-handler">Coupling Mechanism: Handler</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#methodology-workflow">Methodology Workflow</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../api-reference/">API Reference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../about/">About</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">PlasMol Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Methodology</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="theory-and-methodology-of-plasmol">Theory and Methodology of PlasMol</h1>
+<p>PlasMol is a hybrid simulation tool designed to model plasmon-molecule interactions by coupling classical Finite-Difference Time-Domain (FDTD) electromagnetics with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT). This document outlines the theoretical foundations and methodological workflow of PlasMol, drawing from its codebase and the provided schematic. The schematic illustrates the integration between quantum mechanical (QM) software, a handler for coupling, and classical FDTD (e.g., MEEP for electromagnetic propagation).</p>
+<h2 id="introduction">Introduction</h2>
+<p>PlasMol enables three simulation modes:</p>
+<ul>
+<li><strong>Classical Only</strong>: FDTD simulation of nanoparticles (NPs) using MEEP.</li>
+<li><strong>Quantum Only</strong>: RT-TDDFT simulation of molecules.</li>
+<li><strong>Full PlasMol</strong>: Coupled FDTD-RT-TDDFT for NP-molecule systems.</li>
+</ul>
+<p>The core innovation lies in the bidirectional coupling: the electric field from the classical simulation drives quantum propagation, while the induced molecular dipole feeds back into the classical field as a point source. This allows modeling phenomena like plasmon-enhanced spectroscopy or Surface-Enhanced Raman Scattering (SERS).</p>
+<p>The schematic highlights:</p>
+<ul>
+<li>QM side: Time-dependent Fock matrix and integrals.</li>
+<li>Handler: Density matrix propagation and dipole calculation.</li>
+<li>MEEP side: Maxwell's equations with polarization source.</li>
+</ul>
+<h2 id="classical-component-fdtd-with-meep">Classical Component: FDTD with MEEP</h2>
+<p>The classical part simulates electromagnetic fields around NPs using MEEP's FDTD solver. Key equations from the schematic (right side) describe field propagation:</p>
+<div class="arithmatex">\[
+\nabla \times \tilde{\mathbf{E}}(t) = -\mu \frac{\partial \tilde{\mathbf{H}}(t)}{\partial t}
+\]</div>
+<div class="arithmatex">\[
+\nabla \times \tilde{\mathbf{H}}(t) = \epsilon \frac{\partial \tilde{\mathbf{E}}(t)}{\partial t} + \frac{\partial \tilde{\mathbf{P}}(t)}{\partial t}
+\]</div>
+<p>Here, <span class="arithmatex">\(\tilde{\mathbf{E}}\)</span> and <span class="arithmatex">\(\tilde{\mathbf{H}}\)</span> are the electric and magnetic fields, <span class="arithmatex">\(\epsilon\)</span> and <span class="arithmatex">\(\mu\)</span> are permittivity and permeability, and <span class="arithmatex">\(\tilde{\mathbf{P}}(t)\)</span> is the polarization (from quantum feedback in the full PlasMol mode).</p>
+<h3 id="supported-features">Supported Features</h3>
+<ul>
+<li><strong>Sources</strong>: Continuous, Gaussian, chirped, or pulsed waves (see <code>src/classical/sources.py</code>).</li>
+<li><strong>Geometry</strong>: Spheres (Au/Ag materials); extensible to other shapes.</li>
+<li><strong>Boundaries</strong>: Perfectly Matched Layers (PML).</li>
+<li><strong>Outputs</strong>: HDF5 images, GIFs, field CSVs; custom tracking (e.g., extinction spectra) via injections in <code>src/classical/simulation.py</code>.</li>
+</ul>
+<p>In the full PlasMol mode, the induced dipole <span class="arithmatex">\(\tilde{\mathbf{P}}(t)\)</span> is injected as a custom source at the molecule's position.</p>
+<h2 id="quantum-component-rt-tddft-with-pyscf">Quantum Component: RT-TDDFT with PySCF</h2>
+<p>The quantum part computes molecular responses using RT-TDDFT in PySCF. The time-dependent Fock matrix (from the schematic, left side) is:</p>
+<div class="arithmatex">\[
+F_{\mu\nu}(t) = T_{\mu\nu} + V_{\mu\nu} + J_{\mu\nu}(t) - K_{\mu\nu}(t) - \sum_{a \in x,y,z} \mu_a \tilde{E}_a(t)
+\]</div>
+<p>Where:</p>
+<ul>
+<li><span class="arithmatex">\(T_{\mu\nu}\)</span>: Kinetic energy integral:</li>
+</ul>
+<div class="arithmatex">\[
+T_{\mu\nu} = \int \phi_\mu(\mathbf{r}) \left( -\frac{1}{2} \nabla^2 \right) \phi_\nu(\mathbf{r}) \, d\mathbf{r}
+\]</div>
+<ul>
+<li><span class="arithmatex">\(V_{\mu\nu}\)</span>: Nuclear attraction integral:</li>
+</ul>
+<div class="arithmatex">\[
+V_{\mu\nu} = \int \phi_\mu(\mathbf{r}) \left( -\sum_A \frac{Z_A}{|\mathbf{R}_A - \mathbf{r}|} \right) \phi_\nu(\mathbf{r}) \, d\mathbf{r}
+\]</div>
+<ul>
+<li><span class="arithmatex">\(J_{\mu\nu}(t)\)</span>: Coulomb integral (time-dependent via density):</li>
+</ul>
+<div class="arithmatex">\[
+J_{\mu\nu} = \sum_{\lambda\sigma} D_{\lambda\sigma} \iint \phi^*_\mu(\mathbf{r}_1) \phi_\nu(\mathbf{r}_1) \left( \frac{1}{r_{12}} \right) \phi^*_\sigma(\mathbf{r}_2) \phi_\sigma(\mathbf{r}_2) \, d\mathbf{r}_1 d\mathbf{r}_2
+\]</div>
+<ul>
+<li><span class="arithmatex">\(K_{\mu\nu}(t)\)</span>: Exchange integral (similarly time-dependent):</li>
+</ul>
+<div class="arithmatex">\[
+K_{\mu\nu} = \frac{1}{2} \sum_{\lambda\sigma} D_{\lambda\sigma} \iint \phi^*_\mu(\mathbf{r}_1) \phi_\lambda(\mathbf{r}_1) \left( \frac{1}{r_{12}} \right) \phi^*_\sigma(\mathbf{r}_2) \phi_\nu(\mathbf{r}_2) \, d\mathbf{r}_1 d\mathbf{r}_2
+\]</div>
+<p>The external field term <span class="arithmatex">\(-\sum \mu_a \tilde{E}_a(t)\)</span> couples to the classical field.</p>
+<h3 id="density-matrix-evolution">Density Matrix Evolution</h3>
+<p>The density matrix <span class="arithmatex">\(\mathbf{D}(t)\)</span> evolves under the Liouville-von Neumann equation (schematic, handler):</p>
+<div class="arithmatex">\[
+\frac{\partial \mathbf{D}(t)}{\partial t} = [ \mathbf{F}(t), \mathbf{D}(t) ]
+\]</div>
+<p>In practice, PlasMol propagates molecular orbitals <span class="arithmatex">\(\mathbf{C}(t)\)</span> in an orthogonal basis and reconstructs <span class="arithmatex">\(\mathbf{D}(t)\)</span>.</p>
+<h3 id="supported-propagators">Supported Propagators</h3>
+<p>PlasMol offers three methods (see <a href="../api-reference/#quantumpropagators">Propagators</a> for more details):</p>
+<ol>
+<li><strong>Step (Modified Midpoint Unitary Transformation - MMUT)</strong>:</li>
+</ol>
+<div class="arithmatex">\[
+\mathbf{C}_{\text{ortho}}(t + \Delta t) = \exp(-i \cdot 2\Delta t \cdot \mathbf{F}_{\text{ortho}}(t)) \cdot \mathbf{C}_{\text{ortho}}(t - \Delta t)
+\]</div>
+<ol>
+<li><strong>Runge-Kutta 4 (RK4)</strong>:</li>
+</ol>
+<div class="arithmatex">\[
+\mathbf{C}_{\text{ortho}}(t + \Delta t) = \mathbf{C}_{\text{ortho}}(t) + \frac{k_1 + 2k_2 + 2k_3 + k_4}{6}
+\]</div>
+<p>With intermediate <span class="arithmatex">\(k_i\)</span> terms computed via Fock matrix multiplications.</p>
+<ol>
+<li><strong>2nd-Order Magnus with Predictor-Corrector</strong> (Recommended):</li>
+</ol>
+<p>Initial extrapolation:</p>
+<div class="arithmatex">\[
+\mathbf{F}_{\text{ortho}}^{(0)}(t + \Delta t / 2) = 2 \mathbf{F}_{\text{ortho}}(t) - \mathbf{F}_{\text{ortho}}(t - \Delta t / 2)
+\]</div>
+<p>Iterative update until convergence:</p>
+<div class="arithmatex">\[
+\mathbf{C}_{\text{ortho}}^{(k+1)}(t + \Delta t) = \exp(-i \Delta t \cdot \mathbf{F}_{\text{ortho}}^{(k)}(t + \Delta t / 2)) \cdot \mathbf{C}_{\text{ortho}}(t)
+\]</div>
+<p>From the schematic (handler, propagation method):</p>
+<div class="arithmatex">\[
+\tilde{\mathbf{P}}(t + dt) = \frac{3}{4 \tau a^3} \operatorname{Tr}[\mathbf{D}(t + dt) \cdot \mu] - \operatorname{Tr}[\mathbf{D}_0 \cdot \mu]
+\]</div>
+<p>This induced polarization <span class="arithmatex">\(\tilde{\mathbf{P}}(t)\)</span> is fed back to MEEP.</p>
+<h3 id="absorption-spectra">Absorption Spectra</h3>
+<p>With the <code>transform</code> flag, PlasMol runs three directional simulations and applies a Fourier transform (see <code>src/utils/fourier.py</code>).</p>
+<h2 id="coupling-mechanism-handler">Coupling Mechanism: Handler</h2>
+<p>The "Handler" bridges QM and classical parts (schematic, center):</p>
+<ul>
+<li><strong>QM to Classical</strong>: Induced dipole from RT-TDDFT is injected as a point source in MEEP.</li>
+<li><strong>Classical to QM</strong>: Electric field at the molecule's position drives Fock matrix updates.</li>
+<li>Workflow (per time step in <code>src/classical/simulation.py</code> and <code>src/quantum/propagation.py</code>):<ol>
+<li>(Before simulation starts to loop) Generate ground state matrices using PySCF.</li>
+<li>Extract <span class="arithmatex">\(\tilde{\mathbf{E}}(t)\)</span> from MEEP at molecule position.</li>
+<li>Propagate <span class="arithmatex">\(\mathbf{D}(t)\)</span> using chosen method.</li>
+<li>Compute <span class="arithmatex">\(\tilde{\mathbf{P}}(t)\)</span> via dipole contraction.</li>
+<li>Update MEEP source with <span class="arithmatex">\(\partial \tilde{\mathbf{P}} / \partial t\)</span>.</li>
+</ol>
+</li>
+</ul>
+<p>This loop enables self-consistent hybrid dynamics.</p>
+<h2 id="methodology-workflow">Methodology Workflow</h2>
+<ol>
+<li><strong>Input Parsing</strong>: <code>src/input/</code> processes blocks for classical/quantum parameters.</li>
+<li><strong>Initialization</strong>:<ul>
+<li>Classical: Build MEEP simulation (<code>src/classical/simulation.py</code>).</li>
+<li>Quantum: Build molecule and initial state (<code>src/quantum/molecule.py</code>).</li>
+</ul>
+</li>
+<li><strong>Simulation Loop</strong>:<ul>
+<li>Advance FDTD step in MEEP.</li>
+<li>If molecule present and field exceeds cutoff: Call RT-TDDFT propagation.</li>
+<li>Inject dipole back as source.</li>
+</ul>
+</li>
+<li><strong>Outputs</strong>: CSVs, plots, checkpoints via <code>src/utils/</code>.</li>
+<li><strong>Extensions</strong>: Custom injections for tracking (e.g., SERS) in commented sections.</li>
+</ol>
+<p>For code details, see <a href="../api-reference/">API Reference</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../tutorials/" class="btn btn-neutral float-left" title="Tutorials"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../api-reference/" class="btn btn-neutral float-right" title="API Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../tutorials/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../api-reference/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

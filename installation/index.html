@@ -48,6 +48,8 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#step-0-install-meep">Step 0: Install MEEP</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#step-1-clone-the-repository">Step 1: Clone the Repository</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#step-2-create-a-virtual-environment">Step 2: Create a Virtual Environment</a>
@@ -58,8 +60,6 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#step-5-verify-installation">Step 5: Verify Installation</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#common-issues">Common Issues</a>
-    </li>
     </ul>
                 </li>
               </ul>
@@ -69,6 +69,10 @@
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
                 </li>
               </ul>
               <ul>
@@ -114,46 +118,42 @@
 <li>Git (for cloning the repository).</li>
 <li>Optional: Conda or virtualenv for isolated environments.</li>
 </ul>
+<h2 id="step-0-install-meep">Step 0: Install MEEP</h2>
+<p>Please visit the <a href="https://meep.readthedocs.io/en/master/Installation/">installation page</a> for MEEP to install it for use in PlasMol.</p>
 <h2 id="step-1-clone-the-repository">Step 1: Clone the Repository</h2>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/PlasMol.git<span class="w">  </span><span class="c1"># [TODO: Replace with actual repo URL]</span>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kombatEldridge/PlasMol.git<span class="w">  </span><span class="c1"># [TODO: Replace with actual repo URL]</span>
 <span class="nb">cd</span><span class="w"> </span>PlasMol
 </code></pre></div>
 <h2 id="step-2-create-a-virtual-environment">Step 2: Create a Virtual Environment</h2>
-<p>Using virtualenv:
-<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>env
-<span class="nb">source</span><span class="w"> </span>env/bin/activate<span class="w">  </span><span class="c1"># On Windows: env\Scripts\activate</span>
-</code></pre></div></p>
-<p>Or with Conda:
+<p>If a virtual/conda environment for MEEP was not used for install, you can set up one here.</p>
+<p>Using virtualenv:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>plasmol
+<span class="nb">source</span><span class="w"> </span>plasmol/bin/activate<span class="w">  </span><span class="c1"># On Windows: env\Scripts\activate</span>
+</code></pre></div>
+<p>Or with Conda:</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>plasmol<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12
 conda<span class="w"> </span>activate<span class="w"> </span>plasmol
-</code></pre></div></p>
+</code></pre></div>
 <h2 id="step-3-install-dependencies">Step 3: Install Dependencies</h2>
-<p>PlasMol uses:
-- PySCF for quantum calculations.
-- Meep for electromagnetics.
-- NumPy, SciPy, Pandas, Matplotlib for data handling and plotting.</p>
-<p>Install via pip:
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyscf<span class="w"> </span>meep<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>logging<span class="w"> </span>argparse
-<span class="c1"># Optional for advanced features: torch (ML), biopython (if bio-related), etc.</span>
-<span class="c1"># [TODO: Add any other dependencies from your requirements.txt if available]</span>
-</code></pre></div></p>
+<p>PlasMol uses:</p>
+<ul>
+<li>Meep for electromagnetics (should already be installed).</li>
+<li>PySCF for quantum calculations.</li>
+<li>NumPy, SciPy, Pandas, Matplotlib for data handling and plotting.</li>
+</ul>
+<p>Install via pip:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pyscf<span class="w"> </span>numpy<span class="w"> </span>scipy<span class="w"> </span>pandas<span class="w"> </span>matplotlib<span class="w"> </span>logging<span class="w"> </span>argparse
+</code></pre></div>
 <h2 id="step-4-install-plasmol-as-a-package-optional">Step 4: Install PlasMol as a Package (Optional)</h2>
-<p>To make it importable system-wide:
+<p>To make it importable system-wide:</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div>
-This assumes a <code>setup.py</code> or <code>pyproject.toml</code> in the root (e.g., for editable install).</p>
+<p>This assumes a <code>setup.py</code> or <code>pyproject.toml</code> in the root (e.g., for editable install).</p>
 <h2 id="step-5-verify-installation">Step 5: Verify Installation</h2>
-<p>Run a test:
+<p>Run a test:</p>
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>src.main<span class="w"> </span>--help
 </code></pre></div>
-If you see the CLI help message, it's working.</p>
-<h2 id="common-issues">Common Issues</h2>
-<ul>
-<li><strong>Meep Installation</strong>: On some systems, Meep requires additional setup (e.g., <code>conda install -c conda-forge meep</code> for binaries).</li>
-<li><strong>PySCF Errors</strong>: Ensure OpenBLAS or MKL is installed for performance.</li>
-<li><strong>Import Errors</strong>: Run as a module (<code>python -m src.main</code>) from the project root to resolve relative imports.</li>
-</ul>
-<p>[TODO: Add platform-specific notes, e.g., for macOS/Linux/Windows.]</p>
+<p>If you see the CLI help message, it's working.</p>
               
             </div>
           </div><footer>
