@@ -38,6 +38,7 @@ class MOLECULE():
                     unit='B',
                     charge=int(params.charge),
                     spin=int(params.spin))
+        mol.verbose = 0
         self.mf = dft.RKS(mol)
         self.mf.xc = params.xc
         self.mf.kernel()
