@@ -89,7 +89,10 @@ def run(params):
             params_copy.dir = dir
 
             # Update all file paths to use the direction-specific directory
-            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
+            attr_list = ['eField_path', 'pField_path', 'pField_Transform_path', 'eField_vs_pField_path', 'eV_spectrum_path']
+            if params.chkfile_path is not None:
+                attr_list.append('chkfile_path')
+            for attr in attr_list:
                 if hasattr(params_copy, attr):
                     original_path = getattr(params_copy, attr)
                     file_name = os.path.basename(original_path)
