@@ -109,7 +109,9 @@ def run(params):
 
         # Now plot on the main thread for each direction
         for params_copy in params_copies:
-            show_eField_pField(params_copy.eField_path, params_copy.pField_path)
+            base, ext = os.path.splitext(params.eField_vs_pField_path)
+            matplotlibOutput = base + "-" + params_copy.dir + ext
+            show_eField_pField(params_copy.eField_path, params_copy.pField_path, matplotlibOutput=matplotlibOutput)
 
         # Wait for all threads to complete
         for thread in threads:
