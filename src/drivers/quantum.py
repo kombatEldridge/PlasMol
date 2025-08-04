@@ -76,6 +76,7 @@ def run(params):
         directions = ['x', 'y', 'z']
         threads = []
         pField_paths = []
+        params_copies = []
 
         # Set up and start a thread for each direction
         for dir in directions:
@@ -99,6 +100,7 @@ def run(params):
 
             # Store the pField path for later use in transform
             pField_paths.append(params_copy.pField_path)
+            params_copies.append(params_copy)
 
             # Create and start a thread for this direction
             thread = threading.Thread(target=run_computation, args=(params_copy,))
