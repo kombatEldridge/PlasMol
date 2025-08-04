@@ -67,8 +67,6 @@ def run(params):
                 if params_instance.chkfile_path and index % params_instance.chkfile_freq == 0:
                     update_chkfile(params_instance, molecule, current_time)
 
-            show_eField_pField(params_instance.eField_path, params_instance.pField_path)
-
         except Exception as err:
             logger.error(f"RT-TDDFT failed: {err}", exc_info=True)
             sys.exit(1)
@@ -106,6 +104,10 @@ def run(params):
             thread = threading.Thread(target=run_computation, args=(params_copy,))
             threads.append(thread)
             thread.start()
+
+        # Now plot on the main thread for each direction
+        for params_copy in params_copies:
+            show_eField_pField(params_copy.eField_path, params_copy.pField_path)
 
         # Wait for all threads to complete
         for thread in threads:
