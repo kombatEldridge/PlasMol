@@ -122,3 +122,5 @@ def run(params):
     else:
         # Run the original single-threaded computation
         run_computation(params)
+        base, ext = os.path.splitext(params.eField_vs_pField_path)
+        show_eField_pField(params.eField_path, params.pField_path, matplotlibOutput=base)
