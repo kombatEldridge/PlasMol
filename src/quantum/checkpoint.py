@@ -1,18 +1,18 @@
-# quantum/chkfile.py
+# quantum/checkpoint.py
 import numpy as np
 import logging
 import _pickle
 
 logger = logging.getLogger("main")
 
-def update_chkfile(params, molecule, chkpoint_time):
+def update_checkpoint(params, molecule, chkpoint_time):
     """
     Save a checkpoint file containing the current state of the simulation.
 
     This function creates a .npz file with simulation data including the current time,
     initial density matrix, molecular orbital coefficients, Fock matrix in orthogonal basis,
     and an additional array based on the propagator method ('step' or 'magnus2').
-    The file is saved with the name specified in molecule.chkfile_path, appending .npz if not present.
+    The file is saved with the name specified in molecule.checkpoint_path, appending .npz if not present.
 
     Parameters:
     molecule : object
@@ -24,9 +24,9 @@ def update_chkfile(params, molecule, chkpoint_time):
     None
     """
     # ensure .npz extension
-    if not params.chkfile_path.endswith(".npz"):
-        params.chkfile_path = params.chkfile_path + ".npz"
-    fn = params.chkfile_path
+    if not params.checkpoint_path.endswith(".npz"):
+        params.checkpoint_path = params.checkpoint_path + ".npz"
+    fn = params.checkpoint_path
 
     method = params.propagator.lower()
     save_dict = {
@@ -49,11 +49,11 @@ def update_chkfile(params, molecule, chkpoint_time):
     logger.debug(f"Wrote checkpoint to {fn} with keys: {list(save_dict)}")
 
 
-def restart_from_chkfile(molecule, params):
+def restart_from_checkpoint(molecule, params):
     """
     Load the simulation state from a checkpoint file.
 
-    This function loads data from a .npz checkpoint file specified in molecule.chkfile_path,
+    This function loads data from a .npz checkpoint file specified in molecule.checkpoint_path,
     updating the molecule object with the saved state. It includes common data and
     propagator-specific arrays based on the method ('step' or 'magnus2').
 
@@ -64,7 +64,7 @@ def restart_from_chkfile(molecule, params):
     Returns:
     None
     """
-    fn = params.chkfile_path
+    fn = params.checkpoint_path
 
     try:
         data = np.load(fn, allow_pickle=True)

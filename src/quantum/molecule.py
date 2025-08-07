@@ -8,7 +8,7 @@ from pyscf import gto, dft
 from pyscf.scf import addons
 
 from .. import constants
-from ..quantum.chkfile import restart_from_chkfile
+from ..quantum.checkpoint import restart_from_checkpoint
 
 logger = logging.getLogger("main")
 
@@ -71,8 +71,8 @@ class MOLECULE():
 
         self.chkpoint_time = 0
         
-        if params.chkfile_path is not None and os.path.exists(params.chkfile_path):
-            restart_from_chkfile(self, params)
+        if params.checkpoint_path is not None and os.path.exists(params.checkpoint_path):
+            restart_from_checkpoint(self, params)
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
         else: 

@@ -213,9 +213,9 @@ end rttddft
 
 Output paths.
 
-- `chkfile` sub-sub-block:
+- `checkpoint` sub-sub-block:
     - `frequency` int (e.g., `100`). Number of time steps between checkpoints.
-    - `path` string (e.g., `chkfile.npz`). Path to checkpoint file.
+    - `path` string (e.g., `checkpoint.npz`). Path to checkpoint file.
 - `pField_path`: String (e.g., `pField.csv`). Polarization field CSV.
 - `eField_vs_pField_path`: String (e.g., `output.png`). Plot of fields.
 - `pField_Transform_path`: String (e.g., `pField-transformed.npz`). Transformed data (for spectrum).
@@ -225,10 +225,10 @@ Example:
 
 ```lua
 start files
-    start chkfile
+    start checkpoint
         frequency 100
-        path chkfile.npz
-    end chkfile
+        path checkpoint.npz
+    end checkpoint
     pField_path pField.csv
 end files
 ```

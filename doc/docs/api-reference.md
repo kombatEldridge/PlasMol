@@ -34,7 +34,7 @@ PlasMol
 |  |
 |  |_ quantum
 |  |  |_ __init__.py
-|  |  |_ chkfile.py
+|  |  |_ checkpoint.py
 |  |  |_ electric_field.py
 |  |  |_ molecule.py
 |  |  |_ propagation.py
@@ -135,7 +135,7 @@ Users should mainly interact with PlasMol through command line, calling upon the
     - `--restart` (or `-r`): Tries to remove the following files from current working directory in case they are leftover from previous runs. Actual file names for these can be specified in the input file.
         - eField_path
         - pField_path
-        - chkfile path
+        - checkpoint path
         - pField_Transform_path
         - eField_vs_pField_path
         - eV_spectrum_path
@@ -152,7 +152,7 @@ Users should mainly interact with PlasMol through command line, calling upon the
 
 ## quantum/
 
-This directory contains all files necessary to simulate a molecule in PlasMol. Included in it is the file to build the molecule (`molecule.py`), the file to build the electric field for just a quantum simulation (`electric_field.py`), the file to continually update the checkpoint files if called for (`chkfile.py`), and the files for propagating the density matrix of the molecule (`propagation.py` and `propagators/*`).
+This directory contains all files necessary to simulate a molecule in PlasMol. Included in it is the file to build the molecule (`molecule.py`), the file to build the electric field for just a quantum simulation (`electric_field.py`), the file to continually update the checkpoint files if called for (`checkpoint.py`), and the files for propagating the density matrix of the molecule (`propagation.py` and `propagators/*`).
 
 ### `molecule.py`
 
@@ -169,9 +169,9 @@ This directory contains all files necessary to simulate a molecule in PlasMol. I
 - Is called every time step, either by the quantum simulation in `drivers/quantum.py` or during the classical or full PlasMol simulations in `classical/simulation.py` inside `callQuantum()`.
 - Additional methods can be injected into `molecule.py` to track other quantum properties and called at the bottom of this file.
 
-### `chkfile.py`
+### `checkpoint.py`
 
-- Save a checkpoint file containing the current state of the simulation, as specified by the chkfile frequency in the input file.
+- Save a checkpoint file containing the current state of the simulation, as specified by the checkpoint frequency in the input file.
 - Always saves the timestamp $t$, ground state density matrix $\mathbf{D}_{\text{AO}}(0)$, and the coefficient matrix at the timestamp $\mathbf{C}(t)$.
 - Additionally, it will save
     - the orthogonalized coefficient matrix at the previous timestamp $\mathbf{C}_{\text{ortho}}(t-\Delta t)$ for the Magnus step propagator.

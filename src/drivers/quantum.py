@@ -12,7 +12,7 @@ from ..quantum.electric_field import ELECTRICFIELD
 
 from ..quantum.propagators import *
 from ..quantum.propagation import propagation
-from ..quantum.chkfile import update_chkfile
+from ..quantum.checkpoint import update_checkpoint
 
 from ..utils.fourier import transform
 from ..utils.plotting import show_eField_pField
@@ -31,11 +31,11 @@ def run(params):
             molecule = MOLECULE(params_instance)
             field = ELECTRICFIELD(times, params_instance)
 
-            if params_instance.chkfile_path is not None and os.path.exists(params_instance.chkfile_path):
+            if params_instance.checkpoint_path is not None and os.path.exists(params_instance.checkpoint_path):
                 try:
                     _ = read_field_csv(params_instance.eField_path)
                     _ = read_field_csv(params_instance.pField_path)
-                    logger.debug(f"Checkpoint file {params_instance.chkfile_path} found as well as properly formatted field files: {params_instance.eField_path} and {params_instance.pField_path}. Skipping electric/polarizability file generation.")
+                    logger.debug(f"Checkpoint file {params_instance.checkpoint_path} found as well as properly formatted field files: {params_instance.eField_path} and {params_instance.pField_path}. Skipping electric/polarizability file generation.")
                 except Exception as e:
                     print(f"Error reading file: {e}")
             else:
@@ -64,8 +64,8 @@ def run(params):
                 mu_arr = propagation(params_instance, molecule, field.field[index], propagate)
                 logging.info(f"At {current_time} au, combined Bohr output is {mu_arr} in au")
                 updateCSV(params_instance.pField_path, current_time, *mu_arr)
-                if params_instance.chkfile_path and index % params_instance.chkfile_freq == 0:
-                    update_chkfile(params_instance, molecule, current_time)
+                if params_instance.checkpoint_path and index % params_instance.checkpoint_freq == 0:
+                    update_checkpoint(params_instance, molecule, current_time)
 
         except Exception as err:
             logger.error(f"RT-TDDFT failed: {err}", exc_info=True)
@@ -89,8 +89,8 @@ def run(params):
 
             # Update all file paths to use the direction-specific directory
             attr_list = ['eField_path', 'pField_path', 'pField_Transform_path', 'eField_vs_pField_path', 'eV_spectrum_path']
-            if params.chkfile_path is not None:
-                attr_list.append('chkfile_path')
+            if params.checkpoint_path is not None:
+                attr_list.append('checkpoint_path')
             for attr in attr_list:
                 if hasattr(params_copy, attr):
                     original_path = getattr(params_copy, attr)

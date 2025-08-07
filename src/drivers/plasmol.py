@@ -14,11 +14,11 @@ def run(params):
         
         molecule = MOLECULE(params)
 
-        if params.chkfile_path is not None and os.path.exists(params.chkfile_path):
+        if params.checkpoint_path is not None and os.path.exists(params.checkpoint_path):
             try:
                 _ = read_field_csv(params.eField_path)
                 _ = read_field_csv(params.pField_path)
-                logger.debug(f"Checkpoint file {params.chkfile_path} found as well as properly formatted field fields: {params.eField_path} and {params.pField_path}. Skipping electric/polarizability file generation.")
+                logger.debug(f"Checkpoint file {params.checkpoint_path} found as well as properly formatted field fields: {params.eField_path} and {params.pField_path}. Skipping electric/polarizability file generation.")
             except Exception as e:
                 print(f"Error reading file: {e}")
         else:            

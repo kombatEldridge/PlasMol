@@ -30,8 +30,8 @@ class PARAMS:
         self.pField_Transform_path = self.preparams["quantum"]["files"]["pField_Transform_path"]
         self.eField_vs_pField_path = self.preparams["quantum"]["files"]["eField_vs_pField_path"]
         self.eV_spectrum_path = self.preparams["quantum"]["files"]["eV_spectrum_path"]
-        self.chkfile_path = self.preparams["quantum"]["files"]["chkfile"]["path"] if "chkfile" in self.preparams["quantum"]["files"] else None
-        self.chkfile_freq = self.preparams["quantum"]["files"]["chkfile"]["frequency"] if "chkfile" in self.preparams["quantum"]["files"] else None
+        self.checkpoint_path = self.preparams["quantum"]["files"]["checkpoint"]["path"] if "checkpoint" in self.preparams["quantum"]["files"] else None
+        self.checkpoint_freq = self.preparams["quantum"]["files"]["checkpoint"]["frequency"] if "checkpoint" in self.preparams["quantum"]["files"] else None
         self.molecule_coords = self.preparams["quantum"]["rttddft"]["geometry"]["molecule_coords"]
         self.molecule_atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
         self.atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]

@@ -68,7 +68,7 @@ if __name__ == "__main__":
             logger.debug(f"\t\t{key}: {value}")
 
         if params.restart:
-            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'chkfile_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
+            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'checkpoint_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
                 if hasattr(params, attr):
                     file_path = getattr(params, attr)
                     if file_path is not None and os.path.isfile(file_path):

@@ -115,10 +115,10 @@ Compute the induced dipole of a water molecule using a pulsed field. This uses o
         end rttddft
 
         start files
-            start chkfile -- in case simulation crashes
+            start checkpoint -- in case simulation crashes
                 frequency 100
-                path chkfile.npz
-            end chkfile
+                path checkpoint.npz
+            end checkpoint
             pField_path pField.csv
             pField_Transform_path pField-transformed.npz
             eField_vs_pField_path output.png
@@ -192,10 +192,10 @@ Compute the absorption spectrum of a water molecule using three Dirac delta kick
         end rttddft
 
         start files
-            start chkfile -- in case simulation crashes
+            start checkpoint -- in case simulation crashes
                 frequency 100
-                path chkfile.npz
-            end chkfile
+                path checkpoint.npz
+            end checkpoint
             pField_path pField.csv
             pField_Transform_path pField-transformed.npz
             eField_vs_pField_path output.png
@@ -267,10 +267,10 @@ Simulate a gold NP with a water molecule inside, tracking plasmon-molecule inter
             end rttddft
 
             start files
-                start chkfile -- in case simulation crashes
+                start checkpoint -- in case simulation crashes
                     frequency 100
-                    path chkfile.npz
-                end chkfile
+                    path checkpoint.npz
+                end checkpoint
                 pField_path pField.csv
                 pField_Transform_path pField-transformed.npz
                 eField_vs_pField_path output.png

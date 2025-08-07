@@ -66,10 +66,10 @@ start quantum
     end rttddft
 
     start files
-        start chkfile
+        start checkpoint
             frequency 100
-            path chkfile.npz
-        end chkfile
+            path checkpoint.npz
+        end checkpoint
         pField_path pField.csv
         pField_Transform_path pField-transformed.csv
         eField_vs_pField_path output.png
