@@ -35,7 +35,7 @@ class MOLECULE():
         # Format molecule string as required by PySCF
         mol = gto.M(atom=params.molecule_coords,
                     basis=params.basis,
-                    unit='B',
+                    unit='B', # Units of molecule are changed in parser.py to Bohr
                     charge=int(params.charge),
                     spin=int(params.spin))
         mol.verbose = 0
