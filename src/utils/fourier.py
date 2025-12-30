@@ -8,23 +8,15 @@ from .. import constants
 
 logger = logging.getLogger("main")
 
-init_w_eV = float(0)
-final_w_eV = float(35)
-step_w_eV = float(0.1)
-nw = int(final_w_eV/step_w_eV)
-freq_eV = np.arange(init_w_eV, final_w_eV, step_w_eV)
-
 def fold(file_x, file_y, file_z):
     def read_dipole_component(filename, column):
-        df = pd.read_csv(filename, delimiter=',', skiprows=1, header=None, names=['Timestamps (au)', 'X Values', 'Y Values', 'Z Values'], comment='#')
-        df = df.dropna()
-        
-        # Extract columns and convert to NumPy arrays explicitly
-        time = np.array(df['Timestamps (au)'].values[1:], dtype=float)
-        dipole = np.array(df[column].values[1:], dtype=float)
-        
-        # Return as NumPy arrays
-        return np.array(time), np.array(dipole)
+        # Read CSV, skip comment lines and use first non-comment row as header
+        df = pd.read_csv(filename, delimiter=',', header=0, comment='#')
+        # Extract time and requested dipole component as NumPy arrays
+        time = np.array(df['Timestamps (au)'].values, dtype=float)
+        dipole = np.array(df[column].values, dtype=float)
+        logger.debug(f"Loaded {len(time)} points from {filename}")
+        return time, dipole
 
     # Load components
     tx, dx = read_dipole_component(file_x, 'X Values')
@@ -53,47 +45,49 @@ def fold(file_x, file_y, file_z):
     return time_points, dipole_moment
 
 
-def fourier(time, dipole, file):
+def fourier(time, dipole, file, damp):
     dt = time[1] - time[0]
 
-    damp = 0.010
-    logger.debug("Damping factor gamma: %f",damp)
+    logger.debug("Damping factor gamma: %f", damp)
 
-    abs_real = [[],[],[]]
-    abs_imag = [[],[],[]]
+    abs_real = [[], [], []]
+    abs_imag = [[], [], []]
+    freqs_out = []
+
+    # Calculate frequencies once, as they are the same for all axes
+    freqs_au = np.fft.fftfreq(len(time), d=dt) * 2 * np.pi
+    freqs_ev = freqs_au * 27.211386
+    mask = (freqs_ev >= 0) & (freqs_ev <= 50)    # Create mask for frequencies between 0 and 50 eV
 
     for axis in (0, 1, 2):
         logger.info(f"Starting Fourier transform of direction { {0:'x', 1:'y', 2:'z'}[axis] }")
-        for step_num in range(nw):
-            w = freq_eV[step_num]/27.21138 # converted to au
-            S = 0j
-            for k in range(len(time)):
-                S += dipole[axis][k] * np.exp(-1j * w * time[k]) * np.exp(-damp * time[k]) * dt
+        dipole_windowed = dipole[axis] * np.exp(-damp * time)
+        S = np.fft.fft(dipole_windowed) * dt 
+        abs_real[axis] = S.real[mask]
+        abs_imag[axis] = S.imag[mask]
 
-            abs_real[axis].append(S.real)
-            abs_imag[axis].append(S.imag)
-            
+    # Keep only frequencies in the 0 to 50 eV range
+    freqs_out = freqs_ev[mask]
+
     logger.info("Fourier transform done!")
     for i in range(3):
         abs_real[i] = np.array(abs_real[i])
         abs_imag[i] = np.array(abs_imag[i])
 
-    np.savez(file, abs_imag)
-    return abs_imag
+    np.savez(file, abs_imag=abs_imag, freqs=freqs_out)
+    return abs_imag, freqs_out
 
-
-def absorption(imag):
+def absorption(imag, freqs):
     fullsum = imag[0] + imag[1] + imag[2]
-    return - 4 * np.pi * freq_eV / 3 / constants.C_AU * fullsum
+    return - 4 * np.pi * freqs / 3 / constants.C_AU * fullsum
 
-
-def transform(file_x, file_y, file_z,  pField_Transform_path, eV_spectrum_path):
+def transform(file_x, file_y, file_z, pField_Transform_path, eV_spectrum_path, damp=0.01):
     time_points, dipole_moment = fold(file_x, file_y, file_z)
-    abs_imag = fourier(time_points, dipole_moment, pField_Transform_path)
-    abs = absorption(abs_imag)
+    abs_imag, freqs = fourier(time_points, dipole_moment, pField_Transform_path, damp)
+    abs = absorption(abs_imag, freqs)
 
     fig = plt.figure(figsize=(14, 8))
-    plt.plot(freq_eV, abs/max(abs), color='green', label='Spectrum')
+    plt.plot(freqs, abs/max(abs), color='green', label='Spectrum')
     plt.xlabel('Angular frequency ω (eV)', fontsize=16)
     plt.ylabel('Absorption', fontsize=16)
     plt.title('Absorption Spectrum of Water', fontsize=20)
@@ -101,4 +95,4 @@ def transform(file_x, file_y, file_z,  pField_Transform_path, eV_spectrum_path):
     plt.legend(fontsize=16)
     plt.tight_layout()
     plt.savefig(eV_spectrum_path, dpi=600)
-    plt.show()
+    # plt.show()

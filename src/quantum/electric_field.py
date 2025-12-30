@@ -54,7 +54,14 @@ class ELECTRICFIELD:
             active_component = self.intensity_au * np.real(carrier * envelope)
         elif self.shape == 'kick':
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
-            active_component = self.intensity_au * envelope
+            active_component = np.zeros_like(t)  # Initialize array of zeros matching t's shape and dtype
+            mask = np.isclose(t, self.peak_time_au, atol=1e-10)  # Adjust atol for your time precision; finds matching indices
+            if np.any(mask):  # Optional: Check if there's at least one match
+                active_component[mask] = self.intensity_au
+            else:
+                # Optional: Handle no exact match, e.g., find closest index
+                idx = np.argmin(np.abs(t - self.peak_time_au))
+                active_component[idx] = self.intensity_au            # * envelope
         # ------------------------------------ #
         #              Additional              #
         #    custom sources can be defined     #

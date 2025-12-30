@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="plasmol",
-    version="1.0.0",
+    name="PlasMol",
+    version="1.1.0",
     author="Brinton Eldridge",
     author_email="bldrdge1@memphis.edu",
     description="A tool for simulating plasmon-molecule interactions using FDTD and RT-TDDFT.",

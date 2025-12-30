@@ -1,6 +1,7 @@
 # utils/csv.py
 import os
 import csv
+import numpy as np
 
 def initCSV(filename, comment):
     """
@@ -90,3 +91,25 @@ def read_field_csv(file_path):
             y.append(float(row[2]))
             z.append(float(row[3]))
     return time_values, x, y, z
+
+def apply_damping(mu_arr, tau):
+    """
+    Apply damping to the polarizability array.
+
+    Applies a damping factor to the polarizability values based on the provided parameters.
+    The damping is applied as per the formula: mu_damped = mu * exp(-t/tau).
+    Parameters:
+    mu_arr : list of float
+        The polarizability values to be damped.
+    tau : float
+        The damping time constant.
+
+    Returns:
+    list of float
+        The damped polarizability values.
+    """
+    t = np.array(mu_arr[0])
+    damped_mu_x = mu_arr[1] * np.exp(-t / tau)
+    damped_mu_y = mu_arr[2] * np.exp(-t / tau)
+    damped_mu_z = mu_arr[3] * np.exp(-t / tau)
+    return damped_mu_x, damped_mu_y, damped_mu_z

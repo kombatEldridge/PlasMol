@@ -48,7 +48,10 @@ def propagate(params, molecule, exc):
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt
             molecule.F_orth_n12dt = F_orth_p12dt
-            logger.debug(f'Magnus2 converged in {iteration} iterations.')
+            if params.transform:
+                logger.debug(f'{params.dir}-dir: Magnus2 converged in {iteration} iterations.')
+            else:
+                logger.debug(f'Magnus2 converged in {iteration} iterations.')
             break
 
         # 4) update history for next iteration

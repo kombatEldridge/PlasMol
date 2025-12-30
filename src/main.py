@@ -7,7 +7,7 @@ if __name__ == "__main__" and __package__ is None:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     sys.path.insert(0, parent_dir)
-    __package__ = os.path.basename(current_dir)  # Sets __package__ to "src" (or whatever your directory is named)
+    __package__ = os.path.basename(current_dir)
 
 import logging
 import numpy as np
@@ -20,6 +20,9 @@ from .utils.logging import PRINTLOGGER
 
 from .input.cli import parse_arguments
 from .input.parser import inputFilePrepare
+
+# import multiprocessing
+# multiprocessing.set_start_method('fork') 
 
 # main.py
 if __name__ == "__main__":
@@ -90,7 +93,12 @@ if __name__ == "__main__":
         if params.type == 'PlasMol':
             run_plasmol(params)
         elif params.type == 'Quantum':
-            run_quantum(params)
+            # if hasattr(params, 'bases') and params.bases:  # Check for comparison mode
+            #     from .drivers import run_comparison
+            #     logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
+            #     run_comparison(params)
+            # else:
+                run_quantum(params)
         elif params.type == 'Classical':
             run_classical(params)
 

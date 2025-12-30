@@ -12,6 +12,7 @@ class PARAMS:
         self.preparams = preparams
         self.type = self.preparams["simulation_type"]
         self.restart = self.preparams["args"]["restart"]
+        self.do_nothing = self.preparams["args"]["do_nothing"]
         self.buildSettingsParams()
 
         if self.type == 'PlasMol':
@@ -39,9 +40,36 @@ class PARAMS:
         self.charge = self.preparams["quantum"]["rttddft"]['charge']
         self.spin = self.preparams["quantum"]["rttddft"]['spin']
         self.xc = self.preparams["quantum"]["rttddft"]['xc']
+        self.mu = self.preparams["quantum"]["rttddft"].get('mu', None)
         self.propagator = self.preparams["quantum"]["rttddft"]["propagator"].lower()
         self.check_tolerance = self.preparams["quantum"]["rttddft"]['check_tolerance']
         self.transform = True if "transform" in self.preparams["quantum"]["rttddft"] else False
+        self.fourier_gamma = self.preparams["quantum"]["rttddft"].get("fourier_gamma")
+        self.damping = 'static' if "damping" in self.preparams["quantum"]["rttddft"] else None
+        self.mu_damping = self.preparams["quantum"]["rttddft"].get("mu_damping", 0)
+        if self.damping is not None:
+            if 'dynamic' in self.preparams["quantum"]["rttddft"]["damping"]:
+                self.damping = 'dynamic'
+            else:
+                logger.warning("No damping type specified, defaulting to static.")
+            self.gam0 = self.preparams["quantum"]["rttddft"]["damping"].get("gam0", None)
+            self.xi = self.preparams["quantum"]["rttddft"]["damping"].get("xi", None)
+            self.eps0 = self.preparams["quantum"]["rttddft"]["damping"].get("eps0", None)
+            self.clamp = self.preparams["quantum"]["rttddft"]["damping"].get("clamp", None)
+
+        if "comparison" in self.preparams["quantum"]:
+            self.bases = self.preparams["quantum"]["comparison"].get("bases", [])
+            self.xcs = self.preparams["quantum"]["comparison"].get("xcs", [])
+            self.num_virtual = self.preparams["quantum"]["comparison"].get("num_virtual")
+            self.num_occupied = self.preparams["quantum"]["comparison"].get("num_virtual")
+            self.y_min = self.preparams["quantum"]["comparison"].get("y_min")
+            self.y_max = self.preparams["quantum"]["comparison"].get("y_max")
+            if not self.bases or not self.xcs:
+                raise ValueError("Comparison mode requires 'bases' and 'xcs' lists in the 'comparison' block.")
+            # Optionally override other params if needed, e.g., disable source if present
+            if hasattr(self, 'shape'):
+                logger.warning("Comparison mode ignores source; no time propagation.")
+                delattr(self, 'shape')  # Prevent field setup
 
         if 'source' in self.preparams['quantum']:
             if not self.type == 'Quantum':
@@ -115,13 +143,13 @@ class PARAMS:
                 )
             elif source_type == 'chirped':
                 source_params = {
-                    key: value for key, value in self.preparams['source'].items()
+                    key: value for key, value in self.preparams['classical']['source'].items()
                     if key in ['frequency', 'wavelength', 'width', 'peakTime', 'chirpRate', 
                             'start_time', 'end_time', 'is_integrated', 'component']
                 }
                 source = sources.ChirpedSource(
-                    sourceCenter=self.preparams['source']['sourceCenter'],
-                    sourceSize=self.preparams['source']['sourceSize'],
+                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
+                    sourceSize=self.preparams['classical']['source']['sourceSize'],
                     **source_params
                 )
             elif source_type == 'pulse':
