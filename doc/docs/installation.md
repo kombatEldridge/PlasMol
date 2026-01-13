@@ -66,7 +66,7 @@ This assumes a `setup.py` or `pyproject.toml` in the root (e.g., for editable in
 Run a test:
 
 ```bash
-python -m src.main --help
+python -m plasmol.main --help
 ```
 
 If you see the CLI help message, it's working.

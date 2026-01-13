@@ -1,12 +1,15 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as f: 
+    long_description = f.read()
+
 setup(
     name="PlasMol",
     version="1.1.0",
     author="Brinton Eldridge",
     author_email="bldrdge1@memphis.edu",
     description="A tool for simulating plasmon-molecule interactions using FDTD and RT-TDDFT.",
-    long_description=open("README.md").read() if open("README.md", errors="ignore") else "",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/kombatEldridge/PlasMol",
     packages=find_packages(),

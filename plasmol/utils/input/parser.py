@@ -1,4 +1,4 @@
-# input/parser.py
+# utils/input/parser.py
 import re
 import logging
 import numpy as np

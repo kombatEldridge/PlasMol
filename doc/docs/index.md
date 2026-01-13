@@ -39,7 +39,7 @@ pip install -e .
 Run simulations via command line with an input file (e.g., from `templates/`):
 
 ```bash
-python src/main.py -f templates/template-plasmol.in -vv -l plasmol.log -r
+python plasmol/main.py -f templates/template-plasmol.in -vv -l plasmol.log -r
 ```
 
 - `-f`: Input file path.

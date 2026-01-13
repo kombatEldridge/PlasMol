@@ -1,4 +1,4 @@
-# input/params.py
+# utils/input/params.py
 import logging
 import numpy as np
 

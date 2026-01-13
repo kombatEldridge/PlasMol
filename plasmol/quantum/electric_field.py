@@ -22,7 +22,7 @@ class ELECTRICFIELD:
             pass
         # elif self.shape == 'custom_shape'...
         #   if additional parameters need to be added for your custom shape
-        #   you must add support for them in the input/params.py method: buildQuantumParams()
+        #   you must add support for them in the utils/input/params.py method: buildQuantumParams()
         else:
             raise ValueError("Invalid shape. Must be 'pulse' or 'kick'.")
         

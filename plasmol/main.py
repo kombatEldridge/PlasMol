@@ -15,11 +15,11 @@ import numpy as np
 from . import constants
 
 from .drivers import *
-from .input.params import PARAMS
+from .utils.input.params import PARAMS
 from .utils.logging import PRINTLOGGER
 
-from .input.cli import parse_arguments
-from .input.parser import inputFilePrepare
+from .utils.input.cli import parse_arguments
+from .utils.input.parser import inputFilePrepare
 
 # import multiprocessing
 # multiprocessing.set_start_method('fork') 

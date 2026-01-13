@@ -33,10 +33,11 @@ The classical part simulates electromagnetic fields around NPs using MEEP's FDTD
 Here, \(\tilde{\mathbf{E}}\) and \(\tilde{\mathbf{H}}\) are the electric and magnetic fields, \(\epsilon\) and \(\mu\) are permittivity and permeability, and \(\tilde{\mathbf{P}}(t)\) is the polarization (from quantum feedback in the full PlasMol mode).
 
 ### Supported Features
-- **Sources**: Continuous, Gaussian, chirped, or pulsed waves (see `src/classical/sources.py`).
+
+- **Sources**: Continuous, Gaussian, chirped, or pulsed waves (see `plasmol/classical/sources.py`).
 - **Geometry**: Spheres (Au/Ag materials); extensible to other shapes.
 - **Boundaries**: Perfectly Matched Layers (PML).
-- **Outputs**: HDF5 images, GIFs, field CSVs; custom tracking (e.g., extinction spectra) via injections in `src/classical/simulation.py`.
+- **Outputs**: HDF5 images, GIFs, field CSVs; custom tracking (e.g., extinction spectra) via injections in `plasmol/classical/simulation.py`.
 
 In the full PlasMol mode, the induced dipole \(\tilde{\mathbf{P}}(t)\) is injected as a custom source at the molecule's position.
 
@@ -77,6 +78,7 @@ K_{\mu\nu} = \frac{1}{2} \sum_{\lambda\sigma} D_{\lambda\sigma} \iint \phi^*_\mu
 The external field term \(-\sum \mu_a \tilde{E}_a(t)\) couples to the classical field.
 
 ### Density Matrix Evolution
+
 The density matrix \(\mathbf{D}(t)\) evolves under the Liouville-von Neumann equation (schematic, handler):
 
 \[
@@ -86,6 +88,7 @@ The density matrix \(\mathbf{D}(t)\) evolves under the Liouville-von Neumann equ
 In practice, PlasMol propagates molecular orbitals \(\mathbf{C}(t)\) in an orthogonal basis and reconstructs \(\mathbf{D}(t)\).
 
 ### Supported Propagators
+
 PlasMol offers three methods (see [Propagators](api-reference.md#quantumpropagators) for more details):
 
 1. **Step (Modified Midpoint Unitary Transformation - MMUT)**:
@@ -94,7 +97,7 @@ PlasMol offers three methods (see [Propagators](api-reference.md#quantumpropagat
 \mathbf{C}_{\text{ortho}}(t + \Delta t) = \exp(-i \cdot 2\Delta t \cdot \mathbf{F}_{\text{ortho}}(t)) \cdot \mathbf{C}_{\text{ortho}}(t - \Delta t)
 \]
 
-2. **Runge-Kutta 4 (RK4)**:
+1. **Runge-Kutta 4 (RK4)**:
 
 \[
 \mathbf{C}_{\text{ortho}}(t + \Delta t) = \mathbf{C}_{\text{ortho}}(t) + \frac{k_1 + 2k_2 + 2k_3 + k_4}{6}
@@ -102,7 +105,7 @@ PlasMol offers three methods (see [Propagators](api-reference.md#quantumpropagat
 
 With intermediate \(k_i\) terms computed via Fock matrix multiplications.
 
-3. **2nd-Order Magnus with Predictor-Corrector** (Recommended):
+1. **2nd-Order Magnus with Predictor-Corrector** (Recommended):
 
 Initial extrapolation:
 
@@ -125,7 +128,8 @@ From the schematic (handler, propagation method):
 This induced polarization \(\tilde{\mathbf{P}}(t)\) is fed back to MEEP.
 
 ### Absorption Spectra
-With the `transform` flag, PlasMol runs three directional simulations and applies a Fourier transform (see `src/utils/fourier.py`).
+
+With the `transform` flag, PlasMol runs three directional simulations and applies a Fourier transform (see `plasmol/utils/fourier.py`).
 
 ## Coupling Mechanism: Handler
 
@@ -133,7 +137,7 @@ The "Handler" bridges QM and classical parts (schematic, center):
 
 - **QM to Classical**: Induced dipole from RT-TDDFT is injected as a point source in MEEP.
 - **Classical to QM**: Electric field at the molecule's position drives Fock matrix updates.
-- Workflow (per time step in `src/classical/simulation.py` and `src/quantum/propagation.py`):
+- Workflow (per time step in `plasmol/classical/simulation.py` and `plasmol/quantum/propagation.py`):
     1. (Before simulation starts to loop) Generate ground state matrices using PySCF.
     2. Extract \(\tilde{\mathbf{E}}(t)\) from MEEP at molecule position.
     3. Propagate \(\mathbf{D}(t)\) using chosen method.
@@ -144,15 +148,15 @@ This loop enables self-consistent hybrid dynamics.
 
 ## Methodology Workflow
 
-1. **Input Parsing**: `src/input/` processes blocks for classical/quantum parameters.
+1. **Input Parsing**: `plasmol/utils/input/` processes blocks for classical/quantum parameters.
 2. **Initialization**:
-    - Classical: Build MEEP simulation (`src/classical/simulation.py`).
-    - Quantum: Build molecule and initial state (`src/quantum/molecule.py`).
+    - Classical: Build MEEP simulation (`plasmol/classical/simulation.py`).
+    - Quantum: Build molecule and initial state (`plasmol/quantum/molecule.py`).
 3. **Simulation Loop**:
     - Advance FDTD step in MEEP.
     - If molecule present and field exceeds cutoff: Call RT-TDDFT propagation.
     - Inject dipole back as source.
-4. **Outputs**: CSVs, plots, checkpoints via `src/utils/`.
+4. **Outputs**: CSVs, plots, checkpoints via `plasmol/utils/`.
 5. **Extensions**: Custom injections for tracking (e.g., SERS) in commented sections.
 
 For code details, see [API Reference](api-reference.md).

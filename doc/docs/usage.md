@@ -20,17 +20,17 @@ PlasMol is designed to be run from the command line, with most parameters specif
 3. **Run PlasMol**: From the command line:
 
     ```bash
-    python src/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
+    python plasmol/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
     ```
 
     or
 
     ```bash
-    python -m src.main -f /path/to/plasmol.in -vv -l plasmol.log -r
+    python -m plasmol.main -f /path/to/plasmol.in -vv -l plasmol.log -r
     ```
 
     - Common options: `-v` (verbose), `-vv` (debug), `-l log.txt` (log file), `-r` (restart, deletes old output files).
-    - See `src/input/cli.py` or run `python src/main.py --help` for full options.
+    - See `plasmol/utils/input/cli.py` or run `python plasmol/main.py --help` for full options.
 
 4. **Output Files**: PlasMol can generate CSVs (e.g., `eField.csv`, `pField.csv`), images (e.g., via HDF5 or plots), and checkpoint files (`.npz`). For details, see the `files` block below.
 
@@ -180,7 +180,7 @@ For molecule simulations (RT-TDDFT). Required for quantum or full PlasMol modes.
 Core quantum parameters.
 
 - Geometry sub-sub-block*:
-    - Atom coordinates. Inline after `start geometry`.
+  - Atom coordinates. Inline after `start geometry`.
 - `units`*: String (`bohr` or `angstrom`).
 - `check_tolerance`: Float (default 1e-12). Tolerance for matrix checks for hermiticity.
 - `charge`*: Integer (default 0).
@@ -214,8 +214,8 @@ end rttddft
 Output paths.
 
 - `checkpoint` sub-sub-block:
-    - `frequency` int (e.g., `100`). Number of time steps between checkpoints.
-    - `path` string (e.g., `checkpoint.npz`). Path to checkpoint file.
+  - `frequency` int (e.g., `100`). Number of time steps between checkpoints.
+  - `path` string (e.g., `checkpoint.npz`). Path to checkpoint file.
 - `pField_path`: String (e.g., `pField.csv`). Polarization field CSV.
 - `eField_vs_pField_path`: String (e.g., `output.png`). Plot of fields.
 - `pField_Transform_path`: String (e.g., `pField-transformed.npz`). Transformed data (for spectrum).

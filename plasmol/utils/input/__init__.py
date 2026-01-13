@@ -1,4 +1,4 @@
-# input/__init__.py
+# utils/input/__init__.py
 from .parser import inputFilePrepare
 from .params import PARAMS
 from .cli import parse_arguments

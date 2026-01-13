@@ -204,7 +204,7 @@ class PulseSource:
 #         classes for sources          #
 #          can be added here           #
 #        and need to be added to       #
-#   the `input/params.py` file under   #
+#   the `utils/input/params.py` file under   #
 #       the `getSource()` method       #
 # ------------------------------------ #
 

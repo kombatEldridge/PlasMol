@@ -4,7 +4,7 @@
 This section provides hands-on tutorials for using PlasMol. Each tutorial uses a template input file from the `templates/` directory. Run commands from your project root, e.g.:
 
 ```bash
-python src/main.p -f templates/template-classical.in -vv -l plasmol.log
+python plasmol/main.p -f templates/template-classical.in -vv -l plasmol.log
 ```
 
 Outputs will appear in your working directory (e.g., CSVs, images).
@@ -58,13 +58,13 @@ Simulate a gold nanoparticle interacting with a continuous electric field. This 
 2. **Run Simulation**:
 
    ```bash
-   python src/main.py -f /path/to/classical.in -vv -l plasmol.log
+   python plasmol/main.py -f /path/to/classical.in -vv -l plasmol.log
    ```
 
    or
 
    ```bash
-   python -m src.main -f /path/to/classical.in -vv -l plasmol.log
+   python -m plasmol.main -f /path/to/classical.in -vv -l plasmol.log
    ```
 
 3. **View Outputs**:
@@ -74,7 +74,7 @@ Simulate a gold nanoparticle interacting with a continuous electric field. This 
     ![Cross-section of NP simulation](classical.gif)
     *Cross-section of a spherical nanoparticle in the xy-plane receiving incident light, whose electric component is measured in the z-direction. Dashed outline added for clarity.*
 
-    - For extinction spectra, add custom tracking in `src/classical/simulation.py` (see [API Reference](api-reference.md)).
+    - For extinction spectra, add custom tracking in `plasmol/classical/simulation.py` (see [API Reference](api-reference.md)).
     ![FDTD Qext spectrum](MEEPvsDDSCAT.png)
     *Using instructions from [MEEP's documentation](https://meep.readthedocs.io/en/master/Python_Tutorials/Basics/#mie-scattering-of-a-lossless-dielectric-sphere) and [code examples](https://github.com/NanoComp/meep/blob/04ae6b786ab145a35ab8d290ede4cdce105d0677/python/examples/mie_scattering.py), one can compare the Qext spectrum between the FDTD and DDA methods, implemented using MEEP and DDSCAT respectively.*
 
@@ -139,17 +139,17 @@ Compute the induced dipole of a water molecule using a pulsed field. This uses o
 2. **Run Simulation**:
 
     ```bash
-    python src/main.py -f /path/to/quantum.in -vv -l plasmol.log -r
+    python plasmol/main.py -f /path/to/quantum.in -vv -l plasmol.log -r
     ```
 
     or
 
     ```bash
-    python -m src.main -f /path/to/quantum.in -vv -l plasmol.log -r
+    python -m plasmol.main -f /path/to/quantum.in -vv -l plasmol.log -r
     ```
 
 3. **View Outputs**:
-    - `eField.csv`: Incident field; plots using `src/utils/plotting.py` for visualization.
+    - `eField.csv`: Incident field; plots using `plasmol/utils/plotting.py` for visualization.
     - `pField.csv`: Induced dipole (polarization) data.
 
     ![Electric field vs. polarization plot](eFieldvpField.png)
@@ -215,13 +215,13 @@ Compute the absorption spectrum of a water molecule using three Dirac delta kick
 2. **Run Simulation**:
 
     ```bash
-    python src/main.py -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
+    python plasmol/main.py -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
     ```
 
     or
 
     ```bash
-    python -m src.main -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
+    python -m plasmol.main -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
     ```
 
 3. **View Outputs**:
@@ -323,13 +323,13 @@ Simulate a gold NP with a water molecule inside, tracking plasmon-molecule inter
 2. **Run Simulation**:
 
     ```bash
-    python src/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
+    python plasmol/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
     ```
 
     or
 
     ```bash
-    python -m src.main -f /path/to/plasmol.in -vv -l plasmol.log -r
+    python -m plasmol.main -f /path/to/plasmol.in -vv -l plasmol.log -r
     ```
 
 3. **View Outputs**:

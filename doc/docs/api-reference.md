@@ -10,7 +10,7 @@ PlasMol
 |_ docs
 |  |_ *files for these docs*
 |  
-|_ src
+|_ plasmol
 |  |_ __init__.py
 |  |_ constants.py
 |  |_ main.py
@@ -69,33 +69,33 @@ This directory contains all files necessary to simulate a nanoparticle in PlasMo
 ### `sources.py`
 
 - Currently supports
-    - `ContinuousSource`
-        - The `ContinuousSource` provides a continuous-wave electromagnetic source with constant frequency and amplitude that activates abruptly at the start time and persists until the optional end time.
+  - `ContinuousSource`
+    - The `ContinuousSource` provides a continuous-wave electromagnetic source with constant frequency and amplitude that activates abruptly at the start time and persists until the optional end time.
         $$
             s(t)=\theta\left(t-t_{\text {start}}\right) \exp (-i \omega t)
         $$
-        - where $\theta$ is the Heaviside step function, $t_{\text {start}}$ is the start time (default 0), and $\omega=2 \pi f$ with $f$ being the specified frequency.
-    - `GaussianSource`
-        - The `GaussianSource` generates a pulsed electromagnetic source with a Gaussian temporal envelope modulating a carrier wave, designed for broadband frequency excitation while minimizing truncation effects through a shifted peak.
+    - where $\theta$ is the Heaviside step function, $t_{\text {start}}$ is the start time (default 0), and $\omega=2 \pi f$ with $f$ being the specified frequency.
+  - `GaussianSource`
+    - The `GaussianSource` generates a pulsed electromagnetic source with a Gaussian temporal envelope modulating a carrier wave, designed for broadband frequency excitation while minimizing truncation effects through a shifted peak.
         $$
             s(t)=\exp \left(-\frac{\left(t-t_0\right)^2}{2 w^2}\right) \exp (-i \omega t)
         $$
-        - where $w$ is the width parameter, $t_0=t_{\text {start}}+c \cdot w$ with $c$ being the cutoff (default 5.0) to shift the peak and avoid abrupt truncation at $t=t_{\text {start}}$, and $\omega=2 \pi f$ with $f$ being the center frequency.
-    - `ChirpedSource`
-        - The `ChirpedSource` is a custom pulsed source featuring a Gaussian envelope with an added quadratic phase term to produce a linearly chirped frequency sweep, useful for applications requiring time varying frequency content.
+    - where $w$ is the width parameter, $t_0=t_{\text {start}}+c \cdot w$ with $c$ being the cutoff (default 5.0) to shift the peak and avoid abrupt truncation at $t=t_{\text {start}}$, and $\omega=2 \pi f$ with $f$ being the center frequency.
+  - `ChirpedSource`
+    - The `ChirpedSource` is a custom pulsed source featuring a Gaussian envelope with an added quadratic phase term to produce a linearly chirped frequency sweep, useful for applications requiring time varying frequency content.
         $$
             s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2+i b\left(t-t_p\right)^2\right)
         $$
-        - where $f$ is the base frequency, $t_p$ is the peak time, $a$ is the width parameter controlling the envelope decay, and $b$ is the chirp rate introducing quadratic phase for frequency modulation.
-    - `PulseSource`
-        - When simulating an absorption spectrum, this source is required.
-        - The `PulseSource` creates a custom Gaussian-enveloped pulse with a sinusoidal carrier wave peaked at a specified time, suitable for simulating short electromagnetic bursts in time-domain simulations.
+    - where $f$ is the base frequency, $t_p$ is the peak time, $a$ is the width parameter controlling the envelope decay, and $b$ is the chirp rate introducing quadratic phase for frequency modulation.
+  - `PulseSource`
+    - When simulating an absorption spectrum, this source is required.
+    - The `PulseSource` creates a custom Gaussian-enveloped pulse with a sinusoidal carrier wave peaked at a specified time, suitable for simulating short electromagnetic bursts in time-domain simulations.
         $$
             s(t)=\exp \left(i 2 \pi f\left(t-t_p\right)\right) \exp \left(-a\left(t-t_p\right)^2\right)
         $$
-        - where $f$ is the carrier frequency, $t_p$ is the peak time, and $a$ is the width parameter determining the pulse duration.
+    - where $f$ is the carrier frequency, $t_p$ is the peak time, and $a$ is the width parameter determining the pulse duration.
 
-- Other electric field shapes for the classical and full PlasMol simulations can be supported using these four as templates, but additional options for the sources will need to be added to the input file parser in the `input/params.py` file under the `getSource()` method (found in the `buildclassicalParams()` method).
+- Other electric field shapes for the classical and full PlasMol simulations can be supported using these four as templates, but additional options for the sources will need to be added to the input file parser in the `utils/input/params.py` file under the `getSource()` method (found in the `buildclassicalParams()` method).
 
 ## drivers/
 
@@ -118,7 +118,7 @@ For each type of simulation running, a surface-level file determines what steps 
 - Is chosen to run a full PlasMol simulation when both classical and quantum parameters are specified in the input file.
 - This is the main purpose of PlasMol. A Meep simulation will begin with a molecule inside, whose initial electronic structure is built by PySCF. Every time step, the electric field at the molecule's position is measured and sent to the "quantum" portion of the code where the density matrix is propagated by the electric field. As an end result, the induced dipole moment of the molecule can be calculated. Finally, the induced dipole moment is fed back into the Meep simulation as the intensity of a point dipole at the position of the molecule.
 
-## input/
+## utils/input/
 
 Users should mainly interact with PlasMol through command line, calling upon the `main.py` script. To feed parameters into the simulation, users only have a few command line options (controlled by `cli.py`) and one input file (initially parsed by `parser.py` and then fit for the PlasMol codebase using `params.py`).
 
@@ -126,19 +126,19 @@ Users should mainly interact with PlasMol through command line, calling upon the
 
 - Enumerates command line flags to be included when running PlasMol.
 - Command line options include
-    - `--input` (or `-f` for file): Path to the PlasMol input file.
-    - `--log` (or `-l`): Path to the log file. If not specified, log prints to terminal and is not saved.
-    - `--verbose` (or `-v` and `-vv`): Specifies verbosity levels.
-        - Not specified: logs only `logger.warning` calls.
-        - `-v`: logs up to `logger.info` calls.
-        - `-vv`: logs up to `logger.debug` calls.
-    - `--restart` (or `-r`): Tries to remove the following files from current working directory in case they are leftover from previous runs. Actual file names for these can be specified in the input file.
-        - eField_path
-        - pField_path
-        - checkpoint path
-        - pField_Transform_path
-        - eField_vs_pField_path
-        - eV_spectrum_path
+  - `--input` (or `-f` for file): Path to the PlasMol input file.
+  - `--log` (or `-l`): Path to the log file. If not specified, log prints to terminal and is not saved.
+  - `--verbose` (or `-v` and `-vv`): Specifies verbosity levels.
+    - Not specified: logs only `logger.warning` calls.
+    - `-v`: logs up to `logger.info` calls.
+    - `-vv`: logs up to `logger.debug` calls.
+  - `--restart` (or `-r`): Tries to remove the following files from current working directory in case they are leftover from previous runs. Actual file names for these can be specified in the input file.
+    - eField_path
+    - pField_path
+    - checkpoint path
+    - pField_Transform_path
+    - eField_vs_pField_path
+    - eV_spectrum_path
 
 ### `parser.py`
 
@@ -174,8 +174,8 @@ This directory contains all files necessary to simulate a molecule in PlasMol. I
 - Save a checkpoint file containing the current state of the simulation, as specified by the checkpoint frequency in the input file.
 - Always saves the timestamp $t$, ground state density matrix $\mathbf{D}_{\text{AO}}(0)$, and the coefficient matrix at the timestamp $\mathbf{C}(t)$.
 - Additionally, it will save
-    - the orthogonalized coefficient matrix at the previous timestamp $\mathbf{C}_{\text{ortho}}(t-\Delta t)$ for the Magnus step propagator.
-    - the orthogonalized Fock matrix at the previous half timestamp $\mathbf{F}_{\text{ortho}}(t-\frac{1}{2}\Delta t)$ for the 2nd order Magnus propagator.
+  - the orthogonalized coefficient matrix at the previous timestamp $\mathbf{C}_{\text{ortho}}(t-\Delta t)$ for the Magnus step propagator.
+  - the orthogonalized Fock matrix at the previous half timestamp $\mathbf{F}_{\text{ortho}}(t-\frac{1}{2}\Delta t)$ for the 2nd order Magnus propagator.
 - If a new propagator is added, any necessary quantities will need to be added to this file.
 
 ## quantum/propagators/
