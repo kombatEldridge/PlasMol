@@ -3,10 +3,10 @@ import os
 import sys
 import logging
 
-from ..classical.simulation import Simulation
-from ..quantum.molecule import MOLECULE
-from ..utils.plotting import show_eField_pField
-from ..utils.csv import initCSV, read_field_csv
+from plasmol.classical.simulation import SIMULATION
+from plasmol.quantum.molecule import MOLECULE
+from plasmol.utils.plotting import show_eField_pField
+from plasmol.utils.csv import initCSV, read_field_csv
 
 def run(params):
     try:
@@ -26,7 +26,7 @@ def run(params):
             initCSV(params.pField_path, "Molecule's Polarizability Field intensity in atomic units")
             logger.debug(f"Field files successfully initialized: {params.eField_path} and {params.pField_path}")
         
-        simDriver = Simulation(params, molecule)
+        simDriver = SIMULATION(params, molecule)
         simDriver.run()
         
         # Plot the results using the interpolated electric field data

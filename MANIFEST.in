@@ -1,0 +1,15 @@
+include LICENSE
+include README.md
+include plasmol/*.py
+include plasmol/classical/*.py
+include plasmol/drivers/*.py
+include plasmol/quantum/*.py
+include plasmol/quantum/propagators/*.py
+include plasmol/utils/*.py
+include plasmol/utils/input/*.py
+include templates/*.in
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo
+recursive-exclude build *
+recursive-exclude dist *

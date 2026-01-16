@@ -2,7 +2,6 @@
 import os
 import sys
 
-# Dynamically set up package context for direct execution (python main.py)
 if __name__ == "__main__" and __package__ is None:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
@@ -12,19 +11,13 @@ if __name__ == "__main__" and __package__ is None:
 import logging
 import numpy as np
 
-from . import constants
+from plasmol import constants
+from plasmol.drivers import *
+from plasmol.utils.logging import PRINTLOGGER
+from plasmol.utils.input.cli import parse_arguments
+from plasmol.utils.input.params import PARAMS
+from plasmol.utils.input.parser import parseInputFile
 
-from .drivers import *
-from .utils.input.params import PARAMS
-from .utils.logging import PRINTLOGGER
-
-from .utils.input.cli import parse_arguments
-from .utils.input.parser import inputFilePrepare
-
-# import multiprocessing
-# multiprocessing.set_start_method('fork') 
-
-# main.py
 if __name__ == "__main__":
     try:
         # Set up logging
@@ -58,15 +51,15 @@ if __name__ == "__main__":
         logging.getLogger("matplotlib").setLevel(logging.INFO)
         logging.getLogger("PIL").setLevel(logging.INFO)
 
-        # Step 2: Identify parsing workflow from CLI args
-        preparams = inputFilePrepare(args)
-        logger.debug(f"Arguments given and pre-parsed successfully: {preparams}")
+        # Step 2: Parse input file
+        parsed = parseInputFile(args)
+        logger.debug(f"Arguments given and parsed successfully: {parsed}")
 
         # Step 3: Merge all found parameters
         logger.debug("Merging parameters from input file(s) with the CLI inputs. CLI takes priority for duplicate values.")
-        params = PARAMS(preparams)
+        params = PARAMS(parsed)
         
-        logger.debug(f"Arguments given and parsed successfully: ")
+        logger.debug(f"Arguments successfully recieved: ")
         for key, value in vars(params).items():
             logger.debug(f"\t\t{key}: {value}")
 
@@ -94,7 +87,7 @@ if __name__ == "__main__":
             run_plasmol(params)
         elif params.type == 'Quantum':
             # if hasattr(params, 'bases') and params.bases:  # Check for comparison mode
-            #     from .drivers import run_comparison
+            #     from plasmol.drivers import run_comparison
             #     logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
             #     run_comparison(params)
             # else:

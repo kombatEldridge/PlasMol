@@ -4,7 +4,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ..quantum.molecule import MOLECULE
+from plasmol.quantum.molecule import MOLECULE
 
 logger = logging.getLogger("main")
 

@@ -2,13 +2,13 @@
 import os
 import sys
 import logging
-from ..classical.simulation import Simulation
+from plasmol.classical.simulation import SIMULATION
 
 def run(params):
     try:
         logger = logging.getLogger("main")
                 
-        simDriver = Simulation(params)
+        simDriver = SIMULATION(params)
         simDriver.run()
         
         logging.info("Simulation completed successfully.")

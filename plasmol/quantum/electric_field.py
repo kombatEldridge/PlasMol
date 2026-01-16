@@ -2,7 +2,7 @@
 import logging 
 import numpy as np
 
-from .. import constants
+from plasmol import constants
 
 logger = logging.getLogger("main")
 

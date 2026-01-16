@@ -12,6 +12,16 @@ PlasMol requires Python 3.8+ and several scientific libraries. Follow these step
 
 Please visit the [installation page](https://meep.readthedocs.io/en/master/Installation/) for MEEP to install it for use in PlasMol.
 
+For basic install (quantum only):
+pip install PlasMol
+
+For classical simulations (requires meep):
+conda install -c conda-forge meep
+pip install "PlasMol[classical]"
+
+For development:
+pip install -r requirements-dev.txt
+
 ## Step 1: Clone the Repository
 
 ```bash

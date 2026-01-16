@@ -7,16 +7,16 @@ import logging
 import multiprocessing
 import numpy as np
 
-from ..quantum.molecule import MOLECULE
-from ..quantum.electric_field import ELECTRICFIELD
+from plasmol.quantum.molecule import MOLECULE
+from plasmol.quantum.electric_field import ELECTRICFIELD
 
-from ..quantum.propagators import *
-from ..quantum.propagation import propagation
-from ..quantum.checkpoint import update_checkpoint
+from plasmol.quantum.propagators import *
+from plasmol.quantum.propagation import propagation
+from plasmol.quantum.checkpoint import update_checkpoint
 
-from ..utils.fourier import transform
-from ..utils.plotting import show_eField_pField
-from ..utils.csv import initCSV, updateCSV, read_field_csv, apply_damping
+from plasmol.utils.fourier import transform
+from plasmol.utils.plotting import show_eField_pField
+from plasmol.utils.csv import initCSV, updateCSV, read_field_csv, apply_damping
 
 # Moved to top level
 def run_nothing():

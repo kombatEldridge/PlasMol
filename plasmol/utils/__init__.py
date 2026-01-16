@@ -1,9 +1,9 @@
 # utils/__init__.py
-from .csv import initCSV, updateCSV, read_field_csv
-from .logging import PRINTLOGGER
-from .plotting import show_eField_pField
-from .fourier import transform 
-from .gif import make_gif, clear_directory
+from plasmol.utils.csv import initCSV, updateCSV, read_field_csv
+from plasmol.utils.logging import PRINTLOGGER
+from plasmol.utils.plotting import show_eField_pField
+from plasmol.utils.fourier import transform 
+from plasmol.utils.gif import make_gif, clear_directory
 
 __all__ = [
     'initCSV', 'updateCSV', 'read_field_csv',

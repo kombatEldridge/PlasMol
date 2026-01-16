@@ -10,3 +10,4 @@ plasmol/quantum/__pycache__
 plasmol/quantum/propagators/__pycache__
 plasmol/utils/__pycache__
 merge/
+build/

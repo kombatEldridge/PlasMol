@@ -1,6 +1,6 @@
 # utils/input/__init__.py
-from .parser import inputFilePrepare
-from .params import PARAMS
-from .cli import parse_arguments
+from plasmol.utils.input.parser import parseInputFile
+from plasmol.utils.input.params import PARAMS
+from plasmol.utils.input.cli import parse_arguments
 
-__all__ = ['inputFilePrepare', 'PARAMS', 'parse_arguments']
+__all__ = ['parseInputFile', 'PARAMS', 'parse_arguments']

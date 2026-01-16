@@ -1,6 +1,12 @@
 # utils/input/params.py
 import logging
 import numpy as np
+import meep as mp
+from datetime import datetime
+import os
+
+from plasmol.classical import sources
+from plasmol import constants
 
 logger = logging.getLogger("main")
 
@@ -11,254 +17,224 @@ class PARAMS:
     def __init__(self, preparams):
         self.preparams = preparams
         self.type = self.preparams["simulation_type"]
-        self.restart = self.preparams["args"]["restart"]
-        self.do_nothing = self.preparams["args"]["do_nothing"]
-        self.buildSettingsParams()
+        self.restart = self.preparams["args"].get("restart", False)  # Default to False if not provided
+        self.do_nothing = self.preparams["args"].get("do_nothing", False)  # Default to False
 
-        if self.type == 'PlasMol':
-            self.buildQuantumParams()
-            self.buildclassicalParams()
-        elif self.type == 'Quantum':
-            self.buildQuantumParams()
-        elif self.type == 'Classical':
-            self.buildclassicalParams()
+        # Define a large, extensible list of parameter definitions.
+        # Each entry is a tuple: (attribute_name, path_as_list, default_value, section_condition)
+        # - attribute_name: str, the name to set as self.<attribute_name>
+        # - path_as_list: list of str, the nested keys to access in preparams (e.g., ['settings', 'dt'])
+        # - default_value: any, value if not found (use None for required params)
+        # - section_condition: str or None, only set if self.type in ['PlasMol', 'Quantum', 'Classical'] matches or None for always
+        # Add new params here as needed; required params without default will raise error if missing.
+        param_defs = [
+            # Settings (always required)
+            ('dt', ['settings', 'dt'], None, None),
+            ('t_end', ['settings', 't_end'], None, None),
+            ('eField_path', ['settings', 'eField_path'], None, None),
 
-        delattr(self, 'preparams')
+            # Quantum params (for 'Quantum' or 'PlasMol')
+            ('pField_path', ['quantum', 'files', 'pField_path'], None, 'quantum'),
+            ('pField_Transform_path', ['quantum', 'files', 'pField_Transform_path'], None, 'quantum'),
+            ('eField_vs_pField_path', ['quantum', 'files', 'eField_vs_pField_path'], None, 'quantum'),
+            ('eV_spectrum_path', ['quantum', 'files', 'eV_spectrum_path'], None, 'quantum'),
+            ('checkpoint_path', ['quantum', 'files', 'checkpoint', 'path'], None, 'quantum'),
+            ('checkpoint_freq', ['quantum', 'files', 'checkpoint', 'frequency'], None, 'quantum'),
+            ('molecule_coords', ['quantum', 'rttddft', 'geometry', 'molecule_coords'], None, 'quantum'),
+            ('molecule_atoms', ['quantum', 'rttddft', 'geometry', 'atoms'], None, 'quantum'),
+            ('atoms', ['quantum', 'rttddft', 'geometry', 'atoms'], None, 'quantum'),  # Alias for molecule_atoms
+            ('basis', ['quantum', 'rttddft', 'basis'], None, 'quantum'),
+            ('charge', ['quantum', 'rttddft', 'charge'], None, 'quantum'),
+            ('spin', ['quantum', 'rttddft', 'spin'], None, 'quantum'),
+            ('xc', ['quantum', 'rttddft', 'xc'], None, 'quantum'),
+            ('mu', ['quantum', 'rttddft', 'mu'], None, 'quantum'),
+            ('propagator', ['quantum', 'rttddft', 'propagator'], None, 'quantum'),  # Will be lowercased later
+            ('check_tolerance', ['quantum', 'rttddft', 'check_tolerance'], None, 'quantum'),
+            ('transform', ['quantum', 'rttddft', 'transform'], False, 'quantum'),  # Bool, default False
+            ('fourier_gamma', ['quantum', 'rttddft', 'fourier_gamma'], None, 'quantum'),
+            ('damping', ['quantum', 'rttddft', 'damping'], None, 'quantum'),  # Processed later
+            ('mu_damping', ['quantum', 'rttddft', 'mu_damping'], 0, 'quantum'),
+            ('bases', ['quantum', 'comparison', 'bases'], [], 'quantum'),
+            ('xcs', ['quantum', 'comparison', 'xcs'], [], 'quantum'),
+            ('num_virtual', ['quantum', 'comparison', 'num_virtual'], None, 'quantum'),
+            ('num_occupied', ['quantum', 'comparison', 'num_occupied'], None, 'quantum'),  # Often same as num_virtual
+            ('y_min', ['quantum', 'comparison', 'y_min'], None, 'quantum'),
+            ('y_max', ['quantum', 'comparison', 'y_max'], None, 'quantum'),
 
+            # Quantum source (optional, with warning if in PlasMol)
+            ('shape', ['quantum', 'source', 'shape'], None, 'quantum'),
+            ('peak_time_au', ['quantum', 'source', 'peak_time_au'], None, 'quantum'),
+            ('width_steps', ['quantum', 'source', 'width_steps'], None, 'quantum'),
+            ('intensity_au', ['quantum', 'source', 'intensity_au'], None, 'quantum'),
+            ('wavelength_nm', ['quantum', 'source', 'wavelength_nm'], None, 'quantum'),
+            ('dir', ['quantum', 'source', 'dir'], None, 'quantum'),
 
-    def buildQuantumParams(self):
-        self.pField_path = self.preparams["quantum"]["files"]["pField_path"]
-        self.pField_Transform_path = self.preparams["quantum"]["files"]["pField_Transform_path"]
-        self.eField_vs_pField_path = self.preparams["quantum"]["files"]["eField_vs_pField_path"]
-        self.eV_spectrum_path = self.preparams["quantum"]["files"]["eV_spectrum_path"]
-        self.checkpoint_path = self.preparams["quantum"]["files"]["checkpoint"]["path"] if "checkpoint" in self.preparams["quantum"]["files"] else None
-        self.checkpoint_freq = self.preparams["quantum"]["files"]["checkpoint"]["frequency"] if "checkpoint" in self.preparams["quantum"]["files"] else None
-        self.molecule_coords = self.preparams["quantum"]["rttddft"]["geometry"]["molecule_coords"]
-        self.molecule_atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
-        self.atoms = self.preparams["quantum"]["rttddft"]["geometry"]["atoms"]
-        self.basis = self.preparams["quantum"]["rttddft"]['basis']
-        self.charge = self.preparams["quantum"]["rttddft"]['charge']
-        self.spin = self.preparams["quantum"]["rttddft"]['spin']
-        self.xc = self.preparams["quantum"]["rttddft"]['xc']
-        self.mu = self.preparams["quantum"]["rttddft"].get('mu', None)
-        self.propagator = self.preparams["quantum"]["rttddft"]["propagator"].lower()
-        self.check_tolerance = self.preparams["quantum"]["rttddft"]['check_tolerance']
-        self.transform = True if "transform" in self.preparams["quantum"]["rttddft"] else False
-        self.fourier_gamma = self.preparams["quantum"]["rttddft"].get("fourier_gamma")
-        self.damping = 'static' if "damping" in self.preparams["quantum"]["rttddft"] else None
-        self.mu_damping = self.preparams["quantum"]["rttddft"].get("mu_damping", 0)
-        if self.damping is not None:
-            if 'dynamic' in self.preparams["quantum"]["rttddft"]["damping"]:
+            # Classical params (for 'Classical' or 'PlasMol'; objects instantiated separately)
+            ('simulation', ['classical', 'simulation'], None, 'classical'),
+            ('molecule_position', ['classical', 'molecule'], None, 'classical'),
+            ('source_dict', ['classical', 'source'], None, 'classical'),  # Raw dict for instantiation
+            ('nanoparticle_dict', ['classical', 'object'], None, 'classical'),  # Raw dict for instantiation
+            ('symmetries', ['classical', 'simulation', 'symmetries'], None, 'classical'),  # List for processing
+            ('hdf5', ['classical', 'hdf5'], None, 'classical'),  # Dict, processed later
+        ]
+
+        # Populate attributes from param_defs
+        for attr, path, default, condition in param_defs:
+            if condition and condition not in self.type.lower():
+                continue  # Skip if condition not met (e.g., 'quantum' params only if quantum present)
+            value = self._get_nested_value(self.preparams, path, default)
+            if value is None and default is None:
+                raise RuntimeError(f"Required parameter '{attr}' (path: {'.'.join(path)}) is missing.")
+            setattr(self, attr, value)
+
+        # Post-processing for specific params
+        if hasattr(self, 'propagator'):
+            self.propagator = self.propagator.lower()
+            if self.propagator == 'magnus2':
+                self.maxiter = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'maxiter'], None)
+                self.pc_convergence = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'pc_convergence'], None)
+            elif self.propagator not in ['step', 'rk4', 'magnus2']:
+                raise ValueError(f"Unsupported propagator: {self.propagator}. Acceptable: step, rk4, magnus2.")
+
+        if hasattr(self, 'damping') and self.damping is not None:
+            damping_dict = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'damping'], {})
+            if isinstance(damping_dict, dict) and 'dynamic' in damping_dict:
                 self.damping = 'dynamic'
             else:
                 logger.warning("No damping type specified, defaulting to static.")
-            self.gam0 = self.preparams["quantum"]["rttddft"]["damping"].get("gam0", None)
-            self.xi = self.preparams["quantum"]["rttddft"]["damping"].get("xi", None)
-            self.eps0 = self.preparams["quantum"]["rttddft"]["damping"].get("eps0", None)
-            self.clamp = self.preparams["quantum"]["rttddft"]["damping"].get("clamp", None)
+                self.damping = 'static'
+            self.gam0 = damping_dict.get('gam0')
+            self.xi = damping_dict.get('xi')
+            self.eps0 = damping_dict.get('eps0')
+            self.clamp = damping_dict.get('clamp')
 
-        if "comparison" in self.preparams["quantum"]:
-            self.bases = self.preparams["quantum"]["comparison"].get("bases", [])
-            self.xcs = self.preparams["quantum"]["comparison"].get("xcs", [])
-            self.num_virtual = self.preparams["quantum"]["comparison"].get("num_virtual")
-            self.num_occupied = self.preparams["quantum"]["comparison"].get("num_virtual")
-            self.y_min = self.preparams["quantum"]["comparison"].get("y_min")
-            self.y_max = self.preparams["quantum"]["comparison"].get("y_max")
+        if hasattr(self, 'bases') and (self.bases or self.xcs):
             if not self.bases or not self.xcs:
-                raise ValueError("Comparison mode requires 'bases' and 'xcs' lists in the 'comparison' block.")
-            # Optionally override other params if needed, e.g., disable source if present
+                raise ValueError("Comparison mode requires both 'bases' and 'xcs' lists.")
+            self.num_occupied = self.num_virtual  # Assuming same as num_virtual per original
             if hasattr(self, 'shape'):
                 logger.warning("Comparison mode ignores source; no time propagation.")
-                delattr(self, 'shape')  # Prevent field setup
+                delattr(self, 'shape')
 
-        if 'source' in self.preparams['quantum']:
-            if not self.type == 'Quantum':
-                logger.warning("Source block found in quantum section, but full PlasMol simulation is available. Ignoring source in quantum section. For full PlasMol simulation, please add source to classical section.")
+        if hasattr(self, 'shape') and self.type != 'Quantum':
+            logger.warning("Source found in quantum section, but full PlasMol available. Ignoring quantum source; use classical section.")
+            delattr(self, 'shape')  # And remove other quantum source attrs if set
+            if hasattr(self, 'peak_time_au'): delattr(self, 'peak_time_au')
+            if hasattr(self, 'width_steps'): delattr(self, 'width_steps')
+            if hasattr(self, 'intensity_au'): delattr(self, 'intensity_au')
+            if hasattr(self, 'wavelength_nm'): delattr(self, 'wavelength_nm')
+            if hasattr(self, 'dir'): delattr(self, 'dir')
+
+        # Classical-specific instantiations (if classical present)
+        if 'classical' in self.type.lower():
+            self._instantiate_classical_objects()
+
+        delattr(self, 'preparams')  # Clean up
+
+    def _get_nested_value(self, d, path, default=None):
+        """Helper to get nested dict value safely."""
+        for key in path:
+            if isinstance(d, dict) and key in d:
+                d = d[key]
             else:
-                self.shape = self.preparams["quantum"]["source"]['shape']
-                self.peak_time_au = self.preparams["quantum"]["source"]['peak_time_au']
-                self.width_steps = self.preparams["quantum"]["source"]['width_steps']
-                self.intensity_au = self.preparams["quantum"]["source"]['intensity_au']
-                self.wavelength_nm = self.preparams["quantum"]["source"]['wavelength_nm'] if self.shape == 'pulse' else None
-                self.dir = self.preparams["quantum"]["source"]['dir'] if not self.transform else None
-                # if you want to add a custom shape you must add support for the relevant parameters here
+                return default
+        return d
 
-        if self.propagator == 'step':
-            pass
-        elif self.propagator == 'magnus2':
-            self.maxiter = self.preparams["quantum"]["rttddft"]["maxiter"]
-            self.pc_convergence = self.preparams["quantum"]["rttddft"]["pc_convergence"]
-        elif self.propagator == 'rk4':
-            pass
+    def _instantiate_classical_objects(self):
+        """Instantiate classical objects like source, nanoparticle, etc."""
+        # Source
+        if hasattr(self, 'source_dict') and self.source_dict:
+            source_type = self.source_dict.get('sourceType')
+            if not source_type:
+                raise ValueError("Source requires 'sourceType'.")
+            self.source = sources.MEEPSOURCE(
+                source_type=source_type,
+                sourceCenter=self.source_dict.get('sourceCenter', [0, 0, 0]),
+                sourceSize=self.source_dict.get('sourceSize', [0, 0, 0]),
+                frequency=self.source_dict.get('frequency'),
+                wavelength=self.source_dict.get('wavelength'),
+                component=self.source_dict.get('component', 'z'),
+                amplitude=self.source_dict.get('amplitude', 1.0),
+                is_integrated=self.source_dict.get('is_integrated', True),
+                **{k: v for k, v in self.source_dict.items() if k not in [
+                    'sourceType', 'sourceCenter', 'sourceSize', 'frequency', 'wavelength',
+                    'component', 'amplitude', 'is_integrated']}
+            )
         else:
-            raise ValueError(f"Unsupported propagator: {self.propagator}. Please provide in the molecule input file one of the acceptable Density matrix propagators: step, rk4, or magnus2.")
-        
+            logger.info('No source chosen for simulation. Continuing without it.')
+            self.source = None
 
-
-    def buildclassicalParams(self):
-        import meep as mp
-
-        def getMoleculeLocation(self):
-            if self.preparams['classical'].get("molecule", None) is None:
-                logger.info('No molecule chosen for simulation. Continuing without it.')
-                return None
-            
-            return self.preparams['classical']['molecule']
-
-        def getSimulationParams(self):
-            if self.preparams['classical'].get("simulation", None) is None:
-                raise RuntimeError('No simulation parameters chosen for simulation. Exiting.')
-            
-            return self.preparams['classical']["simulation"]
-
-        def getSource(self):
-            from ..classical import sources
-
-            if self.preparams['classical'].get("source", None) is None:
-                logger.info('No source chosen for simulation. Continuing without it.')
-                return None
-
-            source_type = self.preparams['classical']['source']['sourceType']
-            if source_type == 'continuous':
-                source_params = {
-                    key: value for key, value in self.preparams['classical']['source'].items()
-                    if key in ['frequency', 'wavelength', 'start_time', 'end_time', 
-                            'width', 'fwidth', 'slowness', 'is_integrated', 'component']
-                }
-                source = sources.ContinuousSource(
-                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
-                    sourceSize=self.preparams['classical']['source']['sourceSize'],
-                    **source_params
-                )
-            elif source_type == 'gaussian':
-                source_params = {
-                    key: value for key, value in self.preparams['classical']['source'].items()
-                    if key in ['frequency', 'wavelength', 'width', 'fwidth', 'start_time', 
-                            'cutoff', 'is_integrated', 'component']
-                }
-                source = sources.GaussianSource(
-                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
-                    sourceSize=self.preparams['classical']['source']['sourceSize'],
-                    **source_params
-                )
-            elif source_type == 'chirped':
-                source_params = {
-                    key: value for key, value in self.preparams['classical']['source'].items()
-                    if key in ['frequency', 'wavelength', 'width', 'peakTime', 'chirpRate', 
-                            'start_time', 'end_time', 'is_integrated', 'component']
-                }
-                source = sources.ChirpedSource(
-                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
-                    sourceSize=self.preparams['classical']['source']['sourceSize'],
-                    **source_params
-                )
-            elif source_type == 'pulse':
-                source_params = {
-                    key: value for key, value in self.preparams['classical']['source'].items()
-                    if key in ['frequency', 'wavelength', 'width', 'peakTime', 'start_time', 'end_time', 'is_integrated', 'component']
-                }
-
-                source = sources.PulseSource(
-                    sourceCenter=self.preparams['classical']['source']['sourceCenter'],
-                    sourceSize=self.preparams['classical']['source']['sourceSize'],
-                    **source_params
-                )
-            # elif ....
-                # ------------------------------------ #
-                #          Additional custom           #
-                #         classes for sources          #
-                #           can be added to            #
-                #        `classical/sources.py`        #
-                #    and then added here for support   #
-                # ------------------------------------ #
-            else:
-                raise ValueError(f"Unsupported source type: {source_type}")
-
-            return source
-
-        def getNanoparticle(self):
-            if self.preparams['classical'].get("object", None) is None:
-                logger.info('No object chosen for simulation. Continuing without it.')
-                return None
-
-            if self.preparams['classical']['object']['material'] == 'Au':
+        # Nanoparticle
+        if hasattr(self, 'nanoparticle_dict') and self.nanoparticle_dict:
+            material_str = self.nanoparticle_dict.get('material')
+            if material_str == 'Au':
                 from meep.materials import Au_JC_visible as Au
                 material = Au
-            elif self.preparams['classical']['object']['material'] == 'Ag':
+            elif material_str == 'Ag':
                 from meep.materials import Ag
                 material = Ag
             else:
-                raise ValueError(f"Unsupported material type: {self.preparams['classical']['object']['material']}")
+                raise ValueError(f"Unsupported material type: {material_str}")
+            self.nanoparticle = mp.Sphere(
+                radius=self.nanoparticle_dict.get('radius', 0),
+                center=mp.Vector3(*self.nanoparticle_dict.get('center', [0, 0, 0])),
+                material=material
+            )
+        else:
+            logger.info('No object chosen for simulation. Continuing without it.')
+            self.nanoparticle = None
 
-            objectNP = mp.Sphere(radius=self.preparams['classical']['object']['radius'], center=self.preparams['classical']['object']['center'], material=material)
-            return objectNP
-
-        def getSymmetry(self):
-            if self.preparams['classical']['simulation'].get("symmetries", None) is None:
-                logger.info('No symmetries chosen for simulation. Continuing without them.')
-                return None
-            
-            sym = self.preparams['classical']['simulation']['symmetries']
-            symmetries = []
-            for i in range(len(sym)):
+        # Symmetries
+        if hasattr(self, 'symmetries') and self.symmetries:
+            symmetries_list = []
+            sym = self.symmetries
+            i = 0
+            while i < len(sym):
                 if sym[i] in ['X', 'Y', 'Z']:
                     if i + 1 < len(sym):
                         try:
                             phase = int(sym[i + 1])
                         except ValueError:
-                            raise ValueError(
-                                f"Symmetry '{sym[i]}' is not followed by a valid integer.")
-
-                        if sym[i] == 'X':
-                            symmetries.append(mp.Mirror(mp.X, phase=phase))
-                        elif sym[i] == 'Y':
-                            symmetries.append(mp.Mirror(mp.Y, phase=phase))
-                        elif sym[i] == 'Z':
-                            symmetries.append(mp.Mirror(mp.Z, phase=phase))
+                            raise ValueError(f"Symmetry '{sym[i]}' not followed by valid integer.")
+                        dir_map = {'X': mp.X, 'Y': mp.Y, 'Z': mp.Z}
+                        symmetries_list.append(mp.Mirror(dir_map[sym[i]], phase=phase))
+                        i += 2
                     else:
                         raise ValueError(f"Symmetry '{sym[i]}' has no value following it.")
-            if not symmetries:
-                raise ValueError(f"Unsupported symmetry type: {sym}")
-            else:
-                return symmetries
-
-        def gethdf5(self):
-            if self.preparams['classical'].get("hdf5", None) is None:
-                logger.info('No picture output chosen for simulation. Continuing without it.')
-                return None
-
-            if any(key not in self.preparams['classical']['hdf5'] for key in ['timestepsBetween', 'intensityMin', 'intensityMax']):
-                raise ValueError("If you want to generate pictures, you must provide timestepsBetween, intensityMin, and intensityMax.")
-
-            if 'imageDirName' not in self.preparams['classical']['hdf5']:
-                import os 
-                from datetime import datetime
-                self.preparams['classical']['hdf5']['imageDirName'] = f"classical-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
-                logger.info(f"Directory for images: {os.path.abspath(self.preparams['classical']['hdf5']['imageDirName'])}")
-
-            return self.preparams['classical']['hdf5']
-        
-        self.simulation_params = getSimulationParams(self)
-        self.molecule_position = getMoleculeLocation(self)
-        self.source = getSource(self)
-        self.symmetry = getSymmetry(self)
-        self.nanoparticle = getNanoparticle(self)
-        self.hdf5 = gethdf5(self)
-
-        from .. import constants
-        if 'resolution' in self.simulation_params:
-            dtAlt = (0.5 / self.simulation_params["resolution"]) * constants.convertTimeMeep2Atomic
-            if not np.isclose(dtAlt, self.dt):
-                logger.info(f"Resolution given in simulation parameters does not generate given time step 'dt'. Ignoring given resolution, using new resolution: {newResolution}")
-                newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-                self.simulation_params["resolution"] = newResolution
+                else:
+                    i += 1
+            self.symmetry = symmetries_list if symmetries_list else None
         else:
-            newResolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-            self.simulation_params["resolution"] = newResolution
+            logger.info('No symmetries chosen for simulation. Continuing without them.')
+            self.symmetry = None
 
+        # HDF5
+        if hasattr(self, 'hdf5') and self.hdf5:
+            required_keys = ['timestepsBetween', 'intensityMin', 'intensityMax']
+            if any(key not in self.hdf5 for key in required_keys):
+                raise ValueError(f"HDF5 requires {', '.join(required_keys)}.")
+            if 'imageDirName' not in self.hdf5:
+                self.hdf5['imageDirName'] = f"classical-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
+                logger.info(f"Directory for images: {os.path.abspath(self.hdf5['imageDirName'])}")
+        else:
+            logger.info('No picture output chosen for simulation. Continuing without it.')
+            self.hdf5 = None
 
-    def buildSettingsParams(self):
-        self.dt = self.preparams["settings"]["dt"]
-        self.t_end = self.preparams["settings"]["t_end"]
-        self.eField_path = self.preparams["settings"]["eField_path"]
+        # Simulation params (required for classical)
+        if not hasattr(self, 'simulation') or not self.simulation:
+            raise RuntimeError('No simulation parameters chosen for classical simulation.')
+        
+        # Molecule position (required for PlasMol)
+        if self.type == 'PlasMol' and not hasattr(self, 'molecule_position'):
+            raise RuntimeError('Molecule position required for PlasMol simulation.')
 
+        # Adjust resolution based on dt
+        if 'resolution' in self.simulation:
+            dt_alt = (0.5 / self.simulation['resolution']) * constants.convertTimeMeep2Atomic
+            if not np.isclose(dt_alt, self.dt):
+                new_res = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
+                logger.info(f"Resolution does not match dt. Using new resolution: {new_res}")
+                self.simulation['resolution'] = new_res
+        else:
+            new_res = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
+            self.simulation['resolution'] = new_res

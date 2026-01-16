@@ -2,5 +2,5 @@
 __version__ = "1.1.0"  
 __author__ = "Brinton King Eldridge" 
 
-from .drivers import *
+from plasmol.drivers import *
 

@@ -13,8 +13,8 @@ from pyscf.dft import libxc
 from scipy.interpolate import interp1d
 from scipy.linalg import inv
 
-from .. import constants
-from ..quantum.checkpoint import restart_from_checkpoint
+from plasmol import constants
+from plasmol.quantum.checkpoint import restart_from_checkpoint
 
 logger = logging.getLogger("main")
 
