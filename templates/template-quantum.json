@@ -1,0 +1,42 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 40,
+    "filepath_efield": "eField.csv"
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0000000000, 0.0000000000, -0.1302052882]},
+      {"atom": "H", "coord": [1.4891244004, 0.0000000000, 1.0332262019]},
+      {"atom": "H", "coord": [-1.4891244004, 0.0000000000, 1.0332262019]}
+    ],
+    "units": "bohr",
+    "check_tolerance": 1e-12,
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "resplimit": 1e-20,
+    "propagator": "magnus2",
+    "pc_convergence": 1e-12,
+    "maxiter": 200,
+    "files": {
+      "checkpoint": {
+        "snapshot_frequency": 100,
+        "filepath_checkpoint": "checkpoint.npz"
+      },
+      "filepath_pfield": "pField.csv",
+      "filepath_pfield_transformed": "pField-transformed.csv",
+      "filepath_efield_vs_pfield": "output.png",
+      "filepath_fourier_spectrum": "spectrum.png"
+    },
+    "source": {
+      "shape": "pulse",
+      "peak_time_au": 200,
+      "width_steps": 1000,
+      "wavelength_nm": 400,
+      "intensity_au": 5e-5,
+      "dir": "z"
+    }
+  }
+}

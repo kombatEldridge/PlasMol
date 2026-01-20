@@ -55,11 +55,9 @@ if __name__ == "__main__":
         parsed = parseInputFile(args)
         logger.debug(f"Arguments given and parsed successfully: {parsed}")
 
-        # Step 3: Merge all found parameters
-        logger.debug("Merging parameters from input file(s) with the CLI inputs. CLI takes priority for duplicate values.")
+        # Step 3: Fill in PARAMS dataclass
         params = PARAMS(parsed)
-        
-        logger.debug(f"Arguments successfully recieved: ")
+        logger.debug(f"PARAMS successfully created: ")
         for key, value in vars(params).items():
             logger.debug(f"\t\t{key}: {value}")
 

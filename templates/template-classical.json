@@ -4,7 +4,7 @@
     "t_end": 1,
     "eField_path": "eField.csv"
   },
-  "classical": {
+  "meep": {
     "source": {
       "sourceType": "continuous",
       "sourceCenter": [-0.04, 0, 0],

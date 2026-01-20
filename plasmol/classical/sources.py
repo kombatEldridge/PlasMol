@@ -51,7 +51,6 @@ class MEEPSOURCE:
                 - src_func (callable, required): Function f(t) returning complex number for time t (in Meep units).
                 - start_time (float, optional): Starting time. Default: -1e+20.
                 - end_time (float, optional): End time. Default: 1e+20.
-                - center_frequency (float, optional): Center frequency for EigenModeSource use. Default: 0.
                 - fwidth (float, optional): Bandwidth in frequency units. Default: 0.
 
         Raises:
@@ -141,14 +140,12 @@ class MEEPSOURCE:
                 raise ValueError("For 'custom' source_type, 'src_func' must be provided in kwargs.")
             start_time = kwargs.get('start_time', -1e+20)
             end_time = kwargs.get('end_time', 1e+20)
-            center_frequency = kwargs.get('center_frequency', 0)
             fwidth = kwargs.get('fwidth', 0)
             src_time = mp.CustomSource(
                 src_func=src_func,
                 start_time=start_time,
                 end_time=end_time,
                 is_integrated=is_integrated,
-                center_frequency=center_frequency,
                 fwidth=fwidth
             )
 

@@ -14,122 +14,157 @@ class PARAMS:
     """
     Container for simulation parameters given from input files and cli inputs.
     """
-    def __init__(self, preparams):
-        self.preparams = preparams
-        self.type = self.preparams["simulation_type"]
-        self.restart = self.preparams["args"].get("restart", False)  # Default to False if not provided
-        self.do_nothing = self.preparams["args"].get("do_nothing", False)  # Default to False
+    def __init__(self, parsed):
+        self.parsed = parsed
+        self.type = self.parsed["simulation_type"]
+        self.restart = self.parsed["args"].get("restart", False)  # Default to False if not provided
+        self.do_nothing = self.parsed["args"].get("do_nothing", False)  # Default to False
 
         # Define a large, extensible list of parameter definitions.
         # Each entry is a tuple: (attribute_name, path_as_list, default_value, section_condition)
         # - attribute_name: str, the name to set as self.<attribute_name>
-        # - path_as_list: list of str, the nested keys to access in preparams (e.g., ['settings', 'dt'])
+        # - path_as_list: list of str, the nested keys to access in parsed (e.g., ['settings', 'dt'])
         # - default_value: any, value if not found (use None for required params)
-        # - section_condition: str or None, only set if self.type in ['PlasMol', 'Quantum', 'Classical'] matches or None for always
+        # - section_condition: str or None, only set if self.type in ['PlasMol', 'Plasmon', 'Molecule'] matches or None for always
         # Add new params here as needed; required params without default will raise error if missing.
         param_defs = [
             # Settings (always required)
             ('dt', ['settings', 'dt'], None, None),
             ('t_end', ['settings', 't_end'], None, None),
-            ('eField_path', ['settings', 'eField_path'], None, None),
 
-            # Quantum params (for 'Quantum' or 'PlasMol')
-            ('pField_path', ['quantum', 'files', 'pField_path'], None, 'quantum'),
-            ('pField_Transform_path', ['quantum', 'files', 'pField_Transform_path'], None, 'quantum'),
-            ('eField_vs_pField_path', ['quantum', 'files', 'eField_vs_pField_path'], None, 'quantum'),
-            ('eV_spectrum_path', ['quantum', 'files', 'eV_spectrum_path'], None, 'quantum'),
-            ('checkpoint_path', ['quantum', 'files', 'checkpoint', 'path'], None, 'quantum'),
-            ('checkpoint_freq', ['quantum', 'files', 'checkpoint', 'frequency'], None, 'quantum'),
-            ('molecule_coords', ['quantum', 'rttddft', 'geometry', 'molecule_coords'], None, 'quantum'),
-            ('molecule_atoms', ['quantum', 'rttddft', 'geometry', 'atoms'], None, 'quantum'),
-            ('atoms', ['quantum', 'rttddft', 'geometry', 'atoms'], None, 'quantum'),  # Alias for molecule_atoms
-            ('basis', ['quantum', 'rttddft', 'basis'], None, 'quantum'),
-            ('charge', ['quantum', 'rttddft', 'charge'], None, 'quantum'),
-            ('spin', ['quantum', 'rttddft', 'spin'], None, 'quantum'),
-            ('xc', ['quantum', 'rttddft', 'xc'], None, 'quantum'),
-            ('mu', ['quantum', 'rttddft', 'mu'], None, 'quantum'),
-            ('propagator', ['quantum', 'rttddft', 'propagator'], None, 'quantum'),  # Will be lowercased later
-            ('check_tolerance', ['quantum', 'rttddft', 'check_tolerance'], None, 'quantum'),
-            ('transform', ['quantum', 'rttddft', 'transform'], False, 'quantum'),  # Bool, default False
-            ('fourier_gamma', ['quantum', 'rttddft', 'fourier_gamma'], None, 'quantum'),
-            ('damping', ['quantum', 'rttddft', 'damping'], None, 'quantum'),  # Processed later
-            ('mu_damping', ['quantum', 'rttddft', 'mu_damping'], 0, 'quantum'),
-            ('bases', ['quantum', 'comparison', 'bases'], [], 'quantum'),
-            ('xcs', ['quantum', 'comparison', 'xcs'], [], 'quantum'),
-            ('num_virtual', ['quantum', 'comparison', 'num_virtual'], None, 'quantum'),
-            ('num_occupied', ['quantum', 'comparison', 'num_occupied'], None, 'quantum'),  # Often same as num_virtual
-            ('y_min', ['quantum', 'comparison', 'y_min'], None, 'quantum'),
-            ('y_max', ['quantum', 'comparison', 'y_max'], None, 'quantum'),
+            # Plasmon params
+            ('plasmon', ['plasmon'], None, 'plasmon'),
+            ('tolerance_efield', ['plasmon', 'simulation', "tolerance_efield"], 1e-12, 'plasmon'),
+            ('cell_length', ['plasmon', 'simulation', "cell_length"], None, 'plasmon'),
+            ('pml_thickness', ['plasmon', 'simulation', "pml_thickness"], None, 'plasmon'),
+            ('symmetries', ['plasmon', 'simulation', 'symmetries'], None, 'plasmon'),
+            ('surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], 1.33, 'plasmon'),
 
-            # Quantum source (optional, with warning if in PlasMol)
-            ('shape', ['quantum', 'source', 'shape'], None, 'quantum'),
-            ('peak_time_au', ['quantum', 'source', 'peak_time_au'], None, 'quantum'),
-            ('width_steps', ['quantum', 'source', 'width_steps'], None, 'quantum'),
-            ('intensity_au', ['quantum', 'source', 'intensity_au'], None, 'quantum'),
-            ('wavelength_nm', ['quantum', 'source', 'wavelength_nm'], None, 'quantum'),
-            ('dir', ['quantum', 'source', 'dir'], None, 'quantum'),
+            # Plasmon source params
+            ('plasmon_source', ['plasmon', 'source'], False, 'plasmon'),
+            ('plasmon_source_type', ['plasmon', 'source', 'source_type'], False, 'plasmon'),
+            ('plasmon_source_center', ['plasmon', 'source', 'source_center'], False, 'plasmon'),
+            ('plasmon_source_size', ['plasmon', 'source', 'source_size'], False, 'plasmon'),
+            ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'plasmon'),
+            ('plasmon_source_amplitude', ['plasmon', 'source', 'amplitude'], False, 'plasmon'),
+            ('plasmon_source_source_dict', ['plasmon', 'source', 'additional_parameters'], False, 'plasmon'),
 
-            # Classical params (for 'Classical' or 'PlasMol'; objects instantiated separately)
-            ('simulation', ['classical', 'simulation'], None, 'classical'),
-            ('molecule_position', ['classical', 'molecule'], None, 'classical'),
-            ('source_dict', ['classical', 'source'], None, 'classical'),  # Raw dict for instantiation
-            ('nanoparticle_dict', ['classical', 'object'], None, 'classical'),  # Raw dict for instantiation
-            ('symmetries', ['classical', 'simulation', 'symmetries'], None, 'classical'),  # List for processing
-            ('hdf5', ['classical', 'hdf5'], None, 'classical'),  # Dict, processed later
+            # Nanoparticle params
+            ('nanoparticle', ['plasmon', 'nanoparticle'], False, 'plasmon'),
+            ('material', ['plasmon', 'nanoparticle', 'material'], False, 'plasmon'),
+            ('radius', ['plasmon', 'nanoparticle', 'radius'], False, 'plasmon'),
+            ('center', ['plasmon', 'nanoparticle', 'center'], False, 'plasmon'),
+
+            # HDF5 params
+            ('images', ['plasmon', 'images'], False, 'plasmon'),
+            ('timesteps_between', ['plasmon', 'images', 'timesteps_between'], None, 'plasmon'),
+            ('intensity_min', ['plasmon', 'images', 'intensity_min'], None, 'plasmon'),
+            ('intensity_max', ['plasmon', 'images', 'intensity_max'], None, 'plasmon'),
+            ('image_dir_name', ['plasmon', 'images', 'image_dir_name'], None, 'plasmon'),
+
+            # Molecule position for PlasMol
+            ('molecule_position', ['plasmon', 'molecule_position'], None, 'plasmon'),
+
+            # Molecule params
+            ('molecule', ['molecule'], False, 'molecule'),
+            ('coords', ['molecule', 'geometry', 'coords'], None, 'molecule'),
+            ('atoms', ['molecule', 'geometry', 'atoms'], None, 'molecule'),
+            ('basis', ['molecule', 'basis'], None, 'molecule'),
+            ('charge', ['molecule', 'charge'], None, 'molecule'),
+            ('spin', ['molecule', 'spin'], None, 'molecule'),
+            ('xc', ['molecule', 'xc'], None, 'molecule'),
+            ('lrc_parameter', ['molecule', 'lrc_parameter'], None, 'molecule'),
+            ('custom_xc', ['molecule', 'custom_xc'], None, 'molecule'),
+            ('propagator', ['molecule', 'propagator', "type"], None, 'molecule'),
+            ('pc_convergence', ['molecule', 'propagator', "pc_convergence"], 1e-12, 'molecule'),
+            ('max_iterations', ['molecule', 'propagator', "max_iterations"], 200, 'molecule'),
+            ('hermiticity_tolerance', ['molecule', 'hermiticity_tolerance'], 1e-12, 'molecule'),
+
+            # Source params (molecule section)
+            ('molecule_source', ['molecule', 'source'], False, 'molecule'),
+            ('molecule_source_type', ['molecule', 'source', 'type'], None, 'molecule'),
+            ('molecule_source_intensity_au', ['molecule', 'source', 'intensity_au'], None, 'molecule'),
+            ('molecule_source_peak_time_au', ['molecule', 'source', 'peak_time_au'], None, 'molecule'),
+            ('molecule_source_width_steps', ['molecule', 'source', 'width_steps'], None, 'molecule'),
+            ('molecule_source_width_au', ['molecule', 'source', 'width_au'], None, 'molecule'),
+            ('molecule_source_wavelength_nm', ['molecule', 'source', 'wavelength_nm'], None, 'molecule'),
+            ('molecule_source_wavelength_au', ['molecule', 'source', 'wavelength_au'], None, 'molecule'),
+            ('molecule_source_dir', ['molecule', 'source', 'dir'], None, 'molecule'),
+
+            # Fourier params runs three sims at once, one per axis
+            ('fourier', ['molecule', 'modifiers', 'fourier'], False, 'molecule'),
+            ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], None, 'molecule'),
+            ('filepath_pfield_fourier', ['molecule', 'modifiers', 'fourier', 'filepath_pfield_fourier'], None, 'molecule'),
+            ('filepath_spectrum_fourier', ['molecule', 'modifiers', 'fourier', 'filepath_spectrum_fourier'], None, 'molecule'),
+
+            # Lopata Broadening params
+            ('broadening', ['molecule', 'modifiers', 'broadening'], False, 'molecule'),
+            ('broadening_type', ['molecule', 'modifiers', 'broadening', "type"], None, 'molecule'),
+            ('broadening_gam0', ['molecule', 'modifiers', 'broadening', "gam0"], None, 'molecule'),
+            ('broadening_xi', ['molecule', 'modifiers', 'broadening', "xi"], None, 'molecule'),
+            ('broadening_eps0', ['molecule', 'modifiers', 'broadening', "eps0"], None, 'molecule'),
+            ('broadening_clamp', ['molecule', 'modifiers', 'broadening', "clamp"], None, 'molecule'),
+
+            # Comparison mode params
+            ('comparison', ['molecule', 'modifiers', 'comparison'], False, 'molecule'),
+            ('comparison_bases', ['molecule', 'modifiers', 'comparison', 'bases'], [], 'molecule'),
+            ('comparison_xcs', ['molecule', 'modifiers', 'comparison', 'xcs'], [], 'molecule'),
+            ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], 3, 'molecule'),
+            ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], 3, 'molecule'),
+            ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], -1, 'molecule'),
+            ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], 1, 'molecule'),
+
+            # Comparison mode params
+            ('dampening', ['molecule', 'modifiers', 'dampening'], False, 'molecule'),
+            ('dampening_gamma', ['molecule', 'modifiers', 'dampening', 'gamma'], None, 'molecule'),
+
+            # Checkpointing params
+            ('checkpoint', ['molecule', 'files', 'checkpoint'], False, 'molecule'),
+            ('filepath_checkpoint', ['molecule', 'files', 'checkpoint', 'filepath_checkpoint'], None, 'molecule'),
+            ('snapshot_frequency', ['molecule', 'files', 'checkpoint', 'snapshot_frequency'], None, 'molecule'),
+
+            # Files
+            ('filepath_efield', ['molecule', 'files', 'filepath_efield'], 'eField.csv', 'molecule'),
+            ('filepath_pfield', ['molecule', 'files', 'filepath_pfield'], 'pField.csv', 'molecule'),
+            ('filepath_efield_vs_pfield', ['molecule', 'files', 'filepath_efield_vs_pfield'], None, 'molecule'),
+            ('filepath_fourier_spectrum', ['molecule', 'files', 'filepath_fourier_spectrum'], None, 'molecule'),
         ]
 
         # Populate attributes from param_defs
         for attr, path, default, condition in param_defs:
             if condition and condition not in self.type.lower():
-                continue  # Skip if condition not met (e.g., 'quantum' params only if quantum present)
-            value = self._get_nested_value(self.preparams, path, default)
-            if value is None and default is None:
-                raise RuntimeError(f"Required parameter '{attr}' (path: {'.'.join(path)}) is missing.")
-            setattr(self, attr, value)
+                continue  # Skip if condition not met (e.g., 'molecule' params only if molecule present)
+            value = self._get_nested_value(self.parsed, path, default)
+            if value is not None:
+                setattr(self, attr, value)
 
-        # Post-processing for specific params
         if hasattr(self, 'propagator'):
             self.propagator = self.propagator.lower()
-            if self.propagator == 'magnus2':
-                self.maxiter = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'maxiter'], None)
-                self.pc_convergence = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'pc_convergence'], None)
-            elif self.propagator not in ['step', 'rk4', 'magnus2']:
+            if self.propagator not in ['step', 'rk4', 'magnus2']:
                 raise ValueError(f"Unsupported propagator: {self.propagator}. Acceptable: step, rk4, magnus2.")
 
-        if hasattr(self, 'damping') and self.damping is not None:
-            damping_dict = self._get_nested_value(self.preparams, ['quantum', 'rttddft', 'damping'], {})
-            if isinstance(damping_dict, dict) and 'dynamic' in damping_dict:
-                self.damping = 'dynamic'
-            else:
-                logger.warning("No damping type specified, defaulting to static.")
-                self.damping = 'static'
-            self.gam0 = damping_dict.get('gam0')
-            self.xi = damping_dict.get('xi')
-            self.eps0 = damping_dict.get('eps0')
-            self.clamp = damping_dict.get('clamp')
-
-        if hasattr(self, 'bases') and (self.bases or self.xcs):
-            if not self.bases or not self.xcs:
+        if hasattr(self, 'comparison'):
+            if not self.comparison_bases or not self.comparison_xcs:
                 raise ValueError("Comparison mode requires both 'bases' and 'xcs' lists.")
-            self.num_occupied = self.num_virtual  # Assuming same as num_virtual per original
+            
             if hasattr(self, 'shape'):
                 logger.warning("Comparison mode ignores source; no time propagation.")
                 delattr(self, 'shape')
 
-        if hasattr(self, 'shape') and self.type != 'Quantum':
-            logger.warning("Source found in quantum section, but full PlasMol available. Ignoring quantum source; use classical section.")
-            delattr(self, 'shape')  # And remove other quantum source attrs if set
+        if hasattr(self, 'shape') and self.type != 'Molecule':
+            logger.warning("Source found in molecule section, but full PlasMol available. Ignoring molecule source; use plasmon section.")
+            delattr(self, 'shape')  # And remove other molecule source attrs if set
             if hasattr(self, 'peak_time_au'): delattr(self, 'peak_time_au')
             if hasattr(self, 'width_steps'): delattr(self, 'width_steps')
             if hasattr(self, 'intensity_au'): delattr(self, 'intensity_au')
             if hasattr(self, 'wavelength_nm'): delattr(self, 'wavelength_nm')
             if hasattr(self, 'dir'): delattr(self, 'dir')
 
-        # Classical-specific instantiations (if classical present)
-        if 'classical' in self.type.lower():
-            self._instantiate_classical_objects()
+        # plasmon-specific instantiations (if plasmon present)
+        if 'plasmon' in self.type.lower():
+            self._instantiate_plasmon_objects()
 
-        delattr(self, 'preparams')  # Clean up
+        delattr(self, 'parsed')  # Clean up
 
     def _get_nested_value(self, d, path, default=None):
         """Helper to get nested dict value safely."""
@@ -140,8 +175,8 @@ class PARAMS:
                 return default
         return d
 
-    def _instantiate_classical_objects(self):
-        """Instantiate classical objects like source, nanoparticle, etc."""
+    def _instantiate_plasmon_objects(self):
+        """Instantiate plasmon objects like source, nanoparticle, etc."""
         # Source
         if hasattr(self, 'source_dict') and self.source_dict:
             source_type = self.source_dict.get('sourceType')
@@ -214,15 +249,15 @@ class PARAMS:
             if any(key not in self.hdf5 for key in required_keys):
                 raise ValueError(f"HDF5 requires {', '.join(required_keys)}.")
             if 'imageDirName' not in self.hdf5:
-                self.hdf5['imageDirName'] = f"classical-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
+                self.hdf5['imageDirName'] = f"plasmon-{datetime.now().strftime('%m%d%Y_%H%M%S')}"
                 logger.info(f"Directory for images: {os.path.abspath(self.hdf5['imageDirName'])}")
         else:
             logger.info('No picture output chosen for simulation. Continuing without it.')
             self.hdf5 = None
 
-        # Simulation params (required for classical)
+        # Simulation params (required for plasmon)
         if not hasattr(self, 'simulation') or not self.simulation:
-            raise RuntimeError('No simulation parameters chosen for classical simulation.')
+            raise RuntimeError('No simulation parameters chosen for plasmon simulation.')
         
         # Molecule position (required for PlasMol)
         if self.type == 'PlasMol' and not hasattr(self, 'molecule_position'):

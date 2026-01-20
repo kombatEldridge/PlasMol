@@ -12,8 +12,8 @@ from plasmol.quantum.propagation import propagation
 class SIMULATION:
     def __init__(self, params, molecule=None):
         self.params = params
-        self.dt_meep = self.params.dt_au / constants.convertTimeMeep2Atomic
-        self.t_end_meep = self.params.t_end_au / constants.convertTimeMeep2Atomic
+        self.dt_meep = self.params.dt / constants.convertTimeMeep2Atomic
+        self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
 
         # Define simulation parameters
         sim_params = self.params.simulation
