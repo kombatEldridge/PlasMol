@@ -7,14 +7,15 @@
     "simulation": {
       "tolerance_efield": 1e-12, // Has default value
       "cell_length": 0.1, // In units of microns
+      // "cell_volume": [0.1, 0.1, 0.1], // In units of microns
       "pml_thickness": 0.01, // In units of microns
       "symmetries": ["Y", 1, "Z", -1], // Options are "X", "Y", "Z" each followed by 1 or -1
       "surrounding_material_index": 1.33 // has default value
     },
     "source": {
-      "source_type": "continuous",
-      "source_center": [-0.04, 0, 0], // In units of microns, necessary for all source types
-      "source_size": [0, 0.1, 0.1], // In units of microns, necessary for all source types
+      "type": "continuous",
+      "center": [-0.04, 0, 0], // In units of microns, necessary for all source types
+      "size": [0, 0.1, 0.1], // In units of microns, necessary for all source types
       "component": "z", // Options are "x", "y", "z", necessary for all source types
       "amplitude": 1, // applicable for all source types
       "additional_parameters": {
@@ -31,15 +32,19 @@
       },
     },
     "nanoparticle": { // TODO: revamp to allow for non-spherical particles
-      "material": "Au",
+      "material": "Au_JC_visible",
       "radius": 0.03,
       "center": [0, 0, 0]
     },
     "images": {
       "timesteps_between": 1,
-      "intensity_min": 3,
-      "intensity_max": 10,
-      "image_dir_name": "hello"
+      "additional_parameters": [
+        "-m -3",
+        "-M 10",
+        "-Zc dkbluered",
+        "-S 10"
+      ],
+      "dir_name": "hello"
     },
     "molecule_position": [0, 0, 0]
   },
@@ -65,8 +70,8 @@
     "modifiers":{
       // "fourier": { // if not present, defaults to false
       //   "gamma": 1, // Broadening factor for Fourier transformed spectrum
-      //   "filepath_pfield_fourier": "pField-transformed.csv", // File path of P field at the molecule's position after a Fourier transformation to eV vs absorption
-      //   "filepath_spectrum_fourier": "spectrum.png"
+      //   "fourier_pfield_filepath": "pField-transformed.csv", // File path of P field at the molecule's position after a Fourier transformation to eV vs absorption
+      //   "fourier_spectrum_filepath": "spectrum.png"
       // },
       "broadening": { // if not present, defaults to false
         "type": "static",
@@ -92,20 +97,18 @@
       "intensity_au": 0.001, // Electric field intensity in atomic units
       "peak_time_au": 10, // Time at which the pulse peaks in atomic units
       "width_steps": 50, // Width of the pulse in time steps
-      "width_au": null, // Optional: Width of the pulse in atomic units, calculated if not provided
       "wavelength_nm": 800, // Required if shape is 'pulse', wavelength in nanometers
-      "wavelength_au": null, // Optional if shape is 'pulse', wavelength in atomic units, calculated if not provided
       "dir": "z" // Direction of the electric field
     },
     },
     "files": {
       "checkpoint": {
-        "snapshot_frequency": 100,
-        "filepath_checkpoint": "checkpoint.npz"
+        "frequency": 100,
+        "filepath": "checkpoint.npz"
       },
-      "filepath_efield": "eField.csv", // File path of E field at the molecule's position
-      "filepath_pfield": "pField.csv", // File path of P field at the molecule's position
-      // "filepath_spectrum_e_vs_p": "output.png",
+      "field_e_filepath": "eField.csv", // File path of E field at the molecule's position
+      "field_p_filepath": "pField.csv", // File path of P field at the molecule's position
+      // "field_e_vs_p_filepath": "output.png",
     }
   }
 }

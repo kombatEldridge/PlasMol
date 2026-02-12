@@ -8,11 +8,9 @@ class MEEPSOURCE:
                  source_type,
                  sourceCenter,
                  sourceSize,
-                 frequency=None,
-                 wavelength=None,
-                 component='z',
-                 amplitude=1.0,
-                 is_integrated=True,
+                 component,
+                 amplitude,
+                 is_integrated,
                  **kwargs):
         """
         Initializes a MEEPSOURCE object, which can create Continuous, Gaussian, or Custom sources.
@@ -25,8 +23,6 @@ class MEEPSOURCE:
             source_type (str): The type of source ('continuous', 'gaussian', or 'custom').
             sourceCenter (tuple or mp.Vector3): The center coordinates of the source (x, y, z).
             sourceSize (tuple or mp.Vector3): The size dimensions of the source (sx, sy, sz).
-            frequency (float, optional): The center frequency of the source (in Meep units: c/distance).
-            wavelength (float, optional): The center wavelength in microns (alternative to frequency).
             component (str, optional): The electric field component ('x', 'y', or 'z'). Default: 'z'.
             amplitude (complex, optional): Overall complex amplitude multiplying the source. Default: 1.0.
             is_integrated (bool, optional): If True, integrates the source over time (dipole moment).
@@ -35,6 +31,8 @@ class MEEPSOURCE:
 
         Type-Specific Parameters (**kwargs):
             - For 'continuous':
+                - frequency (float, optional): The center frequency of the source (in Meep units: c/distance).
+                - wavelength (float, optional): The center wavelength in microns (alternative to frequency).
                 - start_time (float, optional): Starting time. Default: 0.
                 - end_time (float, optional): End time. Default: 1e+20.
                 - width (float, optional): Temporal width of smoothing. Default: 0.
@@ -42,6 +40,8 @@ class MEEPSOURCE:
                 - slowness (float, optional): Controls gradual turn-on. Default: 3.0.
 
             - For 'gaussian':
+                - frequency (float, optional): The center frequency of the source (in Meep units: c/distance).
+                - wavelength (float, optional): The center wavelength in microns (alternative to frequency).
                 - start_time (float, optional): Starting time. Default: 0.
                 - cutoff (float, optional): Number of widths before cutoff. Default: 5.0.
                 - width (float, optional): Temporal width. Default: 0 (but typically set >0).
@@ -155,9 +155,9 @@ class MEEPSOURCE:
         # Create the final Meep Source object
         self.source = mp.Source(
             src=src_time,
-            component=self.component,
             center=self.sourceCenter,
             size=self.sourceSize,
+            component=self.component,
             amplitude=amplitude
         )
 

@@ -81,16 +81,16 @@ if __name__ == "__main__":
         logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
 
         # Step 4: Execute proper workflow
-        if params.type == 'PlasMol':
+        if params.types == 'PlasMol':
             run_plasmol(params)
-        elif params.type == 'Quantum':
+        elif params.types == 'Quantum':
             # if hasattr(params, 'bases') and params.bases:  # Check for comparison mode
             #     from plasmol.drivers import run_comparison
             #     logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
             #     run_comparison(params)
             # else:
                 run_quantum(params)
-        elif params.type == 'Classical':
+        elif params.types == 'Classical':
             run_classical(params)
 
     except Exception as err:

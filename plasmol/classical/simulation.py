@@ -153,7 +153,8 @@ class SIMULATION:
 
             run_functions = []
             if self.hdf5Bool:
-                png_args = f"-X 10 -Y 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered"
+                # TODO: -m {self.intensityMin} only if self.intensityMin is not None and same for -M
+                png_args = f"-S 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered"
                 run_functions.append(mp.at_every(self.timestepsBetween * self.dt_meep, mp.output_png(mp.Ez, png_args)))
 
             if self.moleculeBool:

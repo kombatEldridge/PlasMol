@@ -7,16 +7,18 @@ from plasmol import constants
 logger = logging.getLogger("main")
 
 class ELECTRICFIELD:
-    def __init__(self, times, params):
-        self.shape = params.shape
-        self.intensity_au = params.intensity_au
-        self.peak_time_au = params.peak_time_au
-        self.width_au = params.width_steps * params.dt
+    def __init__(self, times, shape, intensity_au, peak_time_au, width_steps, dt, dir, wavelength_nm=None):
         self.times = times
-        self.dir = params.dir
+        self.shape = shape
+        self.intensity_au = intensity_au
+        self.peak_time_au = peak_time_au
+        self.width_steps = width_steps
+        self.dt = dt
+        self.width_au = self.width_steps * self.dt
+        self.dir = dir
 
         if self.shape == 'pulse':
-            self.wavelength_nm = params.wavelength_nm
+            self.wavelength_nm = wavelength_nm
             self.wavelength_au = self.wavelength_nm * constants.D_AU_NM
         elif self.shape == 'kick':
             pass

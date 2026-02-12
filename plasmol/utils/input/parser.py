@@ -17,7 +17,7 @@ def parseInputFile(args):
         args: Command-line arguments containing 'input' (path to JSON file).
 
     Returns:
-        dict: Preparams dictionary with 'settings', 'plasmon', 'molecule', 'args', and 'simulation_type'.
+        dict: Preparams dictionary with 'settings', 'plasmon', 'molecule', 'args', and 'simulations'.
 
     Raises:
         RuntimeError: If required parameters are missing or invalid configuration.
@@ -51,16 +51,16 @@ def parseInputFile(args):
 
     # Determine simulation type
     if plasmon_params and molecule_params:
-        simulation_type = 'PlasMol'
+        simulations = ['molecule', 'plasmon']
         if 'simulation_parameters' not in plasmon_params:
             raise RuntimeError("No 'simulation_parameters' object found in 'plasmon' section. Please specify the 'simulation_parameters' in the 'plasmon' section.")
         if 'molecule_position' not in plasmon_params:
             raise RuntimeError("No 'molecule_position' object found in 'plasmon' section, but quantum present. Please specify the 'molecule_position' parameters in the 'plasmon' section.")
     elif molecule_params:
-        simulation_type = 'Molecule'
+        simulations = ['molecule']
         logger.info("Only 'molecule' parameters given. Running RT-TDDFT simulation only.")
     elif plasmon_params:
-        simulation_type = 'Plasmon'
+        simulations = ['plasmon']
         if 'simulation_parameters' not in plasmon_params:
             raise RuntimeError("No 'simulation_parameters' object found in 'plasmon' section. Please specify the 'simulation_parameters' in the 'plasmon' section.")
         logger.info("Only 'plasmon' parameters given. Running MEEP simulation only.")
@@ -78,7 +78,7 @@ def parseInputFile(args):
     args = {k: v for k, v in args.items() if v is not None}
     preparams["args"] = args
 
-    preparams["simulation_type"] = simulation_type
+    preparams["simulations"] = simulations
     return preparams
 
 
