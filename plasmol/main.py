@@ -52,14 +52,16 @@ if __name__ == "__main__":
         logging.getLogger("PIL").setLevel(logging.INFO)
 
         # Step 2: Parse input file
-        parsed = parseInputFile(args)
-        logger.debug(f"Arguments given and parsed successfully: {parsed}")
+        # parsed = parseInputFile(args)
+        # logger.debug(f"Arguments given and parsed successfully: {parsed}")
 
         # Step 3: Fill in PARAMS dataclass
-        params = PARAMS(parsed)
+        params = PARAMS(args)
         logger.debug(f"PARAMS successfully created: ")
         for key, value in vars(params).items():
             logger.debug(f"\t\t{key}: {value}")
+
+        sys.exit(0)
 
         if params.restart:
             for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'checkpoint_path', 'eField_vs_pField_path', 'eV_spectrum_path']:

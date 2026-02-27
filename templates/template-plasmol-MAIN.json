@@ -74,7 +74,7 @@
       //   "fourier_spectrum_filepath": "spectrum.png"
       // },
       "broadening": { // if not present, defaults to false
-        "type": "static",
+        "type": "static", // static or dynamic
         "gam0": 1,
         "xi": 0.5,
         "eps0": 0.0477,
@@ -99,7 +99,6 @@
       "width_steps": 50, // Width of the pulse in time steps
       "wavelength_nm": 800, // Required if shape is 'pulse', wavelength in nanometers
       "dir": "z" // Direction of the electric field
-    },
     },
     "files": {
       "checkpoint": {

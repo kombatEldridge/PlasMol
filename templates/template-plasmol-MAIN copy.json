@@ -1,0 +1,86 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 40
+  },
+  "plasmon": {
+    "simulation": {
+      "tolerance_efield": 1e-12,
+      "cell_length": 0.1,
+      "pml_thickness": 0.01,
+      "symmetries": ["Y", 1, "Z", -1],
+      "surrounding_material_index": 1.33
+    },
+    "source": {
+      "type": "continuous",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.1, 0.1],
+      "component": "z",
+      "amplitude": 1,
+      "additional_parameters": {
+        "frequency": 5,
+        "wavelength": null,
+        "is_integrated": true
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.03,
+      "center": [0, 0, 0]
+    },
+    "images": {
+      "timesteps_between": 1,
+      "additional_parameters": [
+        "-m -3",
+        "-M 10",
+        "-Zc dkbluered",
+        "-S 10"
+      ],
+      "dir_name": "hello"
+    },
+    "molecule_position": [0, 0, 0]
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0000000000, 0.0000000000, -0.1302052882]},
+      {"atom": "H", "coord": [1.4891244004, 0.0000000000, 1.0332262019]},
+      {"atom": "H", "coord": [-1.4891244004, 0.0000000000, 1.0332262019]}
+    ],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "propagator": { 
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "modifiers":{
+      "broadening": {
+        "type": "static",
+        "gam0": 1,
+        "xi": 0.5,
+        "eps0": 0.0477,
+        "clamp": 100
+      }
+    },
+    "source": {
+      "type": "pulse",
+      "intensity_au": 0.001,
+      "peak_time_au": 10,
+      "width_steps": 50,
+      "wavelength_nm": 800,
+      "dir": "z"
+    },
+    "files": {
+      "checkpoint": {
+        "frequency": 100,
+        "filepath": "checkpoint.npz"
+      },
+      "field_e_filepath": "eField.csv",
+      "field_p_filepath": "pField.csv"
+    }
+  }
+}
