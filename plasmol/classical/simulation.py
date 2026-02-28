@@ -2,6 +2,7 @@
 import logging
 import meep as mp
 import numpy as np
+import os
 from collections import defaultdict
 
 from plasmol import constants
@@ -11,77 +12,60 @@ from plasmol.quantum.propagation import propagation
 
 class SIMULATION:
     def __init__(self, params, molecule=None):
-        self.params = params
-        self.dt_meep = self.params.dt / constants.convertTimeMeep2Atomic
-        self.t_end_meep = self.params.t_end / constants.convertTimeMeep2Atomic
+        # set all key values that are in params as key values for self
+        for key, value in params.__dict__.items():
+            setattr(self, key, value)
 
-        # Define simulation parameters
-        sim_params = self.params.simulation
-        self.cellLength = sim_params['cellLength']
-        self.pmlThickness = sim_params['pmlThickness']
-        self.resolution = sim_params['resolution']
-        self.eFieldCutOff = sim_params['eFieldCutOff']
+        logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
 
-        logging.debug(f"Initializing simulation with cellLength: {self.cellLength}, resolution: {self.resolution}")
-
-        self.moleculeBool = bool(self.params.molecule_position)
-        self.positionMolecule = mp.Vector3(*self.params.molecule_position['center']) if self.moleculeBool else None
-
-        if self.moleculeBool:
-            self.molecule = molecule
-            propagator_map = {
-                "step": propagate_step,
-                "magnus2": propagate_magnus2,
-                "rk4": propagate_rk4
-            }
-            self.propagate = propagator_map.get(self.params.propagator, propagate_rk4)  # Default to rk4 if invalid
-
-        self.hdf5Bool = bool(params.hdf5)
-        if self.hdf5Bool:
-            hdf5_params = params.hdf5
-            self.imageDirName = hdf5_params['imageDirName']
-            self.timestepsBetween = hdf5_params['timestepsBetween']
-            self.intensityMin = hdf5_params['intensityMin']
-            self.intensityMax = hdf5_params['intensityMax']
+        # TODO: see if I can't fit this into params._attribute_formation()
+        # if self.has_molecule:
+        #     self.molecule = molecule
+        #     propagator_map = {
+        #         "step": propagate_step,
+        #         "magnus2": propagate_magnus2,
+        #         "rk4": propagate_rk4
+        #     }
+        #     self.propagate = propagator_map.get(self.params.propagator, propagate_rk4)  # Default to rk4 if invalid
 
         # Simulation runtime variables
         self.xyz = ['x', 'y', 'z']
-        self.measuredDipoleResponse = {comp: defaultdict(lambda: 0) for comp in self.xyz}  # Use lambda:0 for default scalar
-        self.mapDirectionToDigit = {'x': 0, 'y': 1, 'z': 2}
+        self.measured_dipole_response = {comp: defaultdict(lambda: 0) for comp in self.xyz}  # Use lambda:0 for default scalar
+        self.map_direction_to_digit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
-        self.cellVolume = mp.Vector3(self.cellLength, self.cellLength, self.cellLength)
-        self.frameCenter = self.cellLength * self.resolution / 2
+        self.cell_volume = mp.Vector3(self.plasmon_cell_length, self.plasmon_cell_length, self.plasmon_cell_length)
+        self.frame_center = self.plasmon_cell_length * self.plasmon_resolution / 2
 
         # Determine decimal places for time steps (simplified: use fixed precision if possible, but keep for now)
-        halfTimeStepString = str(self.params.dt / 2)
-        self.decimalPlaces = len(halfTimeStepString.split('.')[1]) if '.' in halfTimeStepString else 0
+        half_time_step_string = str(self.dt_meep / 2) # Should this be dt or dt_meep
+        self.decimal_places = len(half_time_step_string.split('.')[1]) if '.' in half_time_step_string else 0
 
-        self.sourcesList = []
-        if self.moleculeBool:
+        self.sources_list = []
+        if self.has_molecule:
             for comp, field in zip(self.xyz, [mp.Ex, mp.Ey, mp.Ez]):
                 src_func = lambda t, c=comp: self._get_dipole_response(c, t)
-                self.sourcesList.append(
+                self.sources_list.append(
                     mp.Source(
                         mp.CustomSource(src_func=src_func, is_integrated=True),
-                        center=self.positionMolecule,
+                        center=self.molecule_position,
                         component=field
                     )
                 )
             logging.debug("Emitter for the molecule added to simulation")
 
-        if self.params.source is not None:
-            self.sourcesList.append(self.params.source.source)
+        if self.has_plasmon_source:
+            self.sources_list.append(self.plasmon_source_object)
 
-        self.pmlList = [mp.PML(thickness=self.pmlThickness)]
+        self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
         self.symmetry = self.params.symmetry
         self.nanoparticle = [self.params.nanoparticle] if self.params.nanoparticle else []
-        self.default_material = mp.Medium(index=sim_params['surroundingMaterialIndex'])
+        self.default_material = mp.Medium(index=self.plasmon_surrounding_material_index)
 
         self.sim = mp.Simulation(
-            resolution=self.resolution,
-            cell_size=self.cellVolume,
+            resolution=self.plasmon_resolution,
+            cell_size=self.cell_volume,
             boundary_layers=self.pmlList,
-            sources=self.sourcesList,
+            sources=self.sources_list,
             symmetries=self.symmetry,
             geometry=self.nanoparticle,
             default_material=self.default_material
@@ -92,9 +76,9 @@ class SIMULATION:
         Helper to get dipole response for a component at time t.
         Replaces chirpx, chirpy, chirpz.
         """
-        timestamp = str(round(t, self.decimalPlaces))
-        value = self.measuredDipoleResponse[component].get(timestamp, 0) * constants.convertMomentAtomic2Meep
-        logging.debug(f"Getting dipole for {component} at {round(t * constants.convertTimeMeep2Atomic, self.decimalPlaces)} au. Emitting {value / constants.convertMomentAtomic2Meep * constants.convertFieldMeep2Atomic} in au.")
+        timestamp = str(round(t, self.decimal_places))
+        value = self.measured_dipole_response[component].get(timestamp, 0) * constants.convertMomentAtomic2Meep
+        logging.debug(f"Getting dipole for {component} at {round(t * constants.convertTimeMeep2Atomic, self.decimal_places)} au. Emitting {value / constants.convertMomentAtomic2Meep * constants.convertFieldMeep2Atomic} in au.")
         return value
 
     def _get_electric_field(self, sim):
@@ -106,7 +90,7 @@ class SIMULATION:
         for comp in self.xyz:
             field = np.mean(sim.get_array(
                 component=self.char_to_field[comp],
-                center=self.positionMolecule,
+                center=self.molecule_position,
                 size=mp.Vector3(1E-20, 1E-20, 1E-20)
             ))
             eField[comp] = field * constants.convertFieldMeep2Atomic
@@ -118,7 +102,7 @@ class SIMULATION:
         """
         eField = self._get_electric_field(sim)
 
-        if any(abs(eField[comp]) >= self.eFieldCutOff for comp in self.xyz):
+        if any(abs(eField[comp]) >= self.plasmon_tolerance_efield for comp in self.xyz):
             logging.info(f"Calling propagator at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
             eArr = [eField[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
@@ -126,15 +110,15 @@ class SIMULATION:
             ind_dipole = propagation(self.params, self.molecule, eArr, self.propagate)
             logging.debug(f"Propagation calculation results: {ind_dipole} in au")
 
-            for comp, digit in self.mapDirectionToDigit.items():
+            for comp, digit in self.map_direction_to_digit.items():
                 for offset in [0.5 * self.dt_meep, self.dt_meep]:
-                    timestamp = str(round(sim.meep_time() + offset, self.decimalPlaces))
-                    self.measuredDipoleResponse[comp][timestamp] = ind_dipole[digit]
+                    timestamp = str(round(sim.meep_time() + offset, self.decimal_places))
+                    self.measured_dipole_response[comp][timestamp] = ind_dipole[digit]
 
-            timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
+            timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
             updateCSV(self.params.pField_path, timestamp, *ind_dipole)
 
-        timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimalPlaces))
+        timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
         updateCSV(self.params.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
 
     def run(self):
@@ -145,19 +129,19 @@ class SIMULATION:
         original_dir = os.getcwd()  # Save original directory
 
         try:
-            if self.hdf5Bool:
+            if self.has_images:
                 from plasmol.utils.gif import clear_directory
-                clear_directory(self.imageDirName)
-                self.sim.use_output_directory(self.imageDirName)
-                os.chdir(self.imageDirName)  # Change to output dir if needed for make_gif
+                clear_directory(self.images_dir_name)
+                self.sim.use_output_directory(self.images_dir_name)
+                os.chdir(self.images_dir_name)  # Change to output dir if needed for make_gif
 
             run_functions = []
-            if self.hdf5Bool:
-                # TODO: -m {self.intensityMin} only if self.intensityMin is not None and same for -M
-                png_args = f"-S 10 -m {self.intensityMin} -M {self.intensityMax} -z {self.frameCenter} -Zc dkbluered"
-                run_functions.append(mp.at_every(self.timestepsBetween * self.dt_meep, mp.output_png(mp.Ez, png_args)))
+            if self.has_images:
+                self.images_args = self.params.images_args
+                self.images_args += f"-z {self.frame_center}"
+                run_functions.append(mp.at_every(self.images_timesteps_between * self.dt_meep, mp.output_png(mp.Ez, self.images_args)))
 
-            if self.moleculeBool:
+            if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self.callPropagation))
 
             # Add additional custom tracking functions here if needed
@@ -170,9 +154,9 @@ class SIMULATION:
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
         finally:
-            if self.hdf5Bool:
+            if self.has_images:
                 from plasmol.utils.gif import make_gif
-                make_gif(self.imageDirName)  # Assumes make_gif handles paths correctly; adjust if needed
+                make_gif(self.images_dir_name)  # Assumes make_gif handles paths correctly; adjust if needed
             os.chdir(original_dir)  # Always return to original dir
 
     # ------------------------------------ #
@@ -181,7 +165,7 @@ class SIMULATION:
     # ------------------------------------ #
     def show3Dmap(self):
         import plotly.graph_objects as go
-        eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cellVolume, component=mp.Dielectric)
+        eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cell_volume, component=mp.Dielectric)
         nx, ny, nz = eps_data.shape
         x, y, z = np.mgrid[0:nx, 0:ny, 0:nz]
         iso_value = 4

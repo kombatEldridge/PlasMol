@@ -6,8 +6,8 @@ import numpy as np
 class MEEPSOURCE:
     def __init__(self,
                  source_type,
-                 sourceCenter,
-                 sourceSize,
+                 source_center,
+                 source_size,
                  component,
                  amplitude,
                  is_integrated,
@@ -21,8 +21,8 @@ class MEEPSOURCE:
 
         Args:
             source_type (str): The type of source ('continuous', 'gaussian', or 'custom').
-            sourceCenter (tuple or mp.Vector3): The center coordinates of the source (x, y, z).
-            sourceSize (tuple or mp.Vector3): The size dimensions of the source (sx, sy, sz).
+            source_center (tuple or mp.Vector3): The center coordinates of the source (x, y, z).
+            source_size (tuple or mp.Vector3): The size dimensions of the source (sx, sy, sz).
             component (str, optional): The electric field component ('x', 'y', or 'z'). Default: 'z'.
             amplitude (complex, optional): Overall complex amplitude multiplying the source. Default: 1.0.
             is_integrated (bool, optional): If True, integrates the source over time (dipole moment).
@@ -82,21 +82,14 @@ class MEEPSOURCE:
             For more details on CustomSource, see Meep documentation: https://meep.readthedocs.io/en/latest/Python_User_Interface/#customsource
 
         """
-        self.source_type = source_type.lower().strip()
+        self.source_type = source_type
         logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
 
-        # Common parameter processing
-        if frequency is None and wavelength is None and self.source_type != 'custom':
-            raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.source_type} source.")
-
         char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
-        try:
-            self.component = char_to_field[component.lower().strip()]
-        except KeyError:
-            raise ValueError(f"Invalid component '{component}'; must be 'x', 'y', or 'z'.")
+        self.component = char_to_field[component]
 
-        self.sourceCenter = mp.Vector3(*sourceCenter) if not isinstance(sourceCenter, mp.Vector3) else sourceCenter
-        self.sourceSize = mp.Vector3(*sourceSize) if not isinstance(sourceSize, mp.Vector3) else sourceSize
+        self.sourceCenter = mp.Vector3(*source_center) if not isinstance(source_center, mp.Vector3) else source_center
+        self.sourceSize = mp.Vector3(*source_size) if not isinstance(source_size, mp.Vector3) else source_size
 
         # Compute frequency if wavelength is provided
         freq = (1 / wavelength if wavelength is not None else frequency) if self.source_type != 'custom' else None
