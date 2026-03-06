@@ -5,7 +5,7 @@ from scipy.linalg import expm
 
 logger = logging.getLogger("main")
 
-def propagate(params, molecule, exc):
+def propagate(dt, molecule, exc):
     """
     Propagate molecular orbitals using the step method.
     This method is also known as the modified midpoint unitary transformation (MMUT)
@@ -15,8 +15,8 @@ def propagate(params, molecule, exc):
     U(t) = exp(-i*2dt*F')
 
     Parameters:
-    params : object
-        Parameters object with dt attribute.
+    dt : float
+        Time step size.
     molecule : object
         Molecule object with current state data.
     exc : np.ndarray
@@ -32,7 +32,7 @@ def propagate(params, molecule, exc):
 
     F_orth = molecule.F_orth
 
-    U = expm(-1j * 2 * params.dt * F_orth)
+    U = expm(-1j * 2 * dt * F_orth)
     
     C_orth_pdt = np.matmul(U, C_orth_ndt)
     C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)

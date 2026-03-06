@@ -45,7 +45,8 @@
         "-S 10"
         // or "-m -3 -M 10 -Zc dkbluered -S 10"
       ],
-      "dir_name": "hello"
+      "dir_name": "hello",
+      "make_gif": true
     },
     "molecule_position": [0, 0, 0]
   },

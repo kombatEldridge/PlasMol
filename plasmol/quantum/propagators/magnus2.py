@@ -5,7 +5,7 @@ from scipy.linalg import expm
 
 logger = logging.getLogger("main")
 
-def propagate(params, molecule, exc):
+def propagate(maxiter, dt, pc_convergence, transform, dir, molecule, exc):
     """
     Propagate molecular orbitals using the Magnus2 method.
 
@@ -13,8 +13,16 @@ def propagate(params, molecule, exc):
     using extrapolation and iterative refinement until convergence.
 
     Parameters:
-    params : object
-        Parameters object with dt, maxiter, and pcconv attributes.
+    maxiter : int
+        Maximum number of iterations for convergence.
+    dt : float
+        Time step size.
+    pc_convergence : float
+        Convergence threshold for the predictor-corrector scheme.
+    transform : bool
+        Whether sim is currently running a Fourier transformation.
+    dir : str
+        Direction of propagation.
     molecule : object
         Molecule object with current state data.
     exc : np.ndarray
@@ -30,11 +38,11 @@ def propagate(params, molecule, exc):
     iteration = 0
     while True:
         iteration += 1
-        if iteration > params.maxiter:
-            raise RuntimeError(f"Failed to converge within {params.maxiter} iterations")
+        if iteration > maxiter:
+            raise RuntimeError(f"Failed to converge within {maxiter} iterations")
 
         # 1) predictor
-        U = expm(-1j * params.dt * F_orth_p12dt)
+        U = expm(-1j * dt * F_orth_p12dt)
         C_orth_pdt = np.matmul(U, C_orth)
         C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
         
@@ -43,13 +51,13 @@ def propagate(params, molecule, exc):
         F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
         
         # 3) only check convergence if we have a previous value
-        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < params.pc_convergence:
+        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < pc_convergence:
             molecule.mf.mo_coeff = C_pdt
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt
             molecule.F_orth_n12dt = F_orth_p12dt
-            if params.transform:
-                logger.debug(f'{params.dir}-dir: Magnus2 converged in {iteration} iterations.')
+            if transform:
+                logger.debug(f'{dir}-dir: Magnus2 converged in {iteration} iterations.')
             else:
                 logger.debug(f'Magnus2 converged in {iteration} iterations.')
             break

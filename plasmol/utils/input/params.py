@@ -25,113 +25,115 @@ class PARAMS:
         self.simulation_types = self.preparams["simulation_types"]
 
         # Define a large, extensible list of parameter definitions.
-        # Each entry is a tuple: (attribute_name, path_as_list, section_condition)
+        # Each entry is a tuple: (attribute_name, path_as_list, section_condition, data_types)
         # - attribute_name: str, the name to set as self.<attribute_name>
         # - path_as_list: list of str, the nested keys to access in parsed (e.g., ['settings', 'dt'])
         # - section_condition: str or None, only set if self.type in ['plasmon', 'molecule'] matches or None for always
+        # - data_types: datatype or tuple
         param_defs = [
             # Settings (always required)
-            ('dt', ['settings', 'dt'], False, None, None, None),
-            ('t_end', ['settings', 't_end'], False, None, None, None),
+            ('dt', ['settings', 'dt'], False, None, None, None, (int, float)),
+            ('t_end', ['settings', 't_end'], False, None, None, None, (int, float)),
 
             # Plasmon params
-            ('plasmon_dict', ['plasmon'], True, "has_plasmon", None, 'plasmon'),
-            ('plasmon_tolerance_efield', ['plasmon', 'simulation', "tolerance_efield"], False, 'has_plasmon', 1e-12, 'plasmon'),
-            ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_plasmon', 0.1, 'plasmon'),
-            ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_plasmon', None, 'plasmon'),
-            ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_plasmon', 0.01, 'plasmon'),
-            ('plasmon_symmetries', ['plasmon', 'simulation', 'symmetries'], False, 'has_plasmon', None, 'plasmon'),
-            ('plasmon_surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], False, 'has_plasmon', 1.33, 'plasmon'),
-
+            ('plasmon_dict', ['plasmon'], True, "has_plasmon", None, 'plasmon', dict),
+            ('plasmon_tolerance_efield', ['plasmon', 'simulation', "tolerance_efield"], False, 'has_plasmon', 1e-12, 'plasmon', (int, float)),
+            ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_plasmon', 0.1, 'plasmon', (int, float)),
+            ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_plasmon', None, 'plasmon', (int, float)),
+            ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_plasmon', 0.01, 'plasmon', (int, float)),
+            ('plasmon_symmetries', ['plasmon', 'simulation', 'symmetries'], False, 'has_plasmon', None, 'plasmon', list),
+            ('plasmon_surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], False, 'has_plasmon', 1.33, 'plasmon', (int, float)),
+            
             # Plasmon source params
-            ('plasmon_source_dict', ['plasmon', 'source'], True, "has_plasmon_source", None, 'plasmon'),
-            ('plasmon_source_type', ['plasmon', 'source', 'type'], False, 'has_plasmon_source', None, 'plasmon'),
-            ('plasmon_source_center', ['plasmon', 'source', 'center'], False, 'has_plasmon_source', None, 'plasmon'),
-            ('plasmon_source_size', ['plasmon', 'source', 'size'], False, 'has_plasmon_source', None, 'plasmon'),
-            ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'has_plasmon_source', None, 'plasmon'),
-            ('plasmon_source_amplitude', ['plasmon', 'source', 'amplitude'], False, 'has_plasmon_source', 1, 'plasmon'),
-            ('plasmon_source_is_integrated', ['plasmon', 'source', 'is_integrated'], False, 'has_plasmon_source', True, 'plasmon'),
-            ('plasmon_source_additional_parameters', ['plasmon', 'source', 'additional_parameters'], False, 'has_plasmon_source', None, 'plasmon'),
+            ('plasmon_source_dict', ['plasmon', 'source'], True, "has_plasmon_source", None, 'plasmon', dict),
+            ('plasmon_source_type', ['plasmon', 'source', 'type'], False, 'has_plasmon_source', None, 'plasmon', str),
+            ('plasmon_source_center', ['plasmon', 'source', 'center'], False, 'has_plasmon_source', None, 'plasmon', list),
+            ('plasmon_source_size', ['plasmon', 'source', 'size'], False, 'has_plasmon_source', None, 'plasmon', list),
+            ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'has_plasmon_source', None, 'plasmon', str),
+            ('plasmon_source_amplitude', ['plasmon', 'source', 'amplitude'], False, 'has_plasmon_source', 1, 'plasmon', (int, float)),
+            ('plasmon_source_is_integrated', ['plasmon', 'source', 'is_integrated'], False, 'has_plasmon_source', True, 'plasmon', bool),
+            ('plasmon_source_additional_parameters', ['plasmon', 'source', 'additional_parameters'], False, 'has_plasmon_source', None, 'plasmon', dict),
 
             # Nanoparticle params
-            ('nanoparticle_dict', ['plasmon', 'nanoparticle'], True, "has_nanoparticle", None, 'plasmon'),
-            ('nanoparticle_material', ['plasmon', 'nanoparticle', 'material'], False, 'has_nanoparticle', None, 'plasmon'),
-            ('nanoparticle_radius', ['plasmon', 'nanoparticle', 'radius'], False, 'has_nanoparticle', None, 'plasmon'),
-            ('nanoparticle_center', ['plasmon', 'nanoparticle', 'center'], False, 'has_nanoparticle', [0,0,0], 'plasmon'),
+            ('nanoparticle_dict', ['plasmon', 'nanoparticle'], True, "has_nanoparticle", None, 'plasmon', dict),
+            ('nanoparticle_material', ['plasmon', 'nanoparticle', 'material'], False, 'has_nanoparticle', None, 'plasmon', str),
+            ('nanoparticle_radius', ['plasmon', 'nanoparticle', 'radius'], False, 'has_nanoparticle', None, 'plasmon', (int, float)),
+            ('nanoparticle_center', ['plasmon', 'nanoparticle', 'center'], False, 'has_nanoparticle', [0,0,0], 'plasmon', list),
 
             # Images params
-            ('images_dict', ['plasmon', 'images'], True, "has_images", None, 'plasmon'),
-            ('images_timesteps_between', ['plasmon', 'images', 'timesteps_between'], False, 'has_images', None, 'plasmon'),
-            ('images_additional_parameters', ['plasmon', 'images', 'additional_parameters'], False, 'has_images', "-Zc dkbluered -S 10", 'plasmon'),
-            ('images_dir_name', ['plasmon', 'images', 'dir_name'], False, 'has_images', f"plasmol-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'plasmon'),
+            ('images_dict', ['plasmon', 'images'], True, "has_images", None, 'plasmon', dict),
+            ('images_timesteps_between', ['plasmon', 'images', 'timesteps_between'], False, 'has_images', None, 'plasmon', int),
+            ('images_additional_parameters', ['plasmon', 'images', 'additional_parameters'], False, 'has_images', ["-Zc dkbluered", "-S 10"], 'plasmon', list),
+            ('images_dir_name', ['plasmon', 'images', 'dir_name'], False, 'has_images', f"plasmol-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'plasmon', str),
+            ('images_make_gif', ['plasmon', 'images', 'make_gif'], False, 'has_images', True, 'plasmon', bool),
 
             # Molecule position param
-            ('plasmol_molecule_position', ['plasmon', 'molecule_position'], True, "has_molecule_position", None, ['plasmon', 'molecule']),
+            ('plasmol_molecule_position', ['plasmon', 'molecule_position'], True, "has_molecule_position", None, ['plasmon', 'molecule'], list),
 
             # Molecule params
-            ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule'),
-            ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_geometry_units', ['molecule', 'geometry_units'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_basis', ['molecule', 'basis'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_custom_xc', ['molecule', 'custom_xc'], False, 'has_molecule', None, 'molecule'),
-            ('molecule_propagator', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule'),
-            ('molecule_pc_convergence', ['molecule', 'propagator', "pc_convergence"], False, 'has_molecule', 1e-12, 'molecule'),
-            ('molecule_max_iterations', ['molecule', 'propagator', "max_iterations"], False, 'has_molecule', 200, 'molecule'),
-            ('molecule_hermiticity_tolerance', ['molecule', 'hermiticity_tolerance'], False, 'has_molecule', 1e-12, 'molecule'),
+            ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict),
+            ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule', list),
+            ('molecule_geometry_units', ['molecule', 'geometry_units'], False, 'has_molecule', None, 'molecule', str),
+            ('molecule_basis', ['molecule', 'basis'], False, 'has_molecule', None, 'molecule', str),
+            ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', None, 'molecule', int),
+            ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', None, 'molecule', int),
+            ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule', str),
+            ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule', float),
+            ('molecule_custom_xc', ['molecule', 'custom_xc'], False, 'has_molecule', None, 'molecule', str),
+            ('molecule_propagator', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule', str),
+            ('molecule_pc_convergence', ['molecule', 'propagator', "pc_convergence"], False, 'has_molecule', 1e-12, 'molecule', (int, float)),
+            ('molecule_max_iterations', ['molecule', 'propagator', "max_iterations"], False, 'has_molecule', 200, 'molecule', int),
+            ('molecule_hermiticity_tolerance', ['molecule', 'hermiticity_tolerance'], False, 'has_molecule', 1e-12, 'molecule', (int, float)),
 
             # Source params (molecule section)
-            ('molecule_source_dict', ['molecule', 'source'], True, "has_molecule_source", None, 'molecule'),
-            ('molecule_source_type', ['molecule', 'source', 'type'], False, 'has_molecule_source', None, 'molecule'),
-            ('molecule_source_intensity_au', ['molecule', 'source', 'intensity_au'], False, 'has_molecule_source', None, 'molecule'),
-            ('molecule_source_peak_time_au', ['molecule', 'source', 'peak_time_au'], False, 'has_molecule_source', None, 'molecule'),
-            ('molecule_source_width_steps', ['molecule', 'source', 'width_steps'], False, 'has_molecule_source', None, 'molecule'),
-            ('molecule_source_wavelength_nm', ['molecule', 'source', 'wavelength_nm'], False, 'has_molecule_source', None, 'molecule'),
-            ('molecule_source_component', ['molecule', 'source', 'component'], False, 'has_molecule_source', None, 'molecule'),
+            ('molecule_source_dict', ['molecule', 'source'], True, "has_molecule_source", None, 'molecule', dict),
+            ('molecule_source_type', ['molecule', 'source', 'type'], False, 'has_molecule_source', None, 'molecule', str),
+            ('molecule_source_intensity_au', ['molecule', 'source', 'intensity_au'], False, 'has_molecule_source', None, 'molecule', (int, float)),
+            ('molecule_source_peak_time_au', ['molecule', 'source', 'peak_time_au'], False, 'has_molecule_source', None, 'molecule', (int, float)),
+            ('molecule_source_width_steps', ['molecule', 'source', 'width_steps'], False, 'has_molecule_source', None, 'molecule', int),
+            ('molecule_source_wavelength_nm', ['molecule', 'source', 'wavelength_nm'], False, 'has_molecule_source', None, 'molecule', (int, float)),
+            ('molecule_source_component', ['molecule', 'source', 'component'], False, 'has_molecule_source', None, 'molecule', str),
 
             # Fourier params runs three sims at once, one per axis
-            ('fourier_dict', ['molecule', 'modifiers', 'fourier'], True, "has_fourier", None, 'molecule'),
-            ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], False, 'has_fourier', None, 'molecule'),
-            ('fourier_pfield_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_pfield_filepath'], False, 'has_fourier', None, 'molecule'),
-            ('fourier_spectrum_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_spectrum_filepath'], False, 'has_fourier', None, 'molecule'),
+            ('fourier_dict', ['molecule', 'modifiers', 'fourier'], True, "has_fourier", None, 'molecule', dict),
+            ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], False, 'has_fourier', None, 'molecule', (int, float)),
+            ('fourier_pfield_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_pfield_filepath'], False, 'has_fourier', None, 'molecule', str),
+            ('fourier_spectrum_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_spectrum_filepath'], False, 'has_fourier', None, 'molecule', str),
 
             # Lopata Broadening params
-            ('broadening_dict', ['molecule', 'modifiers', 'broadening'], True, "has_broadening", None, 'molecule'),
-            ('broadening_type', ['molecule', 'modifiers', 'broadening', "type"], False, 'has_broadening', None, 'molecule'),
-            ('broadening_gam0', ['molecule', 'modifiers', 'broadening', "gam0"], False, 'has_broadening', None, 'molecule'),
-            ('broadening_xi', ['molecule', 'modifiers', 'broadening', "xi"], False, 'has_broadening', None, 'molecule'),
-            ('broadening_eps0', ['molecule', 'modifiers', 'broadening', "eps0"], False, 'has_broadening', None, 'molecule'),
-            ('broadening_clamp', ['molecule', 'modifiers', 'broadening', "clamp"], False, 'has_broadening', None, 'molecule'),
+            ('broadening_dict', ['molecule', 'modifiers', 'broadening'], True, "has_broadening", None, 'molecule', dict),
+            ('broadening_type', ['molecule', 'modifiers', 'broadening', "type"], False, 'has_broadening', None, 'molecule', str),
+            ('broadening_gam0', ['molecule', 'modifiers', 'broadening', "gam0"], False, 'has_broadening', None, 'molecule', (int, float)),
+            ('broadening_xi', ['molecule', 'modifiers', 'broadening', "xi"], False, 'has_broadening', None, 'molecule', (int, float)),
+            ('broadening_eps0', ['molecule', 'modifiers', 'broadening', "eps0"], False, 'has_broadening', None, 'molecule', (int, float)),
+            ('broadening_clamp', ['molecule', 'modifiers', 'broadening', "clamp"], False, 'has_broadening', None, 'molecule', (int, float)),
             
             # Comparison mode params
-            ('comparison_dict', ['molecule', 'modifiers', 'comparison'], True, "has_comparison", None, 'molecule'),
-            ('comparison_bases', ['molecule', 'modifiers', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule'),
-            ('comparison_xcs', ['molecule', 'modifiers', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule'),
-            ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], False, 'has_comparison', 3, 'molecule'),
-            ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], False, 'has_comparison', 3, 'molecule'),
-            ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], False, 'has_comparison', -1, 'molecule'),
-            ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', 1, 'molecule'),
+            ('comparison_dict', ['molecule', 'modifiers', 'comparison'], True, "has_comparison", None, 'molecule', dict),
+            ('comparison_bases', ['molecule', 'modifiers', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule', list),
+            ('comparison_xcs', ['molecule', 'modifiers', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule', list),
+            ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], False, 'has_comparison', 3, 'molecule', int),
+            ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], False, 'has_comparison', 3, 'molecule', int),
+            ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], False, 'has_comparison', -1, 'molecule', (int, float)),
+            ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', 1, 'molecule', (int, float)),
 
             # Dampening mode params
-            ('dampening_dict', ['molecule', 'modifiers', 'dampening'], True, "has_dampening", None, 'molecule'),
-            ('dampening_gamma', ['molecule', 'modifiers', 'dampening', 'gamma'], False, 'has_dampening', None, 'molecule'),
+            ('dampening_dict', ['molecule', 'modifiers', 'dampening'], True, "has_dampening", None, 'molecule', dict),
+            ('dampening_gamma', ['molecule', 'modifiers', 'dampening', 'gamma'], False, 'has_dampening', None, 'molecule', (int, float)),
 
             # Checkpointing params
-            ('checkpoint_dict', ['molecule', 'files', 'checkpoint'], True, "has_checkpoint", None, 'molecule'),
-            ('checkpoint_filepath', ['molecule', 'files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, 'molecule'),
-            ('checkpoint_snapshot_frequency', ['molecule', 'files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, 'molecule'),
+            ('checkpoint_dict', ['molecule', 'files', 'checkpoint'], True, "has_checkpoint", None, 'molecule', dict),
+            ('checkpoint_filepath', ['molecule', 'files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, 'molecule', str),
+            ('checkpoint_snapshot_frequency', ['molecule', 'files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, 'molecule', int),
 
             # Files
-            ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "eField.csv", 'molecule'),
-            ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "pField.csv", 'molecule'),
-            ('field_e_vs_p_filepath', ['molecule', 'files', 'field_e_vs_p_filepath'], False, None, None, 'molecule'),
+            ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "eField.csv", 'molecule', str),
+            ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "pField.csv", 'molecule', str),
+            ('field_e_vs_p_filepath', ['molecule', 'files', 'field_e_vs_p_filepath'], False, None, None, 'molecule', str),
         ]
 
-        # Populate attributes from param_defs
-        for attr, path, is_section_dict, boolean_name, default_value, section_condition in param_defs:
+# Populate attributes from param_defs
+        for attr, path, is_section_dict, boolean_name, default_value, section_condition, data_type in param_defs:
             # Check section_condition if applicable
             if section_condition is not None:
                 if isinstance(section_condition, str):
@@ -144,6 +146,10 @@ class PARAMS:
 
             value = self._get_nested_value(self.preparams, path)
 
+            if value is not None:
+                if not isinstance(value, data_type):
+                    raise ValueError(f"Invalid type for {attr}: expected {data_type}, got {type(value)}")
+        
             if is_section_dict:
                 has_section = value is not None
                 setattr(self, boolean_name, has_section)
@@ -161,10 +167,10 @@ class PARAMS:
 
         self._attribute_checks()
         
-        for attr in dir(self):
-            if attr.startswith('_') and not attr.startswith('__'):
-                continue
-            print(f"{attr}: {getattr(self, attr)}")
+        # for attr in dir(self):
+        #     if attr.startswith('_') and not attr.startswith('__'):
+        #         continue
+        #     print(f"{attr}: {getattr(self, attr)}")
         sys.exit(0)
 
         self._attribute_formation()
@@ -192,15 +198,24 @@ class PARAMS:
         if self.has_plasmon:
             if self.plasmon_tolerance_efield <= 0:
                 raise ValueError("'plasmon_tolerance_efield' must be a positive value.")
-            if self.plasmon_cell_length <= 0:
-                raise ValueError("'plasmon_cell_length' must be a positive value.")
-            # TODO: Add overriding to _attribute_formation
-            if hasattr(self, 'plasmon_cell_volume'):
+            if hasattr(self, 'plasmon_cell_volume') and hasattr(self, 'plasmon_cell_length'):
                 logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
+            elif hasattr(self, 'plasmon_cell_length') and self.plasmon_cell_length <= 0:
+                raise ValueError("'plasmon_cell_length' must be a positive value.")
             if self.plasmon_pml_thickness <= 0:
                 raise ValueError("'plasmon_pml_thickness' must be a positive value.")
             if not hasattr(self, 'plasmon_symmetries'):
                 logger.warning("No 'symmetries' specified for plasmon simulation; operating without symmetries will cause longer simulation times.")
+            else:
+                if len(self.plasmon_symmetries) % 2 != 0:
+                    raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; list length must be even (pairs of axis and value)")
+                for i, sym in enumerate(self.plasmon_symmetries):
+                    if i % 2 == 0:
+                        if not (isinstance(sym, str) and sym.lower() in ['x', 'y', 'z']):
+                            raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; even indices must be 'x', 'y', or 'z' (case-insensitive)")
+                    else:
+                        if not (isinstance(sym, int) and sym in [1, -1]):
+                            raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; odd indices must be 1 or -1 (integers)")
             if self.plasmon_surrounding_material_index < 1.0:
                 raise ValueError("'surrounding_material_index' must be >= 1.0 (vacuum).")
             elif self.plasmon_surrounding_material_index == 1.0:
@@ -216,6 +231,12 @@ class PARAMS:
                 if not hasattr(self, attr):
                     pretty = attr.removeprefix("plasmon_source_")
                     raise ValueError(f"Source requires '{pretty}' attribute .")
+            for loc in self.plasmon_source_center:
+                if not isinstance(loc, (int, float)):
+                    raise ValueError(f"Invalid plasmon source center '{loc}'; must be a number.")
+            for loc in self.plasmon_source_size:
+                if not isinstance(loc, (int, float)):
+                    raise ValueError(f"Invalid plasmon source size '{loc}'; must be a number.")
             if self.plasmon_source_component not in ['x', 'y', 'z']:
                 raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
             if self.plasmon_source_additional_parameters is not None:
@@ -233,9 +254,16 @@ class PARAMS:
                 if not hasattr(self, attr):
                     pretty = attr.removeprefix("nanoparticle_")
                     raise ValueError(f"Nanoparticle requires '{pretty}' attribute.")
-        
+            for loc in self.nanoparticle_center:
+                if not isinstance(loc, (int, float)):
+                    raise ValueError(f"Invalid nanoparticle center '{loc}'; must be a number.")
+
         # Images params
         if self.has_images:
+            if hasattr(self, 'images_additional_parameters'):
+                for loc in self.images_additional_parameters:
+                    if not isinstance(loc, str):
+                        raise ValueError(f"Invalid image additional parameter '{loc}'; must be a string.")
             if not hasattr(self, 'images_timesteps_between'):
                 raise ValueError("Images requires 'timesteps_between' attribute.")
         else:
@@ -243,12 +271,11 @@ class PARAMS:
 
         # Molecule position param
         if self.has_molecule_position:
-            if not isinstance(self.plasmol_molecule_position, (list, tuple)):
-                raise ValueError("Molecule position must be a list or tuple.")
-            elif len(self.plasmol_molecule_position) != 3:
+            for loc in self.plasmol_molecule_position:
+                if not isinstance(loc, (int, float)):
+                    raise ValueError(f"Invalid molecule position '{loc}'; must be a number.")
+            if len(self.plasmol_molecule_position) != 3:
                 raise ValueError("Molecule position must be an array of three numbers [x, y, z].")
-            elif any(not isinstance(coord, (int, float)) for coord in self.plasmol_molecule_position):
-                    raise ValueError("Molecule position coordinates must be numbers.")
             elif all(coord == 0 for coord in self.plasmol_molecule_position):
                     logger.warning("Molecule position is set to [0, 0, 0]; ensure this is intended.")
         
@@ -258,6 +285,10 @@ class PARAMS:
                 if not hasattr(self, attr):
                     pretty = attr.removeprefix("molecule_")
                     raise ValueError(f"Molecule requires '{pretty}' attribute.")
+            for loc in self.molecule_geometry:
+                if not isinstance(loc, dict):
+                    raise ValueError(f"Invalid molecule position '{loc}'; must be a dictionary (ex. {'atom': 'O', 'coord': [0.0, 0.0, -0.1302052882]}).")
+
             # TODO: create constants.SUPPORTED_LRC_XC_FUNCTIONALS
             if hasattr(self, 'molecule_lrc_parameter'):
                 if self.molecule_xc.lower() not in constants.SUPPORTED_LRC_XC_FUNCTIONALS:
@@ -334,8 +365,14 @@ class PARAMS:
         # Comparison mode params
         if self.has_comparison:
             logger.info("Comparison modifier selected; preparing to run additional simulations for comparison to quantum results.")
-            if hasattr(self, 'comparison_bases') and hasattr(self, 'comparison_xcs'):
+            if not hasattr(self, 'comparison_bases') or not hasattr(self, 'comparison_xcs'):
                 raise ValueError("Comparison mode requires both 'bases' and 'xcs' lists. See documentation for details.")
+            for loc in self.comparison_bases:
+                if not isinstance(loc, str):
+                    raise ValueError(f"Invalid comparison basis '{loc}'; must be a string.")
+            for loc in self.comparison_xcs:
+                if not isinstance(loc, str):
+                    raise ValueError(f"Invalid comparison xcs '{loc}'; must be a string.")
             if self.comparison_num_virtual < 1:
                 raise ValueError("Comparison 'num_virtual' must be at least 1.")
             if self.comparison_num_occupied < 1:
@@ -373,15 +410,6 @@ class PARAMS:
         This function is meant to form the attributes so they are ready to 
         be used by the rest of the codebase.
         """
-        # Settings (always required)
-        # ('dt', ['settings', 'dt'], None),
-        # ('t_end', ['settings', 't_end'], None),
-        if self.has_plasmon:
-            self.plasmon_resolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
-            self.dt_meep = self.dt / constants.convertTimeMeep2Atomic
-            self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
-    
-
         # # Plasmon params
         # ('plasmon_dict', ['plasmon'], 'plasmon'),
         # ('plasmon_tolerance_efield', ['plasmon', 'simulation', "tolerance_efield"], 1e-12, 'plasmon'),
@@ -396,7 +424,6 @@ class PARAMS:
         #         raise ValueError("'plasmon_tolerance_efield' must be a positive value.")
         #     if self.plasmon_cell_length <= 0:
         #         raise ValueError("'plasmon_cell_length' must be a positive value.")
-        #     # TODO: Add overriding to _attribute_formation
         #     if hasattr(self, 'plasmon_cell_volume'):
         #         logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
         #     if self.plasmon_pml_thickness <= 0:
@@ -416,6 +443,12 @@ class PARAMS:
             self.molecule_position = mp.Vector3(*self.plasmol_molecule_position) 
         else:
             self.molecule_position = None
+
+        if self.has_plasmon:
+            if hasattr(self, 'plasmon_cell_volume'):
+                self.cell_volume = mp.Vector3(*self.plasmon_cell_volume)
+            else:
+                self.cell_volume = mp.Vector3(self.plasmon_cell_length, self.plasmon_cell_length, self.plasmon_cell_length)
 
         # Symmetries
         if hasattr(self, 'symmetries'):

@@ -23,7 +23,7 @@ def propagation(params, molecule, field, propagate):
     None
     """
     mu_arr = np.zeros(3)
-    propagate(params, molecule, field)
+    propagate(**params, molecule=molecule, field=field)
     mu = molecule.calculate_mu()
     for i in [0, 1, 2]:
         mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
