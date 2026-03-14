@@ -102,13 +102,6 @@ def run(params):
     Returns:
     None
     """
-    if not hasattr(params, 'bases') or not params.bases:
-        logger.error("No basis sets provided for comparison.")
-        return
-    if not hasattr(params, 'xcs') or not params.xcs:
-        logger.error("No XC functionals provided for comparison.")
-        return
-
     # Ensure transform is disabled
     params.transform = False
     

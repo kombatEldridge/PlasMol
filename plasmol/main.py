@@ -16,7 +16,6 @@ from plasmol.drivers import *
 from plasmol.utils.logging import PRINTLOGGER
 from plasmol.utils.input.cli import parse_arguments
 from plasmol.utils.input.params import PARAMS
-from plasmol.utils.input.parser import parseInputFile
 
 if __name__ == "__main__":
     try:
@@ -43,7 +42,6 @@ if __name__ == "__main__":
             handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(log_format))
         logger.addHandler(handler)
-
         logger.propagate = False
     
         sys.stdout = PRINTLOGGER(logger, logging.INFO)
@@ -51,16 +49,14 @@ if __name__ == "__main__":
         logging.getLogger("matplotlib").setLevel(logging.INFO)
         logging.getLogger("PIL").setLevel(logging.INFO)
 
-        # Step 2: Parse input file
-        # parsed = parseInputFile(args)
-        # logger.debug(f"Arguments given and parsed successfully: {parsed}")
-
-        # Step 3: Fill in PARAMS dataclass
+        # Step 2: Fill in PARAMS dataclass
         params = PARAMS(args)
         logger.debug(f"PARAMS successfully created: ")
         for key, value in vars(params).items():
-            logger.debug(f"\t\t{key}: {value}")
+            logger.debug(f"\t{key}: {value}")
 
+
+        # TODO: Look through Checkpoints and Fourier transforming
         sys.exit(0)
 
         if params.restart:
@@ -82,15 +78,16 @@ if __name__ == "__main__":
         logger.info(f"The simulation will propagate until {params.t_end} in au or {params.t_end / constants.T_AU_FS} in fs.")
         logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
 
-        # Step 4: Execute proper workflow
+        # Step 3: Execute proper workflow
         if params.types == 'PlasMol':
             run_plasmol(params)
         elif params.types == 'Quantum':
-            # if hasattr(params, 'bases') and params.bases:  # Check for comparison mode
-            #     from plasmol.drivers import run_comparison
-            #     logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
-            #     run_comparison(params)
-            # else:
+            # TODO: go through comparison again
+            if params.has_comparison:
+                from plasmol.drivers import run_comparison
+                logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
+                run_comparison(params)
+            else:
                 run_quantum(params)
         elif params.types == 'Classical':
             run_classical(params)

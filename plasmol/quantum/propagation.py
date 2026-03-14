@@ -4,7 +4,7 @@ import numpy as np
 
 logger = logging.getLogger("main")
 
-def propagation(params, molecule, field, propagate):
+def propagation(params, molecule, exc, propagator):
     """
     Perform time propagation of the molecular state.
 
@@ -16,14 +16,14 @@ def propagation(params, molecule, field, propagate):
         Parameters object with simulation settings.
     molecule : object
         Molecule object with current state.
-    field : object
+    exc : object
         Electric field object with time-dependent field data.
 
     Returns:
     None
     """
     mu_arr = np.zeros(3)
-    propagate(**params, molecule=molecule, field=field)
+    propagator(**params, molecule=molecule, exc=exc, dt=dt)
     mu = molecule.calculate_mu()
     for i in [0, 1, 2]:
         mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)

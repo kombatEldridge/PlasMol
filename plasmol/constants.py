@@ -12,6 +12,7 @@ convertFieldMeep2Atomic = 1 / 1e-6 / epsilon_0 / c / 0.51422082e12
 A0 = 5.29177210903e-11  # Bohr radius in m
 C_AU = 137.035999       # Speed of light in atomic units
 D_AU_NM = 1e-9 / A0     # Distance conv in au/nm
+D_AU_UM = 1e-6 / A0     # Distance conv in au/μm
 T_AU_FS = 41.3413733    # Time conv in au/fs
 V_AU_AA3 = 0.14818471    # Volume conv in au/Å³
 
@@ -29,6 +30,7 @@ vdw_radii = {'H': 1.2, 'He': 1.4, 'Li': 2.2, 'Be': 1.9, 'B': 1.8, 'C': 1.7, 'N':
              'Fm': 2.0, 'Md': 2.0, 'No': 2.0, 'Lr': 2.0, 'Rf': 2.0, 'Db': 2.0, 'Sg': 2.0, 'Bh': 2.0, 'Hs': 2.0, 
              'Mt': 2.0, 'Ds': 2.0, 'Rg': 2.0, 'Cn': 2.0, 'Nh': 2.0, 'Fl': 2.0, 'Mc': 2.0, 'Lv': 2.0, 'Ts': 2.0, 'Og': 2.0}
 
+# TODO: list all LRC XCs that take mu parameter
 SUPPORTED_LRC_XC_FUNCTIONALS = [
-    
+    "CAM-B3LYP"
 ]

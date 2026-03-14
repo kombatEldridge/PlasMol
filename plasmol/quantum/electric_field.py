@@ -7,80 +7,74 @@ from plasmol import constants
 logger = logging.getLogger("main")
 
 class ELECTRICFIELD:
-    def __init__(self, times, shape, intensity_au, peak_time_au, width_steps, dt, dir, wavelength_nm=None):
+    def __init__(self, 
+                 times, 
+                 source_type, 
+                 intensity, 
+                 peak_time, 
+                 width_steps, 
+                 dt, 
+                 component, 
+                 **kwargs):
+
+        self.source_type = source_type
+        logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
+
         self.times = times
-        self.shape = shape
-        self.intensity_au = intensity_au
-        self.peak_time_au = peak_time_au
+        self.intensity_au = intensity
+        self.peak_time_au = peak_time
         self.width_steps = width_steps
         self.dt = dt
         self.width_au = self.width_steps * self.dt
-        self.dir = dir
+        self.component = component
 
-        if self.shape == 'pulse':
-            self.wavelength_nm = wavelength_nm
-            self.wavelength_au = self.wavelength_nm * constants.D_AU_NM
-        elif self.shape == 'kick':
+        if self.source_type == 'pulse':
+            self.frequency_um = kwargs.get('frequency', None)
+            if self.frequency_um is None:
+                self.wavelength_um = kwargs.get('wavelength')
+            else:
+                self.wavelength_um = 1/self.frequency_um
+            self.wavelength_au = self.wavelength_um * constants.D_AU_UM
+        elif self.source_type == 'kick':
             pass
-        # elif self.shape == 'custom_shape'...
-        #   if additional parameters need to be added for your custom shape
-        #   you must add support for them in the utils/input/params.py method: buildQuantumParams()
+        # elif self.source_type == 'custom_shape':
+            # ------------------------------------ #
+            #              Additional              #
+            #    custom sources can be defined     #
+            #      below and supported here        #
+            #          with add'l params           #
+            # ------------------------------------ #
         else:
             raise ValueError("Invalid shape. Must be 'pulse' or 'kick'.")
         
-        self.field = self.build_field()
-
-    def build_field(self):
-        """
-        Compute the electric field for a given array of times.
-
-        Generates the field based on the shape: 'pulse' (oscillatory) or 'kick' (Gaussian),
-        applying it along the specified direction with optional smoothing.
-
-        Parameters:
-        times : np.ndarray
-            Array of times in atomic units.
-        dir : str
-            Direction of the field ('x', 'y', or 'z').
-
-        Returns:
-        np.ndarray
-            Array of shape (len(times), 3) with field components [x, y, z].
-        """
-
-        t = np.asarray(self.times) # must be in au
-        if self.shape == 'pulse':
+        t = np.asarray(self.times)
+        if self.source_type == 'pulse':
             omega = 2 * np.pi * constants.C_AU / self.wavelength_au
             carrier  = np.exp(1j * omega * (t - self.peak_time_au))
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
             active_component = self.intensity_au * np.real(carrier * envelope)
-        elif self.shape == 'kick':
+        elif self.source_type == 'kick':
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
-            active_component = np.zeros_like(t)  # Initialize array of zeros matching t's shape and dtype
-            mask = np.isclose(t, self.peak_time_au, atol=1e-10)  # Adjust atol for your time precision; finds matching indices
-            if np.any(mask):  # Optional: Check if there's at least one match
+            active_component = np.zeros_like(t)
+            mask = np.isclose(t, self.peak_time_au, atol=1e-10)
+            if np.any(mask):
                 active_component[mask] = self.intensity_au
             else:
-                # Optional: Handle no exact match, e.g., find closest index
-                idx = np.argmin(np.abs(t - self.peak_time_au))
-                active_component[idx] = self.intensity_au            # * envelope
-        # ------------------------------------ #
-        #              Additional              #
-        #    custom sources can be defined     #
-        #      here and supported above        #
-        #             as commented             #
-        # ------------------------------------ #
+                raise ValueError("No exact match found for peak time in time array.")
+        # elif self.source_type == 'custom_shape':
+            # ------------------------------------ #
+            #              Additional              #
+            #    custom sources can be defined     #
+            #      here and supported above        #
+            #             as commented             #
+            # ------------------------------------ #
 
-
-        field = np.zeros((len(t), 3))
-        dir = self.dir.lower()
-        if dir == 'x':
-            field[:, 0] = active_component
-        elif dir == 'y':
-            field[:, 1] = active_component
-        elif dir == 'z':
-            field[:, 2] = active_component
+        self.field = np.zeros((len(t), 3))
+        if self.component == 'x':
+            self.field[:, 0] = active_component
+        elif self.component == 'y':
+            self.field[:, 1] = active_component
+        elif self.component == 'z':
+            self.field[:, 2] = active_component
         else:
-            raise ValueError("Invalid direction. Must be 'x', 'y', or 'z'.")
-        return field
-
+            raise ValueError("Invalid component. Must be 'x', 'y', or 'z'.")

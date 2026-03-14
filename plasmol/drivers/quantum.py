@@ -123,10 +123,10 @@ def run(params):
                 process.join()
 
             # Add damping to the polarizability fields if mu_damping is set
-            if params.mu_damping > 0:
+            if params.has_dampen_output:
                 for params_copy in params_copies:
                     mu_arr = read_field_csv(params_copy.pField_path)
-                    damped_mu_x, damped_mu_y, damped_mu_z = apply_damping(mu_arr, params.mu_damping)
+                    damped_mu_x, damped_mu_y, damped_mu_z = apply_damping(mu_arr, params.dampen_output_gamma)
                     
                     # Write the damped values to a new CSV file
                     damped_path = params_copy.pField_path.replace('.csv', f'_damped.csv')

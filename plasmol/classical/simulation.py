@@ -8,11 +8,10 @@ from collections import defaultdict
 
 from plasmol import constants
 from plasmol.utils.csv import updateCSV
-from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
 
 class SIMULATION:
-    def __init__(self, params, molecule=None):
+    def __init__(self, params):
         # set all key values that are in params as key values for self
         for key, value in params.__dict__.items():
             setattr(self, key, value)
@@ -22,19 +21,6 @@ class SIMULATION:
         self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
 
         logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
-
-        # TODO: see if I can't fit this into params._attribute_formation()
-        if self.has_molecule:
-            self.molecule = molecule
-            propagator_map = {
-                "step": propagate_step,
-                "magnus2": propagate_magnus2,
-                "rk4": propagate_rk4
-            }
-            self.propagate = propagator_map.get(self.propagator, propagate_rk4)  # Default to rk4 if invalid
-            sig = inspect.signature(self.propagate)
-            exclude_args = {'molecule', 'field'}
-            self.propagation_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
 
         # Simulation runtime variables
         self.xyz = ['x', 'y', 'z']
@@ -64,7 +50,6 @@ class SIMULATION:
             self.sources_list.append(self.plasmon_source_object)
 
         self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
-        self.symmetry = self.symmetry
         self.nanoparticle = [self.nanoparticle] if self.nanoparticle else []
         self.default_material = mp.Medium(index=self.plasmon_surrounding_material_index)
 
@@ -73,7 +58,7 @@ class SIMULATION:
             cell_size=self.cell_volume,
             boundary_layers=self.pmlList,
             sources=self.sources_list,
-            symmetries=self.symmetry,
+            symmetries=self.plasmon_symmetries,
             geometry=self.nanoparticle,
             default_material=self.default_material
         )
@@ -113,7 +98,7 @@ class SIMULATION:
             eArr = [eField[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
 
-            ind_dipole = propagation(self.propagation_params, self.molecule, eArr, self.propagate)
+            ind_dipole = propagation(params=self.molecule_propagator_params, molecule=self.molecule, exc=eArr, propagator=self.molecule_propagator)
             logging.debug(f"Propagation calculation results: {ind_dipole} in au")
 
             for comp, digit in self.map_direction_to_digit.items():
@@ -140,7 +125,6 @@ class SIMULATION:
                 from plasmol.utils.gif import clear_directory
                 clear_directory(self.images_dir_name)
                 self.simulation.use_output_directory(self.images_dir_name)
-                self.images_args = self.images_args
                 self.images_args += f"-z {self.frame_center}"
                 run_functions.append(mp.at_every(self.images_timesteps_between * self.dt_meep, mp.output_png(mp.Ez, self.images_args)))
 

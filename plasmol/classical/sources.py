@@ -80,7 +80,6 @@ class MEEPSOURCE:
                 # Then: MEEPSOURCE(source_type='custom', ..., src_func=chirped_func)
 
             For more details on CustomSource, see Meep documentation: https://meep.readthedocs.io/en/latest/Python_User_Interface/#customsource
-
         """
         self.source_type = source_type
         logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")

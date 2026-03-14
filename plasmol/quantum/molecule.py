@@ -38,38 +38,19 @@ class MOLECULE():
         Returns:
         None
         """
-        # If basis set is 'd-aug-cc-pvtz', import using bse
-        if params.basis.lower() == 'd-aug-cc-pvtz':
-            import basis_set_exchange as bse
-            basis_h_str = bse.get_basis(params.basis, elements=[1], fmt='nwchem')
-            basis_o_str = bse.get_basis(params.basis, elements=[8], fmt='nwchem')
-            basis_h = gto.basis.parse(basis_h_str)
-            basis_o = gto.basis.parse(basis_o_str)
-            params.basis = {'H': basis_h, 'O': basis_o}
+        # set all key values that are in params as key values for self
+        for key, value in params.__dict__.items():
+            setattr(self, key, value)
 
-        # Format molecule string as required by PySCF
-        self.mol = gto.M(atom=params.molecule_coords,
-                    basis=params.basis,
-                    unit='B', # Units of molecule are changed in parser.py to Bohr
-                    charge=int(params.charge),
-                    spin=int(params.spin))
+        self.mol = gto.M(atom=self.molecule_coords,
+                    basis=self.basis,
+                    unit='B',
+                    charge=self.charge,
+                    spin=self.spin)
         self.mol.verbose = 0
         self.mf = dft.RKS(self.mol)
-        self.xc = params.xc
-        self.mu = params.mu
-        if 'LC' in self.xc or 'CAM' in self.xc:
-            if self.mu is None:
-                logger.warning("No mu value found in LC PBE functional, running tuning process.")
-                self.mu = self.xc_tuning()
-            if self.xc == 'LCBLYP' or self.xc == 'CAMBLYP':
-                self.xc = f'RSH({self.mu}, 0.0, 1.0) + B88, LYP'
-            if self.xc == 'LCwPBE' or self.xc == 'CAMwPBE':
-                self.xc = f'RSH({self.mu}, 1.0, -1.0) + wPBEH, PBE'
-            if self.xc == 'LCPBE' or self.xc == 'CAMPBE':
-                self.xc = f'RSH({self.mu}, 1, -1.0) + PBE, PBE'
-            print(f"Using LC functional {self.xc} with mu = {self.mu}")
-            self.mf.omega = self.mu
-        
+        self.xc = self.xc
+        self.mu = self.mu
         self.mf.xc = self.xc
         self.mf.kernel()
 
@@ -85,12 +66,13 @@ class MOLECULE():
         self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
 
-        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=params.check_tolerance):
+        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=self.check_tolerance):
             logger.warning("Orthogonalization matrix X may not be unitary")
             
         self.occ = self.mf.get_occ()
         self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
 
+        # TODO: Add open shell support
         if len(np.shape(self.D_ao_0)) == 3:
             self.nmat = 2
             sys.exit("nmat == 2")
@@ -99,23 +81,12 @@ class MOLECULE():
 
         self.chkpoint_time = 0
         
-        self.damping = params.damping
-        self.damping_params = {}
-        if self.damping is not None:
-            if params.gam0 is not None:
-                self.damping_params["gam0"] = params.gam0
-            if params.xi is not None:
-                self.damping_params["xi"] = params.xi
-            if params.eps0 is not None:
-                self.damping_params["eps0"] = params.eps0
-            else:
-                self.damping_params["eps0"] = self.compute_vacuum_level()
-            if params.clamp is not None:
-                self.damping_params["clamp"] = params.clamp
-            self.Gamma_ao_0 = self.get_gamma_ao(**self.damping_params)
+        if self.has_broadening:
+            self.Gamma_ao_0 = self.get_gamma_ao(**self.broadening_dict)
 
-        if params.checkpoint_path is not None and os.path.exists(params.checkpoint_path):
-            restart_from_checkpoint(self, params)
+        # TODO: Clean up with new params process
+        if self.checkpoint_path is not None and os.path.exists(self.checkpoint_path):
+            restart_from_checkpoint(self)
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
         else: 
@@ -126,8 +97,9 @@ class MOLECULE():
         if not self.is_hermitian(self.D_ao, tol=1e-12):
             raise ValueError("Initial density matrix in AO is not Hermitian")
         
-        self.volume = self.get_volume(params.molecule_atoms)
+        self.volume = self.get_volume(self.molecule_atoms)
 
+    # TODO: Test extensively
     def xc_tuning(self, tol=1e-3):
         """Tune mu for LC functionals to minimize |E_cat - E_neut + ε_HOMO|."""
         if 'lc' not in self.xc.lower() and 'cam' not in self.xc.lower():
@@ -174,6 +146,7 @@ class MOLECULE():
         else:
             raise ValueError(f"Tuning failed: {res.message}")
 
+    # TODO: Test extensively
     def compute_vacuum_level(self, nstates=20, diffuse_basis='d-aug-cc-pvqz'):
         """Estimate ε_0 by interpolating KS ε vs. EA_k (paper eq 12-13)."""
         from pyscf import scf, tdscf, lib
@@ -295,10 +268,10 @@ class MOLECULE():
         F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
         if exc is not None:
             F_ao += self.calculate_potential(exc)
-        if self.damping == 'static':
+        if self.broadening_type == 'static':
             F_ao -= 1j * self.Gamma_ao_0
-        elif self.damping == 'dynamic':
-            F_ao -= 1j * self.get_gamma_ao(**self.damping_params, D_ao=D_ao)
+        elif self.broadening_type == 'dynamic':
+            F_ao -= 1j * self.get_gamma_ao(**self.broadening_dict, D_ao=D_ao)
         return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
 
 
@@ -399,7 +372,7 @@ class MOLECULE():
         mu = self.calculate_mu()
         return -1 * np.einsum('xij,x->ij', mu, exc)
 
-    def get_gamma_ao(self, gam0=1.0, xi=0.5, eps0=0.05, clamp=100, D_ao=None):
+    def get_gamma_ao(self, gam0, xi, eps0, clamp, D_ao=None):
         """
         Construct a diagonal damping matrix (Gamma(t) in the AO basis)
         according to Lopata2013: https://doi.org/10.1021/ct400569s
@@ -432,4 +405,3 @@ class MOLECULE():
         # Gamma_ao = np.matmul(scipy.linalg.inv(self.X.conj().T), np.matmul(Gamma_mo, scipy.linalg.inv(self.X).conj().T))
         return Gamma_ao
     
-    # define more contractions with the density matrix below...

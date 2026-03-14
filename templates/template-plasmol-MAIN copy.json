@@ -11,18 +11,18 @@
       "symmetries": ["Y", 1, "Z", -1],
       "surrounding_material_index": 1.33
     },
-    "source": {
-      "type": "continuous",
-      "center": [-0.04, 0, 0],
-      "size": [0, 0.1, 0.1],
-      "component": "z",
-      "amplitude": 1,
-      "additional_parameters": {
-        "frequency": 5,
-        "wavelength": null,
-        "is_integrated": true
-      }
-    },
+    // "source": {
+    //   "type": "continuous",
+    //   "center": [-0.04, 0, 0],
+    //   "size": [0, 0.1, 0.1],
+    //   "component": "z",
+    //   "amplitude": 1,
+    //   "additional_parameters": {
+    //     "frequency": 5,
+    //     "wavelength": null,
+    //     "is_integrated": true
+    //   }
+    // },
     "nanoparticle": {
       "material": "Au_JC_visible",
       "radius": 0.03,
@@ -69,11 +69,13 @@
     },
     "source": {
       "type": "pulse",
-      "intensity_au": 0.001,
-      "peak_time_au": 10,
+      "intensity": 0.001,
+      "peak_time": 10,
       "width_steps": 50,
-      "wavelength_nm": 800,
-      "dir": "z"
+      "component": "z",
+      "additional_parameters": {
+        "wavelength": 0.5
+      }
     },
     "files": {
       "checkpoint": {
