@@ -42,16 +42,30 @@ class MOLECULE():
         for key, value in params.__dict__.items():
             setattr(self, key, value)
 
+        # TODO: Restructure
+        # if 'LC' in self.molecule_xc or 'CAM' in self.molecule_xc:
+        #     if self.molecule_lrc_parameter is None:
+        #         logger.warning("No mu value found in LC PBE functional, running tuning process.")
+        #         self.molecule_lrc_parameter = self.xc_tuning()
+        #     if self.molecule_xc == 'LCBLYP' or self.molecule_xc == 'CAMBLYP':
+        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 0.0, 1.0) + B88, LYP'
+        #     if self.molecule_xc == 'LCwPBE' or self.molecule_xc == 'CAMwPBE':
+        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 1.0, -1.0) + wPBEH, PBE'
+        #     if self.molecule_xc == 'LCPBE' or self.molecule_xc == 'CAMPBE':
+        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 1, -1.0) + PBE, PBE'
+        #     print(f"Using LC functional {self.molecule_xc} with mu = {self.molecule_lrc_parameter}")
+        #     self.mf.omega = self.molecule_lrc_parameter
+
         self.mol = gto.M(atom=self.molecule_coords,
-                    basis=self.basis,
+                    basis=self.molecule_basis,
                     unit='B',
-                    charge=self.charge,
-                    spin=self.spin)
+                    charge=self.molecule_charge,
+                    spin=self.molecule_spin)
         self.mol.verbose = 0
         self.mf = dft.RKS(self.mol)
-        self.xc = self.xc
-        self.mu = self.mu
-        self.mf.xc = self.xc
+        self.mf.xc = self.molecule_xc
+        if hasattr(self, 'molecule_lrc_parameter'):
+            self.mf.omega = self.molecule_lrc_parameter
         self.mf.kernel()
 
         print(f"Occupied count: {np.sum(self.mf.mo_occ > 0)}")
@@ -66,7 +80,7 @@ class MOLECULE():
         self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
 
-        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=self.check_tolerance):
+        if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=self.molecule_hermiticity_tolerance):
             logger.warning("Orthogonalization matrix X may not be unitary")
             
         self.occ = self.mf.get_occ()
@@ -85,7 +99,7 @@ class MOLECULE():
             self.Gamma_ao_0 = self.get_gamma_ao(**self.broadening_dict)
 
         # TODO: Clean up with new params process
-        if self.checkpoint_path is not None and os.path.exists(self.checkpoint_path):
+        if self.checkpoint_filepath is not None and os.path.exists(self.checkpoint_filepath):
             restart_from_checkpoint(self)
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
@@ -102,12 +116,12 @@ class MOLECULE():
     # TODO: Test extensively
     def xc_tuning(self, tol=1e-3):
         """Tune mu for LC functionals to minimize |E_cat - E_neut + ε_HOMO|."""
-        if 'lc' not in self.xc.lower() and 'cam' not in self.xc.lower():
+        if 'lc' not in self.molecule_xc.lower() and 'cam' not in self.molecule_xc.lower():
             return
 
         def j_func(mu):
             logger.debug(f"Mu Tuning: Evaluating at mu = {mu}")
-            xc = self.xc
+            xc = self.molecule_xc
             if xc == 'LCBLYP' or xc == 'CAMBLYP':
                 xc = f'RSH({mu}, 0.0, 1.0) + B88, LYP'
             neutral_mf = scf.UKS(self.mol)
@@ -171,7 +185,7 @@ class MOLECULE():
             neutral_mf = scf.RKS(self.mol)
         else:
             neutral_mf = scf.UKS(self.mol)
-        neutral_mf.xc = self.xc
+        neutral_mf.xc = self.molecule_xc
         neutral_mf.kernel()
         e_neutral = neutral_mf.energy_tot()
         mo_energy = neutral_mf.mo_energy
@@ -195,7 +209,7 @@ class MOLECULE():
         anion_mol.spin = self.mol.spin + 1
         anion_mol.build()
         anion_mf = scf.UKS(anion_mol)
-        anion_mf.xc = self.xc
+        anion_mf.xc = self.molecule_xc
         anion_mf.max_cycle = 200
 
         # Initialize from neutral density matrix

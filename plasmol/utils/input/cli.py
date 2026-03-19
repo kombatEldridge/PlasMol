@@ -20,11 +20,10 @@ def parse_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument('input', nargs='?', help="Path to the PlasMol input file (optional, if not provided via -f flag).")
-    parser.add_argument('-f', '--input', required=False, type=str, help="Path to the PlasMol input file.")
+    parser.add_argument('input', nargs='?', help="Path to the PlasMol input file (optional, if not provided via --input flag).")
+    parser.add_argument('-i', '--input', required=False, type=str, help="Path to the PlasMol input file.")
     parser.add_argument('-l', '--log', help="Log file name.")
     parser.add_argument('-v', '--verbose', action='count', default=1, help="Increase verbosity (use up to -vv).")
-    parser.add_argument('-r', '--restart', dest='restart', action='store_true', help="Before simulation starts, removes old files: eField_path, pField_path, pField_Transform_path, checkpoint_path, eField_vs_pField_path, and eV_spectrum_path.")
     parser.add_argument('-n', dest='do_nothing', action='store_true', help="Do not run the simulation, useful for testing the input parsing.")
 
     args = parser.parse_args()

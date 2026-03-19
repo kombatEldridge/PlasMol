@@ -22,7 +22,6 @@ logger = logging.getLogger("main")
 class PARAMS:
     def __init__(self, args):
         self.preparams = self._parse_input_file(args)
-        self.restart = self.preparams["args"]["restart"]
         self.do_nothing = self.preparams["args"]["do_nothing"]
         self.simulation_types = self.preparams["simulation_types"]
 
@@ -184,6 +183,13 @@ class PARAMS:
         
         # Molecule params
         if self.has_molecule:
+            if self.has_comparison:
+                if hasattr(self, 'molecule_basis') or hasattr(self, 'molecule_xc'):
+                    logger.info("Comparison modifier selected; ignoring singular basis set and xc.")
+                else:
+                    # Setting singular basis and xc so it can pass the following checks. These will be ignored anyway.
+                    self.molecule_basis = '6-31g'
+                    self.molecule_xc = 'pbe0'
             for attr in ['molecule_geometry', 'molecule_geometry_units', 'molecule_basis', 'molecule_charge', 'molecule_spin']:
                 if not hasattr(self, attr) or getattr(self, attr) == []:
                     pretty = attr.removeprefix("molecule_")
@@ -257,7 +263,11 @@ class PARAMS:
 
             # Comparison mode params
             if self.has_comparison:
-                logger.info("Comparison modifier selected; preparing to run additional simulations for comparison to quantum results.")
+                logger.info("Comparison modifier selected; preparing to run additional simulations for comparison to molecule results.")
+                if self.has_plasmon:
+                    raise ValueError("Comparison mode is not supported with plasmon simulations. Please run with only molecule simulations.")
+                if self.has_fourier:
+                    raise ValueError("Comparison mode is not supported with fourier simulations. Please run with only molecule simulations.")
                 if not hasattr(self, 'comparison_bases') or not hasattr(self, 'comparison_xcs'):
                     raise ValueError("Comparison mode requires both 'bases' and 'xcs' lists. See documentation for details.")
                 for loc in self.comparison_bases:
@@ -278,10 +288,11 @@ class PARAMS:
                 for xc in self.comparison_xcs:
                     omega = self.comparison_lrc_parameters.get(xc, None)
                     self._check_xc(xc, omega)
-                if self.comparison_num_virtual < 1:
-                    raise ValueError("Comparison 'num_virtual' must be at least 1.")
-                if self.comparison_num_occupied < 1:
-                    raise ValueError("Comparison 'num_occupied' must be at least 1.")
+                for loc in ['comparison_num_virtual', 'comparison_num_occupied', 'comparison_index_min', 'comparison_index_max']:
+                    if hasattr(self, loc):
+                        if getattr(self, loc) < 1: 
+                            pretty = loc.removeprefix("molecule_source_")
+                            raise ValueError(f"Comparison '{pretty}' must be at least 1.")
 
             # Dampening mode params
             if self.has_dampen_output:
@@ -315,6 +326,16 @@ class PARAMS:
         This function is meant to form the attributes so they are ready to 
         be used by the rest of the codebase.
         """
+        self.run_molecule_simulation = False
+        self.run_plasmon_simulation = False
+        if 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
+            pass
+        elif 'molecule' in self.simulation_types:
+            self.run_molecule_simulation = True
+        elif 'plasmon' in self.simulation_types:
+            self.run_plasmon_simulation = True 
+        delattr(self, 'simulation_types')
+
         if self.has_plasmon:
             if hasattr(self, 'plasmon_cell_volume'):
                 self.cell_volume = mp.Vector3(*self.plasmon_cell_volume)
@@ -360,10 +381,6 @@ class PARAMS:
         if self.has_molecule:
             self.molecule_atoms, self.molecule_coords, self.molecule_geometry_units = self._construct_geometry(self.molecule_geometry, self.molecule_geometry_units.lower())
             delattr(self, 'molecule_geometry')
-
-            # TODO: Finish this so basis and xc can be passed to molecule.py without worry.
-            self._construct_basis()
-            self._construct_xc()
 
             propagator_map = {
                 "step": propagate_step,
@@ -466,38 +483,6 @@ class PARAMS:
 
         return atoms, coords_str.strip(), units
 
-    # TODO: Ensure basis set is properly constructed
-    def _construct_basis(self):
-        return 0
-        # TODO: Brought from molecule.py, i don't remember why I had this code
-
-        # If basis set is 'd-aug-cc-pvtz', import using bse
-        # if params.basis.lower() == 'd-aug-cc-pvtz':
-        #     import basis_set_exchange as bse
-        #     basis_h_str = bse.get_basis(params.basis, elements=[1], fmt='nwchem')
-        #     basis_o_str = bse.get_basis(params.basis, elements=[8], fmt='nwchem')
-        #     basis_h = gto.basis.parse(basis_h_str)
-        #     basis_o = gto.basis.parse(basis_o_str)
-        #     params.basis = {'H': basis_h, 'O': basis_o}
-
-    # TODO: Ensure xc functional is properly constructed
-    def _construct_xc(self):
-        return 0
-        # TODO: Brought from molecule.py, i don't remember why I had this code
-
-        # if 'LC' in self.xc or 'CAM' in self.xc:
-        #     if self.mu is None:
-        #         logger.warning("No mu value found in LC PBE functional, running tuning process.")
-        #         self.mu = self.xc_tuning()
-        #     if self.xc == 'LCBLYP' or self.xc == 'CAMBLYP':
-        #         self.xc = f'RSH({self.mu}, 0.0, 1.0) + B88, LYP'
-        #     if self.xc == 'LCwPBE' or self.xc == 'CAMwPBE':
-        #         self.xc = f'RSH({self.mu}, 1.0, -1.0) + wPBEH, PBE'
-        #     if self.xc == 'LCPBE' or self.xc == 'CAMPBE':
-        #         self.xc = f'RSH({self.mu}, 1, -1.0) + PBE, PBE'
-        #     print(f"Using LC functional {self.xc} with mu = {self.mu}")
-        #     self.mf.omega = self.mu
-
     def _parse_input_file(self, args):
         """
         Prepares parameters from the input JSON file and CLI args.
@@ -573,4 +558,3 @@ class PARAMS:
             preparams["molecule"] = molecule_params
 
         return preparams
-

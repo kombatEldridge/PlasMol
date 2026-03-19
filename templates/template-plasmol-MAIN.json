@@ -91,7 +91,9 @@
       //   "num_virtual": 3, 
       //   "num_occupied": 3, 
       //   "y_min": -1, 
-      //   "y_max": 1 
+      //   "y_max": 1,
+      //   "index_min": 1, // Highest priority
+      //   "index_max": 10 // Highest priority
       // }
     },
     "source": {

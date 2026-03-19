@@ -53,44 +53,22 @@ if __name__ == "__main__":
         params = PARAMS(args)
         logger.debug(f"PARAMS successfully created: ")
         for key, value in vars(params).items():
-            logger.debug(f"\t{key}: {value}")
+            print(f"\t{key}: {value}")
 
-
-        # TODO: Look through Checkpoints and Fourier transforming
-        sys.exit(0)
-
-        if params.restart:
-            for attr in ['eField_path', 'pField_path', 'pField_Transform_path', 'checkpoint_path', 'eField_vs_pField_path', 'eV_spectrum_path']:
-                if hasattr(params, attr):
-                    file_path = getattr(params, attr)
-                    if file_path is not None and os.path.isfile(file_path):
-                        try:
-                            os.remove(file_path)
-                            logger.info(f"Deleted {file_path}")
-                        except OSError as e:
-                            logger.error(f"Error deleting {file_path}: {e}")
-                    else:
-                        logger.debug(f"No such file: {file_path}")
-
-        time_values = np.arange(0, params.t_end + params.dt, params.dt)
-        interpolated_times = np.linspace(0, time_values[-1], len(time_values))
-        logger.info(f"The timestep for this simulation is {params.dt} in au or {params.dt / constants.T_AU_FS} in fs.")
-        logger.info(f"The simulation will propagate until {params.t_end} in au or {params.t_end / constants.T_AU_FS} in fs.")
-        logger.debug(f"There will be {len(interpolated_times)} timesteps until the simulation finishes.")
+        logger.info(f"The timestep for this simulation is {params.dt} au (roughly {np.round(params.dt / constants.T_AU_FS, decimals=5)} fs).")
+        logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
 
         # Step 3: Execute proper workflow
-        if params.types == 'PlasMol':
-            run_plasmol(params)
-        elif params.types == 'Quantum':
-            # TODO: go through comparison again
+        if params.run_molecule_simulation:
             if params.has_comparison:
-                from plasmol.drivers import run_comparison
-                logger.info("Running comparison of MO energies and Gamma matrices across basis sets and XC functionals.")
                 run_comparison(params)
             else:
+                # TODO: NEXT
                 run_quantum(params)
-        elif params.types == 'Classical':
+        elif params.run_plasmon_simulation:
             run_classical(params)
+        else:
+            run_plasmol(params)
 
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)

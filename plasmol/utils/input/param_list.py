@@ -90,10 +90,12 @@ param_defs = [
     ('comparison_bases', ['molecule', 'modifiers', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule', list),
     ('comparison_xcs', ['molecule', 'modifiers', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule', list),
     ('comparison_lrc_parameters', ['molecule', 'modifiers', 'comparison', 'lrc_parameters'], False, 'has_comparison', None, 'molecule', dict),
-    ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], False, 'has_comparison', 3, 'molecule', int),
-    ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], False, 'has_comparison', 3, 'molecule', int),
-    ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], False, 'has_comparison', -1, 'molecule', (int, float)),
-    ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', 1, 'molecule', (int, float)),
+    ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], False, 'has_comparison', None, 'molecule', int),
+    ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], False, 'has_comparison', None, 'molecule', int),
+    ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], False, 'has_comparison', None, 'molecule', (int, float)),
+    ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float)),
+    ('comparison_index_min', ['molecule', 'modifiers', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float)),
+    ('comparison_index_max', ['molecule', 'modifiers', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float)),
 
     # Dampening mode params
     ('dampen_output_dict', ['molecule', 'modifiers', 'dampen_output'], True, "has_dampen_output", None, 'molecule', dict),

@@ -3,186 +3,148 @@
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from plasmol.quantum.molecule import MOLECULE
 
 logger = logging.getLogger("main")
 
-def filter_mo_energies(mo_energy, num_virtual=None, y_min=None, y_max=None, min_index=None, max_index=None):
-    if mo_energy is None or len(mo_energy) == 0:
-        return np.array([]), np.array([])
-    
-    mo_energy = np.asarray(mo_energy)
-    if mo_energy.ndim != 1:
-        raise ValueError("mo_energy must be a 1D array")
-    
-    # Assume mo_energy is already sorted ascending; get original indices
-    indices = np.arange(len(mo_energy))
-    
-    # Apply y_min and y_max filters
-    mask = np.ones(len(mo_energy), dtype=bool)
-    if y_min is not None:
-        mask &= (mo_energy >= y_min)
-    if y_max is not None:
-        mask &= (mo_energy <= y_max)
-    
-    # Apply index filters if specified
-    if min_index is not None:
-        mask &= (indices >= min_index)
-    if max_index is not None:
-        mask &= (indices <= max_index)
-    
-    filtered_energies = mo_energy[mask]
-    filtered_indices = indices[mask]
-    
-    # Split into occupied and virtual based on sign
-    occ_mask = filtered_energies < 0
-    occupied_energies = filtered_energies[occ_mask]
-    occupied_indices = filtered_indices[occ_mask]
-    virtual_energies = filtered_energies[~occ_mask]
-    virtual_indices = filtered_indices[~occ_mask]
-    
-    # Limit virtual if specified
-    if num_virtual is not None:
-        virtual_energies = virtual_energies[:num_virtual]
-        virtual_indices = virtual_indices[:num_virtual]
-    
-    # Combine, sort by index to preserve order
-    combined_energies = np.concatenate([occupied_energies, virtual_energies])
-    combined_indices = np.concatenate([occupied_indices, virtual_indices])
-    sort_order = np.argsort(combined_indices)
-    
-    return combined_energies[sort_order], combined_indices[sort_order]
 
-def get_background_color(mo_energy):
+def get_background_color(mo_energy_hartree):
     """
-    Determine background color based on MO energies.
-    
-    - Light transparent red if >5 negative MOs.
-    - Light transparent yellow if 6th MO (LUMO) is close to zero (|E| < 1e-3).
-    - Light transparent green otherwise.
-    
-    Parameters:
-    mo_energy : np.ndarray
-        Full array of sorted MO energies.
-    
-    Returns:
-    str or tuple
-        Matplotlib color (with alpha for transparency).
+    Determine background color based on MO energies (expects Hartree).
+    - Light transparent red if >5 negative MOs
+    - Light transparent yellow if LUMO close to zero (|E| < 1e-3 hartree)
+    - Light transparent green otherwise
     """
-    if mo_energy is None or len(mo_energy) < 6:
-        return 'lightgreen'  # Default to green if too few MOs
-    
-    num_negative = np.sum(mo_energy < 0)
+    if mo_energy_hartree is None or len(mo_energy_hartree) < 6:
+        return 'lightgreen'
+
+    num_negative = np.sum(mo_energy_hartree < 0)
     if num_negative > 5:
         return 'mistyrose'  # Light red
-    # if any positive valeus are close to zero
-    elif np.any(np.abs(mo_energy[mo_energy >= 0]) < 1e-2):
+    elif np.any(np.abs(mo_energy_hartree[mo_energy_hartree >= 0]) < 1e-3):
         return 'lightyellow'
     else:
         return 'lightgreen'
 
+
 def run(params):
-    """
-    Run comparisons of MO energies and Gamma matrices across basis sets and XC functionals.
-    
-    Loops over provided lists of basis sets and XC functionals, computing and logging
-    MO energies and (if damping enabled) the Gamma matrix for each combination.
-    Generates stem plots for MO energies in separate PNG files for each combination,
-    and one large combined plot with subplots for all combinations.
-    Allows limiting the number of virtual MOs shown via params.num_virtual,
-    and filtering/zooming y-axis range via params.y_min and params.y_max.
-    Preserves original MO indices on x-axis.
-    Colors plot background based on MO characteristics.
-    
-    Parameters:
-    params : object
-        Parameters object with bases, xcs, optional num_virtual, y_min, y_max, and damping settings.
-    
-    Returns:
-    None
-    """
-    # Ensure transform is disabled
-    params.transform = False
-    
-    # Get optional parameters
-    num_virtual = getattr(params, 'num_virtual', None)
-    if num_virtual is not None:
-        logger.info(f"Limiting plots to {num_virtual} virtual MOs above zero energy.")
-    y_min = getattr(params, 'y_min', None)
-    y_max = getattr(params, 'y_max', None)
-    if y_min is not None or y_max is not None:
-        logger.info(f"Filtering and zooming y-axis to [{y_min}, {y_max}] hartree.")
-    mo_start = getattr(params, 'mo_start', None)
-    mo_end = getattr(params, 'mo_end', None)
-    if mo_start is not None or mo_end is not None:
-        logger.info(f"Filtering plots to MOs {mo_start} through {mo_end} .")
-    
-    # Collect data for all combinations: dict of (basis, xc) -> (filtered_mo, filtered_indices, full_mo_sorted)
+    # Ensure output directory exists
+    Path("img").mkdir(parents=True, exist_ok=True)
+
+    # Data storage for combined plot: (selected_energies_ev, selected_indices, full_mo_hartree, nocc)
     mo_data = {}
-    
-    for basis in params.bases:
-        for xc in params.xcs:
+
+    for basis in params.comparison_bases:
+        for xc in params.comparison_xcs:
             logger.info(f"Comparing for basis: {basis}, XC: {xc}")
-            params.basis = basis
-            params.xc = xc.upper()
+
+            # Set parameters for this combination
+            params.molecule_basis = basis
+            params.molecule_xc = xc
+
             molecule = MOLECULE(params)
-            
-            logger.info("MO energies (in hartree):")
-            logger.info(molecule.mf.mo_energy)
-            
-            full_mo_sorted = np.sort(molecule.mf.mo_energy)
-            filtered_mo, filtered_indices = filter_mo_energies(
-                full_mo_sorted, num_virtual, y_min, y_max,
-                min_index=(mo_start - 1) if mo_start else None,
-                max_index=(mo_end - 1) if mo_end else None
-            )
-            mo_data[(basis, xc)] = (filtered_mo, filtered_indices, full_mo_sorted)
-            
-            # Individual plot
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.stem(filtered_indices + 1, filtered_mo, linefmt='b-', markerfmt='bo', basefmt='r-')
-            ax.set_title(f"MO Energies for {basis} / {xc}")
-            ax.set_xlabel("MO Index ")
-            ax.set_ylabel("Energy (hartree)")
-            if y_min is not None and y_max is not None:
-                ax.set_ylim(y_min, y_max)
-            ax.set_facecolor(get_background_color(full_mo_sorted))
-            ax.grid(True)
-            plot_filename = f"img/{basis}_{xc}_mo_energies.png"
-            plt.savefig(plot_filename)
-            plt.close(fig)
-            logger.info(f"MO energies plot saved to: {plot_filename}")
-            
-            if params.damping is not None:
-                gamma = molecule.get_gamma_ao(**molecule.damping_params)
-                logger.info("Gamma matrix:")
-                logger.info(gamma)
+
+            # === Data prep (fixed — no sorting!) ===
+            mo_energy_hartree = np.asarray(molecule.mf.mo_energy).copy()
+            nmo = len(mo_energy_hartree)
+            mo_energy_ev = mo_energy_hartree * 27.21138602
+
+            # HOMO index
+            occ_mask = molecule.mf.mo_occ > 0.5
+            homo_idx_0 = np.where(occ_mask)[0][-1] if np.any(occ_mask) else 0
+            nocc = homo_idx_0 + 1
+
+            # === Selection logic (exactly as you wanted) ===
+            if hasattr(params, 'comparison_index_min') and params.comparison_index_min is not None or hasattr(params, 'comparison_index_max') and params.comparison_index_max is not None:
+                start_0 = max(0, (params.comparison_index_min or 1) - 1)
+                end_0   = min(nmo, (params.comparison_index_max or nmo))
             else:
-                logger.info("Damping not enabled; no Gamma matrix computed.")
-    
-    # Create large combined plot
-    num_rows = len(params.bases)
-    num_cols = len(params.xcs)
-    fig, axs = plt.subplots(num_rows, num_cols, figsize=(num_cols * 6, num_rows * 4), squeeze=False)
-    
-    for i, basis in enumerate(params.bases):
-        for j, xc in enumerate(params.xcs):
+                if hasattr(params, 'comparison_num_occupied') and params.comparison_num_occupied is not None:
+                    n_occ_show = params.comparison_num_occupied
+                else:
+                    n_occ_show = nocc
+
+                if hasattr(params, 'comparison_num_virtual') and params.comparison_num_virtual is not None:
+                    n_virt_show = params.comparison_num_virtual
+                else:
+                    n_virt_show = nmo - nocc
+
+                start_0 = max(0, nocc - n_occ_show)
+                end_0   = min(nmo, nocc + n_virt_show)
+
+            selected_indices = np.arange(start_0 + 1, end_0 + 1)
+            selected_energies_ev = mo_energy_ev[start_0:end_0]
+
+            # Store for combined plot
+            mo_data[(basis, xc)] = (selected_energies_ev, selected_indices, mo_energy_hartree, nocc)
+
+            # === Individual plot (publication style) ===
+            fig, ax = plt.subplots(figsize=(9, 7))
+
+            is_occupied = selected_indices <= nocc
+            ax.scatter(selected_indices[is_occupied], selected_energies_ev[is_occupied],
+                       color="#1f77b4", s=80, zorder=5, label="Occupied")
+            ax.scatter(selected_indices[~is_occupied], selected_energies_ev[~is_occupied],
+                       color="#ff7f0e", s=80, zorder=5, label="Virtual")
+
+            for idx, e in zip(selected_indices, selected_energies_ev):
+                ax.hlines(e, idx - 0.35, idx + 0.35, color="gray", linewidth=2.2, alpha=0.8)
+
+            ax.set_xlabel("Molecular Orbital Index")
+            ax.set_ylabel("MO Energy (eV)")
+            ax.set_xticks(selected_indices)
+            ax.grid(axis="y", alpha=0.3)
+            ax.axhline(0, color="black", linestyle="--", alpha=0.4, linewidth=1)
+            ax.set_title(f"MO Energies — {basis} / {xc}")
+            ax.legend(loc="upper right")
+
+            # y_min/y_max view-only clipping
+            if hasattr(params, 'comparison_y_min') and params.comparison_y_min is not None or hasattr(params, 'comparison_y_max') and params.comparison_y_max is not None:
+                ymin = params.comparison_y_min if hasattr(params, 'comparison_y_min') and params.comparison_y_min is not None else None
+                ymax = params.comparison_y_max if hasattr(params, 'comparison_y_max') and params.comparison_y_max is not None else None
+                ax.set_ylim(ymin, ymax)
+
+            plt.tight_layout()
+            plot_filename = f"img/{basis}_{xc}_mo_energies.png"
+            fig.savefig(plot_filename, dpi=300, bbox_inches="tight")
+            plt.close(fig)
+            logger.info(f"MO diagram saved: {plot_filename}")
+
+    # === Combined grid plot ===
+    num_rows = len(params.comparison_bases)
+    num_cols = len(params.comparison_xcs)
+    fig, axs = plt.subplots(num_rows, num_cols, figsize=(num_cols * 7, num_rows * 5), squeeze=False)
+
+    for i, basis in enumerate(params.comparison_bases):
+        for j, xc in enumerate(params.comparison_xcs):
             ax = axs[i, j]
             data = mo_data.get((basis, xc))
-            if data is not None:
-                filtered_mo, filtered_indices, full_mo_sorted = data
-                ax.stem(filtered_indices + 1, filtered_mo, linefmt='b-', markerfmt='bo', basefmt='r-')
-                ax.set_title(f"{basis} / {xc}", fontsize=18)
-                ax.set_xlabel("MO Index ", fontsize=14)
-                ax.set_ylabel("Energy (hartree)",   fontsize=14)
-                if y_min is not None and y_max is not None:
-                    ax.set_ylim(y_min, y_max)
-                ax.set_facecolor(get_background_color(full_mo_sorted))
-                ax.grid(True)
-    
+            if data:
+                selected_ev, selected_idx, full_hartree, this_nocc = data
+
+                # Same nice style as individual plots
+                is_occ = selected_idx <= this_nocc
+                ax.scatter(selected_idx[is_occ], selected_ev[is_occ], color="#1f77b4", s=60, label="Occ")
+                ax.scatter(selected_idx[~is_occ], selected_ev[~is_occ], color="#ff7f0e", s=60, label="Virt")
+
+                for idx, e in zip(selected_idx, selected_ev):
+                    ax.hlines(e, idx - 0.3, idx + 0.3, color="gray", lw=1.8)
+
+                ax.set_title(f"{basis} / {xc}", fontsize=14)
+                ax.set_xlabel("MO Index")
+                ax.set_ylabel("Energy (eV)")
+                ax.grid(True, alpha=0.3)
+                ax.set_facecolor(get_background_color(full_hartree))
+                ax.axhline(0, color='black', ls='--', alpha=0.4)
+                if hasattr(params, 'comparison_y_min') and params.comparison_y_min is not None or hasattr(params, 'comparison_y_max') and params.comparison_y_max is not None:
+                    ymin = params.comparison_y_min if hasattr(params, 'comparison_y_min') and params.comparison_y_min is not None else None
+                    ymax = params.comparison_y_max if hasattr(params, 'comparison_y_max') and params.comparison_y_max is not None else None
+                    ax.set_ylim(ymin, ymax)
+
     plt.tight_layout()
     combined_filename = "img/all_mo_energies.png"
-    plt.savefig(combined_filename)
+    fig.savefig(combined_filename, dpi=300, bbox_inches="tight")
     plt.close(fig)
     logger.info(f"Combined MO energies plot saved to: {combined_filename}")
