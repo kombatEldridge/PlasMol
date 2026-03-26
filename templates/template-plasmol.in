@@ -3,7 +3,7 @@
 start general
     dt 0.1 -- au
     t_end 40  -- au
-    eField_path eField.csv
+    field_e_path field_e.csv
 end general
 
 -- classical portion
@@ -20,7 +20,7 @@ start classical
     end source
 
     start simulation
-        eFieldCutOff 1e-12
+        field_eCutOff 1e-12
         cellLength 0.1
         pmlThickness 0.01
         symmetries Y 1 Z -1
@@ -72,7 +72,7 @@ start quantum
         end checkpoint
         pField_path pField.csv
         pField_Transform_path pField-transformed.csv
-        eField_vs_pField_path output.png
+        field_e_vs_pField_path output.png
         eV_spectrum_path spectrum.png
     end files
 end quantum

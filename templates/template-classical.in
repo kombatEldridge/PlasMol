@@ -2,7 +2,7 @@
 -- general section
 dt 0.1 -- au
 t_end 1  -- au
-eField_path eField.csv
+field_e_path field_e.csv
 
 -- classical portion
 start classical
@@ -15,7 +15,7 @@ start classical
     end source
 
     start simulation
-        eFieldCutOff 1e-12
+        field_eCutOff 1e-12
         cellLength 0.1
         pmlThickness 0.01
         symmetries Y 1 Z -1

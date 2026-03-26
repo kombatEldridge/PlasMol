@@ -19,7 +19,7 @@ Simulate a gold nanoparticle interacting with a continuous electric field. This 
     start general -- 'general' block wrappers are not necessary
         dt 0.1 -- au
         t_end 50  -- au
-        eField_path eField.csv
+        field_e_path field_e.csv
     end general
 
     -- classical portion
@@ -69,7 +69,7 @@ Simulate a gold nanoparticle interacting with a continuous electric field. This 
 
 3. **View Outputs**:
 
-    - `eField.csv`: Electric field data. Path defined in input file.
+    - `field_e.csv`: Electric field data. Path defined in input file.
     - `hello/`: PNG cross-sections (if HDF5 enabled); a GIF is auto-generated.
     ![Cross-section of NP simulation](classical.gif)
     *Cross-section of a spherical nanoparticle in the xy-plane receiving incident light, whose electric component is measured in the z-direction. Dashed outline added for clarity.*
@@ -90,7 +90,7 @@ Compute the induced dipole of a water molecule using a pulsed field. This uses o
     start general -- 'general' block wrappers are not necessary
         dt 0.05 -- au
         t_end 1000  -- au
-        eField_path eField.csv
+        field_e_path field_e.csv
     end general
 
     -- rt-tddft portion
@@ -121,7 +121,7 @@ Compute the induced dipole of a water molecule using a pulsed field. This uses o
             end checkpoint
             pField_path pField.csv
             pField_Transform_path pField-transformed.npz
-            eField_vs_pField_path output.png
+            field_e_vs_pField_path output.png
             eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
         end files
 
@@ -149,10 +149,10 @@ Compute the induced dipole of a water molecule using a pulsed field. This uses o
     ```
 
 3. **View Outputs**:
-    - `eField.csv`: Incident field; plots using `plasmol/utils/plotting.py` for visualization.
+    - `field_e.csv`: Incident field; plots using `plasmol/utils/plotting.py` for visualization.
     - `pField.csv`: Induced dipole (polarization) data.
 
-    ![Electric field vs. polarization plot](eFieldvpField.png)
+    ![Electric field vs. polarization plot](field_evpField.png)
     *Example spectra comparing a pulse felt by the molecule (left) with the molecule's induced dipole (right). Inset highlights molecules small oscillations due to excitement.*
 
 ## Tutorial 3: Molecular Absorption Spectrum (RT-TDDFT with `transform` flag)
@@ -167,7 +167,7 @@ Compute the absorption spectrum of a water molecule using three Dirac delta kick
     start general -- 'general' block wrappers are not necessary
         dt 0.1 -- au
         t_end 4000  -- au
-        eField_path eField.csv
+        field_e_path field_e.csv
     end general
 
     -- rt-tddft portion
@@ -198,7 +198,7 @@ Compute the absorption spectrum of a water molecule using three Dirac delta kick
             end checkpoint
             pField_path pField.csv
             pField_Transform_path pField-transformed.npz
-            eField_vs_pField_path output.png
+            field_e_vs_pField_path output.png
             eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
         end files
 
@@ -242,7 +242,7 @@ Simulate a gold NP with a water molecule inside, tracking plasmon-molecule inter
         start general -- 'general' block wrappers are not necessary
             dt 0.1 -- au
             t_end 4000  -- au
-            eField_path eField.csv
+            field_e_path field_e.csv
         end general
 
         -- rt-tddft portion
@@ -273,7 +273,7 @@ Simulate a gold NP with a water molecule inside, tracking plasmon-molecule inter
                 end checkpoint
                 pField_path pField.csv
                 pField_Transform_path pField-transformed.npz
-                eField_vs_pField_path output.png
+                field_e_vs_pField_path output.png
                 eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
             end files
 

@@ -133,11 +133,11 @@ Users should mainly interact with PlasMol through command line, calling upon the
     - `-v`: logs up to `logger.info` calls.
     - `-vv`: logs up to `logger.debug` calls.
   - `--restart` (or `-r`): Tries to remove the following files from current working directory in case they are leftover from previous runs. Actual file names for these can be specified in the input file.
-    - eField_path
+    - field_e_path
     - pField_path
     - checkpoint path
     - pField_Transform_path
-    - eField_vs_pField_path
+    - field_e_vs_pField_path
     - eV_spectrum_path
 
 ### `parser.py`

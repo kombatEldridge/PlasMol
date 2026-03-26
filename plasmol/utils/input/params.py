@@ -11,7 +11,6 @@ import meep as mp
 from pyscf.dft import libxc
 
 from plasmol import constants
-from plasmol.quantum.molecule import MOLECULE
 from plasmol.classical.sources import MEEPSOURCE
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.utils.input.param_list import param_defs
@@ -22,8 +21,8 @@ logger = logging.getLogger("main")
 class PARAMS:
     def __init__(self, args):
         self.preparams = self._parse_input_file(args)
-        self.do_nothing = self.preparams["args"]["do_nothing"]
         self.simulation_types = self.preparams["simulation_types"]
+        self.resume_from_checkpoint = self.preparams["args"]["checkpoint"]
 
         def _type_name(t):
             names = {
@@ -77,7 +76,12 @@ class PARAMS:
 
         self._attribute_checks()
         self._attribute_formation()
-        print("All parameters successfully parsed and validated.")
+
+        delattr(self, 'preparams')
+        delattr(self, 'simulation_types')
+        delattr(self, 'molecule_geometry')
+
+        logger.info("All parameters successfully parsed and validated.")
 
     def _attribute_checks(self):
         """Perform checks and instantiations based on attributes."""
@@ -99,8 +103,8 @@ class PARAMS:
         if self.has_plasmon:
             # Plasmon simulation params
             if self.has_simulation:
-                if self.plasmon_tolerance_efield <= 0:
-                    raise ValueError("'plasmon_tolerance_efield' must be a positive value.")
+                if self.plasmon_tolerance_field_e <= 0:
+                    raise ValueError("'plasmon_tolerance_field_e' must be a positive value.")
                 if hasattr(self, 'plasmon_cell_volume') and hasattr(self, 'plasmon_cell_length'):
                     logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
                 elif hasattr(self, 'plasmon_cell_length') and self.plasmon_cell_length <= 0:
@@ -199,10 +203,10 @@ class PARAMS:
             for loc in self.molecule_geometry:
                 if not isinstance(loc, dict):
                     raise ValueError(f"Invalid molecule position '{loc}'; must be a dictionary (ex. {'atom': 'O', 'coord': [0.0, 0.0, -0.1302052882]}).")
-            if hasattr(self, 'molecule_propagator'):
-                self.molecule_propagator = self.molecule_propagator.lower()
-                if self.molecule_propagator not in ['step', 'rk4', 'magnus2']:
-                    raise ValueError(f"Unsupported propagator: {self.molecule_propagator}. Acceptable: step, rk4, magnus2.")
+            if hasattr(self, 'molecule_propagator_str'):
+                self.molecule_propagator_str = self.molecule_propagator_str.lower()
+                if self.molecule_propagator_str not in ['step', 'rk4', 'magnus2']:
+                    raise ValueError(f"Unsupported propagator: {self.molecule_propagator_str}. Acceptable: step, rk4, magnus2.")
             if not self.molecule_geometry_units in ['angstrom', 'bohr']:
                 raise ValueError(f"Invalid 'molecule_geometry_units': '{self.molecule_geometry_units}'. Must be 'angstrom' or 'bohr'.")
 
@@ -221,7 +225,6 @@ class PARAMS:
                             pretty = attr.removeprefix("molecule_source_")
                             raise ValueError(f"Molecule source '{pretty}' must be a positive value.")
                 if self.molecule_source_type.lower() == 'pulse' and not ('wavelength' in self.molecule_source_additional_parameters or 'frequency' in self.molecule_source_additional_parameters):
-                    print(self.molecule_source_additional_parameters)
                     raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
                 if self.molecule_source_type.lower() not in ['pulse', 'kick']:
                     raise ValueError(f"Molecule source must be of type 'pulse' or 'kick' and not '{self.molecule_source_type}'.")
@@ -238,13 +241,20 @@ class PARAMS:
             # Fourier params
             if self.has_fourier:
                 logger.info("Fourier modifier selected; running three simulations for Fourier analysis along each axis.")
-                for attr in ['fourier_gamma', 'fourier_pfield_filepath', 'fourier_spectrum_filepath']:
+                for attr in ['fourier_gamma', 'fourier_npz_filepath', 'fourier_spectrum_filepath']:
                     if not hasattr(self, attr) or getattr(self, attr) in ['']:
                         pretty = attr.removeprefix("fourier_")
                         raise ValueError(f"Fourier modifier requires '{pretty}' attribute.")
                 if self.fourier_gamma <= 0:
                     raise ValueError("Fourier modifier 'gamma' must be a positive value.")
-                
+                if hasattr(self, 'fourier_damping_gamma'):
+                    self.fourier_damp = True
+                    logger.info("Damping modifier selected; preparing to apply damping to time-domain signals. See documentation for details.")
+                    if self.fourier_damping_gamma <= 0:
+                        raise ValueError("Damping 'gamma' must be a positive value.")
+                else:
+                    self.fourier_damp = False
+
             # Lopata Broadening params
             if self.has_broadening:
                 logger.info("Broadening modifier selected; applying Lopata broadening to spectra.")
@@ -294,19 +304,16 @@ class PARAMS:
                             pretty = loc.removeprefix("molecule_source_")
                             raise ValueError(f"Comparison '{pretty}' must be at least 1.")
 
-            # Dampening mode params
-            if self.has_dampen_output:
-                logger.info("Dampening modifier selected; preparing to apply dampening to time-domain signals. See documentation for details.")
-                if not hasattr(self, 'dampening_gamma'):
-                    raise ValueError("Dampening modifier requires 'gamma' attribute.")
-                if self.dampening_gamma <= 0:
-                    raise ValueError("Dampening 'gamma' must be a positive value.")
-
         # Checkpointing params
         if self.has_checkpoint:
             logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
+            if self.resume_from_checkpoint:
+                if os.path.exists(self.checkpoint_filepath):
+                    logger.info(f"Checkpoint file {self.checkpoint_filepath} found.")
+                else:
+                    raise ValueError(f"Checkpoint file {self.checkpoint_filepath} not found, but resume from checkpoint flag ('-c') given.")
             if not hasattr(self, 'checkpoint_snapshot_frequency'):
                 raise ValueError("Checkpointing requires 'frequency' attribute for snapshot frequency.")
             if self.checkpoint_snapshot_frequency <= 0:
@@ -334,7 +341,6 @@ class PARAMS:
             self.run_molecule_simulation = True
         elif 'plasmon' in self.simulation_types:
             self.run_plasmon_simulation = True 
-        delattr(self, 'simulation_types')
 
         if self.has_plasmon:
             if hasattr(self, 'plasmon_cell_volume'):
@@ -380,37 +386,23 @@ class PARAMS:
 
         if self.has_molecule:
             self.molecule_atoms, self.molecule_coords, self.molecule_geometry_units = self._construct_geometry(self.molecule_geometry, self.molecule_geometry_units.lower())
-            delattr(self, 'molecule_geometry')
 
             propagator_map = {
                 "step": propagate_step,
                 "magnus2": propagate_magnus2,
                 "rk4": propagate_rk4
             }
-            self.molecule_propagator = propagator_map[self.molecule_propagator]
+            self.molecule_propagator = propagator_map[self.molecule_propagator_str]
             sig = inspect.signature(self.molecule_propagator)
             exclude_args = {'molecule', 'exc'}
             self.molecule_propagator_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
 
             time_values = np.arange(0, self.t_end + self.dt, self.dt)
             self.times = np.linspace(0, time_values[-1], int(len(time_values)))
-            # TODO: Ensure this works!!
-            self.molecule_source_object = ELECTRICFIELD(
-                times = self.times,
-                source_type = self.molecule_source_type.lower().strip(),
-                intensity = self.molecule_source_intensity,
-                peak_time = self.molecule_source_peak_time,
-                width_steps = self.molecule_source_width_steps,
-                dt = self.dt,
-                component = self.molecule_source_component.lower().strip(),
-                **{k: v for k, v in self.molecule_source_additional_parameters.items()}
-            )
+            self.molecule_source_field = ELECTRICFIELD(self).field
 
             if self.has_broadening:
                 del self.broadening_dict["type"]
-
-        delattr(self, 'preparams')
-
 
 
     def _get_nested_value(self, d, path):

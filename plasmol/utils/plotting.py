@@ -5,20 +5,19 @@ import matplotlib.pyplot as plt
 
 logger = logging.getLogger("main")
 
-def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIMG=None, matplotlibOutput=None):
+# TODO: generalize this to take a field file and a title for that field multiple times 
+def plot_fields(field_e_filepath, field_p_filepath=None, output_image_path=None):
     """
     Plot electric field and optionally polarization field from CSV files.
 
     Generates a plot with one or two subplots depending on input, saving it to a file.
 
     Parameters:
-    eFieldFileName : str
+    field_e_filepath : str
         Path to the electric field CSV file.
-    pFieldFileName : str, optional
+    field_p_filepath : str, optional
         Path to the polarization field CSV file (default None).
-    matplotlibLocationIMG : str, optional
-        Directory to save the plot image (default None).
-    matplotlibOutput : str, optional
+    output_image_path : str, optional
         Filename for the plot image (default None).
 
     Returns:
@@ -26,10 +25,10 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
     """
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
-    if pFieldFileName is not None:
-        logging.debug(f"Reading CSV files: {eFieldFileName} and {pFieldFileName}")
+    if field_p_filepath is not None:
+        logging.debug(f"Reading CSV files: {field_e_filepath} and {field_p_filepath}")
     else:
-        logging.debug(f"Reading CSV file: {eFieldFileName}")
+        logging.debug(f"Reading CSV file: {field_e_filepath}")
 
     def sort_csv_by_first_column(filename):
         """
@@ -58,8 +57,8 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
             file.write(header)
             data_sorted.to_csv(file, index=False)
 
-    sort_csv_by_first_column(eFieldFileName)
-    data1 = pd.read_csv(eFieldFileName, comment='#')
+    sort_csv_by_first_column(field_e_filepath)
+    data1 = pd.read_csv(field_e_filepath, comment='#')
     timestamp_cols = [col for col in data1.columns if col.startswith("Timestamps")]
     data1 = data1.sort_values(by=timestamp_cols[0], ascending=True)
     timestamps1 = data1[timestamp_cols[0]]
@@ -67,9 +66,9 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
     y_values1 = data1['Y Values']
     z_values1 = data1['Z Values']
 
-    if pFieldFileName is not None:
-        sort_csv_by_first_column(pFieldFileName)
-        data2 = pd.read_csv(pFieldFileName, comment='#')
+    if field_p_filepath is not None:
+        sort_csv_by_first_column(field_p_filepath)
+        data2 = pd.read_csv(field_p_filepath, comment='#')
         data2 = data2.sort_values(by=timestamp_cols[0], ascending=True)
         timestamps2 = data2[timestamp_cols[0]]
         x_values2 = data2['X Values']
@@ -103,38 +102,27 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
         ax1.legend()
 
     plt.tight_layout()
-    if matplotlibLocationIMG is None:
-        if matplotlibOutput is None:
-            plt.savefig('output.png', dpi=1000)
-            logging.info("Matplotlib image written: output.png")
-        else:
-            plt.savefig(f'{matplotlibOutput}.png', dpi=1000)
-            logging.info(f"Matplotlib image written: {matplotlibOutput}.png")
-    elif matplotlibOutput is None:
-        plt.savefig(f'{matplotlibLocationIMG}.png', dpi=1000)
-        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}.png")
-    else:
-        plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
-        logging.info(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
+    plt.savefig(f'{output_image_path}.png', dpi=1000)
+    logging.info(f"Matplotlib image written: {output_image_path}.png")
 
 
-# def show_eField_2pField(eFieldFileName, pFieldFileName1=None, pFieldFileName2=None, matplotlibLocationIMG=None, matplotlibOutput=None):
+# def show_field_e_2field_p(field_eFileName, field_pFileName1=None, field_pFileName2=None, matplotlibLocationIMG=None, output_image_path=None):
 #     """
 #     Plot electric field and optionally polarization fields from CSV files.
 
 #     Generates a plot with one or two subplots depending on input, saving it to a file.
-#     When two pField files are provided, plots the x-component from the first and y-component from the second on a single subplot.
+#     When two field_p files are provided, plots the x-component from the first and y-component from the second on a single subplot.
 
 #     Parameters:
-#     eFieldFileName : str
+#     field_eFileName : str
 #         Path to the electric field CSV file.
-#     pFieldFileName1 : str, optional
+#     field_pFileName1 : str, optional
 #         Path to the first polarization field CSV file (default None).
-#     pFieldFileName2 : str, optional
+#     field_pFileName2 : str, optional
 #         Path to the second polarization field CSV file (default None).
 #     matplotlibLocationIMG : str, optional
 #         Directory to save the plot image (default None).
-#     matplotlibOutput : str, optional
+#     output_image_path : str, optional
 #         Filename for the plot image (default None).
 
 #     Returns:
@@ -142,12 +130,12 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 #     """
 #     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
-#     if pFieldFileName1 is not None and pFieldFileName2 is not None:
-#         logging.debug(f"Reading CSV files: {eFieldFileName}, {pFieldFileName1} and {pFieldFileName2}")
-#     elif pFieldFileName1 is not None:
-#         logging.debug(f"Reading CSV files: {eFieldFileName} and {pFieldFileName1}")
+#     if field_pFileName1 is not None and field_pFileName2 is not None:
+#         logging.debug(f"Reading CSV files: {field_eFileName}, {field_pFileName1} and {field_pFileName2}")
+#     elif field_pFileName1 is not None:
+#         logging.debug(f"Reading CSV files: {field_eFileName} and {field_pFileName1}")
 #     else:
-#         logging.debug(f"Reading CSV file: {eFieldFileName}")
+#         logging.debug(f"Reading CSV file: {field_eFileName}")
 
 #     def sort_csv_by_first_column(filename):
 #         """
@@ -176,8 +164,8 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 #             file.write(header)
 #             data_sorted.to_csv(file, index=False)
 
-#     sort_csv_by_first_column(eFieldFileName)
-#     data1 = pd.read_csv(eFieldFileName, comment='#')
+#     sort_csv_by_first_column(field_eFileName)
+#     data1 = pd.read_csv(field_eFileName, comment='#')
 #     timestamp_cols = [col for col in data1.columns if col.startswith("Timestamps")]
 #     data1 = data1.sort_values(by=timestamp_cols[0], ascending=True)
 #     timestamps1 = data1[timestamp_cols[0]]
@@ -185,12 +173,12 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 #     y_values1 = data1['Y Values']
 #     z_values1 = data1['Z Values']
 
-#     has_p1 = pFieldFileName1 is not None
-#     has_p2 = pFieldFileName2 is not None
+#     has_p1 = field_pFileName1 is not None
+#     has_p2 = field_pFileName2 is not None
 
 #     if has_p1:
-#         sort_csv_by_first_column(pFieldFileName1)
-#         data2 = pd.read_csv(pFieldFileName1, comment='#')
+#         sort_csv_by_first_column(field_pFileName1)
+#         data2 = pd.read_csv(field_pFileName1, comment='#')
 #         data2 = data2.sort_values(by=timestamp_cols[0], ascending=True)
 #         timestamps2 = data2[timestamp_cols[0]]
 #         x_values2 = data2['X Values']
@@ -198,8 +186,8 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 #         z_values2 = data2['Z Values']
 
 #     if has_p2:
-#         sort_csv_by_first_column(pFieldFileName2)
-#         data3 = pd.read_csv(pFieldFileName2, comment='#')
+#         sort_csv_by_first_column(field_pFileName2)
+#         data3 = pd.read_csv(field_pFileName2, comment='#')
 #         data3 = data3.sort_values(by=timestamp_cols[0], ascending=True)
 #         timestamps3 = data3[timestamp_cols[0]]
 #         x_values3 = data3['X Values']
@@ -243,15 +231,15 @@ def show_eField_pField(eFieldFileName, pFieldFileName=None, matplotlibLocationIM
 
 #     plt.tight_layout()
 #     if matplotlibLocationIMG is None:
-#         if matplotlibOutput is None:
+#         if output_image_path is None:
 #             plt.savefig('output.png', dpi=1000)
 #             logging.info("Matplotlib image written: output.png")
 #         else:
-#             plt.savefig(f'{matplotlibOutput}.png', dpi=1000)
-#             logging.info(f"Matplotlib image written: {matplotlibOutput}.png")
-#     elif matplotlibOutput is None:
+#             plt.savefig(f'{output_image_path}.png', dpi=1000)
+#             logging.info(f"Matplotlib image written: {output_image_path}.png")
+#     elif output_image_path is None:
 #         plt.savefig(f'{matplotlibLocationIMG}.png', dpi=1000)
 #         logging.info(f"Matplotlib image written: {matplotlibLocationIMG}.png")
 #     else:
-#         plt.savefig(f'{matplotlibLocationIMG}{matplotlibOutput}.png', dpi=1000)
-#         logging.info(f"Matplotlib image written: {matplotlibLocationIMG}{matplotlibOutput}.png")
+#         plt.savefig(f'{matplotlibLocationIMG}{output_image_path}.png', dpi=1000)
+#         logging.info(f"Matplotlib image written: {matplotlibLocationIMG}{output_image_path}.png")

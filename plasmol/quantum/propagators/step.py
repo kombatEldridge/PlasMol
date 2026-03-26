@@ -25,11 +25,7 @@ def propagate(dt, molecule, exc):
     Returns:
     None
     """
-    if hasattr(molecule, 'C_orth_ndt'):
-        C_orth_ndt = molecule.C_orth_ndt
-    else:
-        C_orth_ndt = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
-
+    C_orth_ndt = molecule.C_orth_ndt
     F_orth = molecule.F_orth
 
     U = expm(-1j * 2 * dt * F_orth)

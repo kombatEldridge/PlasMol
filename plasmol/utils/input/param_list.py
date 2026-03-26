@@ -15,7 +15,7 @@ param_defs = [
 
     # Plasmon simulation params
     ('plasmon_simulation_dict', ['plasmon', 'simulation'], True, 'has_simulation', None, 'plasmon', dict),
-    ('plasmon_tolerance_efield', ['plasmon', 'simulation', "tolerance_efield"], False, 'has_simulation', 1e-12, 'plasmon', (int, float)),
+    ('plasmon_tolerance_field_e', ['plasmon', 'simulation', "tolerance_field_e"], False, 'has_simulation', 1e-12, 'plasmon', (int, float)),
     ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_simulation', 0.1, 'plasmon', (int, float)),
     ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_simulation', None, 'plasmon', (int, float)),
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float)),
@@ -57,7 +57,7 @@ param_defs = [
     ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', None, 'molecule', int),
     ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule', str),
     ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule', float),
-    ('molecule_propagator', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule', str),
+    ('molecule_propagator_str', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule', str),
     ('molecule_pc_convergence', ['molecule', 'propagator', "pc_convergence"], False, 'has_molecule', 1e-12, 'molecule', (int, float)),
     ('molecule_max_iterations', ['molecule', 'propagator', "max_iterations"], False, 'has_molecule', 200, 'molecule', int),
     ('molecule_hermiticity_tolerance', ['molecule', 'hermiticity_tolerance'], False, 'has_molecule', 1e-12, 'molecule', (int, float)),
@@ -73,9 +73,10 @@ param_defs = [
 
     # Fourier params runs three sims at once, one per axis
     ('fourier_dict', ['molecule', 'modifiers', 'fourier'], True, "has_fourier", None, 'molecule', dict),
-    ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], False, 'has_fourier', None, 'molecule', (int, float)),
-    ('fourier_pfield_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_pfield_filepath'], False, 'has_fourier', None, 'molecule', str),
-    ('fourier_spectrum_filepath', ['molecule', 'modifiers', 'fourier', 'fourier_spectrum_filepath'], False, 'has_fourier', None, 'molecule', str),
+    ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], False, 'has_fourier', 0.01, 'molecule', (int, float)),
+    ('fourier_npz_filepath', ['molecule', 'modifiers', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str),
+    ('fourier_spectrum_filepath', ['molecule', 'modifiers', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str),
+    ('fourier_damping_gamma', ['molecule', 'modifiers', 'fourier', 'damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float)),
 
     # Lopata Broadening params
     ('broadening_dict', ['molecule', 'modifiers', 'broadening'], True, "has_broadening", None, 'molecule', dict),
@@ -96,10 +97,7 @@ param_defs = [
     ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float)),
     ('comparison_index_min', ['molecule', 'modifiers', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float)),
     ('comparison_index_max', ['molecule', 'modifiers', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float)),
-
-    # Dampening mode params
-    ('dampen_output_dict', ['molecule', 'modifiers', 'dampen_output'], True, "has_dampen_output", None, 'molecule', dict),
-    ('dampen_output_gamma', ['molecule', 'modifiers', 'dampen_output', 'gamma'], False, 'has_dampen_output', None, 'molecule', (int, float)),
+    ('comparison_dir_name', ['molecule', 'modifiers', 'comparison', 'dir_name'], False, 'has_comparison', f"img-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'molecule', str),
 
     # Checkpointing params
     ('checkpoint_dict', ['molecule', 'files', 'checkpoint'], True, "has_checkpoint", None, 'molecule', dict),
@@ -107,7 +105,7 @@ param_defs = [
     ('checkpoint_snapshot_frequency', ['molecule', 'files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, 'molecule', int),
 
     # Files
-    ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "eField.csv", 'molecule', str),
-    ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "pField.csv", 'molecule', str),
-    ('field_e_vs_p_filepath', ['molecule', 'files', 'field_e_vs_p_filepath'], False, None, None, 'molecule', str),
+    ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "field_e.csv", 'molecule', str),
+    ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "field_p.csv", 'molecule', str),
+    ('spectra_e_vs_p_filepath', ['molecule', 'files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", 'molecule', str),
 ]

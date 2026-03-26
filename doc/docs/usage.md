@@ -32,7 +32,7 @@ PlasMol is designed to be run from the command line, with most parameters specif
     - Common options: `-v` (verbose), `-vv` (debug), `-l log.txt` (log file), `-r` (restart, deletes old output files).
     - See `plasmol/utils/input/cli.py` or run `python plasmol/main.py --help` for full options.
 
-4. **Output Files**: PlasMol can generate CSVs (e.g., `eField.csv`, `pField.csv`), images (e.g., via HDF5 or plots), and checkpoint files (`.npz`). For details, see the `files` block below.
+4. **Output Files**: PlasMol can generate CSVs (e.g., `field_e.csv`, `pField.csv`), images (e.g., via HDF5 or plots), and checkpoint files (`.npz`). For details, see the `files` block below.
 
 5. **Units and Conventions**: Times are in atomic units (au) unless specified. Coordinates are in Bohr or Angstrom (specify in `units`). Electric fields are in au.
 
@@ -48,7 +48,7 @@ Shared simulation parameters. Use `start general` or `start settings` (interchan
 
 - `dt`*: Float. Time step in au (e.g., `0.001`).
 - `t_end`*: Float. End time in au (e.g., `40`).
-- `eField_path`: String. Path to output CSV for electric field (e.g., `eField.csv`).
+- `field_e_path`: String. Path to output CSV for electric field (e.g., `field_e.csv`).
 
 Example:
 
@@ -56,7 +56,7 @@ Example:
 start general
     dt 0.001
     t_end 40
-    eField_path eField.csv
+    field_e_path field_e.csv
 end general
 ```
 
@@ -102,7 +102,7 @@ Core FDTD parameters. For more information about these parameters, visit [MEEP's
 
 - `cellLength`*: Float (e.g., `0.1`). Simulation cell size.
 - `pmlThickness`*: Float (e.g., `0.01`). PML boundary thickness.
-- `eFieldCutOff`: Float (e.g., `1e-12`). Threshold to trigger quantum propagation. Ignored if no quantum blocked defined.
+- `field_eCutOff`: Float (e.g., `1e-12`). Threshold to trigger quantum propagation. Ignored if no quantum blocked defined.
 - `symmetries`: List (e.g., `Y 1 Z -1`). Mirror symmetries (X/Y/Z with phase ±1).
 - `surroundingMaterialIndex`: Float (default 1.0). Refractive index of medium.
 - `resolution`: Float (optional). Spatial resolution; auto-calculated from `dt` if omitted.
@@ -113,7 +113,7 @@ Example:
 start simulation
     cellLength 0.1
     pmlThickness 0.01
-    eFieldCutOff 1e-12
+    field_eCutOff 1e-12
     symmetries Y 1 Z -1
     surroundingMaterialIndex 1.33
 end simulation
@@ -217,7 +217,7 @@ Output paths.
   - `frequency` int (e.g., `100`). Number of time steps between checkpoints.
   - `path` string (e.g., `checkpoint.npz`). Path to checkpoint file.
 - `pField_path`: String (e.g., `pField.csv`). Polarization field CSV.
-- `eField_vs_pField_path`: String (e.g., `output.png`). Plot of fields.
+- `field_e_vs_pField_path`: String (e.g., `output.png`). Plot of fields.
 - `pField_Transform_path`: String (e.g., `pField-transformed.npz`). Transformed data (for spectrum).
 - `eV_spectrum_path`: String (e.g., `spectrum.png`). Absorption spectrum plot.
 

@@ -3,7 +3,7 @@ import os
 import csv
 import numpy as np
 
-def initCSV(filename, comment):
+def init_csv(filename, comment):
     """
     Initialize a CSV file with a header and comment lines.
 
@@ -27,12 +27,12 @@ def initCSV(filename, comment):
         header = ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values']
         writer.writerow(header)
 
-def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
+def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None):
     """
     Append a row of data to an existing CSV file.
 
     Adds a row with the timestamp and x, y, z values, defaulting to 0 if any value is not provided.
-    Raises an error if the file does not exist (i.e., not initialized with initCSV).
+    Raises an error if the file does not exist (i.e., not initialized with init_csv).
 
     Parameters:
     filename : str
@@ -55,7 +55,7 @@ def updateCSV(filename, timestamp, x_value=None, y_value=None, z_value=None):
            z_value if z_value is not None else 0]
     
     if not file_exists:
-        raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'initCSV' before calling 'updateCSV'.")
+        raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'init_csv' before calling 'update_csv'.")
     
     with open(filename, 'a', newline='') as file:
         writer = csv.writer(file)
@@ -91,25 +91,3 @@ def read_field_csv(file_path):
             y.append(float(row[2]))
             z.append(float(row[3]))
     return time_values, x, y, z
-
-def apply_damping(mu_arr, tau):
-    """
-    Apply damping to the polarizability array.
-
-    Applies a damping factor to the polarizability values based on the provided parameters.
-    The damping is applied as per the formula: mu_damped = mu * exp(-t/tau).
-    Parameters:
-    mu_arr : list of float
-        The polarizability values to be damped.
-    tau : float
-        The damping time constant.
-
-    Returns:
-    list of float
-        The damped polarizability values.
-    """
-    t = np.array(mu_arr[0])
-    damped_mu_x = mu_arr[1] * np.exp(-t / tau)
-    damped_mu_y = mu_arr[2] * np.exp(-t / tau)
-    damped_mu_z = mu_arr[3] * np.exp(-t / tau)
-    return damped_mu_x, damped_mu_y, damped_mu_z

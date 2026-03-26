@@ -21,10 +21,9 @@ def parse_arguments():
     )
 
     parser.add_argument('input', nargs='?', help="Path to the PlasMol input file (optional, if not provided via --input flag).")
-    parser.add_argument('-i', '--input', required=False, type=str, help="Path to the PlasMol input file.")
     parser.add_argument('-l', '--log', help="Log file name.")
     parser.add_argument('-v', '--verbose', action='count', default=1, help="Increase verbosity (use up to -vv).")
-    parser.add_argument('-n', dest='do_nothing', action='store_true', help="Do not run the simulation, useful for testing the input parsing.")
+    parser.add_argument('-c', '--checkpoint', action='store_true', help="Use the checkpoint file in input file to resume simulation.")
 
     args = parser.parse_args()
     if args.log and args.verbose == 0:

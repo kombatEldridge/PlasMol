@@ -7,26 +7,18 @@ from plasmol import constants
 logger = logging.getLogger("main")
 
 class ELECTRICFIELD:
-    def __init__(self, 
-                 times, 
-                 source_type, 
-                 intensity, 
-                 peak_time, 
-                 width_steps, 
-                 dt, 
-                 component, 
-                 **kwargs):
-
-        self.source_type = source_type
-        logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
-
-        self.times = times
-        self.intensity_au = intensity
-        self.peak_time_au = peak_time
-        self.width_steps = width_steps
-        self.dt = dt
+    def __init__(self, params):
+        self.times = params.times
+        self.source_type = params.molecule_source_type.lower().strip()
+        self.intensity_au = params.molecule_source_intensity
+        self.peak_time_au = params.molecule_source_peak_time
+        self.width_steps = params.molecule_source_width_steps
+        self.dt = params.dt
         self.width_au = self.width_steps * self.dt
-        self.component = component
+        self.component = params.molecule_source_component.lower().strip()
+        kwargs = {k: v for k, v in params.molecule_source_additional_parameters.items()}
+
+        logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
 
         if self.source_type == 'pulse':
             self.frequency_um = kwargs.get('frequency', None)

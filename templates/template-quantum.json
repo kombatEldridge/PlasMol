@@ -2,7 +2,7 @@
   "settings": {
     "dt": 0.1,
     "t_end": 40,
-    "filepath_efield": "eField.csv"
+    "filepath_field_e": "field_e.csv"
   },
   "molecule": {
     "geometry": [
@@ -27,7 +27,7 @@
       },
       "filepath_pfield": "pField.csv",
       "filepath_pfield_transformed": "pField-transformed.csv",
-      "filepath_efield_vs_pfield": "output.png",
+      "filepath_field_e_vs_pfield": "output.png",
       "filepath_fourier_spectrum": "spectrum.png"
     },
     "source": {

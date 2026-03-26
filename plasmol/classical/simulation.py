@@ -7,7 +7,7 @@ import inspect
 from collections import defaultdict
 
 from plasmol import constants
-from plasmol.utils.csv import updateCSV
+from plasmol.utils.csv import update_csv
 from plasmol.quantum.propagation import propagation
 
 class SIMULATION:
@@ -77,25 +77,25 @@ class SIMULATION:
         Extracts electric field at molecule position.
         """
         logging.info(f"Getting Electric Field at the molecule at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
-        eField = {}
+        field_e = {}
         for comp in self.xyz:
             field = np.mean(sim.get_array(
                 component=self.char_to_field[comp],
                 center=self.molecule_position,
                 size=mp.Vector3(1E-20, 1E-20, 1E-20)
             ))
-            eField[comp] = field * constants.convertFieldMeep2Atomic
-        return eField
+            field_e[comp] = field * constants.convertFieldMeep2Atomic
+        return field_e
 
     def _call_propagation(self, sim):
         """
         Calls Quantum calculations if the electric field exceeds the response cutoff.
         """
-        eField = self._get_electric_field(sim)
+        field_e = self._get_electric_field(sim)
 
-        if any(abs(eField[comp]) >= self.plasmon_tolerance_efield for comp in self.xyz):
+        if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
             logging.info(f"Calling propagator at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
-            eArr = [eField[c] for c in self.xyz]
+            eArr = [field_e[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
 
             ind_dipole = propagation(params=self.molecule_propagator_params, molecule=self.molecule, exc=eArr, propagator=self.molecule_propagator)
@@ -107,10 +107,10 @@ class SIMULATION:
                     self.measured_dipole_response[comp][timestamp] = ind_dipole[digit]
 
             timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
-            updateCSV(self.pField_path, timestamp, *ind_dipole)
+            update_csv(self.field_p_filepath, timestamp, *ind_dipole)
 
         timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
-        updateCSV(self.eField_path, timestamp, eField['x'], eField['y'], eField['z'])
+        update_csv(self.field_e_filepath, timestamp, field_e['x'], field_e['y'], field_e['z'])
 
     def run(self):
         """
