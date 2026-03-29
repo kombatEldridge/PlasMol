@@ -15,14 +15,24 @@ from plasmol.classical.sources import MEEPSOURCE
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.utils.input.param_list import param_defs
 from plasmol.quantum.propagators import *
-
+from plasmol.utils.checkpoint import load_checkpoint_data
 
 logger = logging.getLogger("main")
 class PARAMS:
     def __init__(self, args):
+        if hasattr(args, 'checkpoint') and args.checkpoint is not None:
+            if os.path.exists(args.checkpoint):
+                logger.info(f"Checkpoint file {args.checkpoint} found.")
+            else:
+                raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
+
+            # Load directly from checkpoint, skipping JSON parsing, validation, and setup
+            self._init_from_checkpoint(args.checkpoint)
+            return
+
         self.preparams = self._parse_input_file(args)
         self.simulation_types = self.preparams["simulation_types"]
-        self.resume_from_checkpoint = self.preparams["args"]["checkpoint"]
+        self.resume_from_checkpoint = False
 
         def _type_name(t):
             names = {
@@ -76,11 +86,8 @@ class PARAMS:
 
         self._attribute_checks()
         self._attribute_formation()
-
         delattr(self, 'preparams')
-        delattr(self, 'simulation_types')
         delattr(self, 'molecule_geometry')
-
         logger.info("All parameters successfully parsed and validated.")
 
     def _attribute_checks(self):
@@ -309,11 +316,6 @@ class PARAMS:
             logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
-            if self.resume_from_checkpoint:
-                if os.path.exists(self.checkpoint_filepath):
-                    logger.info(f"Checkpoint file {self.checkpoint_filepath} found.")
-                else:
-                    raise ValueError(f"Checkpoint file {self.checkpoint_filepath} not found, but resume from checkpoint flag ('-c') given.")
             if not hasattr(self, 'checkpoint_snapshot_frequency'):
                 raise ValueError("Checkpointing requires 'frequency' attribute for snapshot frequency.")
             if self.checkpoint_snapshot_frequency <= 0:
@@ -341,6 +343,9 @@ class PARAMS:
             self.run_molecule_simulation = True
         elif 'plasmon' in self.simulation_types:
             self.run_plasmon_simulation = True 
+
+        dt_str = f"{self.dt:.10f}".rstrip('0')
+        self.time_rounding_decimals = len(dt_str.split('.')[-1]) if '.' in dt_str else 0
 
         if self.has_plasmon:
             if hasattr(self, 'plasmon_cell_volume'):
@@ -550,3 +555,24 @@ class PARAMS:
             preparams["molecule"] = molecule_params
 
         return preparams
+
+    def _init_from_checkpoint(self, checkpoint_path):
+        """
+        Initialize PARAMS object directly from a checkpoint file.
+        This skips JSON parsing, type validation, and most of the setup process.
+        """
+        logger.debug(f"Initializing PARAMS from checkpoint: {checkpoint_path}")
+        saved_params_dict, checkpoint_dict, _ = load_checkpoint_data(checkpoint_path)
+
+        # Populate this instance with all saved attributes from the checkpoint
+        for key, value in saved_params_dict.items():
+            setattr(self, key, value)
+
+        logger.debug(f"Populated {len(saved_params_dict)} attributes from checkpoint")
+
+        # Ensure checkpoint-specific attributes are set
+        self.checkpoint_dict = checkpoint_dict
+        self.resume_from_checkpoint = True
+
+        logger.info(f"Checkpoint successfully loaded at time={checkpoint_dict.get('checkpoint_time')}, "
+                   f"dt={getattr(self, 'dt', 'N/A')}, t_end={getattr(self, 't_end', 'N/A')}")

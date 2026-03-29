@@ -16,6 +16,23 @@ from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 
 logger = logging.getLogger("main")
 
+class DirectionFilter(logging.Filter):
+    def __init__(self, direction):
+        super().__init__()
+        self.prefix = f"[{direction}-direction]"
+
+    def filter(self, record):
+        record.msg = f"{self.prefix} {record.msg}"
+        return True
+    
+def _run_quantum_with_prefix(params_copy):
+    f = DirectionFilter(params_copy.molecule_source_dict['component'])
+    logging.getLogger("main").addFilter(f)
+    try:
+        run_quantum(params_copy)
+    finally:
+        logging.getLogger("main").removeFilter(f)
+
 def apply_damping(mu_arrs, gamma):
     """
     Apply damping to the polarizability array.
@@ -123,12 +140,11 @@ def run(params):
         params_copy.field_p_filepath = os.path.join(params_copy.dir_path, params_copy.field_p_filepath)
         params_copy.spectra_e_vs_p_filepath = os.path.join(params_copy.dir_path, params_copy.spectra_e_vs_p_filepath)
         os.makedirs(params_copy.dir_path, exist_ok=True)
-
         params_copies.append(params_copy)
 
     # Create and start a process for each direction
     for params_copy in params_copies:
-        process = multiprocessing.Process(target=run_quantum, args=(params_copy,))
+        process = multiprocessing.Process(target=_run_quantum_with_prefix, args=(params_copy,))
         processes.append(process)
         process.start()
 

@@ -85,7 +85,7 @@ def update_checkpoint(params, molecule, checkpoint_time):
 
 def resume_from_checkpoint(params):
     """
-    Load checkpoint and **mutate the passed params object in place**.
+    Load checkpoint and mutate the passed params object in place.
     """
     fn = getattr(params, "checkpoint_filepath", None)
     if not fn:
@@ -178,4 +178,93 @@ def resume_from_checkpoint(params):
     
     params.resume_from_checkpoint = True
     logger.info(f"Loaded checkpoint with data at t={params.checkpoint_dict['checkpoint_time']} au.")
-    
+
+
+def load_checkpoint_data(checkpoint_path):
+    """
+    Load data from checkpoint file and return the saved params dict and checkpoint state.
+    This is used by PARAMS.__init__ to create a full params object without JSON parsing.
+    """
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint file {checkpoint_path} not found.")
+
+    try:
+        data = np.load(checkpoint_path, allow_pickle=True)
+    except FileNotFoundError:
+        logger.error(f"Checkpoint file {checkpoint_path} not found.")
+        raise
+    except (_pickle.UnpicklingError, ValueError, OSError, KeyError) as e:
+        logger.error(f"{checkpoint_path} is not a valid checkpoint archive: {e}")
+        raise
+
+    logger.debug(f"Loading checkpoint from {checkpoint_path}")
+    logger.debug(f"Checkpoint contains {len(data.keys())} keys: {sorted(data.keys())}")
+
+    # === Validate core content ===
+    loaded_keys = set(data.keys())
+    missing = REQUIRED_CHECKPOINT_KEYS - loaded_keys
+    extra = loaded_keys - REQUIRED_CHECKPOINT_KEYS - OPTIONAL_KEYS
+    if missing:
+        raise RuntimeError(f"Checkpoint is missing required keys: {missing}")
+    if extra:
+        logger.warning(f"Checkpoint contains unexpected extra keys (ignored): {extra}")
+
+    # np.savez wraps pickled objects in a 0-d ndarray on load; .item() unwraps it.
+    saved_params_dict = data["params_dict"].item()
+    logger.debug(f"Loaded {len(saved_params_dict)} parameters from checkpoint")
+    logger.debug(f"Critical params present - dt: {saved_params_dict.get('dt')}, t_end: {saved_params_dict.get('t_end')}, "
+                 f"checkpoint_filepath: {saved_params_dict.get('checkpoint_filepath')}, "
+                 f"molecule_propagator_str: {saved_params_dict.get('molecule_propagator_str')}")
+
+    # common simulation state
+    checkpoint_dict = {
+        "checkpoint_time": float(data["checkpoint_time"]),
+        "D_ao_0":          data["D_ao_0"],
+        "mo_coeff":        data["mo_coeff"],
+    }
+
+    # propagator-specific state
+    method = saved_params_dict.get("propagator",
+                                  saved_params_dict.get("molecule_propagator_str", "")).lower()
+    if method == "step" and "C_orth_ndt" in data:
+        checkpoint_dict["C_orth_ndt"] = data["C_orth_ndt"]
+    elif method == "magnus2" and "F_orth_n12dt" in data:
+        checkpoint_dict["F_orth_n12dt"] = data["F_orth_n12dt"]
+
+    # === Restore CSV files (only if present) ===
+    restored_any = False
+    for name in ["field_e", "field_p"]:
+        content_key = f"{name}_content"
+        if content_key in data and data[content_key] is not None:
+            original_filepath = saved_params_dict.get(f"{name}_filepath")
+            if original_filepath:
+                restored_filepath = _get_restored_filepath(original_filepath)
+                try:
+                    os.makedirs(os.path.dirname(restored_filepath) or ".", exist_ok=True)
+                    with open(restored_filepath, "wb") as f:
+                        f.write(data[content_key])
+                    # Update the path in the saved dict
+                    saved_params_dict[f"{name}_filepath"] = restored_filepath
+                    logger.info(f"Restored {name} CSV from checkpoint → {restored_filepath}")
+                    restored_any = True
+                except Exception as e:
+                    logger.error(f"Failed to write restored {name} CSV: {e}")
+                    raise
+        else:
+            logger.debug(f"No {name}_content in checkpoint (old checkpoint)")
+
+    if not restored_any:
+        logger.warning("This checkpoint does not contain embedded field CSV files (old-style checkpoint).")
+
+    # === Final validation ===
+    try:
+        _ = read_field_csv(saved_params_dict.get("field_e_filepath"))
+        _ = read_field_csv(saved_params_dict.get("field_p_filepath"))
+        logger.debug("Successfully validated both field CSV files")
+    except Exception as e:
+        logger.error(f"Field CSV validation failed: {e}")
+        raise RuntimeError("Checkpoint restore succeeded but field CSVs cannot be read") from e
+
+    logger.info(f"Loaded checkpoint with data at t={checkpoint_dict['checkpoint_time']} au.")
+
+    return saved_params_dict, checkpoint_dict, data

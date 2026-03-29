@@ -1,7 +1,7 @@
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 40
+    "t_end": 400
   },
   // "plasmon": {
   //   "simulation": {
