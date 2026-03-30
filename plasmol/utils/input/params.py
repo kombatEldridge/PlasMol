@@ -15,14 +15,25 @@ from plasmol.classical.sources import MEEPSOURCE
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.utils.input.param_list import param_defs
 from plasmol.quantum.propagators import *
-
+from plasmol.utils.checkpoint import resume_from_checkpoint
 
 logger = logging.getLogger("main")
 class PARAMS:
     def __init__(self, args):
+        if hasattr(args, 'checkpoint') and args.checkpoint is not None:
+            if os.path.exists(args.checkpoint):
+                logger.info(f"Checkpoint file {args.checkpoint} found.")
+                resume_from_checkpoint(args)
+                for attr, value in args.__dict__.items():
+                    setattr(self, attr, value)
+                return
+            else:
+                raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
+        else:
+            self.resume_from_checkpoint = False
+        
         self.preparams = self._parse_input_file(args)
         self.simulation_types = self.preparams["simulation_types"]
-        self.resume_from_checkpoint = self.preparams["args"]["checkpoint"]
 
         def _type_name(t):
             names = {
@@ -82,6 +93,10 @@ class PARAMS:
         delattr(self, 'molecule_geometry')
 
         logger.info("All parameters successfully parsed and validated.")
+
+        # Store CLI logging parameters for use in child processes etc.
+        self.verbose = getattr(args, 'verbose', 1)
+        self.log = getattr(args, 'log', None)
 
     def _attribute_checks(self):
         """Perform checks and instantiations based on attributes."""
@@ -309,11 +324,6 @@ class PARAMS:
             logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
-            if self.resume_from_checkpoint:
-                if os.path.exists(self.checkpoint_filepath):
-                    logger.info(f"Checkpoint file {self.checkpoint_filepath} found.")
-                else:
-                    raise ValueError(f"Checkpoint file {self.checkpoint_filepath} not found, but resume from checkpoint flag ('-c') given.")
             if not hasattr(self, 'checkpoint_snapshot_frequency'):
                 raise ValueError("Checkpointing requires 'frequency' attribute for snapshot frequency.")
             if self.checkpoint_snapshot_frequency <= 0:
@@ -341,6 +351,9 @@ class PARAMS:
             self.run_molecule_simulation = True
         elif 'plasmon' in self.simulation_types:
             self.run_plasmon_simulation = True 
+
+        dt_str = f"{self.dt:.10f}".rstrip('0')
+        self.time_rounding_decimals = len(dt_str.split('.')[-1]) if '.' in dt_str else 0
 
         if self.has_plasmon:
             if hasattr(self, 'plasmon_cell_volume'):

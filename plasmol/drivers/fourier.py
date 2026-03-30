@@ -13,8 +13,34 @@ from plasmol.drivers import *
 
 from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
+from plasmol.utils.logging import setup_logging
 
 logger = logging.getLogger("main")
+
+class DirectionFilter(logging.Filter):
+    def __init__(self, direction):
+        super().__init__()
+        self.prefix = f"[{direction}-dir]"
+
+    def filter(self, record):
+        record.msg = f"{self.prefix} {record.msg}"
+        return True
+    
+def _run_quantum_with_prefix(params_copy):
+    # Setup logging (honors --log if provided so *everything* goes to the log
+    # file only with no terminal output; otherwise outputs to terminal).
+    setup_logging(
+        getattr(params_copy, 'verbose', 1),
+        getattr(params_copy, 'log', None)
+    )
+    f = DirectionFilter(params_copy.molecule_source_dict['component'])
+    logging.getLogger("main").addFilter(f)
+    logging.getLogger().addFilter(f)
+    try:
+        run_quantum(params_copy)
+    finally:
+        logging.getLogger("main").removeFilter(f)
+        logging.getLogger().removeFilter(f)
 
 def apply_damping(mu_arrs, gamma):
     """
@@ -123,12 +149,11 @@ def run(params):
         params_copy.field_p_filepath = os.path.join(params_copy.dir_path, params_copy.field_p_filepath)
         params_copy.spectra_e_vs_p_filepath = os.path.join(params_copy.dir_path, params_copy.spectra_e_vs_p_filepath)
         os.makedirs(params_copy.dir_path, exist_ok=True)
-
         params_copies.append(params_copy)
 
     # Create and start a process for each direction
     for params_copy in params_copies:
-        process = multiprocessing.Process(target=run_quantum, args=(params_copy,))
+        process = multiprocessing.Process(target=_run_quantum_with_prefix, args=(params_copy,))
         processes.append(process)
         process.start()
 

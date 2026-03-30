@@ -38,7 +38,7 @@ def run(params):
             if current_time < params.checkpoint_dict['checkpoint_time']:
                 continue
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
-        logging.info(f"{params.molecule_source_component}-dir: At {current_time} au, the induced dipole is {mu_arr} in au")
+        logging.info(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
         update_csv(params.field_p_filepath, current_time, *mu_arr)
         if params.has_checkpoint and index % params.checkpoint_snapshot_frequency == 0 and not current_time == 0.0:
             update_checkpoint(params, molecule, current_time)

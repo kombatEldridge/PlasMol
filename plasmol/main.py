@@ -13,40 +13,33 @@ import numpy as np
 
 from plasmol import constants
 from plasmol.drivers import *
-from plasmol.utils.logging import PRINTLOGGER
+from plasmol.utils.logging import setup_logging
 from plasmol.utils.input.cli import parse_arguments
 from plasmol.utils.input.params import PARAMS
 
 if __name__ == "__main__":
-    # Set up logging
-    log_format = '%(levelname)s: %(message)s'
-    logger = logging.getLogger()
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
     # Step 1: Grab CLI args
     args = parse_arguments()
 
-    if args.verbose >= 2:
-        logger.setLevel(logging.DEBUG)
-    elif args.verbose == 1:
-        logger.setLevel(logging.INFO)
-    else:
-        logger.setLevel(logging.WARNING)
+    # Handle existing log file: warn to terminal and use numbered name (hello(1).log etc.)
+    # This ensures main, PARAMS, and all children use the *same* log file.
+    if args.log and os.path.exists(args.log):
+        base, ext = os.path.splitext(args.log)
+        counter = 1
+        while True:
+            candidate = f"{base}({counter}){ext}"
+            if not os.path.exists(candidate):
+                print(
+                    f"WARNING: Log file '{args.log}' already exists. "
+                    f"Using '{candidate}' instead.",
+                    file=sys.stderr
+                )
+                args.log = candidate
+                break
+            counter += 1
 
-    # Use FileHandler if a log file is specified; otherwise, use StreamHandler.
-    if args.log:
-        handler = logging.FileHandler(args.log, mode='w')
-    else:
-        handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter(log_format))
-    logger.addHandler(handler)
-    logger.propagate = False
-
-    sys.stdout = PRINTLOGGER(logger, logging.INFO)
-    logging.getLogger("h5py").setLevel(logging.INFO)
-    logging.getLogger("matplotlib").setLevel(logging.INFO)
-    logging.getLogger("PIL").setLevel(logging.INFO)
+    # Set up logging (now using reusable function so child processes can use it too)
+    logger = setup_logging(args.verbose, args.log)
 
     # Step 2: Fill in PARAMS dataclass
     params = PARAMS(args)

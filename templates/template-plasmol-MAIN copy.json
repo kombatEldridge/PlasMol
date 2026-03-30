@@ -1,7 +1,7 @@
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 40
+    "t_end": 400
   },
   // "plasmon": {
   //   "simulation": {
@@ -53,13 +53,13 @@
         "xi": 0.5,
         "eps0": 0.0477,
         "clamp": 100
+      },
+      "fourier": { // if not present, defaults to false
+        "gamma": 1, // Broadening factor for Fourier transformed spectrum
+        "npz_filepath": "fourier.npz", // File path of npz compressed file containing imaginary component of absorption and frequencies in eV
+        "spectrum_filepath": "spectrum.png",
+        "damping_gamma": 1 // This is an artificial dampening added to P field to increase fourier transform resolution
       }
-      // "fourier": { // if not present, defaults to false
-      //   "gamma": 1, // Broadening factor for Fourier transformed spectrum
-      //   "npz_filepath": "fourier.npz", // File path of npz compressed file containing imaginary component of absorption and frequencies in eV
-      //   "spectrum_filepath": "spectrum.png",
-      //   "damping_gamma": 1 // This is an artificial dampening added to P field to increase fourier transform resolution
-      // }
       // "comparison": {
       //   "bases": ["631g*", "augccpvtz", "def2tzvppd"],
       //   "xcs": ["pbe0", "b3lyp", "CAM-B3LYP"],

@@ -86,10 +86,16 @@ def update_checkpoint(params, molecule, checkpoint_time):
 def resume_from_checkpoint(params):
     """
     Load checkpoint and **mutate the passed params object in place**.
+    Supports both 'checkpoint_filepath' and 'checkpoint' attributes from CLI/params.
+    Safe to call multiple times (idempotent after first load).
     """
-    fn = getattr(params, "checkpoint_filepath", None)
+    if getattr(params, 'resume_from_checkpoint', False):
+        logger.debug("Checkpoint already loaded, skipping redundant resume.")
+        return
+
+    fn = getattr(params, "checkpoint_filepath", getattr(params, "checkpoint", None))
     if not fn:
-        raise ValueError("params.checkpoint_filepath is not set - cannot resume")
+        raise ValueError("params.checkpoint_filepath or params.checkpoint is not set - cannot resume")
 
     try:
         data = np.load(fn, allow_pickle=True)
