@@ -87,11 +87,8 @@ class PARAMS:
 
         self._attribute_checks()
         self._attribute_formation()
-
         delattr(self, 'preparams')
-        delattr(self, 'simulation_types')
         delattr(self, 'molecule_geometry')
-
         logger.info("All parameters successfully parsed and validated.")
 
         # Store CLI logging parameters for use in child processes etc.
@@ -563,3 +560,24 @@ class PARAMS:
             preparams["molecule"] = molecule_params
 
         return preparams
+
+    def _init_from_checkpoint(self, checkpoint_path):
+        """
+        Initialize PARAMS object directly from a checkpoint file.
+        This skips JSON parsing, type validation, and most of the setup process.
+        """
+        logger.debug(f"Initializing PARAMS from checkpoint: {checkpoint_path}")
+        saved_params_dict, checkpoint_dict, _ = load_checkpoint_data(checkpoint_path)
+
+        # Populate this instance with all saved attributes from the checkpoint
+        for key, value in saved_params_dict.items():
+            setattr(self, key, value)
+
+        logger.debug(f"Populated {len(saved_params_dict)} attributes from checkpoint")
+
+        # Ensure checkpoint-specific attributes are set
+        self.checkpoint_dict = checkpoint_dict
+        self.resume_from_checkpoint = True
+
+        logger.info(f"Checkpoint successfully loaded at time={checkpoint_dict.get('checkpoint_time')}, "
+                   f"dt={getattr(self, 'dt', 'N/A')}, t_end={getattr(self, 't_end', 'N/A')}")

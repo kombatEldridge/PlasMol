@@ -111,7 +111,7 @@
         "frequency": 100, // Number of timesteps between checkpoints
         "filepath": "checkpoint.npz" // File name for checkpoint save. If you want to load from a checkpoint file, you have to do that through cli.
       },
-      "field_e_filepath": "field_e.csv", // File path of E field at the molecule's position
+      "field_e_filepath": "field_e.csv", // File path of E field at the molecule's position, this will prefill with molecule source if molecule sim only
       "field_p_filepath": "field_p.csv", // File path of P field at the molecule's position
       // "spectra_e_vs_p_filepath": "output.png",
     }

@@ -12,14 +12,13 @@ from plasmol.utils.checkpoint import update_checkpoint
 
 from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
-from plasmol.utils.checkpoint import resume_from_checkpoint
+# resume_from_checkpoint is no longer called here - loading is now handled in PARAMS.__init__
 
 def run(params):
     logger = logging.getLogger("main")
 
-    if params.resume_from_checkpoint:
-        resume_from_checkpoint(params)
-    else:
+    if not params.resume_from_checkpoint:
+        # Only initialize CSV files for new runs (checkpoint runs already have them)
         init_csv(params.field_e_filepath, "Electric Field intensity in atomic units")
         init_csv(params.field_p_filepath, "Molecule's Polarizability Field intensity in atomic units")
         logger.debug(f"Field files successfully initialized: {params.field_e_filepath} and {params.field_p_filepath}")
@@ -28,6 +27,8 @@ def run(params):
             writer = csv.writer(csvfile)
             writer.writerows(rows)
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
+    else:
+        logger.debug("Resuming from checkpoint - skipping CSV initialization.")
 
     molecule = MOLECULE(params)
     
@@ -35,7 +36,7 @@ def run(params):
 
     for index, current_time in enumerate(params.times):
         if params.resume_from_checkpoint:
-            if current_time < params.checkpoint_dict['checkpoint_time']:
+            if current_time <= params.checkpoint_dict['checkpoint_time']:
                 continue
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
         logging.info(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
