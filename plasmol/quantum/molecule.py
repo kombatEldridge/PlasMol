@@ -84,7 +84,7 @@ class MOLECULE():
         
         self.occ = self.mf.get_occ()
 
-        if self.resume_from_checkpoint:
+        if self.resumed_from_checkpoint:
             self.D_ao_0 = self.checkpoint_dict["D_ao_0"]
             self.mf.mo_coeff = self.checkpoint_dict["mo_coeff"]
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)

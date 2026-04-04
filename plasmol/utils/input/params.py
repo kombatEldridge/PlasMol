@@ -10,29 +10,29 @@ import os
 import meep as mp 
 from pyscf.dft import libxc
 
-from plasmol import constants
 from plasmol.classical.sources import MEEPSOURCE
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.utils.input.param_list import param_defs
 from plasmol.quantum.propagators import *
-from plasmol.utils.checkpoint import resume_from_checkpoint
 
 logger = logging.getLogger("main")
 class PARAMS:
     def __init__(self, args):
         if hasattr(args, 'checkpoint') and args.checkpoint is not None:
             if os.path.exists(args.checkpoint):
+                from plasmol.utils.checkpoint import resume_from_checkpoint
                 logger.info(f"Checkpoint file {args.checkpoint} found.")
-                resume_from_checkpoint(args)
-                for attr, value in args.__dict__.items():
+                params = resume_from_checkpoint(args)
+                for attr, value in params.__dict__.items():
                     setattr(self, attr, value)
                 return
             else:
                 raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
         else:
-            self.resume_from_checkpoint = False
+            self.resumed_from_checkpoint = False
         
         self.preparams = self._parse_input_file(args)
+        self.input_file_path = self.preparams["args"]["input"]
         self.simulation_types = self.preparams["simulation_types"]
 
         def _type_name(t):
@@ -414,7 +414,18 @@ class PARAMS:
             if self.has_broadening:
                 del self.broadening_dict["type"]
 
-
+            if self.has_fourier:
+                for dir in {"x", "y", "z"}:
+                    attr = f"field_e_{dir}_filepath"
+                    value = f"{dir}_dir/{self.field_e_filepath}"
+                    setattr(self, attr, value)
+                    attr = f"field_p_{dir}_filepath"
+                    value = f"{dir}_dir/{self.field_p_filepath}"
+                    setattr(self, attr, value)
+                    attr = f"spectra_e_{dir}_vs_p_{dir}_filepath"
+                    value = f"{dir}_dir/{self.spectra_e_vs_p_filepath}"
+                    setattr(self, attr, value)
+            
     def _get_nested_value(self, d, path):
         """Helper to get nested dict value safely."""
         cur = d
@@ -560,24 +571,3 @@ class PARAMS:
             preparams["molecule"] = molecule_params
 
         return preparams
-
-    def _init_from_checkpoint(self, checkpoint_path):
-        """
-        Initialize PARAMS object directly from a checkpoint file.
-        This skips JSON parsing, type validation, and most of the setup process.
-        """
-        logger.debug(f"Initializing PARAMS from checkpoint: {checkpoint_path}")
-        saved_params_dict, checkpoint_dict, _ = load_checkpoint_data(checkpoint_path)
-
-        # Populate this instance with all saved attributes from the checkpoint
-        for key, value in saved_params_dict.items():
-            setattr(self, key, value)
-
-        logger.debug(f"Populated {len(saved_params_dict)} attributes from checkpoint")
-
-        # Ensure checkpoint-specific attributes are set
-        self.checkpoint_dict = checkpoint_dict
-        self.resume_from_checkpoint = True
-
-        logger.info(f"Checkpoint successfully loaded at time={checkpoint_dict.get('checkpoint_time')}, "
-                   f"dt={getattr(self, 'dt', 'N/A')}, t_end={getattr(self, 't_end', 'N/A')}")

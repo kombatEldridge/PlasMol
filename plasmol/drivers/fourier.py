@@ -145,9 +145,9 @@ def run(params):
         params_copy.molecule_source_dict['component'] = dir
         params_copy.molecule_source_field = ELECTRICFIELD(params_copy).field
         params_copy.dir_path = f"{dir}_dir"
-        params_copy.field_e_filepath = os.path.join(params_copy.dir_path, params_copy.field_e_filepath)
-        params_copy.field_p_filepath = os.path.join(params_copy.dir_path, params_copy.field_p_filepath)
-        params_copy.spectra_e_vs_p_filepath = os.path.join(params_copy.dir_path, params_copy.spectra_e_vs_p_filepath)
+        params_copy.field_e_filepath = getattr(params_copy, f'field_e_{dir}_filepath')
+        params_copy.field_p_filepath = getattr(params_copy, f'field_p_{dir}_filepath')
+        params_copy.spectra_e_vs_p_filepath = getattr(params_copy, f'spectra_e_{dir}_vs_p_{dir}_filepath')
         os.makedirs(params_copy.dir_path, exist_ok=True)
         params_copies.append(params_copy)
 

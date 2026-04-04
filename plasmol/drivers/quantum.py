@@ -8,16 +8,15 @@ from plasmol.quantum.molecule import MOLECULE
 
 from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
-from plasmol.utils.checkpoint import update_checkpoint
+from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint
 
 from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
-# resume_from_checkpoint is no longer called here - loading is now handled in PARAMS.__init__
 
 def run(params):
     logger = logging.getLogger("main")
 
-    if not params.resume_from_checkpoint:
+    if not params.resumed_from_checkpoint:
         # Only initialize CSV files for new runs (checkpoint runs already have them)
         init_csv(params.field_e_filepath, "Electric Field intensity in atomic units")
         init_csv(params.field_p_filepath, "Molecule's Polarizability Field intensity in atomic units")
@@ -27,6 +26,7 @@ def run(params):
             writer = csv.writer(csvfile)
             writer.writerows(rows)
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
+        add_field_e_checkpoint(params, params.field_e_filepath)
     else:
         logger.debug("Resuming from checkpoint - skipping CSV initialization.")
 
@@ -35,7 +35,7 @@ def run(params):
     logger.debug(f"Electric field successfully added to {params.field_e_filepath}")
 
     for index, current_time in enumerate(params.times):
-        if params.resume_from_checkpoint:
+        if params.resumed_from_checkpoint:
             if current_time <= params.checkpoint_dict['checkpoint_time']:
                 continue
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
@@ -43,8 +43,6 @@ def run(params):
         update_csv(params.field_p_filepath, current_time, *mu_arr)
         if params.has_checkpoint and index % params.checkpoint_snapshot_frequency == 0 and not current_time == 0.0:
             update_checkpoint(params, molecule, current_time)
-            logger.info(f"Checkpoint updated at time {current_time}")
-
 
     base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
     plot_fields(params.field_e_filepath, params.field_p_filepath, output_image_path=base)
