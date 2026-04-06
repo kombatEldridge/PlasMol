@@ -36,7 +36,9 @@ def run(params):
 
     for index, current_time in enumerate(params.times):
         if params.resumed_from_checkpoint:
-            if current_time <= params.checkpoint_dict['checkpoint_time']:
+            dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if params.has_fourier else None
+            suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
+            if current_time <= params.checkpoint_dict[f'checkpoint_time{suffix}']:
                 continue
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
         logging.info(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")

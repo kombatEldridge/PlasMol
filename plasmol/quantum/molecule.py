@@ -83,16 +83,23 @@ class MOLECULE():
             logger.warning("Orthogonalization matrix X may not be unitary")
         
         self.occ = self.mf.get_occ()
-
+        
+        skip_checkpoint = False
         if self.resumed_from_checkpoint:
-            self.D_ao_0 = self.checkpoint_dict["D_ao_0"]
-            self.mf.mo_coeff = self.checkpoint_dict["mo_coeff"]
+            dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if self.has_fourier else None
+            if dir_component in params.not_checkpointed_dirs:
+                skip_checkpoint = True
+
+        if self.resumed_from_checkpoint and not skip_checkpoint:
+            suffix = f"_{dir_component}" if self.has_fourier and dir_component else ""
+            self.D_ao_0 = self.checkpoint_dict[f"D_ao_0{suffix}"]
+            self.mf.mo_coeff = self.checkpoint_dict[f"mo_coeff{suffix}"]
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
             self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
             if self.molecule_propagator_str == 'magnus2':
-                self.F_orth_n12dt = self.checkpoint_dict["F_orth_n12dt"]
+                self.F_orth_n12dt = self.checkpoint_dict[f"F_orth_n12dt{suffix}"]
             elif self.molecule_propagator_str == 'step':
-                self.C_orth_ndt = self.checkpoint_dict["C_orth_ndt"]
+                self.C_orth_ndt = self.checkpoint_dict[f"C_orth_ndt{suffix}"]
         else:
             self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
             self.D_ao = self.D_ao_0

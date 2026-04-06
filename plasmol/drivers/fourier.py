@@ -133,7 +133,10 @@ def absorption(imag, freqs):
 
 def run(params):
     # Log running fourier with gamma
-    logger.info(f"Running Fourier transform process with gamma: {params.fourier_gamma}")
+    if params.resumed_from_checkpoint:
+        logger.info(f"Resuming Fourier transform process with gamma: {params.fourier_gamma}")
+    else:
+        logger.info(f"Running Fourier transform process with gamma: {params.fourier_gamma}")
 
     processes = []
     params_copies = []
@@ -148,7 +151,8 @@ def run(params):
         params_copy.field_e_filepath = getattr(params_copy, f'field_e_{dir}_filepath')
         params_copy.field_p_filepath = getattr(params_copy, f'field_p_{dir}_filepath')
         params_copy.spectra_e_vs_p_filepath = getattr(params_copy, f'spectra_e_{dir}_vs_p_{dir}_filepath')
-        os.makedirs(params_copy.dir_path, exist_ok=True)
+        if not params.resumed_from_checkpoint:
+            os.makedirs(params_copy.dir_path, exist_ok=True)
         params_copies.append(params_copy)
 
     # Create and start a process for each direction
@@ -165,9 +169,9 @@ def run(params):
     for params_copy in params_copies:
         if params.fourier_damp:
             mu_arrs = read_field_csv(params_copy.field_p_filepath)
-            mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.dampen_output_gamma)
+            mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_damping_gamma)
             params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
-            init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.dampen_output_gamma}")
+            init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_damping_gamma}")
             for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
                 update_csv(params_copy.field_p_filepath, t, x, y, z)
             logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")

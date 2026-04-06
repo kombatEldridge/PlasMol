@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import _pickle
 import os
-from plasmol.utils.csv import read_field_csv
+from plasmol.utils.csv import read_field_csv, init_csv
 from argparse import Namespace
 
 logger = logging.getLogger("main")
@@ -14,6 +14,8 @@ logger = logging.getLogger("main")
 # Exactly what must be present in every checkpoint (field contents optional for
 # backward compatibility with old checkpoints).
 # =============================================================================
+DIRECTIONS = ['x', 'y', 'z']
+
 REQUIRED_CHECKPOINT_KEYS = {
     "params_dict",
     "input_file_path",
@@ -37,7 +39,7 @@ OPTIONAL_KEYS = {
     "checkpoint_time_x", "checkpoint_time_y", "checkpoint_time_z",
 }
 
-def _get_restored_filepath(original_path, include_dir=True):
+def _get_restored_filepath(original_path, include_dir=True, restored_text="restored"):
     """Append '_restored' to the filename (before the extension)."""
     if not original_path:
         return None
@@ -45,7 +47,7 @@ def _get_restored_filepath(original_path, include_dir=True):
     dir_name = os.path.dirname(path)
     base_name = os.path.basename(path)
     name, ext = os.path.splitext(base_name)
-    restored_name = f"{name}_restored{ext}"
+    restored_name = f"{name}_{restored_text}{ext}"
     return os.path.join(dir_name, restored_name) if dir_name and include_dir else restored_name
 
 
@@ -65,8 +67,8 @@ def init_checkpoint(params):
         except Exception as e:
             raise RuntimeError(f"Error occurred while checking existing checkpoint: {e}")
         finally:
-            logger.warning("Checkpoint file exists, so it does not need to be initialized")
-            return
+            params.checkpoint_filepath = _get_restored_filepath(params.checkpoint_filepath, restored_text="new")
+            logger.warning(f"Previous checkpoint file exists, moving new one to {params.checkpoint_filepath}")
 
     input_file_path = params.input_file_path
     with open(input_file_path, "rb") as f:
@@ -79,10 +81,8 @@ def init_checkpoint(params):
         "is_fourier":         getattr(params, 'has_fourier', False),
     }
 
-    for dir in ['x', 'y', 'z']:
-        suffix = ""
-        if save_dict["is_fourier"]:
-            suffix = f"_{dir}"
+    for dir in DIRECTIONS:
+        suffix = f"_{dir}" if save_dict["is_fourier"] else ""
         save_dict[f"checkpoint_time{suffix}"] = 0.0
 
     # Pre-populate every optional key with None so the full structure exists
@@ -111,8 +111,12 @@ def add_field_e_checkpoint(params, field_e_filepath):
     else:
         raise FileNotFoundError("Checkpoint file not found during update")
     
+    is_fourier = save_dict["is_fourier"]
+    dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if is_fourier else None
+    suffix = f"_{dir_component}" if is_fourier and dir_component else ""
+
     with open(field_e_filepath, "rb") as f:
-        save_dict["field_e_content"] = f.read()
+        save_dict[f"field_e{suffix}_content"] = f.read()
 
     np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
@@ -159,9 +163,7 @@ def update_checkpoint(params, molecule, checkpoint_time):
             logger.warning(f"{name} file for {dir_component or 'non-fourier'} ('{filepath}') not found - keeping existing content")
 
     # === Update molecule / propagator state for the current direction ===
-    suffix = ""
-    if is_fourier and dir_component:
-        suffix = f"_{dir_component}"
+    suffix = f"_{dir_component}" if is_fourier and dir_component else ""
 
     save_dict[f"checkpoint_time{suffix}"] = checkpoint_time
     save_dict[f"D_ao_0{suffix}"] = molecule.D_ao_0
@@ -229,13 +231,16 @@ def resume_from_checkpoint(args):
     params.resume_from_checkpoint = True
 
     # === Restore CSV files ===
-    checkpoint_dirs = ['x', 'y', 'z']
+    checkpoint_dirs = DIRECTIONS.copy()
     if is_fourier:
-        for dir in ['x', 'y', 'z']:
+        for dir in checkpoint_dirs:
             if data[f"checkpoint_time_{dir}"] == 0.0:
                 checkpoint_dirs.remove(dir)
-                logger
-        name_set = [f"field_e_{d}" for d in ['x', 'y', 'z']] + [f"field_p_{d}" for d in checkpoint_dirs]
+                logger.info(f"No checkpoint data found for direction {dir}.")
+        temp_dirs = [f"field_e_{d}" for d in DIRECTIONS] + [f"field_p_{d}" for d in checkpoint_dirs]
+        name_set = ["field_e_x", "field_e_y", "field_e_z", "field_p_x", "field_p_y", "field_p_z"]
+        not_checkpointed_names = list(set(name_set) - set(temp_dirs))
+        params.not_checkpointed_dirs = list(set(DIRECTIONS) - set(checkpoint_dirs))
     else:
         name_set = ["field_e", "field_p"]
 
@@ -247,8 +252,12 @@ def resume_from_checkpoint(args):
                 restored_filepath = _get_restored_filepath(original_filepath)
                 try:
                     os.makedirs(os.path.dirname(restored_filepath) or ".", exist_ok=True)
-                    with open(restored_filepath, "wb") as f:
-                        f.write(data[content_key])
+                    if name in not_checkpointed_names:
+                        with open(restored_filepath, "wb") as f:
+                            init_csv(restored_filepath, "Molecule's Polarizability Field intensity in atomic units")
+                    else:
+                        with open(restored_filepath, "wb") as f:
+                            f.write(data[content_key])
                     setattr(params, f"{name}_filepath", restored_filepath)
                     logger.info(f"Restored {name} CSV from checkpoint → {restored_filepath}")
                 except Exception as e:
@@ -260,7 +269,7 @@ def resume_from_checkpoint(args):
     params.checkpoint_dict = {}
     method = getattr(params, "propagator", getattr(params, "molecule_propagator_str", "")).lower()
     if is_fourier:
-        for dir in ['x', 'y', 'z']:
+        for dir in DIRECTIONS:
             params.checkpoint_dict[f"checkpoint_time_{dir}"] = float(data[f"checkpoint_time_{dir}"])
             if dir in checkpoint_dirs:
                 params.checkpoint_dict[f"D_ao_0_{dir}"] = data[f"D_ao_0_{dir}"]
@@ -281,7 +290,7 @@ def resume_from_checkpoint(args):
     # === Final validation ===
     try:
         if is_fourier:
-            for dir in ['x', 'y', 'z']:
+            for dir in DIRECTIONS:
                 _ = read_field_csv(getattr(params, f"field_e_{dir}_filepath"))
             for dir in checkpoint_dirs:
                 _ = read_field_csv(getattr(params, f"field_p_{dir}_filepath"))
@@ -295,10 +304,10 @@ def resume_from_checkpoint(args):
 
     params.resumed_from_checkpoint = True
     if is_fourier:
-        logger.info(f"Loaded fourier checkpoint with data at \
-                    t_x={params.checkpoint_dict['checkpoint_time_x']} au \n\
-                    t_y={params.checkpoint_dict['checkpoint_time_y']} au \n\
-                    t_z={params.checkpoint_dict['checkpoint_time_z']} au.")
+        logger.info(f"Loaded fourier checkpoint with data at "
+                    f"t_x={params.checkpoint_dict['checkpoint_time_x']} au, "
+                    f"t_y={params.checkpoint_dict['checkpoint_time_y']} au, "
+                    f"t_z={params.checkpoint_dict['checkpoint_time_z']} au.")
     else:
         logger.info(f"Loaded checkpoint with data at t={params.checkpoint_dict['checkpoint_time']} au.")
     return params

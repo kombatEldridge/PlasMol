@@ -5,7 +5,7 @@ from scipy.linalg import expm
 
 logger = logging.getLogger("main")
 
-def propagate(molecule_max_iterations, dt, molecule_pc_convergence, has_fourier, molecule_source_component, molecule, exc):
+def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc):
     """
     Propagate molecular orbitals using the Magnus2 method.
 
@@ -19,10 +19,6 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, has_fourier,
         Time step size.
     molecule_pc_convergence : float
         Convergence threshold for the predictor-corrector scheme.
-    has_fourier : bool
-        Whether sim is currently running a Fourier transformation.
-    molecule_source_component : str
-        Direction of propagation.
     molecule : object
         Molecule object with current state data.
     exc : np.ndarray
@@ -56,10 +52,7 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, has_fourier,
             molecule.D_ao = D_ao_pdt
             molecule.F_orth = F_orth_pdt
             molecule.F_orth_n12dt = F_orth_p12dt
-            if has_fourier:
-                logger.debug(f'{molecule_source_component}-dir: Magnus2 converged in {iteration} iterations.')
-            else:
-                logger.debug(f'Magnus2 converged in {iteration} iterations.')
+            logger.debug(f'Magnus2 converged in {iteration} iterations.')
             break
 
         # 4) update history for next iteration
