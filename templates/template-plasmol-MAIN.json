@@ -61,7 +61,8 @@
     "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
-    // "lrc_parameter": 0.0, // aka mu or omega
+    // "xc": "0RSH(0.4, 1, -1.0) + PBE, PBE", // if you want to hard code the lr-xc
+    // "lrc_parameter": 0.0, // aka mu or omega if xc accepts it
     "propagator": { 
       "type": "magnus2",
       "pc_convergence": 1e-12, // only for Magnus2, has default value

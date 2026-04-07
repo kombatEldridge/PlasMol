@@ -1,4 +1,3 @@
-# utils/input/params.py
 import logging
 import math
 import inspect
@@ -12,7 +11,7 @@ from pyscf.dft import libxc
 
 from plasmol.classical.sources import MEEPSOURCE
 from plasmol.quantum.electric_field import ELECTRICFIELD
-from plasmol.utils.input.param_list import param_defs
+from plasmol.utils.input.struct import param_defs
 from plasmol.quantum.propagators import *
 
 logger = logging.getLogger("main")
@@ -34,6 +33,7 @@ class PARAMS:
         self.preparams = self._parse_input_file(args)
         self.input_file_path = self.preparams["args"]["input"]
         self.simulation_types = self.preparams["simulation_types"]
+        self.xyz = ['x', 'y', 'z']
 
         def _type_name(t):
             names = {
@@ -130,7 +130,7 @@ class PARAMS:
                         raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; list length must be even (pairs of axis and value)")
                     for i, sym in enumerate(self.plasmon_symmetries):
                         if i % 2 == 0:
-                            if not (isinstance(sym, str) and sym.lower() in ['x', 'y', 'z']):
+                            if not (isinstance(sym, str) and sym.lower() in self.xyz):
                                 raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; even indices must be 'x', 'y', or 'z' (case-insensitive)")
                         else:
                             if not (isinstance(sym, int) and sym in [1, -1]):
@@ -156,7 +156,7 @@ class PARAMS:
                 for loc in self.plasmon_source_size:
                     if not isinstance(loc, (int, float)):
                         raise ValueError(f"Invalid plasmon source size '{loc}'; must be a number.")
-                if self.plasmon_source_component not in ['x', 'y', 'z']:
+                if self.plasmon_source_component not in self.xyz:
                     raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
                 if self.plasmon_source_additional_parameters is not None:
                     if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters:
@@ -240,8 +240,8 @@ class PARAMS:
                     raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
                 if self.molecule_source_type.lower() not in ['pulse', 'kick']:
                     raise ValueError(f"Molecule source must be of type 'pulse' or 'kick' and not '{self.molecule_source_type}'.")
-                if self.molecule_source_component not in ['x', 'y', 'z']:
-                    raise ValueError("Molecule source component must be 'x', 'y', or 'z'.")
+                if self.molecule_source_component not in self.xyz:
+                    raise ValueError(f"Molecule source component must be one of {self.xyz}.")
                 if hasattr(self, 'molecule_source_additional_parameters') and self.molecule_source_additional_parameters is not None:
                     for attr in self.molecule_source_additional_parameters:
                         value = self.molecule_source_additional_parameters.get(attr)
@@ -252,6 +252,8 @@ class PARAMS:
 
             # Fourier params
             if self.has_fourier:
+                if self.has_plasmon:
+                    raise ValueError(f"Fourier modifier cannot be used with plasmon modifier.")
                 logger.info("Fourier modifier selected; running three simulations for Fourier analysis along each axis.")
                 for attr in ['fourier_gamma', 'fourier_npz_filepath', 'fourier_spectrum_filepath']:
                     if not hasattr(self, attr) or getattr(self, attr) in ['']:

@@ -1,4 +1,3 @@
-# classical/simulation.py
 import logging
 import meep as mp
 import numpy as np
@@ -23,8 +22,7 @@ class SIMULATION:
         logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
 
         # Simulation runtime variables
-        self.xyz = ['x', 'y', 'z']
-        self.measured_dipole_response = {comp: defaultdict(lambda: 0) for comp in self.xyz}  # Use lambda:0 for default scalar
+        self.measured_dipole_response = {component: defaultdict(lambda: 0) for component in self.xyz} 
         self.map_direction_to_digit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         self.frame_center = self.plasmon_cell_length * self.plasmon_resolution / 2

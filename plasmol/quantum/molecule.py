@@ -41,20 +41,6 @@ class MOLECULE():
         for key, value in params.__dict__.items():
             setattr(self, key, value)
 
-        # TODO: Restructure
-        # if 'LC' in self.molecule_xc or 'CAM' in self.molecule_xc:
-        #     if self.molecule_lrc_parameter is None:
-        #         logger.warning("No mu value found in LC PBE functional, running tuning process.")
-        #         self.molecule_lrc_parameter = self.xc_tuning()
-        #     if self.molecule_xc == 'LCBLYP' or self.molecule_xc == 'CAMBLYP':
-        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 0.0, 1.0) + B88, LYP'
-        #     if self.molecule_xc == 'LCwPBE' or self.molecule_xc == 'CAMwPBE':
-        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 1.0, -1.0) + wPBEH, PBE'
-        #     if self.molecule_xc == 'LCPBE' or self.molecule_xc == 'CAMPBE':
-        #         self.molecule_xc = f'RSH({self.molecule_lrc_parameter}, 1, -1.0) + PBE, PBE'
-        #     print(f"Using LC functional {self.molecule_xc} with mu = {self.molecule_lrc_parameter}")
-        #     self.mf.omega = self.molecule_lrc_parameter
-
         self.mol = gto.M(atom=self.molecule_coords,
                     basis=self.molecule_basis,
                     unit='B',
@@ -124,151 +110,10 @@ class MOLECULE():
     # # TODO: Test extensively
     # def xc_tuning(self, tol=1e-3):
     #     """Tune mu for LC functionals to minimize |E_cat - E_neut + ε_HOMO|."""
-    #     if 'lc' not in self.molecule_xc.lower() and 'cam' not in self.molecule_xc.lower():
-    #         return
-
-    #     def j_func(mu):
-    #         logger.debug(f"Mu Tuning: Evaluating at mu = {mu}")
-    #         xc = self.molecule_xc
-    #         if xc == 'LCBLYP' or xc == 'CAMBLYP':
-    #             xc = f'RSH({mu}, 0.0, 1.0) + B88, LYP'
-    #         neutral_mf = scf.UKS(self.mol)
-    #         neutral_mf.xc = xc
-    #         neutral_mf.omega = mu
-    #         neutral_mf.kernel()
-    #         if not neutral_mf.converged:
-    #             logger.warning(f"Neutral SCF not converged at mu={mu}")
-
-    #         e_homo_alpha = neutral_mf.mo_energy[0][neutral_mf.mo_occ[0] > 0][-1] if any(neutral_mf.mo_occ[0] > 0) else -np.inf
-    #         e_homo_beta = neutral_mf.mo_energy[1][neutral_mf.mo_occ[1] > 0][-1] if any(neutral_mf.mo_occ[1] > 0) else -np.inf
-    #         e_homo = max(e_homo_alpha, e_homo_beta)
-
-    #         cation_mol = self.mol.copy()
-    #         cation_mol.charge = self.mol.charge + 1
-    #         cation_mol.spin = 1 if self.mol.spin == 0 else self.mol.spin - 1
-    #         cation_mf = scf.UKS(cation_mol)
-    #         if xc == 'LCBLYP' or xc == 'CAMBLYP':
-    #             xc = f'RSH({mu}, 0.0, 1.0) + B88, LYP'
-    #         cation_mf.xc = xc
-    #         cation_mf.omega = mu
-    #         cation_mf.kernel()
-    #         if not cation_mf.converged:
-    #             logger.warning(f"Cation SCF not converged at mu={mu}")
-
-    #         ip_scf = cation_mf.energy_tot() - neutral_mf.energy_tot()
-    #         j = np.abs(e_homo + ip_scf)
-    #         logger.debug(f"Mu={mu:.3f}, IP_SCF={ip_scf:.3f} Ha, ε_HOMO={e_homo:.3f} Ha, J={j:.3f}")
-    #         return j
-
-    #     res = opt.minimize_scalar(j_func, bounds=(0.1, 1.0), tol=tol, method='bounded', options={'maxiter': 100})
-    #     if res.success:
-    #         mu = res.x
-    #         logger.info(f"Tuned mu={mu:.3f}, min J={res.fun:.3f}")
-    #         return mu
-    #     else:
-    #         raise ValueError(f"Tuning failed: {res.message}")
 
     # # TODO: Test extensively
     # def compute_vacuum_level(self, nstates=20, diffuse_basis='d-aug-cc-pvqz'):
     #     """Estimate ε_0 by interpolating KS ε vs. EA_k (paper eq 12-13)."""
-    #     from pyscf import scf, tdscf, lib
-    #     from scipy.interpolate import interp1d
-
-    #     if diffuse_basis == 'd-aug-cc-pvtz':
-    #         import basis_set_exchange as bse
-    #         basis_h_str = bse.get_basis(diffuse_basis, elements=[1], fmt='nwchem')
-    #         basis_o_str = bse.get_basis(diffuse_basis, elements=[8], fmt='nwchem')
-
-    #         basis_h = gto.basis.parse(basis_h_str)
-    #         basis_o = gto.basis.parse(basis_o_str)
-
-    #         diffuse_basis = {'H': basis_h, 'O': basis_o}
-
-    #     original_basis = self.mol.basis
-    #     self.mol.basis = diffuse_basis
-    #     self.mol.build()
-
-    #     # Neutral SCF
-    #     if self.mol.spin == 0:
-    #         neutral_mf = scf.RKS(self.mol)
-    #     else:
-    #         neutral_mf = scf.UKS(self.mol)
-    #     neutral_mf.xc = self.molecule_xc
-    #     neutral_mf.kernel()
-    #     e_neutral = neutral_mf.energy_tot()
-    #     mo_energy = neutral_mf.mo_energy
-    #     mo_occ = neutral_mf.mo_occ
-
-    #     # Extract and sort virtual orbital energies
-    #     if self.mol.spin == 0:  # RKS
-    #         virtual_indices = np.where(mo_occ == 0)[0]
-    #         virtual_eps = np.sort(mo_energy[virtual_indices])
-    #     else:  # UKS
-    #         ea, eb = mo_energy
-    #         oa, ob = mo_occ
-    #         virtual_eps_a = ea[oa == 0]
-    #         virtual_eps_b = eb[ob == 0]
-    #         virtual_eps = np.sort(np.concatenate((virtual_eps_a, virtual_eps_b)))
-    #     print('Sorted virtual KS energies (first 11):', virtual_eps[:11])
-
-    #     # Anion UKS (charge=-1, spin=neutral.spin + 1 for high-spin pairing)
-    #     anion_mol = self.mol.copy()
-    #     anion_mol.charge = self.mol.charge - 1
-    #     anion_mol.spin = self.mol.spin + 1
-    #     anion_mol.build()
-    #     anion_mf = scf.UKS(anion_mol)
-    #     anion_mf.xc = self.molecule_xc
-    #     anion_mf.max_cycle = 200
-
-    #     # Initialize from neutral density matrix
-    #     dm_neutral = neutral_mf.make_rdm1()
-    #     if not isinstance(dm_neutral, tuple):
-    #         dm0 = (dm_neutral / 2, dm_neutral / 2)
-    #     else:
-    #         dm0 = dm_neutral
-    #     anion_mf.kernel(dm0=dm0)
-    #     e_anion = anion_mf.energy_tot()
-
-    #     ea1 = e_anion - e_neutral
-    #     print('EA1:', ea1)
-
-    #     # TDDFT on anion for excitations v_k
-    #     td = tdscf.TDDFT(anion_mf)
-    #     td.nstates = nstates
-    #     td.kernel()
-    #     v_k = td.e
-    #     print('TDDFT excitation energies v_k:', v_k)
-
-    #     # Build EA list: EA1, EA1 + v1, EA1 + v2, ...
-    #     eas = [ea1] + [ea1 + v for v in v_k]
-    #     print('Constructed EAs:', eas)
-
-    #     # Pair with virtual ε (assume energy order, truncate to len(eas))
-    #     num_pairs = min(len(virtual_eps), len(eas))
-    #     eps_paired = virtual_eps[:num_pairs]
-    #     eas_paired = np.array(eas[:num_pairs])
-    #     print('Paired eps:', eps_paired)
-    #     print('Paired eas:', eas_paired)
-
-    #     # Interpolate EA(ε) to find ε where EA=0
-    #     if np.all(eas_paired > 0):
-    #         print("All EAs positive, extrapolating left")
-    #         f = interp1d(eas_paired, eps_paired, kind='linear', fill_value='extrapolate')
-    #         epsilon0 = f(0)
-    #     elif np.all(eas_paired < 0):
-    #         print("All EAs negative, extrapolating right")
-    #         f = interp1d(eas_paired, eps_paired, kind='linear', fill_value='extrapolate')
-    #         epsilon0 = f(0)
-    #     else:
-    #         print("Mixed EAs, interpolating")
-    #         f = interp1d(eas_paired, eps_paired, kind='linear')
-    #         epsilon0 = f(0)
-
-    #     self.mol.basis = original_basis
-    #     self.mol.build()
-    #     logger.info(f"Computed ε_0={epsilon0:.4f} Ha")
-    #     sys.exit(0)
-    #     return epsilon0
 
 
     def get_F_orth(self, D_ao, exc=None):

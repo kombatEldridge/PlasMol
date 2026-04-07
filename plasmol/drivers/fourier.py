@@ -142,7 +142,7 @@ def run(params):
     params_copies = []
 
     # Set up params copies and paths for each direction (always, to support transform)
-    for dir in ['x', 'y', 'z']:
+    for dir in params.xyz:
         # Create a deep copy of params to ensure process safety
         params_copy = copy.deepcopy(params)
         params_copy.molecule_source_dict['component'] = dir

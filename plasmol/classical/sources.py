@@ -91,6 +91,8 @@ class MEEPSOURCE:
         self.sourceSize = mp.Vector3(*source_size) if not isinstance(source_size, mp.Vector3) else source_size
 
         # Compute frequency if wavelength is provided
+        wavelength = kwargs.get('wavelength', None)
+        frequency = kwargs.get('frequency', None)
         freq = (1 / wavelength if wavelength is not None else frequency) if self.source_type != 'custom' else None
 
         # Type-specific source time creation
