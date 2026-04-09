@@ -25,8 +25,7 @@ def run(params):
         if not params.resumed_from_checkpoint and params.has_checkpoint:
                 init_checkpoint(params)
 
-        molecule = MOLECULE(params)
-        plasmon = SIMULATION(params, molecule)
+        plasmon = SIMULATION(params)
         plasmon.run()
         
         plot_fields(params.field_e_filepath, params.field_p_filepath)

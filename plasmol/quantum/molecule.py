@@ -256,22 +256,26 @@ class MOLECULE():
         """
         if D_ao is None:
             D_ao = self.D_ao_0
+            
         F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
-        F_orth = np.matmul(self.X.T, np.matmul(F_ao, self.X))
-        # F_orth = np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
+        F_orth = self.X.conj().T @ F_ao @ self.X
         eps, C_prime = np.linalg.eigh(F_orth)
 
         M = len(eps)
-        gamma = np.zeros(M)
+        gamma = np.zeros(M, dtype=float)
         for i in range(M):
             e_tilde = eps[i] - eps0
             if e_tilde > 0:
-                gamma[i] = gam0 * (np.exp(xi * e_tilde) - 1.0)
-            gamma[i] = min(clamp, gamma[i])
+                gamma_i = gam0 * (np.exp(xi * e_tilde) - 1.0)
+                gamma[i] = min(clamp, gamma_i)
 
         Lambda = np.diag(gamma)
-        Gamma_mo = np.matmul(C_prime, np.matmul(Lambda, C_prime.conj().T))
-        Gamma_ao = np.matmul(inv(self.X.T), np.matmul(Gamma_mo, inv(self.X.T).T))
-        # Gamma_ao = np.matmul(scipy.linalg.inv(self.X.conj().T), np.matmul(Gamma_mo, scipy.linalg.inv(self.X).conj().T))
+        Gamma_orth = C_prime @ Lambda @ C_prime.conj().T
+        # Gamma_orth = self.X.conj().T @ G_ao @ self.X 
+        # ==> inv(self.X.conj().T) @ Gamma_orth = G_ao @ self.X 
+        # ==> inv(self.X.conj().T) @ Gamma_orth @ inv(self.X) = G_ao
+
+        # TODO: double check that inv(self.X.T).T == inv(self.X)
+        Gamma_ao = inv(self.X.conj().T) @ Gamma_orth @ inv(self.X)
         return Gamma_ao
     

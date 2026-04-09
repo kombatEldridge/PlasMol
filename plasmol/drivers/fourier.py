@@ -187,7 +187,7 @@ def run(params):
     plt.plot(freqs, abs/max(abs), color='green', label='Spectrum')
     plt.xlabel('Angular frequency ω (eV)', fontsize=16)
     plt.ylabel('Absorption', fontsize=16)
-    plt.title('Absorption Spectrum of Water', fontsize=20)
+    plt.title('Absorption Spectrum', fontsize=20)
     plt.grid(True)
     plt.legend(fontsize=16)
     plt.tight_layout()

@@ -1,13 +1,12 @@
+import os
 import logging
 import meep as mp
 import numpy as np
-import os
-import inspect
-from collections import defaultdict
 
 from plasmol import constants
 from plasmol.utils.csv import update_csv
 from plasmol.quantum.propagation import propagation
+
 
 class SIMULATION:
     def __init__(self, params):
@@ -21,15 +20,12 @@ class SIMULATION:
 
         logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
 
-        # Simulation runtime variables
-        self.measured_dipole_response = {component: defaultdict(lambda: 0) for component in self.xyz} 
+        # Key = integer step index (step = round(t / dt_meep)), Value = induced dipole (au)
+        self.measured_dipole_response = {component: {} for component in self.xyz}
+
         self.map_direction_to_digit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
         self.frame_center = self.plasmon_cell_length * self.plasmon_resolution / 2
-
-        # Determine decimal places for time steps (simplified: use fixed precision if possible, but keep for now)
-        half_time_step_string = str(self.dt_meep / 2) # Should this be dt or dt_meep
-        self.decimal_places = len(half_time_step_string.split('.')[1]) if '.' in half_time_step_string else 0
 
         self.sources_list = []
         if self.has_molecule:
@@ -45,7 +41,7 @@ class SIMULATION:
             logging.debug("Emitter for the molecule added to simulation")
 
         if self.has_plasmon_source:
-            self.sources_list.append(self.plasmon_source_object)
+            self.sources_list.append(self.plasmon_source_object.source)
 
         self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
         self.nanoparticle = [self.nanoparticle] if self.nanoparticle else []
@@ -61,20 +57,31 @@ class SIMULATION:
             default_material=self.default_material
         )
 
-    def _get_dipole_response(self, component, t):
+    def _get_step(self, t_meep: float) -> int:
+        """Convert Meep time (in Meep units) to nearest integer step index."""
+        return round(t_meep / self.dt_meep)
+
+    def _get_dipole_response(self, component: str, t_meep: float):
         """
-        Helper to get dipole response for a component at time t.
+        Helper to get dipole response for a component at time t (in Meep units).
+        Uses integer step index for perfect numerical stability.
         """
-        timestamp = str(round(t, self.decimal_places))
-        value = self.measured_dipole_response[component].get(timestamp, 0) * constants.convertMomentAtomic2Meep
-        logging.debug(f"Getting dipole for {component} at {round(t * constants.convertTimeMeep2Atomic, self.decimal_places)} au. Emitting {value / constants.convertMomentAtomic2Meep * constants.convertFieldMeep2Atomic} in au.")
-        return value
+        step = self._get_step(t_meep)
+        value_au = self.measured_dipole_response[component].get(step, 0.0)
+        value_meep = value_au * constants.convertMomentAtomic2Meep
+
+        logging.debug(f"Getting dipole for {component} at step {step} "
+                      f"(t={t_meep*constants.convertTimeMeep2Atomic:.6f} au). "
+                      f"Emitting {value_au:.6e} au")
+        return value_meep
 
     def _get_electric_field(self, sim):
         """
         Extracts electric field at molecule position.
         """
-        logging.info(f"Getting Electric Field at the molecule at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+        t_au = sim.meep_time() * constants.convertTimeMeep2Atomic
+        logging.info(f"Getting Electric Field at the molecule at time {round(t_au, 4)} au")
+
         field_e = {}
         for comp in self.xyz:
             field = np.mean(sim.get_array(
@@ -88,27 +95,40 @@ class SIMULATION:
     def _call_propagation(self, sim):
         """
         Calls Quantum calculations if the electric field exceeds the response cutoff.
+        Stores induced dipole using integer step indices.
         """
         field_e = self._get_electric_field(sim)
+        current_t_meep = sim.meep_time()
+        current_step = self._get_step(current_t_meep)
 
         if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
-            logging.info(f"Calling propagator at time {round(sim.meep_time() * constants.convertTimeMeep2Atomic, 4)} au")
+            logging.info(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, 4)} au (step {current_step})")
+
             eArr = [field_e[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
 
-            ind_dipole = propagation(params=self.molecule_propagator_params, molecule=self.molecule, exc=eArr, propagator=self.molecule_propagator)
+            ind_dipole = propagation(
+                params=self.molecule_propagator_params,
+                molecule=self.molecule,
+                exc=eArr,
+                propagator=self.molecule_propagator
+            )
             logging.debug(f"Propagation calculation results: {ind_dipole} in au")
 
+            # Store the new dipole for the next step(s) that Meep's CustomSource may query
+            next_step = current_step + 1
             for comp, digit in self.map_direction_to_digit.items():
-                for offset in [0.5 * self.dt_meep, self.dt_meep]:
-                    timestamp = str(round(sim.meep_time() + offset, self.decimal_places))
-                    self.measured_dipole_response[comp][timestamp] = ind_dipole[digit]
+                self.measured_dipole_response[comp][next_step] = ind_dipole[digit]
+                # Extra safety for any internal half-step queries
+                self.measured_dipole_response[comp][next_step + 1] = ind_dipole[digit]
 
-            timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
-            update_csv(self.field_p_filepath, timestamp, *ind_dipole)
+            # Write polarization (induced dipole) to CSV in atomic units
+            timestamp_au = (current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic
+            update_csv(self.field_p_filepath, timestamp_au, *ind_dipole)
 
-        timestamp = str(round((sim.meep_time() + self.dt_meep) * constants.convertTimeMeep2Atomic, self.decimal_places))
-        update_csv(self.field_e_filepath, timestamp, field_e['x'], field_e['y'], field_e['z'])
+        # Always write electric field to CSV in atomic units
+        timestamp_au = (current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic
+        update_csv(self.field_e_filepath, timestamp_au, field_e['x'], field_e['y'], field_e['z'])
 
     def run(self):
         """
@@ -129,32 +149,15 @@ class SIMULATION:
             if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
 
-            # ------------------------------------ #
-            #              Additional              #
-            #      custom tracking functions       #
-            #           can be added here          #
-            # ------------------------------------ #
-            # run_functions.append(...)
-
             self.simulation.run(*run_functions, until=self.t_end_meep)
 
             logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
         finally:
-            # ------------------------------------ #
-            #              Additional              #
-            #      custom visualization calls      #
-            #           can be added here          #
-            # ------------------------------------ #
-            # self.show3Dmap()
-            # self.show2Dmap()
-
-            # TODO: Ensure gifs work
-            if self.has_images:
-                if self.images_make_gif:
-                    from plasmol.utils.gif import make_gif
-                    make_gif(self.images_dir_name)
+            if self.has_images and getattr(self, 'images_make_gif', True):
+                from plasmol.utils.gif import make_gif
+                make_gif(self.images_dir_name)
             os.chdir(cwd)
 
     # ------------------------------------ #
@@ -188,7 +191,6 @@ class SIMULATION:
         z_mid = nz // 2
         eps_slice = eps_data[:, :, z_mid]
         iso_value = 4
-        # Binary mask: 1 where >= iso_value (dielectric), 0 otherwise
         z_plot = np.where(eps_slice >= iso_value, 1, 0)
         fig = go.Figure(data=go.Heatmap(
             z=z_plot,
@@ -199,6 +201,6 @@ class SIMULATION:
             title='2D Slice of Dielectric (XY plane at Z midpoint)',
             xaxis_title='X',
             yaxis_title='Y',
-            yaxis=dict(scaleanchor='x')  # Make aspect ratio square
+            yaxis=dict(scaleanchor='x')
         )
         fig.show()

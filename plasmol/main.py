@@ -21,6 +21,11 @@ if __name__ == "__main__":
     # Step 1: Grab CLI args
     args = parse_arguments()
 
+    if args.describe:
+        from plasmol.utils.input.models import describe_parameters
+        describe_parameters()
+        sys.exit(0)
+
     # Handle existing log file: warn to terminal and use numbered name (hello(1).log etc.)
     # This ensures main, PARAMS, and all children use the *same* log file.
     if args.log and os.path.exists(args.log):

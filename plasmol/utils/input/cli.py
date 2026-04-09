@@ -24,7 +24,7 @@ def parse_arguments():
     parser.add_argument('-l', '--log', help="Log file name.")
     parser.add_argument('-v', '--verbose', action='count', default=1, help="Increase verbosity (use up to -vv).")
     parser.add_argument('-c', '--checkpoint', help="Path to checkpoint file (.npz) to resume simulation from. When provided, the input file is NOT required.")
-
+    parser.add_argument('--describe', action='store_true', help='Show all parameters with descriptions, units, and defaults')
     args = parser.parse_args()
 
     # Auto-detect if positional argument is a checkpoint file (supports both `main.py foo.npz` and `main.py -c foo.npz`)
@@ -33,7 +33,7 @@ def parse_arguments():
         args.checkpoint = args.input
         args.input = None
 
-    if args.input is None and args.checkpoint is None:
+    if args.input is None and args.checkpoint is None and not args.describe:
         parser.error("Either an input file or --checkpoint must be provided.")
     if args.log and args.verbose == 0:
         args.verbose = 1
