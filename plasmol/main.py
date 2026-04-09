@@ -21,11 +21,11 @@ if __name__ == "__main__":
     # Step 1: Grab CLI args
     args = parse_arguments()
 
-    if args.describe:
-        from plasmol.utils.input.models import describe_parameters
-        describe_parameters()
+    if getattr(args, 'describe', False):
+        from plasmol.utils.input.params import PARAMS   # adjust import path as needed
+        PARAMS.describe_parameters()
         sys.exit(0)
-
+        
     # Handle existing log file: warn to terminal and use numbered name (hello(1).log etc.)
     # This ensures main, PARAMS, and all children use the *same* log file.
     if args.log and os.path.exists(args.log):
@@ -62,10 +62,12 @@ if __name__ == "__main__":
     logger.info(f"The timestep for this simulation is {params.dt} au (roughly {np.round(params.dt / constants.T_AU_FS, decimals=5)} fs).")
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     
-    if params.has_checkpoint:
+    if params.has_checkpoint and not params.resumed_from_checkpoint:
         from plasmol.utils.checkpoint import init_checkpoint
         init_checkpoint(params)
 
+    params.fourier_damp = False
+    
     # Step 3: Execute proper workflow
     if params.run_molecule_simulation:
         if params.has_comparison:

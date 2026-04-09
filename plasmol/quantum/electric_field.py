@@ -16,7 +16,7 @@ class ELECTRICFIELD:
         self.dt = params.dt
         self.width_au = self.width_steps * self.dt
         self.component = params.molecule_source_component.lower().strip()
-        kwargs = {k: v for k, v in params.molecule_source_additional_parameters.items()}
+        kwargs = {k: v for k, v in getattr(params, 'molecule_source_additional_parameters', {}).items()}
 
         logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
 

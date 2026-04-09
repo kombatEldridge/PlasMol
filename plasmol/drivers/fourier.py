@@ -176,7 +176,7 @@ def run(params):
                 update_csv(params_copy.field_p_filepath, t, x, y, z)
             logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")
 
-        plot_fields(params_copy.field_e_filepath, params_copy.field_p_filepath, params_copy.spectra_e_vs_p_filepath)
+        # plot_fields(params_copy.field_e_filepath, params_copy.field_p_filepath, params_copy.spectra_e_vs_p_filepath)
 
     # Apply Fourier transform to the field_p CSV files
     time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
