@@ -1,5 +1,0 @@
--r requirements.txt
-pytest>=7.0
-black>=22.0
-flake8>=5.0
-twine>=4.0

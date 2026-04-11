@@ -65,13 +65,13 @@ class PARAMS:
                 elif isinstance(section_condition, list):
                     if not all(c in self.simulation_types for c in section_condition):
                         continue
-
+            
             value = self._get_nested_value(self.preparams, path)
-
+            
             if value is not None:
                 if not isinstance(value, data_type):
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
-       
+            
             if is_section_dict:
                 has_section = value is not None
                 setattr(self, boolean_name, has_section)
@@ -90,7 +90,6 @@ class PARAMS:
         self._attribute_checks()
         self._attribute_formation()
         delattr(self, 'preparams')
-        delattr(self, 'molecule_geometry')
         logger.info("All parameters successfully parsed and validated.")
 
         # Store CLI logging parameters for use in child processes etc.
@@ -110,7 +109,7 @@ class PARAMS:
             raise RuntimeError("'t_end' must be a positive value.")
         if self.dt > self.t_end:
             raise RuntimeError("'dt' cannot be larger than 't_end'.")
-        if math.isclose(self.t_end % self.dt, 0.0, abs_tol=1e-10):
+        if not math.isclose(self.t_end % self.dt, 0.0, abs_tol=1e-10):
             raise RuntimeError("'t_end' must be a multiple of 'dt'.")
 
         # Plasmon params
@@ -239,7 +238,11 @@ class PARAMS:
                             logger.warning(f"Molecule source '{pretty}' attribute being ignored because Fourier modifier is enabled.")
                     setattr(self, 'molecule_source_type', 'kick')
                     setattr(self, 'molecule_source_component', 'z')
-                for attr in ['molecule_source_intensity', 'molecule_source_peak_time', 'molecule_source_width_steps']:
+                if hasattr(self, 'molecule_source_peak_time'):
+                    value = getattr(self, attr)
+                    if value is not None and value < 0:
+                        raise ValueError(f"Molecule source peak_time must be a positive value.")
+                for attr in ['molecule_source_intensity', 'molecule_source_width_steps']:
                     if hasattr(self, attr):
                         value = getattr(self, attr)
                         if value is not None and value <= 0:
@@ -264,7 +267,7 @@ class PARAMS:
                 if self.has_plasmon:
                     raise ValueError(f"Fourier modifier cannot be used with plasmon modifier.")
                 logger.info("Fourier modifier selected; running three simulations for Fourier analysis along each axis.")
-                for attr in ['fourier_gamma', 'fourier_npz_filepath', 'fourier_spectrum_filepath']:
+                for attr in ['fourier_gamma', 'fourier_spectrum_filepath']:
                     if not hasattr(self, attr) or getattr(self, attr) in ['']:
                         pretty = attr.removeprefix("fourier_")
                         raise ValueError(f"Fourier modifier requires '{pretty}' attribute.")
@@ -407,6 +410,7 @@ class PARAMS:
 
         if self.has_molecule:
             self.molecule_atoms, self.molecule_coords, self.molecule_geometry_units = self._construct_geometry(self.molecule_geometry, self.molecule_geometry_units.lower())
+            delattr(self, 'molecule_geometry')
 
             propagator_map = {
                 "step": propagate_step,

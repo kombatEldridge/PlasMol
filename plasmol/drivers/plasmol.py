@@ -28,7 +28,8 @@ def run(params):
         plasmon = SIMULATION(params)
         plasmon.run()
         
-        plot_fields(params.field_e_filepath, params.field_p_filepath)
+        base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
+        plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
         logging.info("Simulation completed successfully.")
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)

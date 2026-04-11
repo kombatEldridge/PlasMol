@@ -5,103 +5,89 @@ import matplotlib.pyplot as plt
 
 logger = logging.getLogger("main")
 
-# TODO: generalize this to take a field file and a title for that field multiple times 
-def plot_fields(field_e_filepath, field_p_filepath=None, output_image_path=None):
+def plot_fields(fields, output_image_path=None):
     """
-    Plot electric field and optionally polarization field from CSV files.
+    Plot one or more vector fields (X, Y, Z components) from CSV files.
 
-    Generates a plot with one or two subplots depending on input, saving it to a file.
+    Each field gets its own subplot with a custom title.
 
     Parameters:
-    field_e_filepath : str
-        Path to the electric field CSV file.
-    field_p_filepath : str, optional
-        Path to the polarization field CSV file (default None).
+    fields : list of tuples (filepath: str, title: str)
+        List of (CSV filepath, subplot title) pairs.
+        Example:
+        [
+            (field_e_filepath, 'Incident Electric Field'),
+            (field_p_filepath, "Molecule's Response")
+        ]
     output_image_path : str, optional
-        Filename for the plot image (default None).
+        Base filename for the saved plot (will save as {output_image_path}.png).
 
     Returns:
     None
     """
+    if not fields:
+        raise ValueError("At least one field must be provided.")
+
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
-    if field_p_filepath is not None:
-        logging.debug(f"Reading CSV files: {field_e_filepath} and {field_p_filepath}")
-    else:
-        logging.debug(f"Reading CSV file: {field_e_filepath}")
+    # Load and prepare all fields (sorting is now done in memory – no more mutating original CSVs)
+    data_list = []
+    timestamp_col = None
 
-    def sort_csv_by_first_column(filename):
-        """
-        Sort a CSV file by its first column (timestamps).
+    for filepath, title in fields:
+        logging.debug(f"Reading CSV file: {filepath}")
 
-        Preserves comments and header while sorting data rows.
+        df = pd.read_csv(filepath, comment='#')
 
-        Parameters:
-        filename : str
-            Path to the CSV file to sort.
+        # Find the timestamp column
+        ts_cols = [col for col in df.columns if col.startswith("Timestamps")]
+        if not ts_cols:
+            raise ValueError(f"No timestamp column found in {filepath}")
+        ts_col = ts_cols[0]
 
-        Returns:
-        None
-        """
-        with open(filename, 'r') as file:
-            lines = file.readlines()
-        comments = [line for line in lines if line.startswith('#')]
-        header = next(line for line in lines if not line.startswith('#'))
-        data_lines = [line for line in lines if not line.startswith('#') and line != header]
-        from io import StringIO
-        data = pd.read_csv(StringIO(''.join(data_lines)))
-        timestamp_cols = [col for col in data.columns if col.startswith("Timestamps")]
-        data_sorted = data.sort_values(by=timestamp_cols[0])
-        with open(filename, 'w') as file:
-            file.writelines(comments)
-            file.write(header)
-            data_sorted.to_csv(file, index=False)
+        if timestamp_col is None:
+            timestamp_col = ts_col
+        elif ts_col != timestamp_col:
+            logging.warning(f"Timestamp column mismatch in {filepath} (using first one)")
 
-    sort_csv_by_first_column(field_e_filepath)
-    data1 = pd.read_csv(field_e_filepath, comment='#')
-    timestamp_cols = [col for col in data1.columns if col.startswith("Timestamps")]
-    data1 = data1.sort_values(by=timestamp_cols[0], ascending=True)
-    timestamps1 = data1[timestamp_cols[0]]
-    x_values1 = data1['X Values']
-    y_values1 = data1['Y Values']
-    z_values1 = data1['Z Values']
+        # Sort by timestamp (in memory, non-destructive)
+        df = df.sort_values(by=ts_col, ascending=True)
 
-    if field_p_filepath is not None:
-        sort_csv_by_first_column(field_p_filepath)
-        data2 = pd.read_csv(field_p_filepath, comment='#')
-        data2 = data2.sort_values(by=timestamp_cols[0], ascending=True)
-        timestamps2 = data2[timestamp_cols[0]]
-        x_values2 = data2['X Values']
-        y_values2 = data2['Y Values']
-        z_values2 = data2['Z Values']
+        data_list.append({
+            'df': df,
+            'title': title,
+            'timestamp_col': ts_col
+        })
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-        ax1.plot(timestamps1, x_values1, label='x', marker='o')
-        ax1.plot(timestamps1, y_values1, label='y', marker='o')
-        ax1.plot(timestamps1, z_values1, label='z', marker='o')
-        ax1.set_title('Incident Electric Field')
-        ax1.set_xlabel(timestamp_cols[0])
-        ax1.set_ylabel('Electric Field Magnitude')
-        ax1.legend()
+    # Create subplots (works for 1, 2, 3+ fields automatically)
+    n = len(data_list)
+    fig, axs = plt.subplots(1, n, figsize=(6 * n, 5), squeeze=False)
+    axs = axs.flatten()
 
-        ax2.plot(timestamps2, x_values2, label='x', marker='o')
-        ax2.plot(timestamps2, y_values2, label='y', marker='o')
-        ax2.plot(timestamps2, z_values2, label='z', marker='o')
-        ax2.set_title("Molecule's Response")
-        ax2.set_xlabel(timestamp_cols[0])
-        ax2.set_ylabel('Polarization Field Magnitude')
-        ax2.legend()
-    else:
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        ax1.plot(timestamps1, x_values1, label='x', marker='o')
-        ax1.plot(timestamps1, y_values1, label='y', marker='o')
-        ax1.plot(timestamps1, z_values1, label='z', marker='o')
-        ax1.set_title('Incident Electric Field')
-        ax1.set_xlabel(timestamp_cols[0])
-        ax1.set_ylabel('Electric Field Magnitude')
-        ax1.legend()
+    for ax, item in zip(axs, data_list):
+        df = item['df']
+        ts_col = item['timestamp_col']
+        title = item['title']
+
+        timestamps = df[ts_col]
+        x_values = df['X Values']
+        y_values = df['Y Values']
+        z_values = df['Z Values']
+
+        ax.plot(timestamps, x_values, label='x', marker='o')
+        ax.plot(timestamps, y_values, label='y', marker='o')
+        ax.plot(timestamps, z_values, label='z', marker='o')
+
+        ax.set_title(title)
+        ax.set_xlabel(ts_col)
+        ax.set_ylabel('Field Magnitude')
+        ax.legend()
 
     plt.tight_layout()
-    plt.savefig(f'{output_image_path}.png', dpi=1000)
-    logging.info(f"Matplotlib image written: {output_image_path}.png")
 
+    if output_image_path:
+        save_path = f'{output_image_path}.png'
+        plt.savefig(save_path, dpi=1000)
+        logging.info(f"Matplotlib image written: {save_path}")
+    else:
+        plt.show()  # fallback if no path is given

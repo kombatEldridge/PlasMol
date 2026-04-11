@@ -14,7 +14,7 @@ param_defs = [
     ('plasmon_simulation_dict', ['plasmon', 'simulation'], True, 'has_simulation', None, 'plasmon', dict, None, None),
     ('plasmon_tolerance_field_e', ['plasmon', 'simulation', "tolerance_field_e"], False, 'has_simulation', 1e-12, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_simulation', 0.1, 'plasmon', (int, float), "Length of the simulation cell (used if cell_volume not provided)", "μm"),
-    ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_simulation', None, 'plasmon', (int, float), "Simulation cell volume (overrides cell_length if provided)", "μm"),
+    ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_simulation', None, 'plasmon', list, "Simulation cell volume (overrides cell_length if provided)", "μm"),
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float), "Thickness of the PML absorbing boundary layers (recommended to be close to half the largest wavelength)", "μm"),
     ('plasmon_symmetries', ['plasmon', 'simulation', 'symmetries'], False, 'has_simulation', None, 'plasmon', list, "Symmetry operations (axis followed by phase) e.g. ['Y', 1, 'Z', -1]", None),
     ('plasmon_surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], False, 'has_simulation', 1.33, 'plasmon', (int, float), "Refractive index of the surrounding medium", None),

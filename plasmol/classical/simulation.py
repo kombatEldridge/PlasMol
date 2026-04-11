@@ -25,7 +25,6 @@ class SIMULATION:
 
         self.map_direction_to_digit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
-        self.frame_center = self.plasmon_cell_length * self.plasmon_resolution / 2
 
         self.sources_list = []
         if self.has_molecule:
@@ -143,7 +142,7 @@ class SIMULATION:
                 from plasmol.utils.gif import clear_directory
                 clear_directory(self.images_dir_name)
                 self.simulation.use_output_directory(self.images_dir_name)
-                self.images_args += f"-z {self.frame_center}"
+                self.images_args += " -0z0"
                 run_functions.append(mp.at_every(self.images_timesteps_between * self.dt_meep, mp.output_png(mp.Ez, self.images_args)))
 
             if self.has_molecule:

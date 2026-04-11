@@ -11,7 +11,6 @@ from plasmol import constants
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.drivers import *
 
-from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 from plasmol.utils.logging import setup_logging
 
@@ -96,7 +95,7 @@ def fold(file_x, file_y, file_z):
 
     return time_points, dipole_moment
 
-def fourier(time, dipole, file, damp):
+def fourier(time, dipole, damp, npz=None):
     dt = time[1] - time[0]
     abs_real = [[], [], []]
     abs_imag = [[], [], []]
@@ -122,8 +121,8 @@ def fourier(time, dipole, file, damp):
         abs_real[i] = np.array(abs_real[i])
         abs_imag[i] = np.array(abs_imag[i])
 
-    np.savez(file, abs_imag=abs_imag, freqs=freqs_out)
-    logger.debug(f"Fourier transform saved to {file}!")
+    np.savez(npz, abs_imag=abs_imag, freqs=freqs_out)
+    logger.debug(f"Fourier transform saved to {npz}!")
 
     return abs_imag, freqs_out
 
@@ -176,11 +175,10 @@ def run(params):
                 update_csv(params_copy.field_p_filepath, t, x, y, z)
             logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")
 
-        # plot_fields(params_copy.field_e_filepath, params_copy.field_p_filepath, params_copy.spectra_e_vs_p_filepath)
-
     # Apply Fourier transform to the field_p CSV files
     time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
-    abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_npz_filepath, params.fourier_gamma)
+
+    abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, npz=getattr(params, 'fourier_npz_filepath', None))
     abs = absorption(abs_imag, freqs)
 
     plt.figure(figsize=(14, 8))

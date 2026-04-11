@@ -19,15 +19,16 @@ def clear_directory(directory_path):
         logging.info(f"{e}, creating.")
 
 def make_gif(frame_folder):
+    print(os.getcwd())
     frame_folder = os.path.basename(os.path.normpath(frame_folder))
     os.chdir(frame_folder)
-    items = os.listdir(frame_folder)
+    items = os.listdir()
     items = [file_name for file_name in items if file_name != ".DS_Store"]
     items = [item for item in items if "png" in item]
     sorted_items = sorted(items)
-    os.chdir(frame_folder)
+    os.chdir(f'../{frame_folder}')
     frames = [Image.open(image) for image in sorted_items]
     frame_one = frames[0]
-    frame_one.save(f"{frame_folder}.gif", format="GIF", append_images=frames[1:],
+    frame_one.save(f"../{frame_folder}.gif", format="GIF", append_images=frames[1:],
                save_all=True, duration=25, loop=0)
     logging.info(f"File Saved: {frame_folder}.gif")

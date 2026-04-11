@@ -47,4 +47,5 @@ def run(params):
             update_checkpoint(params, molecule, current_time)
 
     base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
-    plot_fields(params.field_e_filepath, params.field_p_filepath, output_image_path=base)
+    plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+

@@ -8,10 +8,8 @@ from plasmol.utils.checkpoint import init_checkpoint
 def run(params):
     try:
         logger = logging.getLogger("main")
-                
         plasmon = SIMULATION(params)
         plasmon.run()
-        
         logging.info("Simulation completed successfully.")
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)
