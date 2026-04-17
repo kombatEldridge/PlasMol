@@ -109,8 +109,9 @@ class PARAMS:
             raise RuntimeError("'t_end' must be a positive value.")
         if self.dt > self.t_end:
             raise RuntimeError("'dt' cannot be larger than 't_end'.")
-        if not math.isclose(self.t_end % self.dt, 0.0, abs_tol=1e-10):
-            raise RuntimeError("'t_end' must be a multiple of 'dt'.")
+        n_steps = round(self.t_end / self.dt)
+        if abs(n_steps * self.dt - self.t_end) > 1e-9:
+            raise RuntimeError("'t_end' must be a multiple of 'dt'")
 
         # Plasmon params
         if self.has_plasmon:
@@ -150,7 +151,7 @@ class PARAMS:
                 for attr in ['plasmon_source_type', 'plasmon_source_center', 'plasmon_source_size', 'plasmon_source_component', 'plasmon_source_additional_parameters']:
                     if not hasattr(self, attr):
                         pretty = attr.removeprefix("plasmon_source_")
-                        raise ValueError(f"Source requires '{pretty}' attribute .")
+                        raise ValueError(f"Source requires '{pretty}' attribute.")
                 for loc in self.plasmon_source_center:
                     if not isinstance(loc, (int, float)):
                         raise ValueError(f"Invalid plasmon source center '{loc}'; must be a number.")
@@ -159,7 +160,7 @@ class PARAMS:
                         raise ValueError(f"Invalid plasmon source size '{loc}'; must be a number.")
                 if self.plasmon_source_component not in self.xyz:
                     raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
-                if self.plasmon_source_additional_parameters is not None:
+                if getattr(self, "plasmon_source_additional_parameters", None) is not None:
                     if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters:
                         raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")
                 elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and self.source_type != 'custom':
@@ -239,7 +240,7 @@ class PARAMS:
                     setattr(self, 'molecule_source_type', 'kick')
                     setattr(self, 'molecule_source_component', 'z')
                 if hasattr(self, 'molecule_source_peak_time'):
-                    value = getattr(self, attr)
+                    value = getattr(self, 'molecule_source_peak_time')
                     if value is not None and value < 0:
                         raise ValueError(f"Molecule source peak_time must be a positive value.")
                 for attr in ['molecule_source_intensity', 'molecule_source_width_steps']:
@@ -248,8 +249,14 @@ class PARAMS:
                         if value is not None and value <= 0:
                             pretty = attr.removeprefix("molecule_source_")
                             raise ValueError(f"Molecule source '{pretty}' must be a positive value.")
-                if self.molecule_source_type.lower() == 'pulse' and not ('wavelength' in self.molecule_source_additional_parameters or 'frequency' in self.molecule_source_additional_parameters):
-                    raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
+                if not hasattr(self, "molecule_source_additional_parameters") and self.molecule_source_type == 'pulse':
+                    pretty = attr.removeprefix("molecule_source_")
+                    raise ValueError(f"Source requires '{pretty}' attribute.")
+
+                if self.molecule_source_type.lower() == 'pulse':
+                    msap = getattr(self, 'molecule_source_additional_parameters', {})
+                    if 'wavelength' not in msap and 'frequency' not in msap:
+                        raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
                 if self.molecule_source_type.lower() not in ['pulse', 'kick']:
                     raise ValueError(f"Molecule source must be of type 'pulse' or 'kick' and not '{self.molecule_source_type}'.")
                 if self.molecule_source_component not in self.xyz:
@@ -345,8 +352,7 @@ class PARAMS:
             if hasattr(self, file):
                 value = getattr(self, file)
                 if not isinstance(value, str) or value in ['']:
-                    pretty = file.removeprefix("field_").removesuffix("_filepath")
-                    raise ValueError(f"Filepath for '{pretty}' must be a non-empty string.")
+                    raise ValueError(f"Filepath for '{file}' must be a non-empty string.")
 
 
     def _attribute_formation(self):

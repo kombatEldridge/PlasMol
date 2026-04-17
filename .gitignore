@@ -9,6 +9,7 @@ plasmol/utils/input/__pycache__
 plasmol/quantum/__pycache__
 plasmol/quantum/propagators/__pycache__
 plasmol/utils/__pycache__
+tests/__pycache__
 merge/
 build/
 img/
