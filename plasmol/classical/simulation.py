@@ -80,7 +80,7 @@ class SIMULATION:
         Extracts electric field at molecule position.
         """
         t_au = sim.meep_time() * constants.convertTimeMeep2Atomic
-        logging.info(f"Getting Electric Field at the specified position at time {round(t_au, 4)} au")
+        logging.debug(f"Getting Electric Field at the specified position at time {round(t_au, 4)} au")
 
         field_e = {}
         for comp in self.xyz:

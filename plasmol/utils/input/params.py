@@ -621,6 +621,21 @@ class PARAMS:
 
         return preparams
 
+    def __getstate__(self):
+        """Return state for pickling (e.g. multiprocessing in fdtd_response driver).
+        Removes unpicklable Meep/SWIG objects so the rest of params can be safely pickled.
+        """
+        state = self.__dict__.copy()
+        for attr in ['plasmon_source_object', 'nanoparticle']:
+            state.pop(attr, None)
+        return state
+
+    def __setstate__(self, state):
+        """Restore state after unpickling. Meep objects are intentionally absent;
+        the calling code (e.g. fdtd_response) is responsible for recreating them.
+        """
+        self.__dict__.update(state)
+    
     @classmethod
     def describe_parameters(cls):
         """Print beautiful table of ALL input parameters (used by --describe)."""
