@@ -130,6 +130,7 @@ class MEEPSOURCE:
 
         elif self.source_type == 'custom':
             src_func = kwargs.get('src_func')
+            src_func = walk_through_src_funcs(src_func)
             if src_func is None:
                 raise ValueError("For 'custom' source_type, 'src_func' must be provided in kwargs.")
             start_time = kwargs.get('start_time', -1e+20)
@@ -160,7 +161,42 @@ class MEEPSOURCE:
 #             Additional custom              #
 #            classes for sources             #
 #             can be added here              #
-#           and need to be added to          #
-#   the `utils/input/params.py` file under   #
-#          the `getSource()` method          #
 # ------------------------------------------ #
+
+def walk_through_src_funcs(src_func):
+    if src_func == "PAPER_PULSE_CHEN2010":
+        src_func = paper_pulse_chen2010
+    else:
+        raise ValueError(f"Invalid source function '{src_func}'; must be added to the list of supported functions within `sources.py`.")
+    return src_func
+
+CONVERSION_FACTOR = 3.378555833184493
+
+def paper_pulse_chen2010(t):
+    """
+    Exact pulse from Chen et al. 2010 (eq. 36)
+    t is in Meep time units
+    """
+    # t0_fs = 10.0
+    # sigma_fs = 0.7
+    # lambda_nm = 600.0
+
+    # # Convert to Meep units using your factor
+    # t0 = t0_fs / CONVERSION_FACTOR
+    # sigma = sigma_fs / CONVERSION_FACTOR
+
+    # # Angular frequency in Meep units
+    # omega_meep = (2 * np.pi * 2.99792458e8 * 1e6 * CONVERSION_FACTOR * 1e-15) / (lambda_nm * 1e-9)
+
+    # return np.exp(-((t - t0) / sigma)**2) * np.sin(omega_meep * t)
+
+    t0_fs = 10.0
+    sigma_fs = 0.7
+    lambda_um = 0.600   # 600 nm
+
+    from plasmol import constants
+    t0_meep = t0_fs / constants.convertTimeMeep2fs
+    sigma_meep = sigma_fs / constants.convertTimeMeep2fs
+    omega_meep = 2 * np.pi / lambda_um 
+
+    return np.exp(-((t - t0_meep) / sigma_meep)**2) * np.sin(omega_meep * t)

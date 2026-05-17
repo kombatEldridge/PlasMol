@@ -10,7 +10,8 @@
       "cell_volume": [0.1, 0.1, 0.1],
       "pml_thickness": 0.01,
       "symmetries": ["Y", 1, "Z", -1],
-      "surrounding_material_index": 1.33
+      "surrounding_material_index": 1.33,
+      "courant": 0.5
     },
     "source": {
       "type": "continuous",
@@ -114,5 +115,14 @@
       "field_p_filepath": "field_p.csv",
       "spectra_e_vs_p_filepath": "output.png"
     }
+  },
+  "custom": {
+    "probe_points": [
+      [0.011, 0, 0],
+      [0.012, 0, 0],
+      [0.013, 0, 0],
+      [0.014, 0, 0],
+      [0.015, 0, 0]
+    ]
   }
 }

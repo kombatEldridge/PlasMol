@@ -118,6 +118,7 @@ def init_checkpoint(params):
         "input_file_path":    input_file_path,
         "input_file_content": input_file_content,
         "is_fourier":         getattr(params, 'has_fourier', False),
+        "is_open_shell": getattr(params, "molecule_spin", 0) != 0,
     }
 
     for dir in params.xyz:
@@ -287,6 +288,12 @@ def resume_from_checkpoint(args):
     saved_params_dict = data["params_dict"].item()
     params = Namespace(**saved_params_dict)
     params.resume_from_checkpoint = True
+
+    # === Check Open/Closed Shell ===
+    saved_open_shell = bool(data.get("is_open_shell", False))
+    if saved_open_shell != (saved_params_dict.get("molecule_spin", 0) != 0):
+        raise RuntimeError("Checkpoint open-shell flag inconsistent with molecule_spin")
+
 
     # === Restore CSV files ===
     if is_fourier:

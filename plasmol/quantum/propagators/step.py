@@ -28,7 +28,12 @@ def propagate(dt, molecule, exc):
     C_orth_ndt = molecule.C_orth_ndt
     F_orth = molecule.F_orth
 
-    U = expm(-1j * 2 * dt * F_orth)
+    def _expm(F):
+        if F.ndim == 3:
+            return np.stack([expm(F[s]) for s in range(F.shape[0])])
+        return expm(F)
+
+    U = _expm(-1j * 2 * dt * F_orth)
     
     C_orth_pdt = np.matmul(U, C_orth_ndt)
     C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)

@@ -5,6 +5,11 @@ from scipy.linalg import expm
 
 logger = logging.getLogger("main")
 
+def _expm(F):
+    if F.ndim == 3:
+        return np.stack([expm(F[s]) for s in range(F.shape[0])])
+    return expm(F)
+
 def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc):
     """
     Propagate molecular orbitals using the Magnus2 method.
@@ -38,7 +43,7 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, ex
             raise RuntimeError(f"Failed to converge within {molecule_max_iterations} iterations")
 
         # 1) predictor
-        U = expm(-1j * dt * F_orth_p12dt)
+        U = _expm(-1j * dt * F_orth_p12dt)
         C_orth_pdt = np.matmul(U, C_orth)
         C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
         

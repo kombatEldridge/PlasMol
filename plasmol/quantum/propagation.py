@@ -26,8 +26,15 @@ def propagation(params, molecule, exc, propagator):
     mu_arr = np.zeros(3)
     propagator(**params, molecule=molecule, exc=exc)
     mu = molecule.calculate_mu()
+
+    D = molecule.D_ao
+    D0 = molecule.D_ao_0
+    if D.ndim == 3:
+        D = D.sum(axis=0)
+        D0 = D0.sum(axis=0)
+        
     for i in [0, 1, 2]:
-        mu_arr[i] = float((np.trace(mu[i] @ molecule.D_ao) - np.trace(mu[i] @ molecule.D_ao_0)).real)
+        mu_arr[i] = float((np.trace(mu[i] @ D) - np.trace(mu[i] @ D0)).real)
 
     # ------------------------------------ #
     #              Additional              #

@@ -14,7 +14,7 @@ def test_minimal_json_parses_cleanly(minimal_params):
     assert p.t_end == 5.0
     assert p.has_molecule is True
     assert p.has_plasmon is False
-    assert p.run_molecule_simulation is True
+    assert p.run_molecule_simulation_only is True
     assert p.molecule_propagator_str == "rk4"
     assert p.molecule_source_type == "kick"
     assert p.molecule_source_component == "z"
@@ -34,8 +34,8 @@ def test_plasmon_only_parses_cleanly(plasmon_only_args):
     """Test that PARAMS correctly handles a plasmon-only simulation (no molecule)."""
     p = PARAMS(plasmon_only_args)
     assert p.has_plasmon is True
-    assert p.run_plasmon_simulation is True
-    assert p.run_molecule_simulation is False
+    assert p.run_plasmon_simulation_only is True
+    assert p.run_molecule_simulation_only is False
     assert p.has_molecule is False
     assert p.plasmon_cell_length == 0.2
     assert p.plasmon_pml_thickness == 0.02

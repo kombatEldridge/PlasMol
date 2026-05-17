@@ -18,6 +18,7 @@ param_defs = [
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float), "Thickness of the PML absorbing boundary layers (recommended to be close to half the largest wavelength)", "μm"),
     ('plasmon_symmetries', ['plasmon', 'simulation', 'symmetries'], False, 'has_simulation', None, 'plasmon', list, "Symmetry operations (axis followed by phase) e.g. ['Y', 1, 'Z', -1]", None),
     ('plasmon_surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], False, 'has_simulation', 1.33, 'plasmon', (int, float), "Refractive index of the surrounding medium", None),
+    ('plasmon_courant', ['plasmon', 'simulation', "courant"], False, 'has_simulation', 1.33, 'plasmon', (int, float), "Courant number for spatial/temporal resolution", None),
 
     # Plasmon source params
     ('plasmon_source_dict', ['plasmon', 'source'], True, "has_plasmon_source", None, 'plasmon', dict, None, None),
@@ -105,4 +106,7 @@ param_defs = [
     ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "field_e.csv", 'molecule', str, "File path for electric field at molecule position", None),
     ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "field_p.csv", 'molecule', str, "File path for induced polarization at molecule position", None),
     ('spectra_e_vs_p_filepath', ['molecule', 'files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", 'molecule', str, "File path for electric vs polarization field plot", None),
+
+    # Misc/Add'l Parameters
+    ('probe_points', ['custom', 'probe_points'], False, 'has_custom', False, None, list, "List of points (x,y,z) at which to record electric field", "μm"),
 ]

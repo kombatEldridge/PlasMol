@@ -69,14 +69,16 @@ if __name__ == "__main__":
     params.fourier_damp = False
     
     # Step 3: Execute proper workflow
-    if params.run_molecule_simulation:
+    if params.run_custom_driver:
+        run_fdtd_response(params)
+    elif params.run_molecule_simulation_only:
         if params.has_comparison:
             run_comparison(params)
         elif params.has_fourier:
             run_fourier(params)
         else:
             run_quantum(params)
-    elif params.run_plasmon_simulation:
+    elif params.run_plasmon_simulation_only:
         run_classical(params)
     else:
         run_plasmol(params)

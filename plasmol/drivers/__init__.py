@@ -4,5 +4,6 @@ from plasmol.drivers.plasmol import run as run_plasmol
 from plasmol.drivers.quantum import run as run_quantum
 from plasmol.drivers.comparison import run as run_comparison
 from plasmol.drivers.fourier import run as run_fourier
+from plasmol.drivers.fdtd_response import run as run_fdtd_response
 
-__all__ = ['run_classical', 'run_plasmol', 'run_quantum', 'run_comparison', 'run_fourier']  # Controls 'from drivers import *'
+__all__ = ['run_classical', 'run_plasmol', 'run_quantum', 'run_comparison', 'run_fourier', 'run_fdtd_response']  # Controls 'from drivers import *'

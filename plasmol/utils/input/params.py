@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.console import Console
 
 from plasmol.quantum.propagators import *
-from plasmol.classical.sources import MEEPSOURCE
+from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 from plasmol.utils.input.struct import param_defs
 from plasmol.quantum.electric_field import ELECTRICFIELD
 
@@ -36,6 +36,7 @@ class PARAMS:
         self.input_file_path = self.preparams["args"]["input"]
         self.simulation_types = self.preparams["simulation_types"]
         self.xyz = ['x', 'y', 'z']
+        self.custom_parameters = {}
 
         def _type_name(t):
             names = {
@@ -68,10 +69,15 @@ class PARAMS:
             
             value = self._get_nested_value(self.preparams, path)
             
+
             if value is not None:
                 if not isinstance(value, data_type):
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
             
+            if boolean_name == 'has_custom':
+                self.custom_parameters[attr] = value
+                self.has_custom = True
+
             if is_section_dict:
                 has_section = value is not None
                 setattr(self, boolean_name, has_section)
@@ -92,7 +98,6 @@ class PARAMS:
         delattr(self, 'preparams')
         logger.info("All parameters successfully parsed and validated.")
 
-        # Store CLI logging parameters for use in child processes etc.
         self.verbose = getattr(args, 'verbose', 1)
         self.log = getattr(args, 'log', None)
 
@@ -127,6 +132,7 @@ class PARAMS:
                     raise ValueError("'plasmon_pml_thickness' must be a positive value.")
                 if not hasattr(self, 'plasmon_symmetries'):
                     logger.warning("No 'symmetries' specified for plasmon simulation; operating without symmetries will cause longer simulation times.")
+                    self.plasmon_symmetries = []
                 else:
                     if len(self.plasmon_symmetries) % 2 != 0:
                         raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; list length must be even (pairs of axis and value)")
@@ -161,10 +167,19 @@ class PARAMS:
                 if self.plasmon_source_component not in self.xyz:
                     raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
                 if getattr(self, "plasmon_source_additional_parameters", None) is not None:
-                    if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters:
+                    if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters and not self.plasmon_source_type == 'custom':
                         raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")
-                elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and self.source_type != 'custom':
-                    raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.source_type} source.")
+                elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and self.plasmon_source_type != 'custom':
+                    raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.plasmon_source_type} source.")
+
+                if self.plasmon_source_type == 'custom':
+                    if not hasattr(self, 'plasmon_source_additional_parameters') or 'src_func' not in self.plasmon_source_additional_parameters:
+                        raise ValueError(f"Custom source requires 'src_func' in 'plasmon_source_additional_parameters' attribute.")
+                    try:
+                        walk_through_src_funcs(self.plasmon_source_additional_parameters['src_func'])
+                    except ValueError as e:
+                        raise ValueError(f"Error occurred while processing custom source function: {e}")
+
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
 
@@ -353,21 +368,31 @@ class PARAMS:
                 value = getattr(self, file)
                 if not isinstance(value, str) or value in ['']:
                     raise ValueError(f"Filepath for '{file}' must be a non-empty string.")
-
+                
+        # Misc/Add'l Parameters
+        # for attr in dir(self):
+        #     if not attr.startswith('_'):
+                # logger.info(f"{attr}: {getattr(self, attr)}")
+        if self.has_custom:
+            # print all attributes
+            logger.info(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
 
     def _attribute_formation(self):
         """
         This function is meant to form the attributes so they are ready to 
         be used by the rest of the codebase.
         """
-        self.run_molecule_simulation = False
-        self.run_plasmon_simulation = False
-        if 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
+        self.run_molecule_simulation_only = False
+        self.run_plasmon_simulation_only = False
+        self.run_custom_driver = False
+        if self.has_custom:
+            self.run_custom_driver = True
+        elif 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
             pass
         elif 'molecule' in self.simulation_types:
-            self.run_molecule_simulation = True
+            self.run_molecule_simulation_only = True
         elif 'plasmon' in self.simulation_types:
-            self.run_plasmon_simulation = True 
+            self.run_plasmon_simulation_only = True 
 
         dt_str = f"{self.dt:.10f}".rstrip('0')
         self.time_rounding_decimals = len(dt_str.split('.')[-1]) if '.' in dt_str else 0
@@ -543,6 +568,7 @@ class PARAMS:
         settings_params = params.get('settings', {})
         plasmon_params = params.get('plasmon')
         molecule_params = params.get('molecule')
+        addl_params = params.get('custom', {})
 
         # ---- Determine simulation type + validation ----
         simulation_types = []
@@ -590,6 +616,8 @@ class PARAMS:
             preparams["plasmon"] = plasmon_params
         if molecule_params:
             preparams["molecule"] = molecule_params
+        if addl_params:
+            preparams["custom"] = addl_params
 
         return preparams
 

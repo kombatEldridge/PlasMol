@@ -51,12 +51,15 @@ def run(params):
             molecule = MOLECULE(params)
 
             # === Data prep ===
-            mo_energy_hartree = np.asarray(molecule.mf.mo_energy).copy()
+            is_uks = (np.asarray(molecule.mf.mo_energy).ndim == 2)
+            mo_energy_hartree = (np.asarray(molecule.mf.mo_energy)[0].copy() if is_uks
+                                else np.asarray(molecule.mf.mo_energy).copy())
+            mo_occ_arr = (molecule.mf.mo_occ[0] if is_uks else molecule.mf.mo_occ)
             nmo = len(mo_energy_hartree)
             mo_energy_ev = mo_energy_hartree * 27.21138602
 
             # HOMO index
-            occ_mask = molecule.mf.mo_occ > 0.5
+            occ_mask = mo_occ_arr > 0.5
             homo_idx_0 = np.where(occ_mask)[0][-1] if np.any(occ_mask) else 0
             nocc = homo_idx_0 + 1
 

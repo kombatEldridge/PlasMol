@@ -4,7 +4,7 @@ import meep as mp
 import numpy as np
 
 from plasmol import constants
-from plasmol.utils.csv import update_csv
+from plasmol.utils.csv import update_csv, init_csv
 from plasmol.quantum.propagation import propagation
 
 
@@ -13,10 +13,11 @@ class SIMULATION:
         # set all key values that are in params as key values for self
         for key, value in params.__dict__.items():
             setattr(self, key, value)
-
-        self.plasmon_resolution = round(0.5 / (self.dt / constants.convertTimeMeep2Atomic))
+        
+        self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
         self.dt_meep = self.dt / constants.convertTimeMeep2Atomic
         self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
+        self.field_data = {}
 
         logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
 
@@ -43,7 +44,7 @@ class SIMULATION:
             self.sources_list.append(self.plasmon_source_object.source)
 
         self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
-        self.nanoparticle = [self.nanoparticle] if self.nanoparticle else []
+        self.nanoparticle = [self.nanoparticle] if getattr(self, 'nanoparticle', None) else []
         self.default_material = mp.Medium(index=self.plasmon_surrounding_material_index)
 
         self.simulation = mp.Simulation(
@@ -74,29 +75,25 @@ class SIMULATION:
                       f"Emitting {value_au:.6e} au")
         return value_meep
 
-    def _get_electric_field(self, sim):
+    def _get_electric_field(self, sim, loc):
         """
         Extracts electric field at molecule position.
         """
         t_au = sim.meep_time() * constants.convertTimeMeep2Atomic
-        logging.info(f"Getting Electric Field at the molecule at time {round(t_au, 4)} au")
+        logging.info(f"Getting Electric Field at the specified position at time {round(t_au, 4)} au")
 
         field_e = {}
         for comp in self.xyz:
-            field = np.mean(sim.get_array(
-                component=self.char_to_field[comp],
-                center=self.molecule_position,
-                size=mp.Vector3(1E-20, 1E-20, 1E-20)
-            ))
+            field = sim.get_array(component=self.char_to_field[comp], center=loc, size=mp.Vector3(1E-10, 1E-10, 1E-10)).mean()
             field_e[comp] = field * constants.convertFieldMeep2Atomic
         return field_e
-
+        
     def _call_propagation(self, sim):
         """
         Calls Quantum calculations if the electric field exceeds the response cutoff.
         Stores induced dipole using integer step indices.
         """
-        field_e = self._get_electric_field(sim)
+        field_e = self._get_electric_field(sim, self.molecule_position)
         current_t_meep = sim.meep_time()
         current_step = self._get_step(current_t_meep)
 
@@ -148,6 +145,12 @@ class SIMULATION:
             if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
 
+            # If running Chen2010 Replication Work
+            if self.probe_points:
+                self.field_data = {str(p): [] for p in self.probe_points}
+                run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
+                for i, point in enumerate(self.probe_points):
+                    init_csv(f"chen2010_{self.plasmon_source_component}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
             self.simulation.run(*run_functions, until=self.t_end_meep)
 
             logging.info("Simulation completed successfully!")
@@ -161,7 +164,6 @@ class SIMULATION:
 
     # ------------------------------------ #
     #         Example custom methods       #
-    #         to show maps of NP           #
     # ------------------------------------ #
     def show3Dmap(self):
         import plotly.graph_objects as go
@@ -203,3 +205,10 @@ class SIMULATION:
             yaxis=dict(scaleanchor='x')
         )
         fig.show()
+
+    def _record_probe_fields(self, sim):
+        timestamp_au = sim.meep_time() * constants.convertTimeMeep2Atomic
+        for i, point in enumerate(self.probe_points):
+            field_e_point = self._get_electric_field(sim, point)
+            self.field_data[str(point)].append((timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z']))
+            update_csv(f"chen2010_{self.plasmon_source_component}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])

@@ -47,14 +47,33 @@ class MOLECULE():
                     charge=self.molecule_charge,
                     spin=self.molecule_spin)
         self.mol.verbose = 0
-        self.mf = dft.RKS(self.mol)
+        self.is_open_shell = (self.molecule_spin != 0)
+        if self.is_open_shell:
+            self.mf = dft.UKS(self.mol)
+        else:
+            self.mf = dft.RKS(self.mol)
         self.mf.xc = self.molecule_xc
         if hasattr(self, 'molecule_lrc_parameter'):
             self.mf.omega = self.molecule_lrc_parameter
         self.mf.kernel()
+        self.nmat = 2 if self.is_open_shell else 1
 
-        logger.debug(f"Number of Occupied MOs: {np.sum(self.mf.mo_occ > 0)}")
-        logger.debug(f"E_HOMO energy: {np.round(self.mf.mo_energy[self.mf.mo_occ > 0][-1], 6)} Ha, {np.round(self.mf.mo_energy[self.mf.mo_occ > 0][-1] * 27.2114, 6)} eV")
+        if self.is_open_shell:
+            occ_a, occ_b = self.mf.mo_occ
+            n_occ_a = int(np.sum(occ_a > 0))
+            n_occ_b = int(np.sum(occ_b > 0))
+            logger.debug(f"Number of Occupied MOs: α={n_occ_a}, β={n_occ_b}")
+            if n_occ_a > 0:
+                e_homo_a = self.mf.mo_energy[0][occ_a > 0][-1]
+                logger.debug(f"E_HOMO(α) = {e_homo_a:.6f} Ha ({e_homo_a*27.2114:.6f} eV)")
+            if n_occ_b > 0:
+                e_homo_b = self.mf.mo_energy[1][occ_b > 0][-1]
+                logger.debug(f"E_HOMO(β) = {e_homo_b:.6f} Ha ({e_homo_b*27.2114:.6f} eV)")
+        else:
+            logger.debug(f"Number of Occupied MOs: {np.sum(self.mf.mo_occ > 0)}")
+            logger.debug(f"E_HOMO energy: {self.mf.mo_energy[self.mf.mo_occ > 0][-1]:.6f} Ha, "
+                        f"{self.mf.mo_energy[self.mf.mo_occ > 0][-1]*27.2114:.6f} eV")
+
 
         charges = self.mf.mol.atom_charges()
         coords = self.mf.mol.atom_coords()
@@ -95,26 +114,16 @@ class MOLECULE():
             elif self.molecule_propagator_str == 'step':
                 self.C_orth_ndt = self.rotate_coeff_to_orth(self.mf.mo_coeff)
 
-        # TODO: Add open shell support
-        if len(np.shape(self.D_ao_0)) == 3:
-            self.nmat = 2
-            sys.exit("nmat == 2")
-        else:
-            self.nmat = 1
-
         if not self.is_hermitian(self.D_ao, tol=1e-12):
             raise ValueError("Initial density matrix in AO is not Hermitian")
         
         self.volume = self.get_volume(self.molecule_atoms)
 
-    # # TODO: Test extensively
     # def xc_tuning(self, tol=1e-3):
     #     """Tune mu for LC functionals to minimize |E_cat - E_neut + ε_HOMO|."""
 
-    # # TODO: Test extensively
     # def compute_vacuum_level(self, nstates=20, diffuse_basis='d-aug-cc-pvqz'):
     #     """Estimate ε_0 by interpolating KS ε vs. EA_k (paper eq 12-13)."""
-
 
     def get_F_orth(self, D_ao, exc=None):
         """
@@ -187,6 +196,8 @@ class MOLECULE():
         bool
             True if the matrix is Hermitian within tolerance, False otherwise.
         """
+        if A.ndim == 3:
+            return all(np.allclose(a, a.conj().T, rtol=0, atol=tol) for a in A)
         return np.allclose(A, A.conj().T, rtol=0, atol=tol)
 
     def get_volume(self, coords):
@@ -247,6 +258,10 @@ class MOLECULE():
         Construct a diagonal damping matrix (Gamma(t) in the AO basis)
         according to Lopata2013: https://doi.org/10.1021/ct400569s
 
+        Gamma_orth = self.X.conj().T @ G_ao @ self.X 
+        ==> inv(self.X.conj().T) @ Gamma_orth = G_ao @ self.X 
+        ==> inv(self.X.conj().T) @ Gamma_orth @ inv(self.X) = G_ao
+
         Parameters:
         None
 
@@ -259,23 +274,21 @@ class MOLECULE():
             
         F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
         F_orth = self.X.conj().T @ F_ao @ self.X
-        eps, C_prime = np.linalg.eigh(F_orth)
 
-        M = len(eps)
-        gamma = np.zeros(M, dtype=float)
-        for i in range(M):
-            e_tilde = eps[i] - eps0
-            if e_tilde > 0:
-                gamma_i = gam0 * (np.exp(xi * e_tilde) - 1.0)
-                gamma[i] = min(clamp, gamma_i)
-
-        Lambda = np.diag(gamma)
-        Gamma_orth = C_prime @ Lambda @ C_prime.conj().T
-        # Gamma_orth = self.X.conj().T @ G_ao @ self.X 
-        # ==> inv(self.X.conj().T) @ Gamma_orth = G_ao @ self.X 
-        # ==> inv(self.X.conj().T) @ Gamma_orth @ inv(self.X) = G_ao
-
+        def _gamma_one_spin(F_orth_s):
+            eps, C_prime = np.linalg.eigh(F_orth_s)
+            M = len(eps)
+            gamma = np.zeros(M, dtype=float)
+            for i in range(M):
+                e_tilde = eps[i] - eps0
+                if e_tilde > 0:
+                    gamma[i] = min(clamp, gam0 * (np.exp(xi * e_tilde) - 1.0))
+            Gamma_orth = C_prime @ np.diag(gamma) @ C_prime.conj().T
+            Gamma_ao = inv(self.X.conj().T) @ Gamma_orth @ inv(self.X)
+            return Gamma_ao
+        
         # TODO: double check that inv(self.X.T).T == inv(self.X)
-        Gamma_ao = inv(self.X.conj().T) @ Gamma_orth @ inv(self.X)
-        return Gamma_ao
-    
+
+        if F_orth.ndim == 3:
+            return np.stack([_gamma_one_spin(F_orth[s]) for s in range(F_orth.shape[0])])
+        return _gamma_one_spin(F_orth)
