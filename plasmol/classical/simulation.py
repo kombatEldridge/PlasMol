@@ -150,7 +150,7 @@ class SIMULATION:
                 self.field_data = {str(p): [] for p in self.probe_points}
                 run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
                 for i, point in enumerate(self.probe_points):
-                    init_csv(f"chen2010_{self.plasmon_source_component}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
+                    init_csv(f"{self.field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
             self.simulation.run(*run_functions, until=self.t_end_meep)
 
             logging.info("Simulation completed successfully!")
@@ -211,4 +211,4 @@ class SIMULATION:
         for i, point in enumerate(self.probe_points):
             field_e_point = self._get_electric_field(sim, point)
             self.field_data[str(point)].append((timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z']))
-            update_csv(f"chen2010_{self.plasmon_source_component}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])
+            update_csv(f"{self.field_e_filepath}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])

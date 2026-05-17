@@ -361,6 +361,8 @@ class PARAMS:
                 raise ValueError("Checkpointing requires 'frequency' attribute for snapshot frequency.")
             if self.checkpoint_snapshot_frequency <= 0:
                 raise ValueError("Checkpointing 'frequency' must be a positive value.")
+            if not self.has_molecule:
+                raise ValueError("Checkpointing is only supported with molecule simulations.")
 
         # Files
         for file in ['field_e_filepath', 'field_p_filepath']:
@@ -370,11 +372,7 @@ class PARAMS:
                     raise ValueError(f"Filepath for '{file}' must be a non-empty string.")
                 
         # Misc/Add'l Parameters
-        # for attr in dir(self):
-        #     if not attr.startswith('_'):
-                # logger.info(f"{attr}: {getattr(self, attr)}")
         if self.has_custom:
-            # print all attributes
             logger.info(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
 
     def _attribute_formation(self):
@@ -568,7 +566,8 @@ class PARAMS:
         settings_params = params.get('settings', {})
         plasmon_params = params.get('plasmon')
         molecule_params = params.get('molecule')
-        addl_params = params.get('custom', {})
+        files_params = params.get('files')
+        addl_params = params.get('custom')
 
         # ---- Determine simulation type + validation ----
         simulation_types = []
@@ -616,6 +615,8 @@ class PARAMS:
             preparams["plasmon"] = plasmon_params
         if molecule_params:
             preparams["molecule"] = molecule_params
+        if files_params:
+            preparams["files"] = files_params
         if addl_params:
             preparams["custom"] = addl_params
 

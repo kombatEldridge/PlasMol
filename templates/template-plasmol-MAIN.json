@@ -105,16 +105,16 @@
         "wavelength": 0.5,
         "frequency": null
       }
-    },
-    "files": {
-      "checkpoint": {
-        "frequency": 100,
-        "filepath": "checkpoint.npz"
-      },
-      "field_e_filepath": "field_e.csv",
-      "field_p_filepath": "field_p.csv",
-      "spectra_e_vs_p_filepath": "output.png"
     }
+  },
+  "files": {
+    "checkpoint": {
+      "frequency": 100,
+      "filepath": "checkpoint.npz"
+    },
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
   },
   "custom": {
     "probe_points": [

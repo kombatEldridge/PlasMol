@@ -98,14 +98,14 @@ param_defs = [
     ('comparison_dir_name', ['molecule', 'modifiers', 'comparison', 'dir_name'], False, 'has_comparison', f"img-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'molecule', str, "Directory name for comparison plots", None),
 
     # Checkpointing params
-    ('checkpoint_dict', ['molecule', 'files', 'checkpoint'], True, "has_checkpoint", None, 'molecule', dict, None, None),
-    ('checkpoint_filepath', ['molecule', 'files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, 'molecule', str, "Path to the checkpoint .npz file", None),
-    ('checkpoint_snapshot_frequency', ['molecule', 'files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, 'molecule', int, "Number of timesteps between checkpoint saves", None),
+    ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),
+    ('checkpoint_filepath', ['files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, None, str, "Path to the checkpoint .npz file", None),
+    ('checkpoint_snapshot_frequency', ['files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, None, int, "Number of timesteps between checkpoint saves", None),
 
     # Files
-    ('field_e_filepath', ['molecule', 'files', 'field_e_filepath'], False, None, "field_e.csv", 'molecule', str, "File path for electric field at molecule position", None),
-    ('field_p_filepath', ['molecule', 'files', 'field_p_filepath'], False, None, "field_p.csv", 'molecule', str, "File path for induced polarization at molecule position", None),
-    ('spectra_e_vs_p_filepath', ['molecule', 'files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", 'molecule', str, "File path for electric vs polarization field plot", None),
+    ('field_e_filepath', ['files', 'field_e_filepath'], False, None, "field_e.csv", None, str, "File path for electric field at molecule position", None),
+    ('field_p_filepath', ['files', 'field_p_filepath'], False, None, "field_p.csv", None, str, "File path for induced polarization at molecule position", None),
+    ('spectra_e_vs_p_filepath', ['files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", None, str, "File path for electric vs polarization field plot", None),
 
     # Misc/Add'l Parameters
     ('probe_points', ['custom', 'probe_points'], False, 'has_custom', False, None, list, "List of points (x,y,z) at which to record electric field", "μm"),
