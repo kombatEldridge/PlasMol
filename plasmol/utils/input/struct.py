@@ -6,7 +6,7 @@ param_defs = [
     # Settings (always required)
     ('dt', ['settings', 'dt'], False, None, None, None, (int, float), "Time step", "a.u."),
     ('t_end', ['settings', 't_end'], False, None, None, None, (int, float), "End time", "a.u."),
-    ('driver_str', ['settings', 'driver'], False, 'has_custom_driver', None, None, str, "Custom driver to run", None),
+    ('driver_str', ['settings', 'driver'], True, 'has_custom', None, None, str, "Custom driver to run", None),
 
     # Plasmon params
     ('plasmon_dict', ['plasmon'], True, "has_plasmon", None, 'plasmon', dict, None, None),

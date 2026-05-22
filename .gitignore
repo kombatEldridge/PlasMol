@@ -5,6 +5,7 @@ doc/site/
 plasmol/__pycache__
 plasmol/classical/__pycache__
 plasmol/drivers/__pycache__
+plasmol/drivers/custom_drivers/__pycache__
 plasmol/utils/input/__pycache__
 plasmol/quantum/__pycache__
 plasmol/quantum/propagators/__pycache__

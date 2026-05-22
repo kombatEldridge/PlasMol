@@ -17,8 +17,8 @@ from plasmol.utils.input.struct import param_defs
 from plasmol.quantum.electric_field import ELECTRICFIELD
 from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 
-
 logger = logging.getLogger("main")
+
 class PARAMS:
     def __init__(self, args):
         if hasattr(args, 'checkpoint') and args.checkpoint is not None:
@@ -71,12 +71,11 @@ class PARAMS:
             
             value = self._get_nested_value(self.preparams, path)
             
-
             if value is not None:
                 if not isinstance(value, data_type):
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
             
-            if path[0] == 'additional_parameters':
+            if path[0] == 'additional_parameters' and value is not None:
                 self.custom_parameters[attr] = value
                 self.has_custom = True
 
