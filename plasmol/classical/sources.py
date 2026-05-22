@@ -9,8 +9,8 @@ class MEEPSOURCE:
                  source_center,
                  source_size,
                  component,
-                 amplitude,
                  is_integrated,
+                 amplitude=1,
                  **kwargs):
         """
         Initializes a MEEPSOURCE object, which can create Continuous, Gaussian, or Custom sources.

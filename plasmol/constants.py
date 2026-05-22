@@ -5,8 +5,8 @@ angs2bohr = 1.0/0.52917721067
 
 convertTimeMeep2fs = 1e-6 / c * 1e15
 convertTimeAtomic2fs = 0.024188843
-convertMomentAtomic2Meep = 8.4783536198e-30 * c / 1 / 1e-6 / 1e-6
 convertTimeMeep2Atomic = convertTimeMeep2fs / convertTimeAtomic2fs
+convertMomentAtomic2Meep = 8.4783536198e-30 * c / 1 / 1e-6 / 1e-6
 convertFieldMeep2Atomic = 1 / 1e-6 / epsilon_0 / c / 0.51422082e12
 
 A0 = 5.29177210903e-11  # Bohr radius in m

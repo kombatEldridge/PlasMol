@@ -6,6 +6,7 @@ param_defs = [
     # Settings (always required)
     ('dt', ['settings', 'dt'], False, None, None, None, (int, float), "Time step", "a.u."),
     ('t_end', ['settings', 't_end'], False, None, None, None, (int, float), "End time", "a.u."),
+    ('driver_str', ['settings', 'driver'], False, 'has_custom_driver', None, None, str, "Custom driver to run", None),
 
     # Plasmon params
     ('plasmon_dict', ['plasmon'], True, "has_plasmon", None, 'plasmon', dict, None, None),
@@ -18,7 +19,7 @@ param_defs = [
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float), "Thickness of the PML absorbing boundary layers (recommended to be close to half the largest wavelength)", "μm"),
     ('plasmon_symmetries', ['plasmon', 'simulation', 'symmetries'], False, 'has_simulation', None, 'plasmon', list, "Symmetry operations (axis followed by phase) e.g. ['Y', 1, 'Z', -1]", None),
     ('plasmon_surrounding_material_index', ['plasmon', 'simulation', "surrounding_material_index"], False, 'has_simulation', 1.33, 'plasmon', (int, float), "Refractive index of the surrounding medium", None),
-    ('plasmon_courant', ['plasmon', 'simulation', "courant"], False, 'has_simulation', 1.33, 'plasmon', (int, float), "Courant number for spatial/temporal resolution", None),
+    ('plasmon_courant', ['plasmon', 'simulation', "courant"], False, 'has_simulation', 0.5, 'plasmon', (int, float), "Courant number for spatial/temporal resolution", None),
 
     # Plasmon source params
     ('plasmon_source_dict', ['plasmon', 'source'], True, "has_plasmon_source", None, 'plasmon', dict, None, None),
@@ -69,33 +70,13 @@ param_defs = [
     ('molecule_source_component', ['molecule', 'source', 'component'], False, 'has_molecule_source', None, 'molecule', str, "Direction of the electric field", None),
     ('molecule_source_additional_parameters', ['molecule', 'source', 'additional_parameters'], False, 'has_molecule_source', None, 'molecule', dict, "Additional parameters (wavelength or frequency for pulse)", "μm"),
 
-    # Fourier params
-    ('fourier_dict', ['molecule', 'modifiers', 'fourier'], True, "has_fourier", None, 'molecule', dict, None, None),
-    ('fourier_gamma', ['molecule', 'modifiers', 'fourier', 'gamma'], False, 'has_fourier', 0.01, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
-    ('fourier_npz_filepath', ['molecule', 'modifiers', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
-    ('fourier_spectrum_filepath', ['molecule', 'modifiers', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
-    ('fourier_damping_gamma', ['molecule', 'modifiers', 'fourier', 'damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping applied to polarization field for better FFT resolution", "a.u."),
-
     # Lopata Broadening params
-    ('broadening_dict', ['molecule', 'modifiers', 'broadening'], True, "has_broadening", None, 'molecule', dict, None, None),
-    ('broadening_type', ['molecule', 'modifiers', 'broadening', "type"], False, 'has_broadening', None, 'molecule', str, "Type of broadening (static or dynamic)", None),
-    ('broadening_gam0', ['molecule', 'modifiers', 'broadening', "gam0"], False, 'has_broadening', 1.0, 'molecule', (int, float), "Base broadening strength", "a.u."),
-    ('broadening_xi', ['molecule', 'modifiers', 'broadening', "xi"], False, 'has_broadening', 0.5, 'molecule', (int, float), "Energy-dependent broadening exponent", None),
-    ('broadening_eps0', ['molecule', 'modifiers', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float), "Reference energy for broadening", "a.u."),
-    ('broadening_clamp', ['molecule', 'modifiers', 'broadening', "clamp"], False, 'has_broadening', 100, 'molecule', (int, float), "Maximum allowed broadening value", "a.u."),
-
-    # Comparison mode params
-    ('comparison_dict', ['molecule', 'modifiers', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),
-    ('comparison_bases', ['molecule', 'modifiers', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule', list, "List of basis sets to compare", None),
-    ('comparison_xcs', ['molecule', 'modifiers', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule', list, "List of exchange-correlation functionals to compare", None),
-    ('comparison_lrc_parameters', ['molecule', 'modifiers', 'comparison', 'lrc_parameters'], False, 'has_comparison', None, 'molecule', dict, "Long-range correction parameters for RSH functionals", None),
-    ('comparison_num_virtual', ['molecule', 'modifiers', 'comparison', 'num_virtual'], False, 'has_comparison', None, 'molecule', int, "Number of virtual orbitals to show in MO plot", None),
-    ('comparison_num_occupied', ['molecule', 'modifiers', 'comparison', 'num_occupied'], False, 'has_comparison', None, 'molecule', int, "Number of occupied orbitals to show in MO plot", None),
-    ('comparison_y_min', ['molecule', 'modifiers', 'comparison', 'y_min'], False, 'has_comparison', None, 'molecule', (int, float), "Minimum energy for MO plot (Hartree)", "Ha"),
-    ('comparison_y_max', ['molecule', 'modifiers', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float), "Maximum energy for MO plot (Hartree)", "Ha"),
-    ('comparison_index_min', ['molecule', 'modifiers', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float), "Lowest MO index to plot (1-indexed)", None),
-    ('comparison_index_max', ['molecule', 'modifiers', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float), "Highest MO index to plot (1-indexed)", None),
-    ('comparison_dir_name', ['molecule', 'modifiers', 'comparison', 'dir_name'], False, 'has_comparison', f"img-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'molecule', str, "Directory name for comparison plots", None),
+    ('broadening_dict', ['molecule', 'broadening'], True, "has_broadening", None, 'molecule', dict, None, None),
+    ('broadening_type', ['molecule', 'broadening', "type"], False, 'has_broadening', None, 'molecule', str, "Type of broadening (static or dynamic)", None),
+    ('broadening_gam0', ['molecule', 'broadening', "gam0"], False, 'has_broadening', 1.0, 'molecule', (int, float), "Base broadening strength", "a.u."),
+    ('broadening_xi', ['molecule', 'broadening', "xi"], False, 'has_broadening', 0.5, 'molecule', (int, float), "Energy-dependent broadening exponent", None),
+    ('broadening_eps0', ['molecule', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float), "Reference energy for broadening", "a.u."),
+    ('broadening_clamp', ['molecule', 'broadening', "clamp"], False, 'has_broadening', 100, 'molecule', (int, float), "Maximum allowed broadening value", "a.u."),
 
     # Checkpointing params
     ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),
@@ -107,6 +88,28 @@ param_defs = [
     ('field_p_filepath', ['files', 'field_p_filepath'], False, None, "field_p.csv", None, str, "File path for induced polarization at molecule position", None),
     ('spectra_e_vs_p_filepath', ['files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", None, str, "File path for electric vs polarization field plot", None),
 
-    # Misc/Add'l Parameters
-    ('probe_points', ['custom', 'probe_points'], False, 'has_custom', False, None, list, "List of points (x,y,z) at which to record electric field", "μm"),
+    # Additional Parameters
+    
+    ## Driver: fourier.py
+    ('fourier_dict', ['additional_parameters', 'fourier'], True, "has_fourier", None, 'molecule', dict, None, None),
+    ('fourier_gamma', ['additional_parameters', 'fourier', 'gamma'], False, 'has_fourier', 0.01, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
+    ('fourier_npz_filepath', ['additional_parameters', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
+    ('fourier_spectrum_filepath', ['additional_parameters', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
+    ('fourier_damping_gamma', ['additional_parameters', 'fourier', 'damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping applied to polarization field for better FFT resolution", "a.u."),
+
+    ## Driver: comparison.py
+    ('comparison_dict', ['additional_parameters', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),
+    ('comparison_bases', ['additional_parameters', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule', list, "List of basis sets to compare", None),
+    ('comparison_xcs', ['additional_parameters', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule', list, "List of exchange-correlation functionals to compare", None),
+    ('comparison_lrc_parameters', ['additional_parameters', 'comparison', 'lrc_parameters'], False, 'has_comparison', None, 'molecule', dict, "Long-range correction parameters for RSH functionals", None),
+    ('comparison_num_virtual', ['additional_parameters', 'comparison', 'num_virtual'], False, 'has_comparison', None, 'molecule', int, "Number of virtual orbitals to show in MO plot", None),
+    ('comparison_num_occupied', ['additional_parameters', 'comparison', 'num_occupied'], False, 'has_comparison', None, 'molecule', int, "Number of occupied orbitals to show in MO plot", None),
+    ('comparison_y_min', ['additional_parameters', 'comparison', 'y_min'], False, 'has_comparison', None, 'molecule', (int, float), "Minimum energy for MO plot (Hartree)", "Ha"),
+    ('comparison_y_max', ['additional_parameters', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float), "Maximum energy for MO plot (Hartree)", "Ha"),
+    ('comparison_index_min', ['additional_parameters', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float), "Lowest MO index to plot (1-indexed)", None),
+    ('comparison_index_max', ['additional_parameters', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float), "Highest MO index to plot (1-indexed)", None),
+    ('comparison_dir_name', ['additional_parameters', 'comparison', 'dir_name'], False, 'has_comparison', f"img-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'molecule', str, "Directory name for comparison plots", None),
+    
+    ## Driver: chen2010_fig1.py
+    ('probe_points', ['additional_parameters', 'probe_points'], False, 'has_chen2010_fig1', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
 ]

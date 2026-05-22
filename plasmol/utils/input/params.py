@@ -11,10 +11,12 @@ from pyscf.dft import libxc
 from rich.table import Table
 from rich.console import Console
 
+from plasmol.drivers import *
 from plasmol.quantum.propagators import *
-from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 from plasmol.utils.input.struct import param_defs
 from plasmol.quantum.electric_field import ELECTRICFIELD
+from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
+
 
 logger = logging.getLogger("main")
 class PARAMS:
@@ -74,7 +76,7 @@ class PARAMS:
                 if not isinstance(value, data_type):
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
             
-            if boolean_name == 'has_custom':
+            if path[0] == 'additional_parameters':
                 self.custom_parameters[attr] = value
                 self.has_custom = True
 
@@ -380,17 +382,19 @@ class PARAMS:
         This function is meant to form the attributes so they are ready to 
         be used by the rest of the codebase.
         """
-        self.run_molecule_simulation_only = False
-        self.run_plasmon_simulation_only = False
-        self.run_custom_driver = False
+        self.driver_str = getattr(self, 'driver_str', None)
         if self.has_custom:
-            self.run_custom_driver = True
+            if self.driver_str is None:
+                raise ValueError(f"Additional parameters specified but no driver name provided. Please specify a driver name.")
+            logging.debug(f"Custom driver specified: {self.driver_str}")
         elif 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
-            pass
+            self.driver_str = 'plasmol'
         elif 'molecule' in self.simulation_types:
-            self.run_molecule_simulation_only = True
+            self.driver_str = 'quantum'
         elif 'plasmon' in self.simulation_types:
-            self.run_plasmon_simulation_only = True 
+            self.driver_str = 'classical'
+
+        self.driver = get_driver(self.driver_str)
 
         dt_str = f"{self.dt:.10f}".rstrip('0')
         self.time_rounding_decimals = len(dt_str.split('.')[-1]) if '.' in dt_str else 0

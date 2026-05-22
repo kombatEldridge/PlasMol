@@ -146,13 +146,13 @@ class SIMULATION:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
 
             # If running Chen2010 Replication Work
-            if self.probe_points:
+            if getattr(self, 'probe_points', None):
                 self.field_data = {str(p): [] for p in self.probe_points}
                 run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
                 for i, point in enumerate(self.probe_points):
                     init_csv(f"{self.field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
             self.simulation.run(*run_functions, until=self.t_end_meep)
-
+                        
             logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
