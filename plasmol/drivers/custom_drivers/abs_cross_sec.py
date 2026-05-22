@@ -29,12 +29,6 @@ class PrefixFilter(logging.Filter):
 
 
 def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None):
-    """
-    Run one of the three Mie cases.
-    - "empty"   → returns incident flux data
-    - "scatt"   → uses incident_flux_data + load_minus_flux_data
-    - "abs"     → independent absorption run
-    """
     label = case.upper()
     log_file = getattr(params, 'log', None)
     setup_logging(verbose=1, log_file=log_file)
@@ -53,6 +47,7 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
     p = copy.deepcopy(params)
 
     # Recreate plasmon NP
+    r = getattr(p, 'nanoparticle_radius')
     if not case == "empty":
         mat_name = p.nanoparticle_dict["material"]
         p.nanoparticle_material = p._load_meep_material(mat_name)
@@ -62,7 +57,11 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
             material=p.nanoparticle_material
         )
         logger.info(f"Nanoparticle geometry recreated")
-        
+    
+    # Recreate plasmon source
+    freq = getattr(p, 'plasmon_source_additional_parameters').get('frequency')
+    fwidth = getattr(p, 'plasmon_source_additional_parameters').get('fwidth')
+    
     p.plasmon_source_object = MEEPSOURCE(
         source_type=getattr(p, 'plasmon_source_type').lower().strip(),
         source_center=getattr(p, 'plasmon_source_center'),
@@ -71,10 +70,6 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
         is_integrated=getattr(p, 'plasmon_source_is_integrated'),
         **{k: v for k, v in getattr(p, 'plasmon_source_additional_parameters', {}).items()}
     )
-
-    freq = getattr(p, 'plasmon_source_additional_parameters').get('frequency')
-    fwidth = getattr(p, 'plasmon_source_additional_parameters').get('fwidth')
-    r = getattr(p, 'nanoparticle_radius')
 
     sim = SIMULATION(p)
 
@@ -119,8 +114,6 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
         logger.info("Scattering run finished")
         return scatt_flux
     elif case == "abs":
-        for k, b in boxes.items():
-            sim.simulation.load_minus_flux_data(b, incident_flux_data[k])
         sim.run()
         logger.info("Absorption simulation completed.")
         abs_fluxes = {}
@@ -143,7 +136,7 @@ def run(params):
 
     results = {}
 
-    # 1. Run empty simulation (must be sequential)
+    # 1. Run empty simulation
     logger.info("→ Running EMPTY simulation (incident flux)...")
     empty_result = _run_one_case(params, "empty")
     incident_flux_data = empty_result["incident_flux_data"]
