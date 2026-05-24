@@ -5,6 +5,9 @@ import os
 import pickle
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import meep as mp
@@ -183,3 +186,111 @@ def run(params):
 
     logger.info(f"Arrays saved to {output_filename}")
     logger.info("Absorption cross section driver finished.")
+
+    # 'Abs', 'Scatt', or 'Ext'
+    fit_quantity = 'Abs'
+
+    # Peak detection sensitivity
+    prominence = 0.05
+
+    energy_range_ev = (1.0, 6.0)
+
+    print(f"Loading CSV: {output_filename}")
+    df = pd.read_csv(output_filename, sep='\t')
+
+    wavelength_um = df['Wavelengths'].values
+    abs_cross = df['Abs'].values
+    scatt_cross = df['Scatt'].values
+
+    energy_ev = 1.23984193 / wavelength_um
+
+    if fit_quantity == 'Abs':
+        spectrum = abs_cross
+        label = 'Absorption Cross-Section'
+    elif fit_quantity == 'Scatt':
+        spectrum = scatt_cross
+        label = 'Scattering Cross-Section'
+    elif fit_quantity == 'Ext':
+        spectrum = abs_cross + scatt_cross
+        label = 'Extinction (Abs + Scatt)'
+
+    mask = (energy_ev >= energy_range_ev[0]) & (energy_ev <= energy_range_ev[1])
+    energy_ev = energy_ev[mask]
+    spectrum = spectrum[mask]
+
+    print(f"Fitting {label}")
+
+    peaks_idx, properties = find_peaks(spectrum, prominence=prominence * spectrum.max(), distance=8)
+    peak_energies = energy_ev[peaks_idx]
+
+    print(f"\nDetected {len(peak_energies)} peak(s) at: {peak_energies.round(3)} eV\n")
+
+    def multi_lorentzian(x, *params):
+        offset = params[-1]
+        y = offset
+        for i in range(0, len(params)-1, 3):
+            E0, gamma, A = params[i:i+3]
+            y += A * (gamma**2) / ((x - E0)**2 + (gamma/2)**2)
+        return y
+
+    p0 = []
+    for E_guess in peak_energies:
+        p0.extend([E_guess, 0.18, spectrum.max() * 0.7])   # E, gamma, A
+    p0.append(0.0)  # offset
+
+    popt, pcov = curve_fit(multi_lorentzian, energy_ev, spectrum,
+                        p0=p0, bounds=(0, np.inf), maxfev=10000)
+
+    peaks = []
+    for i in range(0, len(popt)-1, 3):
+        E, gamma, A = popt[i:i+3]
+        peaks.append((E, gamma, A))
+
+    print("=== FITTED PEAKS ===")
+    for idx, (E, gamma, A) in enumerate(peaks):
+        print(f"Peak {idx}:  E = {E:6.3f} eV   γ = {gamma:5.3f} eV   Amp = {A:8.2e}")
+
+    plt.figure(figsize=(11, 6))
+    plt.plot(energy_ev, spectrum, 'b-', label=f'Raw {label}', lw=2)
+
+    x_fit = np.linspace(energy_ev.min(), energy_ev.max(), 2000)
+    y_fit = multi_lorentzian(x_fit, *popt)
+    plt.plot(x_fit, y_fit, 'k--', label='Total fit', lw=2.2)
+
+    offset = popt[-1]
+    for idx, (E, gamma, A) in enumerate(peaks):
+        y_comp = A * (gamma**2) / ((x_fit - E)**2 + (gamma/2)**2)
+        plt.plot(x_fit, y_comp + offset, '--', lw=1.6,
+                label=f'Peak {idx} (E={E:.2f} eV, γ={gamma:.2f})')
+
+    plt.xlabel('Energy (eV)')
+    plt.ylabel(label + ' (arb. units)')
+    plt.title(f'Plasmon Fit — {Path(output_filename).stem}')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig('plasmon_multi_peak_fit.png', dpi=400)
+
+    if len(peaks) == 0:
+        print("No peaks detected!")
+        exit()
+    if len(peaks) == 1:
+        chosen = 0
+        print("Only one peak found → using it automatically.")
+    else:
+        print("\nWhich peak do you want to use for the COM?")
+        strongest_idx = np.argmax([A for _, _, A in peaks])
+        print(f"   (Strongest peak is index {strongest_idx})")
+        user_input = input(f"Enter peak index (default = {strongest_idx}): ").strip()
+        chosen = int(user_input) if user_input.isdigit() else strongest_idx
+
+    E_p, gamma_p, A_p = peaks[chosen]
+    F_p_suggested = 1.0
+
+    print("\n" + "="*65)
+    print("READY-TO-USE COM PARAMETERS (Dipolar Plasmon)")
+    print("="*65)
+    print(f"E_p_eV      = {E_p:.4f}")
+    print(f"gamma_p_eV  = {gamma_p:.4f}")
+    print(f"F_p         = {F_p_suggested}")
+    print("="*65)
