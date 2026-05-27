@@ -65,8 +65,6 @@ if __name__ == "__main__":
     if params.has_checkpoint and not params.resumed_from_checkpoint:
         from plasmol.utils.checkpoint import init_checkpoint
         init_checkpoint(params)
-
-    params.fourier_damp = False
     
     # Step 3: Execute proper workflow
     params.driver(params)

@@ -7,6 +7,7 @@ import logging
 import inspect
 import meep as mp 
 import numpy as np
+from pathlib import Path
 from pyscf.dft import libxc
 from rich.table import Table
 from rich.console import Console
@@ -74,7 +75,7 @@ class PARAMS:
             if value is not None:
                 if not isinstance(value, data_type):
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
-            
+
             if path[0] == 'additional_parameters' and value is not None:
                 self.custom_parameters[attr] = value
                 self.has_custom = True
@@ -230,9 +231,16 @@ class PARAMS:
                     raise ValueError(f"Molecule requires '{pretty}' attribute.")
             lrc_parameters = [self.molecule_lrc_parameter] if hasattr(self, 'molecule_lrc_parameter') else []
             self._check_xc(self.molecule_xc, *lrc_parameters)
-            for loc in self.molecule_geometry:
-                if not isinstance(loc, dict):
-                    raise ValueError(f"Invalid molecule position '{loc}'; must be a dictionary (ex. {'atom': 'O', 'coord': [0.0, 0.0, -0.1302052882]}).")
+            if type(self.molecule_geometry) == str:
+                path = Path(self.molecule_geometry)
+                if not path.exists():
+                    raise ValueError(f"Geometry file not found: {path}")
+                if not path.suffix.lower() == '.xyz':
+                    raise ValueError("String input must be a path to a .xyz file.")
+            else:
+                for loc in self.molecule_geometry:
+                    if not isinstance(loc, dict):
+                        raise ValueError(f"Invalid molecule position '{loc}'; must be a dictionary (ex. {'atom': 'O', 'coord': [0.0, 0.0, -0.1302052882]}).")
             if hasattr(self, 'molecule_propagator_str'):
                 self.molecule_propagator_str = self.molecule_propagator_str.lower()
                 if self.molecule_propagator_str not in ['step', 'rk4', 'magnus2']:
@@ -290,12 +298,21 @@ class PARAMS:
                 if self.has_plasmon:
                     raise ValueError(f"Fourier modifier cannot be used with plasmon modifier.")
                 logger.info("Fourier modifier selected; running three simulations for Fourier analysis along each axis.")
-                for attr in ['fourier_gamma', 'fourier_spectrum_filepath']:
-                    if not hasattr(self, attr) or getattr(self, attr) in ['']:
-                        pretty = attr.removeprefix("fourier_")
-                        raise ValueError(f"Fourier modifier requires '{pretty}' attribute.")
-                if self.fourier_gamma <= 0:
-                    raise ValueError("Fourier modifier 'gamma' must be a positive value.")
+                if not hasattr(self, 'fourier_spectrum_filepath') or getattr(self, 'fourier_spectrum_filepath') in ['']:
+                    raise ValueError(f"Fourier modifier requires spectrum_filepath attribute.")
+                if self.fourier_min_ev < 0:
+                    raise ValueError(f"Fourier modifier 'min_ev' must be a non-negative value.")
+                if self.fourier_max_ev < 0:
+                    raise ValueError(f"Fourier modifier 'max_ev' must be a non-negative value.")
+                if self.fourier_max_ev <= self.fourier_min_ev:
+                    raise ValueError(f"Fourier modifier 'max_ev' must be greater than 'min_ev'.")
+                if not hasattr(self, 'fourier_gamma'):
+                    if not self.has_broadening:
+                        raise ValueError(f"Fourier modifier requires gamma attribute.")
+                    else:
+                        self.fourier_gamma = 0
+                if self.fourier_gamma < 0:
+                    raise ValueError("Fourier modifier 'gamma' must be a non-negative value.")
                 if hasattr(self, 'fourier_damping_gamma'):
                     self.fourier_damp = True
                     logger.info("Damping modifier selected; preparing to apply damping to time-domain signals. See documentation for details.")
@@ -506,12 +523,59 @@ class PARAMS:
     def _construct_geometry(self, geometry, units):
         """
         Post-process molecule geometry:
-        - Validate input
-        - Convert to Bohr units
-        - Build the exact coords string expected by the simulator
+        - Accepts either:
+            1. List of dicts: [{"atom": "O", "coord": [x,y,z]}, ...]
+            2. String path to a .xyz file
+        - Validates input
+        - Converts to Bohr units
+        - Builds the exact coords string expected by the simulator
         """
         atoms = []
         coords_bohr = {}
+
+        if isinstance(geometry, str):
+            path = Path(geometry)
+            
+            # Parse XYZ file
+            with open(path) as f:
+                lines = [line.strip() for line in f if line.strip()]
+
+            # First line: total number of atoms (optional)
+            # Second line: molecule name or comment (optional)
+            # All other lines: element symbol or atomic number, x, y, and z coordinates, separated by spaces, tabs, or commas
+            start_line = None
+            num_atoms = None
+            for current_line, line in enumerate(lines):
+                items = line.split()
+                if len(items) < 4:
+                    if len(items) == 1 and items[0].isdigit():
+                        num_atoms = int(items[0])
+                    continue
+                else:
+                    for item in items:
+                        item = item.replace('.', '').replace(',', '')
+                        if not item.isdigit():
+                            continue
+                    start_line = current_line
+            
+            if start_line is None:
+                raise ValueError("Invalid XYZ file format: no valid atom lines found.")
+            if num_atoms is None:
+                num_atoms = 0
+                for i in range(start_line, len(lines)):
+                    items = lines[i].split()
+                    if len(items) == 4:
+                        num_atoms += 1
+            
+            geometry = []
+            for i in range(2, 2 + num_atoms):
+                parts = lines[i].split()
+                atom = parts[0]
+                coord = [float(x) for x in parts[1:4]]
+                geometry.append({"atom": atom, "coord": coord})
+
+        if not isinstance(geometry, list):
+            raise ValueError("geometry must be a list of dicts or a path to a .xyz file.")
 
         for idx, entry in enumerate(geometry, start=1):
             if not isinstance(entry, dict) or 'atom' not in entry or 'coord' not in entry:
@@ -527,13 +591,13 @@ class PARAMS:
             label = f"{atom}{idx}"
             coords_bohr[label] = np.array(coord, dtype=float)
 
-        # Convert to Bohr
-        if units.startswith('angstrom'):
+        # Convert to Bohr if input was in Ångstroms
+        if units.lower().startswith('angstrom'):
             factor = 1.8897259886
             coords_bohr = {label: xyz * factor for label, xyz in coords_bohr.items()}
             units = "bohr"
 
-        # Build the exact string format the simulator wants
+        # Build the exact string format PySCF wants
         coords_str = ""
         for i, atom in enumerate(atoms):
             x, y, z = coords_bohr[f"{atom}{i+1}"]
@@ -570,7 +634,7 @@ class PARAMS:
         plasmon_params = params.get('plasmon')
         molecule_params = params.get('molecule')
         files_params = params.get('files')
-        addl_params = params.get('custom')
+        addl_params = params.get('additional_parameters')
 
         # ---- Determine simulation type + validation ----
         simulation_types = []
@@ -621,7 +685,7 @@ class PARAMS:
         if files_params:
             preparams["files"] = files_params
         if addl_params:
-            preparams["custom"] = addl_params
+            preparams["additional_parameters"] = addl_params
 
         return preparams
 

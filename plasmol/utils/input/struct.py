@@ -49,7 +49,7 @@ param_defs = [
 
     # Molecule params
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),
-    ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule', list, "Molecular geometry as list of atom+coord entries", None),
+    ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule', (list, str), "Molecular geometry as list of atom+coord entries or path to .xyz file", None),
     ('molecule_geometry_units', ['molecule', 'geometry_units'], False, 'has_molecule', None, 'molecule', str, "Units of the geometry coordinates", None),
     ('molecule_basis', ['molecule', 'basis'], False, 'has_molecule', None, 'molecule', str, "Basis set name (e.g. '6-31g')", None),
     ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', None, 'molecule', int, "Total molecular charge", None),
@@ -92,7 +92,9 @@ param_defs = [
     
     ## Driver: fourier.py
     ('fourier_dict', ['additional_parameters', 'fourier'], True, "has_fourier", None, 'molecule', dict, None, None),
-    ('fourier_gamma', ['additional_parameters', 'fourier', 'gamma'], False, 'has_fourier', 0.01, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
+    ('fourier_gamma', ['additional_parameters', 'fourier', 'gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
+    ('fourier_min_ev', ['additional_parameters', 'fourier', 'min_ev'], False, 'has_fourier', 1.5, 'molecule', (int, float), "Minimum energy for Fourier transformed spectrum", "eV"),
+    ('fourier_max_ev', ['additional_parameters', 'fourier', 'max_ev'], False, 'has_fourier', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
     ('fourier_npz_filepath', ['additional_parameters', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
     ('fourier_spectrum_filepath', ['additional_parameters', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
     ('fourier_damping_gamma', ['additional_parameters', 'fourier', 'damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping applied to polarization field for better FFT resolution", "a.u."),

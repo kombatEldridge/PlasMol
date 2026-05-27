@@ -2,10 +2,12 @@
 import os
 import copy
 import logging
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import multiprocessing
 import matplotlib.pyplot as plt
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from plasmol import constants
 from plasmol.quantum.electric_field import ELECTRICFIELD
@@ -16,7 +18,7 @@ from plasmol.utils.logging import setup_logging
 
 logger = logging.getLogger("main")
 
-class DirectionFilter(logging.Filter):
+class PrefixFilter(logging.Filter):
     def __init__(self, direction):
         super().__init__()
         self.prefix = f"[{direction}-dir]"
@@ -26,13 +28,11 @@ class DirectionFilter(logging.Filter):
         return True
     
 def _run_quantum_with_prefix(params_copy):
-    # Setup logging (honors --log if provided so *everything* goes to the log
-    # file only with no terminal output; otherwise outputs to terminal).
     setup_logging(
         getattr(params_copy, 'verbose', 1),
         getattr(params_copy, 'log', None)
     )
-    f = DirectionFilter(params_copy.molecule_source_dict['component'])
+    f = PrefixFilter(params_copy.molecule_source_dict['component'])
     logging.getLogger("main").addFilter(f)
     logging.getLogger().addFilter(f)
     try:
@@ -95,7 +95,7 @@ def fold(file_x, file_y, file_z):
 
     return time_points, dipole_moment
 
-def fourier(time, dipole, damp, npz=None):
+def fourier(time, dipole, damp, min_ev, max_ev, npz=None):
     dt = time[1] - time[0]
     abs_real = [[], [], []]
     abs_imag = [[], [], []]
@@ -104,7 +104,7 @@ def fourier(time, dipole, damp, npz=None):
     # Calculate frequencies once, as they are the same for all axes
     freqs_au = np.fft.fftfreq(len(time), d=dt) * 2 * np.pi
     freqs_ev = freqs_au * 27.211386
-    mask = (freqs_ev >= 0) & (freqs_ev <= 50)
+    mask = (freqs_ev >= min_ev) & (freqs_ev <= max_ev)
 
     for axis in (0, 1, 2):
         logger.debug(f"Starting Fourier transform of direction { {0:'x', 1:'y', 2:'z'}[axis] }")
@@ -121,8 +121,9 @@ def fourier(time, dipole, damp, npz=None):
         abs_real[i] = np.array(abs_real[i])
         abs_imag[i] = np.array(abs_imag[i])
 
-    np.savez(npz, abs_imag=abs_imag, freqs=freqs_out)
-    logger.debug(f"Fourier transform saved to {npz}!")
+    if npz:
+        np.savez(npz, abs_imag=abs_imag, freqs=freqs_out)
+        logger.debug(f"Fourier transform saved to {npz}!")
 
     return abs_imag, freqs_out
 
@@ -137,12 +138,8 @@ def run(params):
     else:
         logger.info(f"Running Fourier transform process with gamma: {params.fourier_gamma}")
 
-    processes = []
     params_copies = []
-
-    # Set up params copies and paths for each direction (always, to support transform)
     for dir in params.xyz:
-        # Create a deep copy of params to ensure process safety
         params_copy = copy.deepcopy(params)
         params_copy.molecule_source_dict['component'] = dir
         params_copy.molecule_source_field = ELECTRICFIELD(params_copy).field
@@ -153,16 +150,22 @@ def run(params):
         if not params.resumed_from_checkpoint:
             os.makedirs(params_copy.dir_path, exist_ok=True)
         params_copies.append(params_copy)
+    
+    logger.info(f"Running {len(params_copies)} directional quantum simulations in parallel...")
 
-    # Create and start a process for each direction
-    for params_copy in params_copies:
-        process = multiprocessing.Process(target=_run_quantum_with_prefix, args=(params_copy,))
-        processes.append(process)
-        process.start()
+    with ProcessPoolExecutor(max_workers=len(params_copies)) as executor:
+        future_to_dir = {
+            executor.submit(_run_quantum_with_prefix, params_copy): params_copy.molecule_source_dict['component']
+            for params_copy in params_copies
+        }
 
-    # Wait for all processes to complete
-    for process in processes:
-        process.join()
+        for future in as_completed(future_to_dir):
+            direction = future_to_dir[future]
+            try:
+                future.result()
+                logger.info(f"{direction}-dir quantum run completed successfully")
+            except Exception as e:
+                logger.error(f"{direction}-dir quantum run failed: {e}")
 
     # Add damping to the polarizability fields if mu_damping is set
     for params_copy in params_copies:
@@ -178,14 +181,16 @@ def run(params):
     # Apply Fourier transform to the field_p CSV files
     time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
 
-    abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, npz=getattr(params, 'fourier_npz_filepath', None))
+    abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, params.fourier_min_ev, params.fourier_max_ev, npz=getattr(params, 'fourier_npz_filepath', None))
     abs = absorption(abs_imag, freqs)
-
+    
+    pd.DataFrame({'Frequency': freqs, 'Absorption': abs/max(abs)}).to_csv(Path(params.fourier_spectrum_filepath).with_suffix(".csv"), index=False)
     plt.figure(figsize=(14, 8))
     plt.plot(freqs, abs/max(abs), color='green', label='Spectrum')
-    plt.xlabel('Angular frequency ω (eV)', fontsize=16)
+    plt.xlabel('Energy (eV)', fontsize=16)
     plt.ylabel('Absorption', fontsize=16)
     plt.title('Absorption Spectrum', fontsize=20)
+    plt.xlim(params.fourier_min_ev, params.fourier_max_ev)
     plt.grid(True)
     plt.legend(fontsize=16)
     plt.tight_layout()

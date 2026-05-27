@@ -26,7 +26,8 @@ def run(params):
             writer = csv.writer(csvfile)
             writer.writerows(rows)
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
-        add_field_e_checkpoint(params, params.field_e_filepath)
+        if params.has_checkpoint:
+            add_field_e_checkpoint(params, params.field_e_filepath)
     else:
         logger.debug("Resuming from checkpoint - skipping CSV initialization.")
 

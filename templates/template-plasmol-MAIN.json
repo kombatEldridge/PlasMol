@@ -107,6 +107,8 @@
     ],
     "fourier": {
       "gamma": 0.01,
+      "min_ev": 1.5,
+      "max_ev": 5.0,
       "npz_filepath": null,
       "spectrum_filepath": "spectrum.png",
       "damping_gamma": null
