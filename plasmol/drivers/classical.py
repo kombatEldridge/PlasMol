@@ -8,6 +8,7 @@ from plasmol.utils.checkpoint import init_checkpoint
 def run(params):
     try:
         logger = logging.getLogger("main")
+        logger.info(" === RUNNING MEEP ONLY SIMULATION === ")
         plasmon = SIMULATION(params)
         plasmon.run()
         logging.info("Simulation completed successfully.")

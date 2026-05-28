@@ -37,8 +37,7 @@ def distance(pos: list):
 
 def _run_one_case(params, case: str, incident_flux_data=None):
     label = case.upper()
-    log_file = getattr(params, 'log', None)
-    setup_logging(verbose=1, log_file=log_file)
+    setup_logging(verbose=getattr(params, 'verbose', None), log_file=getattr(params, 'log', None))
     prefix_filter = PrefixFilter(label)
     root_logger = logging.getLogger()
     root_logger.addFilter(prefix_filter)
@@ -163,7 +162,7 @@ def run(params):
     incident_flux_data = empty_result["incident_flux_data"]
 
     # 2. Run scattering + absorption in parallel
-    with ProcessPoolExecutor(max_workers=2) as executor:
+    with ProcessPoolExecutor(max_workers=8) as executor:
         future_scatt = executor.submit(_run_one_case, params, "scatt", incident_flux_data)
         future_abs   = executor.submit(_run_one_case, params, "abs", incident_flux_data)
 

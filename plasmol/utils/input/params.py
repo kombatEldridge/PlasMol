@@ -149,8 +149,6 @@ class PARAMS:
                     raise ValueError("'surrounding_material_index' must be >= 1.0 (vacuum).")
                 elif self.plasmon_surrounding_material_index == 1.0:
                     logger.debug("For 'surrounding_material_index' value of 1.0 (vacuum) is being used.")
-                elif self.plasmon_surrounding_material_index == 1.33:
-                    logger.debug("For 'surrounding_material_index' typical value of 1.33 for water is being used.")
                 elif self.plasmon_surrounding_material_index > 5.0:
                     logger.warning("'surrounding_material_index' is unusually high; please verify this value.")
 

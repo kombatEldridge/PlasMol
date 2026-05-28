@@ -38,7 +38,7 @@ class SIMULATION:
                         component=field
                     )
                 )
-            logging.debug("Emitter for the molecule added to simulation")
+            logging.info("Emitter for the molecule added to simulation")
 
         if self.has_plasmon_source:
             self.sources_list.append(self.plasmon_source_object.source)
