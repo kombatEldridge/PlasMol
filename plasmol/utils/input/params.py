@@ -430,7 +430,6 @@ class PARAMS:
                 self.plasmon_symmetries = symmetries_list if symmetries_list else None
             
             if self.has_plasmon_source:
-                # TODO: Ensure this works!!
                 self.plasmon_source_object = MEEPSOURCE(
                     source_type=self.plasmon_source_type.lower().strip(),
                     source_center=self.plasmon_source_center,
@@ -471,9 +470,10 @@ class PARAMS:
             exclude_args = {'molecule', 'exc'}
             self.molecule_propagator_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
             
-            time_values = np.arange(0, self.t_end + self.dt, self.dt)
-            self.times = np.linspace(0, time_values[-1], int(len(time_values)))
-            self.molecule_source_field = ELECTRICFIELD(self).field
+            if not self.has_plasmon:
+                time_values = np.arange(0, self.t_end + self.dt, self.dt)
+                self.times = np.linspace(0, time_values[-1], int(len(time_values)))
+                self.molecule_source_field = ELECTRICFIELD(self).field
 
             if self.has_broadening:
                 del self.broadening_dict["type"]

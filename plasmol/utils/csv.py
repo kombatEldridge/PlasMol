@@ -19,6 +19,8 @@ def init_csv(filename, comment):
     Returns:
     None
     """
+    if os.path.exists(filename):
+        print(f"Warning: {filename} already exists and will be wiped.")
     with open(filename, 'w', newline='') as file:
         for line in comment.splitlines():
             file.write(f"# {line}\n")

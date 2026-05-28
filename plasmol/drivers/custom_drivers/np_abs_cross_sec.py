@@ -1,4 +1,4 @@
-# plasmol/drivers/abs_cross_sec.py
+# plasmol/drivers/np_abs_cross_sec.py
 import copy
 import logging
 import os
@@ -31,7 +31,7 @@ class PrefixFilter(logging.Filter):
         return True
 
 
-def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None):
+def _run_one_case(params, case: str, incident_flux_data=None):
     label = case.upper()
     log_file = getattr(params, 'log', None)
     setup_logging(verbose=1, log_file=log_file)
@@ -50,7 +50,7 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
     p = copy.deepcopy(params)
 
     # Recreate plasmon NP
-    r = getattr(p, 'nanoparticle_radius')
+    r = getattr(p, 'nanoparticle_radius') + 0.005 # adding padding just in case
     if not case == "empty":
         mat_name = p.nanoparticle_dict["material"]
         p.nanoparticle_material = p._load_meep_material(mat_name)
@@ -135,7 +135,7 @@ def _run_one_case(params, case: str, incident_flux_data=None, box_x1_flux0=None)
 
 
 def run(params):
-    logger.info("=== Starting Mie Scattering Driver ) ===")
+    logger.info("=== Starting Cross-Section Driver ===")
 
     results = {}
 
@@ -153,15 +153,15 @@ def run(params):
             case = "scatt" if future == future_scatt else "abs"
             try:
                 results[case] = future.result()
-                logger.info(f"✅ {case.upper()} run completed")
+                logger.info(f"{case.upper()} run completed")
             except Exception as e:
                 logger.error(f"{case.upper()} run failed: {e}")
 
     intensity = np.asarray(empty_result["flux0"])/(2 * getattr(params, 'nanoparticle_radius'))**2
     scatt_cross_section = np.divide(results["scatt"], intensity)
-    abs_cross_section = np.divide(results["abs"], intensity)
+    np_abs_cross_section = np.divide(results["abs"], intensity)
     scatt_eff = scatt_cross_section*(-1)/(np.pi * getattr(params, 'nanoparticle_radius')**2)
-    abs_eff = abs_cross_section/(np.pi*getattr(params, 'nanoparticle_radius')**2)
+    abs_eff = np_abs_cross_section/(np.pi*getattr(params, 'nanoparticle_radius')**2)
 
     wavelengths = 1/np.asarray(empty_result["freqs"])
     combined_array = np.column_stack((wavelengths, abs_eff, scatt_eff))

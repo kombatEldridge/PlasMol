@@ -2,7 +2,7 @@
 import logging
 import meep as mp
 import numpy as np
-
+# TODO: Make sure customsource works
 class MEEPSOURCE:
     def __init__(self,
                  source_type,

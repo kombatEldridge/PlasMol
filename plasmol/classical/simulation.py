@@ -90,7 +90,7 @@ class SIMULATION:
         
     def _call_propagation(self, sim):
         """
-        Calls Quantum calculations if the electric field exceeds the response cutoff.
+        Calls RT-TDDFT calculations if the electric field exceeds the response cutoff.
         Stores induced dipole using integer step indices.
         """
         field_e = self._get_electric_field(sim, self.molecule_position)
@@ -98,7 +98,7 @@ class SIMULATION:
         current_step = self._get_step(current_t_meep)
 
         if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
-            logging.info(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, 4)} au (step {current_step})")
+            logging.debug(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, 4)} au (step {current_step})")
 
             eArr = [field_e[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
@@ -151,6 +151,7 @@ class SIMULATION:
                 run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
                 for i, point in enumerate(self.probe_points):
                     init_csv(f"{self.field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
+
             self.simulation.run(*run_functions, until=self.t_end_meep)
                         
             logging.info("Simulation completed successfully!")
