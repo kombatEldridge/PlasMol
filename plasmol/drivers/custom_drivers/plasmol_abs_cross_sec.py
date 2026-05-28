@@ -40,7 +40,8 @@ def _run_one_case(params, case: str, incident_flux_data=None):
     log_file = getattr(params, 'log', None)
     setup_logging(verbose=1, log_file=log_file)
     prefix_filter = PrefixFilter(label)
-    logging.getLogger().addFilter(prefix_filter)
+    root_logger = logging.getLogger()
+    root_logger.addFilter(prefix_filter)
 
     import sys
     from plasmol.utils.logging import PRINTLOGGER
@@ -66,8 +67,8 @@ def _run_one_case(params, case: str, incident_flux_data=None):
         logger.info(f"Nanoparticle geometry recreated")
         setattr(p, 'molecule', MOLECULE(p))
         # just to prevent any racetime things
-        p.field_e_filepath = f"{Path(p.field_e_filepath).with_suffix("")}_{case}.csv"
-        p.field_p_filepath = f"{Path(p.field_p_filepath).with_suffix("")}_{case}.csv"
+        p.field_e_filepath = f"{Path(p.field_e_filepath).with_suffix('')}_{case}.csv"
+        p.field_p_filepath = f"{Path(p.field_p_filepath).with_suffix('')}_{case}.csv"
         init_csv(p.field_e_filepath, "Electric Field intensity in atomic units")
         init_csv(p.field_p_filepath, "Molecule's Polarizability Field intensity in atomic units")
         logger.debug(f"Field files successfully initialized: {p.field_e_filepath} and {p.field_p_filepath}")
@@ -111,6 +112,8 @@ def _run_one_case(params, case: str, incident_flux_data=None):
         for name, flux_region in boxes.items():
             incident_flux_data[name] = sim.simulation.get_flux_data(flux_region)
         logger.info("Empty run finished")
+        root_logger.removeFilter(prefix_filter)   # ← crucial
+        logging.getLogger().removeFilter(prefix_filter)  # also remove from "main" logger if you added it there
         return {"incident_flux_data": incident_flux_data, "freqs": freqs, "flux0": flux0}
     elif case == "scatt":
         for k, b in boxes.items():
@@ -146,6 +149,7 @@ def _run_one_case(params, case: str, incident_flux_data=None):
         )
         logger.info("Absorption run finished")
         return abs_flux
+
 
 
 def run(params):
