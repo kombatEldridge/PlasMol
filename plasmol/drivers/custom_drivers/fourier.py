@@ -1,4 +1,4 @@
-# drivers/fourier.py
+# drivers/custom_drivers/fourier.py
 import os
 import copy
 import logging
@@ -171,9 +171,9 @@ def run(params):
     for params_copy in params_copies:
         if params.fourier_damp:
             mu_arrs = read_field_csv(params_copy.field_p_filepath)
-            mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_damping_gamma)
+            mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_field_p_damping_gamma)
             params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
-            init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_damping_gamma}")
+            init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
             for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
                 update_csv(params_copy.field_p_filepath, t, x, y, z)
             logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")

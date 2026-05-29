@@ -309,7 +309,7 @@ def test_fourier_gamma_non_positive(tmp_path):
         ValueError, "Fourier modifier 'gamma' must be a positive value")
 
 
-def test_fourier_damping_gamma_non_positive(tmp_path):
+def test_fourier_field_p_damping_gamma_non_positive(tmp_path):
     _test_validation_error(tmp_path,
         lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "damping_gamma": -0.1}}})),
         ValueError, "Damping 'gamma' must be a positive value")

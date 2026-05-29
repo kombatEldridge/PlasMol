@@ -111,7 +111,7 @@
       "max_ev": 5.0,
       "npz_filepath": null,
       "spectrum_filepath": "spectrum.png",
-      "damping_gamma": null
+      "field_p_damping_gamma": null
     },
     "comparison": {
       "bases": ["631g*", "augccpvtz", "def2tzvppd"],

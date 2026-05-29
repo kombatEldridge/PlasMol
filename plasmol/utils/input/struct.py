@@ -97,7 +97,7 @@ param_defs = [
     ('fourier_max_ev', ['additional_parameters', 'fourier', 'max_ev'], False, 'has_fourier', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
     ('fourier_npz_filepath', ['additional_parameters', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
     ('fourier_spectrum_filepath', ['additional_parameters', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
-    ('fourier_damping_gamma', ['additional_parameters', 'fourier', 'damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping applied to polarization field for better FFT resolution", "a.u."),
+    ('fourier_field_p_damping_gamma', ['additional_parameters', 'fourier', 'field_p_damping_gamma'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping applied to polarization field for better FFT resolution", "a.u."),
 
     ## Driver: comparison.py
     ('comparison_dict', ['additional_parameters', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),

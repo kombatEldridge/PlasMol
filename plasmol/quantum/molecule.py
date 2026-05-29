@@ -74,7 +74,6 @@ class MOLECULE():
             logger.debug(f"E_HOMO energy: {self.mf.mo_energy[self.mf.mo_occ > 0][-1]:.6f} Ha, "
                         f"{self.mf.mo_energy[self.mf.mo_occ > 0][-1]*27.2114:.6f} eV")
 
-
         charges = self.mf.mol.atom_charges()
         coords = self.mf.mol.atom_coords()
         nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
@@ -287,8 +286,6 @@ class MOLECULE():
             Gamma_ao = inv(self.X.conj().T) @ Gamma_orth @ inv(self.X)
             return Gamma_ao
         
-        # TODO: double check that inv(self.X.T).T == inv(self.X)
-
         if F_orth.ndim == 3:
             return np.stack([_gamma_one_spin(F_orth[s]) for s in range(F_orth.shape[0])])
         return _gamma_one_spin(F_orth)

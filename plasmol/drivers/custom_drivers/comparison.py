@@ -1,4 +1,4 @@
-# plasmol/drivers/comparison.py
+# drivers/custom_drivers/comparison.py
 
 import logging
 import matplotlib.pyplot as plt

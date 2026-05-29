@@ -1,4 +1,4 @@
-# plasmol/drivers/plasmol_abs_cross_sec.py
+# drivers/custom_drivers/plasmol_abs_cross_sec.py
 import copy
 import logging
 import os

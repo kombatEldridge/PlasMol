@@ -311,10 +311,10 @@ class PARAMS:
                         self.fourier_gamma = 0
                 if self.fourier_gamma < 0:
                     raise ValueError("Fourier modifier 'gamma' must be a non-negative value.")
-                if hasattr(self, 'fourier_damping_gamma'):
+                if hasattr(self, 'fourier_field_p_damping_gamma'):
                     self.fourier_damp = True
                     logger.info("Damping modifier selected; preparing to apply damping to time-domain signals. See documentation for details.")
-                    if self.fourier_damping_gamma <= 0:
+                    if self.fourier_field_p_damping_gamma <= 0:
                         raise ValueError("Damping 'gamma' must be a positive value.")
                 else:
                     self.fourier_damp = False
