@@ -17,7 +17,6 @@ class SIMULATION:
         self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
         self.dt_meep = self.dt / constants.convertTimeMeep2Atomic
         self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
-        self.field_data = {}
 
         logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
 
@@ -28,7 +27,7 @@ class SIMULATION:
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
 
         self.sources_list = []
-        if self.has_molecule:
+        if self.has_molecule and self.plasmol_back_propagation:
             for comp, field in zip(self.xyz, [mp.Ex, mp.Ey, mp.Ez]):
                 src_func = lambda t, c=comp: self._get_dipole_response(c, t)
                 self.sources_list.append(
@@ -145,7 +144,8 @@ class SIMULATION:
             if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
 
-            # If running Chen2010 Replication Work
+            # If needing multiple molecules positions (like replicating Chen2010 work)
+            # Currently just records e field
             if getattr(self, 'probe_points', None):
                 self.field_data = {str(p): [] for p in self.probe_points}
                 run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
@@ -153,7 +153,7 @@ class SIMULATION:
                     init_csv(f"{self.field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
 
             self.simulation.run(*run_functions, until=self.t_end_meep)
-                        
+
             logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)

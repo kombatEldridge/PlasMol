@@ -131,7 +131,8 @@ def init_checkpoint(params):
         if key not in save_dict:
             save_dict[key] = None
 
-    # === Locked + atomic write (prevents race condition) ===
+    # In case 'allow_pickle=True' is in the save_dict
+    save_dict.pop('allow_pickle', None)
     with _checkpoint_lock(checkpoint_path):
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
@@ -166,7 +167,6 @@ def add_field_e_checkpoint(params, field_e_filepath):
     
         # In case 'allow_pickle=True' is in the save_dict
         save_dict.pop('allow_pickle', None)
-
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
 
@@ -238,7 +238,9 @@ def update_checkpoint(params, molecule, checkpoint_time):
         missing = REQUIRED_CHECKPOINT_KEYS - set(save_dict.keys())
         if missing:
             raise RuntimeError(f"BUG: checkpoint is missing required keys: {missing}")
-
+        
+        # In case 'allow_pickle=True' is in the save_dict
+        save_dict.pop('allow_pickle', None)
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
     time_log_str = f"{'='*40} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time}"

@@ -13,7 +13,7 @@ param_defs = [
 
     # Plasmon simulation params
     ('plasmon_simulation_dict', ['plasmon', 'simulation'], True, 'has_simulation', None, 'plasmon', dict, None, None),
-    ('plasmon_tolerance_field_e', ['plasmon', 'simulation', "tolerance_field_e"], False, 'has_simulation', 1e-12, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
+    ('plasmon_tolerance_field_e', ['plasmon', 'simulation', "tolerance_field_e"], False, 'has_simulation', 1e-20, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_simulation', 0.1, 'plasmon', (int, float), "Length of the simulation cell (used if cell_volume not provided)", "μm"),
     ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_simulation', None, 'plasmon', list, "Simulation cell volume (overrides cell_length if provided)", "μm"),
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float), "Thickness of the PML absorbing boundary layers (recommended to be close to half the largest wavelength)", "μm"),
@@ -44,8 +44,9 @@ param_defs = [
     ('images_dir_name', ['plasmon', 'images', 'dir_name'], False, 'has_images', f"plasmol-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'plasmon', str, "Directory name where PNG frames will be saved", None),
     ('images_make_gif', ['plasmon', 'images', 'make_gif'], False, 'has_images', True, 'plasmon', bool, "Automatically create animated GIF from the PNG frames after simulation", None),
 
-    # Molecule position param
+    # Molecule w/in Plasmon params
     ('plasmol_molecule_position', ['plasmon', 'molecule_position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
+    ('plasmol_back_propagation', ['plasmon', 'back_propagation'], True, "has_back_propagation", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
 
     # Molecule params
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),

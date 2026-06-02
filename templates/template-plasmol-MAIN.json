@@ -49,7 +49,8 @@
       "dir_name": "hello",
       "make_gif": true
     },
-    "molecule_position": [0, 0, 0]
+    "molecule_position": [0, 0, 0],
+    "back_propagation": false
   },
   "molecule": {
     "geometry": [
@@ -73,7 +74,7 @@
       "type": "static",
       "gam0": 1,
       "xi": 0.5,
-      "eps0": 0.0477,
+      "eps0": 0.0477, # or "tune"
       "clamp": 100
     },
     "source": {
