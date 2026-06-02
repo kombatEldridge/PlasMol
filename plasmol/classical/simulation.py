@@ -69,9 +69,11 @@ class SIMULATION:
         value_au = self.measured_dipole_response[component].get(step, 0.0)
         value_meep = value_au * constants.convertMomentAtomic2Meep
 
-        logging.debug(f"Getting dipole for {component} at step {step} "
-                      f"(t={t_meep*constants.convertTimeMeep2Atomic:.6f} au). "
-                      f"Emitting {value_au:.6e} au")
+        if not np.isclose(value_au, 0.0):
+            logging.debug(f"Getting dipole for {component} at step {step} "
+                        f"(t={t_meep*constants.convertTimeMeep2Atomic:.6f} au). "
+                        f"Emitting {value_au:.6e} au")
+            
         return value_meep
 
     def _get_electric_field(self, sim, loc):
