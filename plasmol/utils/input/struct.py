@@ -45,8 +45,8 @@ param_defs = [
     ('images_make_gif', ['plasmon', 'images', 'make_gif'], False, 'has_images', True, 'plasmon', bool, "Automatically create animated GIF from the PNG frames after simulation", None),
 
     # Molecule w/in Plasmon params
-    ('plasmol_molecule_position', ['plasmon', 'molecule_position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
-    ('plasmol_back_propagation', ['plasmon', 'back_propagation'], True, "has_back_propagation", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
+    ('plasmol_molecule_position', ['plasmon', 'molecule', 'position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
+    ('plasmol_back_propagation', ['plasmon', 'molecule', 'back_propagation'], False, "has_molecule_position", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
 
     # Molecule params
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),

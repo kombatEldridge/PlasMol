@@ -213,9 +213,12 @@ class PARAMS:
                         raise ValueError(f"Invalid molecule position '{loc}'; must be a number.")
                 if len(self.plasmol_molecule_position) != 3:
                     raise ValueError("Molecule position must be an array of three numbers [x, y, z].")
-        
+
         # Molecule params
         if self.has_molecule:
+            if self.has_plasmon:
+                if not hasattr(self, 'plasmol_molecule_position'):
+                    raise RuntimeError("No 'plasmol_molecule_position' object found in 'plasmon' section, but quantum (molecule) is present. Please specify the 'plasmol_molecule_position' parameters in the 'plasmon' section.")
             if self.has_comparison:
                 if hasattr(self, 'molecule_basis') or hasattr(self, 'molecule_xc'):
                     logger.info("Comparison modifier selected; ignoring singular basis set and xc.")
@@ -468,7 +471,7 @@ class PARAMS:
                     self.images_args += f" {str}"
 
             if self.has_molecule:
-                self.molecule_position = mp.Vector3(*self.plasmol_molecule_position) 
+                self.plasmol_molecule_position = mp.Vector3(*self.plasmol_molecule_position) 
 
         if self.has_molecule:
             self.molecule_atoms, self.molecule_coords, self.molecule_geometry_units = self._construct_geometry(self.molecule_geometry, self.molecule_geometry_units.lower())
@@ -658,24 +661,7 @@ class PARAMS:
             simulation_types.append('plasmon')
 
         if not simulation_types:
-            raise RuntimeError(
-                "The minimum required parameters were not given. "
-                "Please check guidelines for information on minimal requirements."
-            )
-
-        # Plasmon-specific validation (required whenever plasmon section exists)
-        if plasmon_params:
-            if 'simulation' not in plasmon_params:
-                raise RuntimeError(
-                    "No 'simulation' object found in 'plasmon' section. "
-                    "Please specify the 'simulation' in the 'plasmon' section."
-                )
-            if molecule_params and 'molecule_position' not in plasmon_params:
-                raise RuntimeError(
-                    "No 'molecule_position' object found in 'plasmon' section, "
-                    "but quantum (molecule) is present. "
-                    "Please specify the 'molecule_position' parameters in the 'plasmon' section."
-                )
+            raise RuntimeError("The minimum required parameters were not given. Please check guidelines for information on minimal requirements.")
 
         # Logging for single-simulation cases (same behaviour as before)
         if len(simulation_types) == 1:

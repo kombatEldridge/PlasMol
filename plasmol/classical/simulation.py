@@ -33,7 +33,7 @@ class SIMULATION:
                 self.sources_list.append(
                     mp.Source(
                         mp.CustomSource(src_func=src_func, is_integrated=True),
-                        center=self.molecule_position,
+                        center=self.plasmol_molecule_position,
                         component=field
                     )
                 )
@@ -94,7 +94,7 @@ class SIMULATION:
         Calls RT-TDDFT calculations if the electric field exceeds the response cutoff.
         Stores induced dipole using integer step indices.
         """
-        field_e = self._get_electric_field(sim, self.molecule_position)
+        field_e = self._get_electric_field(sim, self.plasmol_molecule_position)
         current_t_meep = sim.meep_time()
         current_step = self._get_step(current_t_meep)
 
