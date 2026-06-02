@@ -373,10 +373,16 @@ class PARAMS:
             logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
-            if not hasattr(self, 'checkpoint_snapshot_frequency'):
-                raise ValueError("Checkpointing requires 'frequency' attribute for snapshot frequency.")
-            if self.checkpoint_snapshot_frequency <= 0:
-                raise ValueError("Checkpointing 'frequency' must be a positive value.")
+            if not hasattr(self, 'checkpoint_frequency_steps') and not hasattr(self, 'checkpoint_frequency_time'):
+                raise ValueError("Checkpointing requires 'frequency_steps' or 'frequency_time' attribute for snapshot frequency.")
+            if hasattr(self, 'checkpoint_frequency_steps') and hasattr(self, 'checkpoint_frequency_time'):
+                raise ValueError("Checkpointing requires either 'frequency_steps' or 'frequency_time' attribute, not both.")
+            if hasattr(self, 'checkpoint_frequency_steps') and self.checkpoint_frequency_steps <= 0:
+                raise ValueError("Checkpointing 'frequency_steps' must be a positive value.")
+            if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time <= 0:
+                raise ValueError("Checkpointing 'frequency_time' must be a positive value.")
+            if hasattr(self, 'checkpoint_frequency_time') and np.isclose(self.checkpoint_frequency_time % self.dt, 0) == False:
+                raise ValueError("Checkpointing 'frequency_time' must be a multiple of the time step.")
             if not self.has_molecule:
                 raise ValueError("Checkpointing is only supported with molecule simulations.")
 

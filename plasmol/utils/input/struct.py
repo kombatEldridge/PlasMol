@@ -81,7 +81,8 @@ param_defs = [
     # Checkpointing params
     ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),
     ('checkpoint_filepath', ['files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, None, str, "Path to the checkpoint .npz file", None),
-    ('checkpoint_snapshot_frequency', ['files', 'checkpoint', 'frequency'], False, 'has_checkpoint', None, None, int, "Number of timesteps between checkpoint saves", None),
+    ('checkpoint_frequency_steps', ['files', 'checkpoint', 'frequency_steps'], False, 'has_checkpoint', None, None, int, "Number of timesteps between checkpoint saves", None),
+    ('checkpoint_frequency_time', ['files', 'checkpoint', 'frequency_time'], False, 'has_checkpoint', None, None, int, "Amount of time between checkpoint saves", "a.u."),
 
     # Files
     ('field_e_filepath', ['files', 'field_e_filepath'], False, None, "field_e.csv", None, str, "File path for electric field at molecule position", None),

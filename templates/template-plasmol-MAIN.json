@@ -1,7 +1,7 @@
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 40,
+    "t_end": 400,
     "driver": null
   },
   "plasmon": {
@@ -62,7 +62,7 @@
     "spin": 0,
     "basis": "6-31g",
     "xc": "RSH(0.4, 1, -1.0) + PBE, PBE",
-    "lrc_parameter": 0.0,
+    "lrc_parameter": 0.0, # or "tune"
     "propagator": { 
       "type": "magnus2",
       "pc_convergence": 1e-12,
@@ -90,7 +90,8 @@
   },
   "files": {
     "checkpoint": {
-      "frequency": 100,
+      "frequency_steps": 100,
+      "frequency_time": 1000,
       "filepath": "checkpoint.npz"
     },
     "field_e_filepath": "field_e.csv",

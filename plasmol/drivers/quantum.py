@@ -44,7 +44,9 @@ def run(params):
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
         logging.info(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
         update_csv(params.field_p_filepath, current_time, *mu_arr)
-        if params.has_checkpoint and index % params.checkpoint_snapshot_frequency == 0 and not current_time == 0.0:
+        if params.has_checkpoint and \
+            (index % params.checkpoint_frequency_steps == 0 or current_time % params.checkpoint_frequency_time == 0) and \
+            not current_time == 0.0:
             update_checkpoint(params, molecule, current_time)
 
     base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
