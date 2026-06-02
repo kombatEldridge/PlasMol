@@ -163,6 +163,9 @@ def add_field_e_checkpoint(params, field_e_filepath):
 
         with open(field_e_filepath, "rb") as f:
             save_dict[f"field_e{suffix}_content"] = f.read()
+    
+        # In case 'allow_pickle=True' is in the save_dict
+        save_dict.pop('allow_pickle', None)
 
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
