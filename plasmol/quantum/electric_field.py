@@ -8,6 +8,12 @@ logger = logging.getLogger("main")
 
 class ELECTRICFIELD:
     def __init__(self, params):
+        if not params.has_molecule_source:
+            logger.warning("No molecule source specified. Continuing with empty field.")
+            self.times = params.times
+            self.field = np.zeros((len(self.times), 3)) 
+            return
+
         self.times = params.times
         self.source_type = params.molecule_source_type.lower().strip()
         self.intensity_au = params.molecule_source_intensity
@@ -70,3 +76,4 @@ class ELECTRICFIELD:
             self.field[:, 2] = active_component
         else:
             raise ValueError("Invalid component. Must be 'x', 'y', or 'z'.")
+        

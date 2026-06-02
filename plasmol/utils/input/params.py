@@ -371,6 +371,8 @@ class PARAMS:
         # Checkpointing params
         if self.has_checkpoint:
             logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
+            if self.has_plasmon:
+                raise ValueError("Checkpointing not supported on simulations including plasmons.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
             if not hasattr(self, 'checkpoint_frequency_steps') and not hasattr(self, 'checkpoint_frequency_time'):
@@ -381,8 +383,16 @@ class PARAMS:
                 raise ValueError("Checkpointing 'frequency_steps' must be a positive value.")
             if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time <= 0:
                 raise ValueError("Checkpointing 'frequency_time' must be a positive value.")
-            if hasattr(self, 'checkpoint_frequency_time') and np.isclose(self.checkpoint_frequency_time % self.dt, 0) == False:
-                raise ValueError("Checkpointing 'frequency_time' must be a multiple of the time step.")
+            if hasattr(self, 'checkpoint_frequency_time'):
+                n_steps = round(self.checkpoint_frequency_time / self.dt)
+                reconstructed = n_steps * self.dt
+                if not math.isclose(reconstructed, self.checkpoint_frequency_time, rel_tol=1e-9, abs_tol=1e-12):
+                    remainder = self.checkpoint_frequency_time % self.dt
+                    raise ValueError(
+                        f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) must be a multiple of "
+                        f"the time step ({self.dt}), but got remainder = {remainder}"
+                    )
+                self.checkpoint_frequency_steps = n_steps
             if not self.has_molecule:
                 raise ValueError("Checkpointing is only supported with molecule simulations.")
 

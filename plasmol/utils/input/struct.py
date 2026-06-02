@@ -55,7 +55,7 @@ param_defs = [
     ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', None, 'molecule', int, "Total molecular charge", None),
     ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', None, 'molecule', int, "Spin multiplicity minus one (0 = singlet)", None),
     ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule', str, "Exchange-correlation functional", None),
-    ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule', float, "Long-range correction parameter (mu/omega) for RSH functionals", "a.u."),
+    ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule', (float, str), "Long-range correction parameter (mu/omega) for RSH functionals", "a.u."),
     ('molecule_propagator_str', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule', str, "Time-propagation algorithm", None),
     ('molecule_pc_convergence', ['molecule', 'propagator', "pc_convergence"], False, 'has_molecule', 1e-12, 'molecule', (int, float), "Predictor-corrector convergence threshold (Magnus2 only)", "a.u."),
     ('molecule_max_iterations', ['molecule', 'propagator', "max_iterations"], False, 'has_molecule', 200, 'molecule', int, "Maximum predictor-corrector iterations (Magnus2 only)", None),
@@ -75,14 +75,14 @@ param_defs = [
     ('broadening_type', ['molecule', 'broadening', "type"], False, 'has_broadening', None, 'molecule', str, "Type of broadening (static or dynamic)", None),
     ('broadening_gam0', ['molecule', 'broadening', "gam0"], False, 'has_broadening', 1.0, 'molecule', (int, float), "Base broadening strength", "a.u."),
     ('broadening_xi', ['molecule', 'broadening', "xi"], False, 'has_broadening', 0.5, 'molecule', (int, float), "Energy-dependent broadening exponent", None),
-    ('broadening_eps0', ['molecule', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float), "Reference energy for broadening", "a.u."),
+    ('broadening_eps0', ['molecule', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float, str), "Reference energy for broadening", "a.u."),
     ('broadening_clamp', ['molecule', 'broadening', "clamp"], False, 'has_broadening', 100, 'molecule', (int, float), "Maximum allowed broadening value", "a.u."),
 
     # Checkpointing params
     ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),
     ('checkpoint_filepath', ['files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, None, str, "Path to the checkpoint .npz file", None),
     ('checkpoint_frequency_steps', ['files', 'checkpoint', 'frequency_steps'], False, 'has_checkpoint', None, None, int, "Number of timesteps between checkpoint saves", None),
-    ('checkpoint_frequency_time', ['files', 'checkpoint', 'frequency_time'], False, 'has_checkpoint', None, None, int, "Amount of time between checkpoint saves", "a.u."),
+    ('checkpoint_frequency_time', ['files', 'checkpoint', 'frequency_time'], False, 'has_checkpoint', None, None, (int, float), "Amount of time between checkpoint saves", "a.u."),
 
     # Files
     ('field_e_filepath', ['files', 'field_e_filepath'], False, None, "field_e.csv", None, str, "File path for electric field at molecule position", None),

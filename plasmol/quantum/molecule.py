@@ -57,11 +57,14 @@ class MOLECULE():
         if hasattr(self, 'molecule_lrc_parameter'):
             if self.molecule_lrc_parameter == "tune":
                 self.molecule_lrc_parameter = self.xc_tuning()
+                logger.info(f"Optimal μ (ω) = {self.molecule_lrc_parameter:.6f}")
             self.mf.omega = self.molecule_lrc_parameter
-
-        # eps0 = self.compute_vacuum_level()
-        # print(f"Vacuum level ε₀ = {eps0:.6f} Ha")
-        # sys.exit(0)
+        
+        if self.has_broadening:
+            if self.broadening_dict["eps0"] == "tune":
+                eps0 = self.compute_vacuum_level()
+                self.broadening_dict["eps0"] = eps0
+                logger.info(f"Vacuum level ε₀ = {eps0:.6f} Ha")
 
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
@@ -175,7 +178,6 @@ class MOLECULE():
 
         logger.info("Tuning LC-ωPBE...\n")
         res = minimize_scalar(compute_J, bounds=(0.25, 0.55), method="bounded", tol=1e-6)
-        logger.info(f"Optimal μ (ω) = {res.x:.6f}")
         return res.x
 
     def compute_vacuum_level(self):

@@ -48,17 +48,14 @@ if __name__ == "__main__":
 
     # Step 2: Fill in PARAMS dataclass
     params = PARAMS(args)
-    logger.debug(f"PARAMS successfully created: ")
-    for key, value in vars(params).items():
-        logger.debug(f"\t{key}: {value}")
-    
+    logger.debug(f"PARAMS successfully created: saved to `run_parameters`")
     if args.verbose >= 2:
         with open("run_parameters", "w") as f:
             f.write("=== Run Parameters ===\n\n")
             for key in sorted(vars(params).keys()):
                 value = getattr(params, key)
                 f.write(f"{key}: {value}\n")
-
+    
     logger.info(f"The timestep for this simulation is {params.dt} au (roughly {np.round(params.dt / constants.T_AU_FS, decimals=5)} fs).")
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     

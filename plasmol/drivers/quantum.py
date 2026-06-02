@@ -1,4 +1,5 @@
 # drivers/quantum.py
+import math
 import os
 import csv
 import logging
@@ -32,9 +33,10 @@ def run(params):
         logger.debug("Resuming from checkpoint - skipping CSV initialization.")
 
     molecule = MOLECULE(params)
-    
     logger.debug(f"Electric field successfully added to {params.field_e_filepath}")
 
+    total_steps = len(params.times)
+    report_interval = max(1, total_steps // 10)
     for index, current_time in enumerate(params.times):
         if params.resumed_from_checkpoint:
             dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if params.has_fourier else None
@@ -42,12 +44,17 @@ def run(params):
             if current_time <= params.checkpoint_dict[f'checkpoint_time{suffix}']:
                 continue
         mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
-        logging.info(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
+        logging.debug(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
+        if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
+            percent = int(round((index + 1) / total_steps * 100))
+            logger.info(f"Simulation progress: {percent}% done "
+                        f"({index + 1}/{total_steps} steps)")
         update_csv(params.field_p_filepath, current_time, *mu_arr)
-        if params.has_checkpoint and \
-            (index % params.checkpoint_frequency_steps == 0 or current_time % params.checkpoint_frequency_time == 0) and \
-            not current_time == 0.0:
-            update_checkpoint(params, molecule, current_time)
+        if params.has_checkpoint and not current_time == 0.0:
+            n_steps = round(index / params.checkpoint_frequency_steps)
+            reconstructed = n_steps * params.checkpoint_frequency_steps
+            if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
+                update_checkpoint(params, molecule, current_time)
 
     base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
     plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
