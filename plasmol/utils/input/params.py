@@ -386,6 +386,8 @@ class PARAMS:
                 raise ValueError("Checkpointing 'frequency_steps' must be a positive value.")
             if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time <= 0:
                 raise ValueError("Checkpointing 'frequency_time' must be a positive value.")
+            if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time > self.t_end:
+                logger.warning(f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) is greater than simulation end time ({self.t_end}). Will only save checkpoint at simulation end.")
             if hasattr(self, 'checkpoint_frequency_time'):
                 n_steps = round(self.checkpoint_frequency_time / self.dt)
                 reconstructed = n_steps * self.dt

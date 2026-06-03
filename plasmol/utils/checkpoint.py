@@ -243,7 +243,7 @@ def update_checkpoint(params, molecule, checkpoint_time):
         save_dict.pop('allow_pickle', None)
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
-    time_log_str = f"{'='*40} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time}"
+    time_log_str = f"{'='*40} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time} "
     time_log_str += f"(direction: {dir_component}) " if is_fourier else ""
     time_log_str += f"{'='*40}"
     logger.info(time_log_str)

@@ -9,7 +9,7 @@ from plasmol.quantum.molecule import MOLECULE
 
 from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
-from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint
+from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint, init_checkpoint
 
 from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
@@ -37,25 +37,34 @@ def run(params):
 
     total_steps = len(params.times)
     report_interval = max(1, total_steps // 10)
-    for index, current_time in enumerate(params.times):
-        if params.resumed_from_checkpoint:
-            dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if params.has_fourier else None
-            suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
-            if current_time <= params.checkpoint_dict[f'checkpoint_time{suffix}']:
-                continue
-        mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
-        logging.debug(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
-        if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
-            percent = int(round((index + 1) / total_steps * 100))
-            logger.info(f"Simulation progress: {percent}% done "
-                        f"({index + 1}/{total_steps} steps)")
-        update_csv(params.field_p_filepath, current_time, *mu_arr)
-        if params.has_checkpoint and not current_time == 0.0:
-            n_steps = round(index / params.checkpoint_frequency_steps)
-            reconstructed = n_steps * params.checkpoint_frequency_steps
-            if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
-                update_checkpoint(params, molecule, current_time)
+    try:
+        time = 0
+        for index, current_time in enumerate(params.times):
+            if params.resumed_from_checkpoint:
+                dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if params.has_fourier else None
+                suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
+                if current_time <= params.checkpoint_dict[f'checkpoint_time{suffix}']:
+                    continue
+            mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
+            logging.debug(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
+            if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
+                percent = int(round((index + 1) / total_steps * 100))
+                logger.info(f"Simulation progress: {percent}% done ({index + 1}/{total_steps} steps)")
+            update_csv(params.field_p_filepath, current_time, *mu_arr)
+            time = current_time
+            if params.has_checkpoint and not current_time == 0.0:
+                n_steps = round(index / params.checkpoint_frequency_steps)
+                reconstructed = n_steps * params.checkpoint_frequency_steps
+                if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
+                    update_checkpoint(params, molecule, current_time)
+    except Exception as e:
+        logger.error(f"An error occurred during simulation: {e}")
+    finally:
+        setattr(params, 'checkpoint_filepath', "final_checkpoint.npz")
+        init_checkpoint(params)
+        update_checkpoint(params, molecule, time)
 
-    base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
-    plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+        base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
+        plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+
 

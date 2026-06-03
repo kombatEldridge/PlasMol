@@ -16,6 +16,7 @@ from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
 from plasmol.utils.input.cli import parse_arguments
 from plasmol.utils.input.params import PARAMS
+from plasmol.utils.checkpoint import init_checkpoint, update_checkpoint
 
 if __name__ == "__main__":
     # Step 1: Grab CLI args
@@ -60,9 +61,7 @@ if __name__ == "__main__":
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     
     if params.has_checkpoint and not params.resumed_from_checkpoint:
-        from plasmol.utils.checkpoint import init_checkpoint
         init_checkpoint(params)
     
     # Step 3: Execute proper workflow
     params.driver(params)
-
