@@ -9,7 +9,7 @@ from plasmol.quantum.molecule import MOLECULE
 
 from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
-from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint, init_checkpoint
+from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint, init_checkpoint, cleanup_checkpoint
 
 from plasmol.utils.plotting import plot_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
@@ -57,12 +57,16 @@ def run(params):
                 reconstructed = n_steps * params.checkpoint_frequency_steps
                 if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
                     update_checkpoint(params, molecule, current_time)
+                    params.checkpoint_written_after_init = True
     except Exception as e:
         logger.error(f"An error occurred during simulation: {e}")
     finally:
-        setattr(params, 'checkpoint_filepath', "final_checkpoint.npz")
+        checkpoint_filepath = params.checkpoint_filepath
+        setattr(params, 'checkpoint_filepath', f"final-{checkpoint_filepath}")
         init_checkpoint(params)
         update_checkpoint(params, molecule, time)
+        setattr(params, 'checkpoint_filepath', checkpoint_filepath)
+        cleanup_checkpoint(params)
 
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)

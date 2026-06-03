@@ -62,6 +62,7 @@ if __name__ == "__main__":
     
     if params.has_checkpoint and not params.resumed_from_checkpoint:
         init_checkpoint(params)
+        params.checkpoint_written_after_init = False
     
     # Step 3: Execute proper workflow
     params.driver(params)

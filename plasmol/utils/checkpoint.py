@@ -93,9 +93,6 @@ def init_checkpoint(params):
     Creates the .npz with params_dict, input_file_path, input_file_content,
     is_fourier, and all optional keys pre-initialized to None.
     """
-    if not getattr(params, "checkpoint_filepath", None):
-        raise ValueError("params.checkpoint_filepath is not set - cannot write checkpoint")
-    
     checkpoint_path = params.checkpoint_filepath
 
     # Load existing checkpoint
@@ -380,3 +377,11 @@ def resume_from_checkpoint(args):
     else:
         logger.info(f"Loaded checkpoint with data at t={params.checkpoint_dict['checkpoint_time']} au.")
     return params
+
+def cleanup_checkpoint(params):
+    if params.checkpoint_written_after_init == False:
+        logger.warning(f"First checkpoint file ({params.checkpoint_filepath}) was initialized but never completed. Removing...")
+        os.remove(params.checkpoint_filepath)
+    for filename in os.listdir("."):
+        if filename.endswith(".npz.lock"):
+            os.remove(filename)
