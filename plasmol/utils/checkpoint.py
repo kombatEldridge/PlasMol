@@ -379,7 +379,7 @@ def resume_from_checkpoint(args):
     return params
 
 def cleanup_checkpoint(params):
-    if params.checkpoint_written_after_init == False:
+    if hasattr(params, "checkpoint_written_after_init") and params.checkpoint_written_after_init == False:
         logger.warning(f"First checkpoint file ({params.checkpoint_filepath}) was initialized but never completed. Removing...")
         os.remove(params.checkpoint_filepath)
     for filename in os.listdir("."):

@@ -1,4 +1,4 @@
-# quantum/electric_field.py
+# quantum/sources.py
 import logging 
 import numpy as np
 
@@ -6,7 +6,7 @@ from plasmol import constants
 
 logger = logging.getLogger("main")
 
-class ELECTRICFIELD:
+class QUANTUMSOURCE:
     def __init__(self, params):
         if not params.has_molecule_source:
             logger.warning("No molecule source specified. Continuing with empty field.")
@@ -24,7 +24,7 @@ class ELECTRICFIELD:
         self.component = params.molecule_source_component.lower().strip()
         kwargs = {k: v for k, v in getattr(params, 'molecule_source_additional_parameters', {}).items()}
 
-        logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
+        logging.debug(f"Initializing QUANTUMSOURCE with type: {self.source_type}")
 
         if self.source_type == 'pulse':
             self.frequency_um = kwargs.get('frequency', None)

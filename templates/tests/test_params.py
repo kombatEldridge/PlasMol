@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from argparse import Namespace
 from plasmol.utils.input.params import PARAMS
-from plasmol.quantum.electric_field import ELECTRICFIELD
+from plasmol.quantum.sources import QUANTUMSOURCE
 
 def test_minimal_json_parses_cleanly(minimal_params):
     """Basic sanity check on our minimal test JSON."""
@@ -79,8 +79,8 @@ def test_geometry_construction_angstrom_conversion(tmp_path):
     print("Geometry conversion (Angstrom → Bohr) successful")
 
 
-def test_electricfield_pulse_and_kick():
-    """Test ELECTRICFIELD for both 'pulse' and 'kick'."""
+def test_QUANTUMSOURCE_pulse_and_kick():
+    """Test QUANTUMSOURCE for both 'pulse' and 'kick'."""
     times = np.linspace(0, 40, 401)
     # Pulse
     params_pulse = Namespace(
@@ -89,7 +89,7 @@ def test_electricfield_pulse_and_kick():
         molecule_source_width_steps=50, molecule_source_component="z",
         molecule_source_additional_parameters={"wavelength": 0.8}
     )
-    ef = ELECTRICFIELD(params_pulse)
+    ef = QUANTUMSOURCE(params_pulse)
     assert ef.field.shape == (len(times), 3)
     assert np.max(np.abs(ef.field[:, 2])) > 0.005
 
@@ -99,9 +99,9 @@ def test_electricfield_pulse_and_kick():
         molecule_source_intensity=0.05, molecule_source_peak_time=5.0,
         molecule_source_width_steps=1, molecule_source_component="x"
     )
-    ef = ELECTRICFIELD(params_kick)
+    ef = QUANTUMSOURCE(params_kick)
     assert abs(ef.field[np.argmin(np.abs(times - 5.0)), 0] - 0.05) < 1e-10
-    print("ELECTRICFIELD pulse/kick generation correct")
+    print("QUANTUMSOURCE pulse/kick generation correct")
 
 
 # ====================== TESTS FOR EVERY PROTECTION IN _attribute_checks() ======================

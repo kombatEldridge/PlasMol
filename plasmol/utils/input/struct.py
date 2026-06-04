@@ -53,8 +53,8 @@ param_defs = [
     ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule', (list, str), "Molecular geometry as list of atom+coord entries or path to .xyz file", None),
     ('molecule_geometry_units', ['molecule', 'geometry_units'], False, 'has_molecule', None, 'molecule', str, "Units of the geometry coordinates", None),
     ('molecule_basis', ['molecule', 'basis'], False, 'has_molecule', None, 'molecule', str, "Basis set name (e.g. '6-31g')", None),
-    ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', None, 'molecule', int, "Total molecular charge", None),
-    ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', None, 'molecule', int, "Spin multiplicity minus one (0 = singlet)", None),
+    ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', 0, 'molecule', int, "Total molecular charge", None),
+    ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', 0, 'molecule', int, "Spin multiplicity minus one (0 = singlet)", None),
     ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule', str, "Exchange-correlation functional", None),
     ('molecule_lrc_parameter', ['molecule', 'lrc_parameter'], False, 'has_molecule', None, 'molecule', (float, str), "Long-range correction parameter (mu/omega) for RSH functionals", "a.u."),
     ('molecule_propagator_str', ['molecule', 'propagator', "type"], False, 'has_molecule', 'magnus2', 'molecule', str, "Time-propagation algorithm", None),
@@ -73,7 +73,7 @@ param_defs = [
 
     # Lopata Broadening params
     ('broadening_dict', ['molecule', 'broadening'], True, "has_broadening", None, 'molecule', dict, None, None),
-    ('broadening_type', ['molecule', 'broadening', "type"], False, 'has_broadening', None, 'molecule', str, "Type of broadening (static or dynamic)", None),
+    ('broadening_type', ['molecule', 'broadening', "type"], False, 'has_broadening', "static", 'molecule', str, "Type of broadening (static or dynamic)", None),
     ('broadening_gam0', ['molecule', 'broadening', "gam0"], False, 'has_broadening', 1.0, 'molecule', (int, float), "Base broadening strength", "a.u."),
     ('broadening_xi', ['molecule', 'broadening', "xi"], False, 'has_broadening', 0.5, 'molecule', (int, float), "Energy-dependent broadening exponent", None),
     ('broadening_eps0', ['molecule', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float, str), "Reference energy for broadening", "a.u."),

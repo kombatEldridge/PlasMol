@@ -61,12 +61,12 @@ def run(params):
     except Exception as e:
         logger.error(f"An error occurred during simulation: {e}")
     finally:
-        checkpoint_filepath = params.checkpoint_filepath
-        setattr(params, 'checkpoint_filepath', f"final-{checkpoint_filepath}")
-        init_checkpoint(params)
-        update_checkpoint(params, molecule, time)
-        setattr(params, 'checkpoint_filepath', checkpoint_filepath)
-        cleanup_checkpoint(params)
+        # checkpoint_filepath = getattr(params, "checkpoint_filepath", "checkpoint.npz")
+        # setattr(params, 'checkpoint_filepath', f"final-{checkpoint_filepath}")
+        # init_checkpoint(params)
+        # update_checkpoint(params, molecule, time)
+        # setattr(params, 'checkpoint_filepath', checkpoint_filepath)
+        # cleanup_checkpoint(params)
 
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)

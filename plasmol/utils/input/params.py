@@ -17,7 +17,7 @@ from plasmol import constants
 from plasmol.drivers import *
 from plasmol.quantum.propagators import *
 from plasmol.utils.input.struct import param_defs
-from plasmol.quantum.electric_field import ELECTRICFIELD
+from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 
 logger = logging.getLogger("main")
@@ -224,7 +224,6 @@ class PARAMS:
                         raise ValueError("Point and center must be 3D coordinates (x, y, z)")
                     d = np.linalg.norm(p - c)
                     distance = abs(d - self.nanoparticle_radius)
-                    print(d)
                     if self.plasmon_pixel_length > distance:
                         raise ValueError(f"Molecule position is too close to nanoparticle surface (dist = {distance:.6f} μm). Minimum distance required: {self.plasmon_pixel_length:.6f} μm.")
                     if self.nanoparticle_radius > d:
@@ -235,6 +234,9 @@ class PARAMS:
             if self.has_plasmon:
                 if not hasattr(self, 'plasmol_molecule_position'):
                     raise RuntimeError("No 'plasmol_molecule_position' object found in 'plasmon' section, but quantum (molecule) is present. Please specify the 'plasmol_molecule_position' parameters in the 'plasmon' section.")
+            else:
+                if hasattr(self, 'driver_str') and self.driver_str == "plasmol":
+                    raise ValueError("Driver 'plasmol' requires a 'plasmon' section.")
             if self.has_comparison:
                 if hasattr(self, 'molecule_basis') or hasattr(self, 'molecule_xc'):
                     logger.info("Comparison modifier selected; ignoring singular basis set and xc.")
@@ -265,7 +267,7 @@ class PARAMS:
             if not self.molecule_geometry_units in ['angstrom', 'bohr']:
                 raise ValueError(f"Invalid 'molecule_geometry_units': '{self.molecule_geometry_units}'. Must be 'angstrom' or 'bohr'.")
 
-            # Source params (molecule section)
+            # Molecule Source params
             if self.has_plasmon_source and self.has_molecule_source:
                 raise ValueError("Source found in both plasmon and molecule sections. Please specify only one.")
             elif self.has_molecule_source:
@@ -274,12 +276,14 @@ class PARAMS:
                         pretty = attr.removeprefix("molecule_source_")
                         raise ValueError(f"Molecule source requires '{pretty}' attribute.")
                 if self.has_fourier:
-                    for attr in ['molecule_source_type', 'molecule_source_component']:
-                        if hasattr(self, attr):
-                            pretty = attr.removeprefix("molecule_source_")
-                            logger.warning(f"Molecule source '{pretty}' attribute being ignored because Fourier modifier is enabled.")
-                    setattr(self, 'molecule_source_type', 'kick')
-                    setattr(self, 'molecule_source_component', 'z')
+                    if not getattr(self, 'molecule_source_type', None) == "kick":
+                        logger.warning(f"Non-'kick' source type being ignored because Fourier modifier is enabled.")
+                        setattr(self, 'molecule_source_type', 'kick')
+                    if hasattr(self, 'molecule_source_component'):
+                        logger.warning(f"Molecule source component being ignored because Fourier modifier is enabled.")
+                else:
+                    if self.molecule_source_component not in self.xyz:
+                        raise ValueError(f"Molecule source component must be one of {self.xyz}.")
                 if hasattr(self, 'molecule_source_peak_time'):
                     value = getattr(self, 'molecule_source_peak_time')
                     if value is not None and value < 0:
@@ -293,15 +297,12 @@ class PARAMS:
                 if not hasattr(self, "molecule_source_additional_parameters") and self.molecule_source_type == 'pulse':
                     pretty = attr.removeprefix("molecule_source_")
                     raise ValueError(f"Source requires '{pretty}' attribute.")
-
                 if self.molecule_source_type.lower() == 'pulse':
                     msap = getattr(self, 'molecule_source_additional_parameters', {})
                     if 'wavelength' not in msap and 'frequency' not in msap:
                         raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
                 if self.molecule_source_type.lower() not in ['pulse', 'kick']:
                     raise ValueError(f"Molecule source must be of type 'pulse' or 'kick' and not '{self.molecule_source_type}'.")
-                if self.molecule_source_component not in self.xyz:
-                    raise ValueError(f"Molecule source component must be one of {self.xyz}.")
                 if hasattr(self, 'molecule_source_additional_parameters') and self.molecule_source_additional_parameters is not None:
                     for attr in self.molecule_source_additional_parameters:
                         value = self.molecule_source_additional_parameters.get(attr)
@@ -341,17 +342,15 @@ class PARAMS:
             # Lopata Broadening params
             if self.has_broadening:
                 logger.info("Broadening modifier selected; applying Lopata broadening to spectra.")
-                if not hasattr(self, 'broadening_type'):
-                    raise ValueError("Broadening modifier requires 'type' attribute (either 'static' or 'dynamic').")
                 if self.broadening_type.lower() not in ['static', 'dynamic']:
                     raise ValueError("Broadening 'type' must be 'static' or 'dynamic'.")
-                if hasattr(self, 'broadening_gam0') and self.broadening_gam0 <= 0:
+                if self.broadening_gam0 <= 0:
                     raise ValueError("Broadening 'gam0' must be a positive value.")
-                if hasattr(self, 'broadening_xi')  and self.broadening_xi < 0:
+                if self.broadening_xi < 0:
                     raise ValueError("Broadening 'xi' must be a non-negative value.")
-                if hasattr(self, 'broadening_eps0') and self.broadening_eps0 < 0:
+                if type(self.broadening_eps0) == float and self.broadening_eps0 < 0:
                         raise ValueError("Broadening 'eps0' must be a non-negative value.") 
-                if hasattr(self, 'broadening_clamp') and self.broadening_clamp <= 0:
+                if self.broadening_clamp <= 0:
                     raise ValueError("Broadening 'clamp' must be a positive value.")
 
             # Comparison mode params
@@ -384,7 +383,7 @@ class PARAMS:
                 for loc in ['comparison_num_virtual', 'comparison_num_occupied', 'comparison_index_min', 'comparison_index_max']:
                     if hasattr(self, loc):
                         if getattr(self, loc) < 1: 
-                            pretty = loc.removeprefix("molecule_source_")
+                            pretty = loc.removeprefix("comparison_")
                             raise ValueError(f"Comparison '{pretty}' must be at least 1.")
 
         # Checkpointing params
@@ -508,11 +507,9 @@ class PARAMS:
             if not self.has_plasmon:
                 time_values = np.arange(0, self.t_end + self.dt, self.dt)
                 self.times = np.linspace(0, time_values[-1], int(len(time_values)))
-                self.molecule_source_field = ELECTRICFIELD(self).field
-
-            if self.has_broadening:
-                del self.broadening_dict["type"]
-
+                if not self.has_fourier:
+                    self.molecule_source_field = QUANTUMSOURCE(self).field
+                
             if self.has_fourier:
                 for dir in {"x", "y", "z"}:
                     attr = f"field_e_{dir}_filepath"

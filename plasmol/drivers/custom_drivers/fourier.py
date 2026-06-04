@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from plasmol import constants
-from plasmol.quantum.electric_field import ELECTRICFIELD
+from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.drivers import *
 
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
@@ -32,7 +32,7 @@ def _run_quantum_with_prefix(params_copy):
         getattr(params_copy, 'verbose', 1),
         getattr(params_copy, 'log', None)
     )
-    f = PrefixFilter(params_copy.molecule_source_dict['component'])
+    f = PrefixFilter(params_copy.molecule_source_component)
     logging.getLogger("main").addFilter(f)
     logging.getLogger().addFilter(f)
     try:
@@ -141,8 +141,8 @@ def run(params):
     params_copies = []
     for dir in params.xyz:
         params_copy = copy.deepcopy(params)
-        params_copy.molecule_source_dict['component'] = dir
-        params_copy.molecule_source_field = ELECTRICFIELD(params_copy).field
+        params_copy.molecule_source_component = dir
+        params_copy.molecule_source_field = QUANTUMSOURCE(params_copy).field
         params_copy.dir_path = f"{dir}_dir"
         params_copy.field_e_filepath = getattr(params_copy, f'field_e_{dir}_filepath')
         params_copy.field_p_filepath = getattr(params_copy, f'field_p_{dir}_filepath')
@@ -155,7 +155,7 @@ def run(params):
 
     with ProcessPoolExecutor(max_workers=len(params_copies)) as executor:
         future_to_dir = {
-            executor.submit(_run_quantum_with_prefix, params_copy): params_copy.molecule_source_dict['component']
+            executor.submit(_run_quantum_with_prefix, params_copy): params_copy.molecule_source_component
             for params_copy in params_copies
         }
 
@@ -182,6 +182,8 @@ def run(params):
     time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
 
     abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, params.fourier_min_ev, params.fourier_max_ev, npz=getattr(params, 'fourier_npz_filepath', None))
+    if len(freqs) == 0:
+        raise ValueError("No valid frequencies found for Fourier transform. Try running the simulation for longer.")
     abs = absorption(abs_imag, freqs)
     
     pd.DataFrame({'Frequency': freqs, 'Absorption': abs/max(abs)}).to_csv(Path(params.fourier_spectrum_filepath).with_suffix(".csv"), index=False)
