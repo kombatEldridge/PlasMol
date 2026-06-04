@@ -10,8 +10,10 @@ import numpy as np
 from pathlib import Path
 from pyscf.dft import libxc
 from rich.table import Table
+from typing import Tuple, Union
 from rich.console import Console
 
+from plasmol import constants
 from plasmol.drivers import *
 from plasmol.quantum.propagators import *
 from plasmol.utils.input.struct import param_defs
@@ -213,6 +215,20 @@ class PARAMS:
                         raise ValueError(f"Invalid molecule position '{loc}'; must be a number.")
                 if len(self.plasmol_molecule_position) != 3:
                     raise ValueError("Molecule position must be an array of three numbers [x, y, z].")
+                if self.has_nanoparticle:
+                    self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
+                    self.plasmon_pixel_length = 1/self.plasmon_resolution
+                    p = np.asarray(self.plasmol_molecule_position, dtype=float)
+                    c = np.asarray(self.nanoparticle_center, dtype=float)
+                    if p.shape != (3,) or c.shape != (3,):
+                        raise ValueError("Point and center must be 3D coordinates (x, y, z)")
+                    d = np.linalg.norm(p - c)
+                    distance = abs(d - self.nanoparticle_radius)
+                    print(d)
+                    if self.plasmon_pixel_length > distance:
+                        raise ValueError(f"Molecule position is too close to nanoparticle surface (dist = {distance:.6f} μm). Minimum distance required: {self.plasmon_pixel_length:.6f} μm.")
+                    if self.nanoparticle_radius > d:
+                        raise ValueError(f"Molecule position is inside the nanoparticle (dist from NP center = {d:.6f} μm). Minimum distance required: {self.nanoparticle_radius + self.plasmon_pixel_length:.6f} μm.")
 
         # Molecule params
         if self.has_molecule:
@@ -447,7 +463,7 @@ class PARAMS:
                     phase = int(self.plasmon_symmetries[i + 1])
                     symmetries_list.append(mp.Mirror(dir_map[axis], phase=phase))
                 self.plasmon_symmetries = symmetries_list if symmetries_list else None
-            
+
             if self.has_plasmon_source:
                 self.plasmon_source_object = MEEPSOURCE(
                     source_type=self.plasmon_source_type.lower().strip(),

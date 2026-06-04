@@ -18,7 +18,7 @@ class SIMULATION:
         self.dt_meep = self.dt / constants.convertTimeMeep2Atomic
         self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
 
-        logging.debug(f"Initializing simulation with cellLength: {self.plasmon_cell_length}, resolution: {self.plasmon_resolution}")
+        logging.info(f"Initializing simulation with a resolution of {self.plasmon_resolution} pixels/μm ==> {1/self.plasmon_resolution:.6f} μm/pixel")
 
         # Key = integer step index (step = round(t / dt_meep)), Value = induced dipole (au)
         self.measured_dipole_response = {component: {} for component in self.xyz}
