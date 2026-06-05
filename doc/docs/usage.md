@@ -1,260 +1,458 @@
 # Usage
 
-PlasMol is designed to be run from the command line, with most parameters specified in a single input file. This page explains how to create and structure an input file, as well as details on each supported block and parameter. For step-by-step examples, see the [Tutorials](tutorials.md) page.
+PlasMol is run from the command line and is controlled almost entirely by a single **JSON input file**. 
 
-## General Process for Creating an Input File
+## Command-Line Interface (CLI)
 
-1. **Determine Simulation Type**: PlasMol supports three modes based on your input file:
-    - **Classical Only**: Simulate a nanoparticle (NP) using FDTD (via MEEP). Include a `classical` block but no `quantum` block.
-    - **Quantum Only**: Simulate a molecule using RT-TDDFT (via PySCF). Include a `quantum` block but no `classical` block.
-    - **PlasMol (Full)**: Simulate NP-molecule interactions. Include both `classical` and `quantum` blocks.
+```bash
+python -m plasmol.main -f input.json [options]
+```
 
-2. **Structure the Input File**: The file uses a block-based format with `start` and `end` keywords. Comments start with `#`, `--`, or `%`. Sections can be nested.
-    - Always start with a `general` or `settings` block (these two keywords are interchangeable) for shared parameters (e.g., time step, end time).
-    - Add `classical` and/or `quantum` blocks as needed.
-    - Use templates from the `templates/` directory as starting points:
-        - [template-classical.in](https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-classical.in)
-        - [template-quantum.in](https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-quantum.in)
-        - [template-plasmol.in](https://github.com/kombatEldridge/PlasMol/blob/cf3ee73f07f7ae5be5b0de6c1b8a8f9e7913c45b/templates/template-plasmol.in)
+**Options**:
 
-3. **Run PlasMol**: From the command line:
-
-    ```bash
-    python plasmol/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
-    ```
-
-    or
-
-    ```bash
-    python -m plasmol.main -f /path/to/plasmol.in -vv -l plasmol.log -r
-    ```
-
-    - Common options: `-v` (verbose), `-vv` (debug), `-l log.txt` (log file), `-r` (restart, deletes old output files).
-    - See `plasmol/utils/input/cli.py` or run `python plasmol/main.py --help` for full options.
-
-4. **Output Files**: PlasMol can generate CSVs (e.g., `field_e.csv`, `pField.csv`), images (e.g., via HDF5 or plots), and checkpoint files (`.npz`). For details, see the `files` block below.
-
-5. **Units and Conventions**: Times are in atomic units (au) unless specified. Coordinates are in Bohr or Angstrom (specify in `units`). Electric fields are in au.
-
-6. **Customization**: For advanced tweaks (e.g., custom sources or propagators), modify the code as noted in [API Reference](api-reference.md).
-
-## Input Blocks and Parameters
-
-Below are details on each block, drawn from the code and templates. Parameters are listed with defaults (if any), types, and descriptions. Required parameters are marked with *.
-
-### General/Settings Block
-
-Shared simulation parameters. Use `start general` or `start settings` (interchangeable). This block is required.
-
-- `dt`*: Float. Time step in au (e.g., `0.001`).
-- `t_end`*: Float. End time in au (e.g., `40`).
-- `field_e_path`: String. Path to output CSV for electric field (e.g., `field_e.csv`).
+- `-f`, `--input` : Path to JSON input file (will assume first file given is input if not specified).
+- `-l`, `--log` : Path to log file (default: print to terminal).
+- `-v`, `-vv` : Verbosity (`-v` = INFO (default), `-vv` = DEBUG).
+- `--describe` : Print a rich table of **all** supported parameters (with types, defaults, descriptions, units) and exit. Extremely useful for exploring the schema.
+- `--help` : Show CLI help.
 
 Example:
-
-```lua
-start general
-    dt 0.001
-    t_end 40
-    field_e_path field_e.csv
-end general
+```bash
+python -m plasmol.main --describe
 ```
 
-### Classical Block
+## Overall JSON Structure
 
-For NP simulations (FDTD via MEEP). Required for classical or full PlasMol modes.
+The input file has five top-level keys (all optional except `settings`):
 
-#### Source Sub-Block
-
-Defines the incident electric field. Required for most simulations. For more information about these sources, visit [MEEP's documentation](https://meep.readthedocs.io/en/master/Python_User_Interface/#source).
-
-- `sourceType`*: String. One of: `continuous`, `gaussian`, `chirped`, `pulse`.
-- `sourceCenter`*: Float or list (microns) (e.g., `-0.04` or `-0.04 0 0`). Center position. If one component given, assumed in the 'x' direction.
-- `sourceSize`*: List of 3 floats (microns) (e.g., `0 0.1 0.1`). Size dimensions.
-- `frequency`: Float. Frequency (au); mutually exclusive with `wavelength`.
-- `wavelength`: Float. Wavelength (microns); mutually exclusive with `frequency`.
-- `width`: Float (default 0). Gaussian width.
-- `fwidth`: Float (default inf). Frequency width (alternative to `width`).
-- `start_time`: Float (default 0 or -inf). Start time.
-- `end_time`: Float (default inf). End time.
-- `cutoff`: Float (default 5.0, for Gaussian). Truncation cutoff.
-- `slowness`: Float (default 3.0, for Continuous). Ramp-up slowness.
-- `peakTime`: Float (for Chirped/Pulse). Peak time.
-- `chirpRate`: Float (for Chirped). Chirp rate.
-- `is_integrated`: Boolean (default True). Integrate source over time.
-- `component`: String (default 'z'). Field component ('x', 'y', 'z').
-
-Example (Continuous):
-
-```lua
-start source
-    sourceType continuous
-    sourceCenter -0.04
-    sourceSize 0 0.1 0.1
-    frequency 5
-    isIntegrated True
-end source
+```json
+{
+  "settings": { ... },
+  "plasmon": { ... },               // classical FDTD / nanoparticle
+  "molecule": { ... },              // RT-TDDFT molecule
+  "files": { ... },                 // output paths
+  "additional_parameters": { ... }  // fourier, comparison, probe_points, custom drivers
+}
 ```
 
-#### Simulation Sub-Block
+Comments are supported in JSON using `#`, `--`, `%`, or `//` (they are stripped before parsing).
 
-Core FDTD parameters. For more information about these parameters, visit [MEEP's documentation](https://meep.readthedocs.io/en/master/).
+Values listed as `null` in the exerpts below are considered optional and are just stated to highlight them.
 
-- `cellLength`*: Float (e.g., `0.1`). Simulation cell size.
-- `pmlThickness`*: Float (e.g., `0.01`). PML boundary thickness.
-- `field_eCutOff`: Float (e.g., `1e-12`). Threshold to trigger quantum propagation. Ignored if no quantum blocked defined.
-- `symmetries`: List (e.g., `Y 1 Z -1`). Mirror symmetries (X/Y/Z with phase ±1).
-- `surroundingMaterialIndex`: Float (default 1.0). Refractive index of medium.
-- `resolution`: Float (optional). Spatial resolution; auto-calculated from `dt` if omitted.
+## 1. "settings"
 
-Example:
+This section is required.
 
-```lua
-start simulation
-    cellLength 0.1
-    pmlThickness 0.01
-    field_eCutOff 1e-12
-    symmetries Y 1 Z -1
-    surroundingMaterialIndex 1.33
-end simulation
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 400,
+    "driver": null
+  }
+}
 ```
 
-#### Object Sub-Block
+| Key | Type | Default | Description | Units |
+|-----|------|---------|-------------|-------|
+| `dt` | float | – | Time step | a.u. |
+| `t_end` | float | – | Simulation end time | a.u. |
+| `driver` | str or null | null | Force a specific driver name | – |
 
-Defines the NP (currently supports spheres only).
+Driver is inferred automatically if not specified:
 
-- `material`*: String. Either `Au` or `Ag`. Material type.
-- `radius`*: Float (microns) (e.g., `0.03`). Sphere radius.
-- `center`*: List of 3 floats (e.g., `0 0 0`). Center position.
+- Only `"molecule"` top-level key → `quantum` driver
+- Only `"plasmon"` top-level key → `classical` driver
+- Both `"molecule"` and `"plasmon"` top-level keys → `plasmol` driver
+- If `"driver"` present in `"settings: {...}"` → forces a custom driver
 
-Example:
+## 2. "plasmon"
 
-```lua
-start object
-    material Au
-    radius 0.03
-    center 0 0 0
-end object
+Contains everything needed for Meep FDTD simulations of nanoparticles (and the classical part of hybrid runs).
+
+### 2.1 "simulation"
+These are the general paramters necessary to run a MEEP simulation. More information on these parameters can be found in the [MEEP documentation](https://meep.readthedocs.io/).
+
+```json
+{
+  "simulation": {
+    "cell_length": 0.1,
+    "cell_volume": [0.1, 0.1, 0.1],
+    "pml_thickness": 0.01,
+    "symmetries": ["Y", 1, "Z", -1],
+    "surrounding_material_index": 1.33,
+    "courant": 0.5,
+  }
+}
 ```
 
-#### HDF5 Sub-Block
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `cell_length`                 | int or float | Simulation cubic box length | 0.1 | μm |
+| `cell_volume`                 | list of int or float | Simulation box size; `cell_volume` overrides `cell_length` if both are given | – | μm |
+| `pml_thickness`               | int or float | Perfectly matched layer thickness; recommended ≈ λ_max / 2 | 0.01 | μm |
+| `symmetries`                  | list of str, int pairs | Pairs of `axis, phase`, e.g. `["Y", 1, "Z", -1]`; Axes = X/Y/Z, phase = ±1 | – | – |
+| `surrounding_material_index`  | int or float | Refractive index of background medium | 1.33 | – |
+| `courant`                     | int or float | Courant number for stability | 0.5 | – |
 
-For generating 2D cross-section images of the simulation.
 
-- `timestepsBetween`*: Integer (e.g., `1`). Interval for image output.
-- `intensityMin`*: Float (e.g., `3`). Min intensity for color scale.
-- `intensityMax`*: Float (e.g., `10`). Max intensity for color scale.
-- `imageDirName`: String (optional, auto-generated if omitted). Output directory.
+### 2.2 "source"
 
-Example:
+Defines the incident electromagnetic source within the FDTD simulation. Again, if a hybrid system is requested, this will be the only allowed incident electric field.
 
-```lua
-start hdf5
-    timestepsBetween 1
-    intensityMin 3
-    intensityMax 10
-    imageDirName images
-end hdf5
+```json
+{
+  "source": {
+    "type": "continuous",
+    "center": [-0.04, 0, 0],
+    "size": [0, 0.1, 0.1],
+    "component": "z",
+    "amplitude": 1.0,
+    "is_integrated": true,
+    "additional_parameters": {
+      "frequency": 5.0,
+      "wavelength": null,
+      "start_time": 0,
+      "end_time": 1e20,
+      "width": 0,
+      "fwidth": null,
+      "slowness": 3.0,
+      "cutoff": 5.0,
+      "src_func": null
+    }
+  }
+}
 ```
 
-#### Molecule Sub-Block
+**Common fields**:
 
-Places a molecule in the simulation (required for full PlasMol).
+| Key | Type | Source Type | Description | Default | Units |
+|-----|------|---------|----|-------------|-------|
+| `type` | str | All | Type of preset electric field to add ("continuous", "gaussian", or <custom\>) | – | – |
+| `center` | list of 3 floats | All | Center coordinates of the source | – | μm |
+| `size` | list of 3 floats | All | Size of the source volume; for 2D/3D sources, set the propagation dimension size to 0 | – | μm |
+| `component` | str | All | Electric field component the source acts on ("x", "y", "z") | – | – |
+| `amplitude` | int or float | All | Overall amplitude multiplying the source | 1 | arb. |
+| `is_integrated` | bool | All | Whether the source is integrated over time (dipole moment) | True | – |
+| `additional_parameters.frequency` | int or float | All | Frequency of the source | – | 1/μm |
+| `additional_parameters.wavelength` | int or float | `continuous` + `gaussian` | Frequency of the source; gets converted to frequency if given instead | – | μm |
+| `additional_parameters.start_time` | int or float | All | The starting time for the source | 0 | t_meep |
+| `additional_parameters.end_time` | int or float | All | The end time for the source | 1e20 | t_meep |
+| `additional_parameters.width` | int or float | `continuous` + `gaussian`| Roughly, the temporal width of the smoothing | 0 | – |
+| `additional_parameters.fwidth` | int or float | All |  frequency width is proportional to the inverse of the temporal width; equal to 1/width | inf | – |
+| `additional_parameters.slowness` | int or float | `continuous` | Controls how far into the exponential tail of the tanh function the source turns on | 3.0 | – |
+| `additional_parameters.cutoff` | int or float | `gaussian` | How many widths the current decays for before it is cut off and set to zero  | 5.0 | – |
 
-- `center`*: List of 3 floats (microns) (e.g., `0 0 0`). Molecule position.
+If you want to provide a custom source, you'll need to go into `classical/sources.py` and inject the source function (`src_func`). Additionally the `"type"` must be the name of the function. 
 
-Example:
+Note: At v1.1.0, all other variables for your custom source function not stated above as supported (such as wavelength and frequency) must be hard coded into the `src_func` within `classical/sources.py`.
 
-```lua
-start molecule
-    center 0 0 0
-end molecule
+### 2.3 "nanoparticle"
+
+This section specifies details about the singular NP in your simulation.
+
+```json
+{
+  "nanoparticle": {
+    "material": "Au_JC_visible",
+    "radius": 0.03,
+    "center": [0, 0, 0]
+  }
+}
 ```
 
-### Quantum Block
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `material` | str | Name from `meep.materials` (e.g. `Au_JC_visible`, `Ag_JC_visible`) | – | – |
+| `radius`   | int or float | Radius of Spherical NP | – | μm |
+| `center`   | list of int or float | Center position of Spherical NP | [0, 0, 0] | μm |
 
-For molecule simulations (RT-TDDFT). Required for quantum or full PlasMol modes.
+Note: At v1.1.0, only **spherical** NPs are supported.
 
-#### RTTDDFT Sub-Block
+### 2.4 "images"
 
-Core quantum parameters.
+Generate PNG frames and optional GIF of |E| evolution.
 
-- Geometry sub-sub-block*:
-  - Atom coordinates. Inline after `start geometry`.
-- `units`*: String (`bohr` or `angstrom`).
-- `check_tolerance`: Float (default 1e-12). Tolerance for matrix checks for hermiticity.
-- `charge`*: Integer (default 0).
-- `spin`*: Integer (default 0).
-- `basis`*: String (e.g., `6-31g`).
-- `xc`*: String (e.g., `pbe0`). Exchange-correlation functional.
-- `propagator`*: String, one of `step`, `rk4`, or `magnus2`.
-- `pc_convergence`: Float (only for magnus2, e.g., `1e-12`).
-- `maxiter`: Integer (only for magnus2, e.g., `200`).
-- `transform`: (No value needed). Enables absorption spectrum calculation. See the [API Reference](api-reference.md#quantumpy) and [Tutorial #3](tutorials.md#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag) for more details.
-
-Example:
-
-```lua
-start rttddft
-    start geometry
-        O 0.0 0.0 -0.13
-        H 1.49 0.0 1.03
-        H -1.49 0.0 1.03
-    end geometry
-    units bohr
-    basis 6-31g
-    xc pbe0
-    propagator magnus2
-    transform
-end rttddft
+```json
+{
+  "images": {
+    "timesteps_between": 1,
+    "additional_parameters": ["-m -3", "-M 10", "-Zc dkbluered", "-S 10"],
+    "dir_name": "fdtd_frames",
+    "make_gif": true
+  }
+}
 ```
 
-#### Files Sub-Block
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `timesteps_between` | int | Number of Meep timesteps between PNG frames | – | – |
+| `additional_parameters` | list | Additional arguments passed to Meep's output_png (from h5topng) | ['-Zc dkbluered', '-S 10'] | – |
+| `dir_name` | str | Directory name where PNG frames will be saved | plasmol-images | – |
+| `make_gif` | bool | Automatically create animated GIF from the PNG frames after simulation | True | – |
 
-Output paths.
 
-- `checkpoint` sub-sub-block:
-  - `frequency` int (e.g., `100`). Number of time steps between checkpoints.
-  - `path` string (e.g., `checkpoint.npz`). Path to checkpoint file.
-- `pField_path`: String (e.g., `pField.csv`). Polarization field CSV.
-- `field_e_vs_pField_path`: String (e.g., `output.png`). Plot of fields.
-- `pField_Transform_path`: String (e.g., `pField-transformed.npz`). Transformed data (for spectrum).
-- `eV_spectrum_path`: String (e.g., `spectrum.png`). Absorption spectrum plot.
+### 2.5 "molecule"
 
-Example:
+This set is necessary to specify details about how the molecule will be treated within the MEEP framework.
 
-```lua
-start files
-    start checkpoint
-        frequency 100
-        path checkpoint.npz
-    end checkpoint
-    pField_path pField.csv
-end files
+```json
+{
+  "molecule": {
+    "position": [0, 0, 0],
+    "tolerance_field_e": 1e-20,
+    "back_propagation": true
+  }
+}
 ```
 
-#### Source Sub-Block (Quantum-Only)
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `position` | list of int or float | Location of the quantum molecule inside the Meep cell | – | μm |
+| `tolerance_field_e` | int or float | Minimum E at molecule position before triggering quantum propagation (hybrid only) | 1e-20 | a.u. |
+| `back_propagation` | bool | Whether to inject the molecular induced dipole back into Meep as a CustomSource | True | – |
 
-Electric field for standalone quantum simulations.
+## 3. "molecule"
 
-- `shape`*: String (`pulse` or `kick`).
-- `wavelength_nm`: Float (for pulse).
-- `peak_time_au`: Float.
-- `width_steps`: Integer.
-- `intensity_au`: Float.
-- `dir`: String (`x`, `y`, `z`).
+Contains all parameters for the RT-TDDFT quantum simulation of the molecule. This section is used both for pure quantum runs and for the quantum part of hybrid `plasmol` runs.
 
-Example:
+### 3.1 Geometry & Electronic Structure
 
-```lua
-start source
-    shape pulse
-    wavelength_nm 500
-    peak_time_au 0.1
-    width_steps 5
-    intensity_au 5e-5
-    dir z
-end source
+```json
+{
+  "geometry": [
+    {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+    {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+    {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+  ],
+  "geometry_units": "bohr",
+  "charge": 0,
+  "spin": 0,
+  "basis": "6-31g",
+  "xc": "pbe0",
+  "lrc_parameter": null
+}
 ```
 
-For more details on code internals, see [API Reference](api-reference.md).
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `geometry` | list of dicts or str | List of `{"atom": "...", "coord": [x,y,z]}` or path to a `.xyz` file | – | – |
+| `geometry_units` | str | Units of the geometry coordinates ("bohr" or "angstrom") | – | – |
+| `charge` | int | Total molecular charge | 0 | – |
+| `spin` | int | Spin multiplicity minus one (0 = closed shell) | 0 | – |
+| `basis` | str | Basis set name (e.g. `"6-31g"`, `"def2-tzvpp"`) | – | – |
+| `xc` | str | Exchange-correlation functional (PySCF/Libxc name) | – | – |
+| `lrc_parameter` | float or `"tune"` | Range-separation parameter μ (ω) for RSH functionals; use `"tune"` for automatic IP-tuning | – | a.u. |
+
+For `geometry` entries given as `.xyz` files, they must follow this format:
+
+ - First line: total number of atoms (optional)
+ - Second line: molecule name or comment (optional)
+ - All other lines: element symbol or atomic number, x, y, and z coordinates, separated by spaces or tabs
+
+
+### 3.2 Propagator
+
+```json
+{
+  "propagator": {
+    "type": "magnus2",
+    "pc_convergence": 1e-12,
+    "max_iterations": 200
+  },
+  "hermiticity_tolerance": 1e-12
+}
+```
+
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `propagator.type` | str | Time-propagation algorithm ("magnus2", "rk4", or "step") | `"magnus2"` | – |
+| `propagator.pc_convergence` | float | Predictor-corrector convergence threshold (Magnus2 only) | 1e-12 | a.u. |
+| `propagator.max_iterations` | int | Maximum predictor-corrector iterations (Magnus2 only) | 200 | – |
+| `hermiticity_tolerance` | float | Tolerance used when checking that matrices are Hermitian | 1e-12 | a.u. |
+
+### 3.3 Quantum Source (pure quantum runs only)
+
+When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must provide an incident electric field via this block.
+
+```json
+{
+  "source": {
+    "type": "pulse",
+    "intensity": 0.001,
+    "peak_time": 10,
+    "width_steps": 50,
+    "component": "z",
+    "additional_parameters": {
+      "wavelength": 0.5,
+      "frequency": null
+    }
+  }
+}
+```
+
+| Key | Type | Source Type | Description | Default | Units |
+|-----|------|---------|----|-------------|-------|
+| `type` | str | All | Shape of the external field ("pulse" or "kick") | – | – |
+| `intensity` | float | All | Peak electric-field strength | – | a.u. |
+| `peak_time` | float | All | Time at which the pulse/kick reaches maximum | – | a.u. |
+| `width_steps` | int | All | Width of the pulse in number of time steps | – | – |
+| `component` | str | All | Direction of the electric field ("x", "y", or "z") | – | – |
+| `additional_parameters.wavelength` | float | `pulse` | Central wavelength of the pulse | – | μm |
+| `additional_parameters.frequency` | float | `pulse` | Central frequency of the pulse (alternative to wavelength) | – | 1/a.u. |
+
+For absorption spectra use `"type": "kick"` together with the `"fourier"` section under `additional_parameters` top-level key.
+
+### 3.4 Broadening (Lopata-style)
+
+Optional energy-dependent imaginary potential added to the Fock matrix for lifetime effects and smoother spectra. See the [Lopata paper](https://pubs.acs.org/doi/abs/10.1021/ct400569s) for more details.
+
+```json
+{
+  "broadening": {
+    "type": "static",
+    "gam0": 1.0,
+    "xi": 0.5,
+    "eps0": 0.0477,
+    "clamp": 100
+  }
+}
+```
+
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `type` | str | `"static"` or `"dynamic"` broadening | `"static"` | – |
+| `gam0` | float | Base broadening strength | 1.0 | a.u. |
+| `xi` | float | Exponent controlling energy dependence of broadening | 0.5 | – |
+| `eps0` | float or `"tune"` | Reference energy (vacuum level); use `"tune"` for automatic estimation | 0.05 | a.u. |
+| `clamp` | float | Maximum allowed broadening value | 100 | a.u. |
+
+## 4. "files"
+
+Controls output file names and checkpointing behavior.
+
+```json
+{
+  "files": {
+    "checkpoint": {
+      "frequency_steps": 100,
+      "frequency_time": null,
+      "filepath": "checkpoint.npz"
+    },
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  }
+}
+```
+
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `checkpoint.frequency_steps` | int | Number of time steps between checkpoint saves | – | – |
+| `checkpoint.frequency_time` | float | Amount of simulation time between checkpoint saves (alternative to frequency_steps) | – | a.u. |
+| `checkpoint.filepath` | str | Path to the `.npz` checkpoint file | – | – |
+| `field_e_filepath` | str | CSV file for the electric field felt by the molecule | `"field_e.csv"` | – |
+| `field_p_filepath` | str | CSV file for the induced dipole (polarization) of the molecule | `"field_p.csv"` | – |
+| `spectra_e_vs_p_filepath` | str | PNG file showing incident field vs. molecular response | auto-timestamped | – |
+
+**Note**: Checkpointing is only supported for pure quantum simulations. Use either `frequency_steps` **or** `frequency_time`, not both.
+
+## 5. "additional_parameters"
+
+This top-level section holds advanced or workflow-specific options.
+
+### 5.1 "fourier" (Absorption spectrum workflow)
+
+When present (and the molecule source is a delta kick), PlasMol automatically runs three directional simulations and performs a Fourier transform to produce an absorption spectrum.
+
+```json
+{
+  "fourier": {
+    "gamma": 0.01,
+    "min_ev": 1.5,
+    "max_ev": 5.0,
+    "spectrum_filepath": "spectrum.png",
+    "npz_filepath": null,
+    "field_p_damping_gamma": null
+  }
+}
+```
+
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `gamma` | float | Broadening (damping) factor applied before FFT | – | a.u. |
+| `min_ev` | float | Lower energy limit of the plotted spectrum | 1.5 | eV |
+| `max_ev` | float | Upper energy limit of the plotted spectrum | 5.0 | eV |
+| `spectrum_filepath` | str | Output PNG file for the absorption spectrum | – | – |
+| `npz_filepath` | str | Optional `.npz` file containing raw Fourier data | – | – |
+| `field_p_damping_gamma` | float | Extra artificial damping applied to the time-domain polarization signal | – | a.u. |
+
+### 5.2 "comparison" (MO energy diagrams)
+
+Runs a series of ground-state SCF calculations for different basis sets / XC functionals and produces publication-quality MO energy plots.
+
+```json
+{
+  "comparison": {
+    "bases": ["6-31g", "def2-tzvpp"],
+    "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
+    "lrc_parameters": {"cam-b3lyp": 0.33},
+    "num_occupied": 5,
+    "num_virtual": 10,
+    "y_min": -1.0,
+    "y_max": 0.6,
+    "index_min": null,
+    "index_max": null,
+    "dir_name": "mo_comparison"
+  }
+}
+```
+
+| Key | Type | Description | Default | Units |
+|-----|------|---------|-------------|-------|
+| `bases` | list of str | List of basis sets to compare | – | – |
+| `xcs` | list of str | List of exchange-correlation functionals to compare | – | – |
+| `lrc_parameters` | dict | Mapping of XC name → μ value for range-separated hybrids | – | – |
+| `num_occupied` | int | Number of occupied orbitals to display | – | – |
+| `num_virtual` | int | Number of virtual orbitals to display | – | – |
+| `y_min` / `y_max` | float | Energy axis limits (Hartree) | – | Ha |
+| `index_min` / `index_max` | int | MO index range to display (1-based) | – | – |
+| `dir_name` | str | Directory in which comparison plots are saved | auto-timestamped | – |
+
+### 5.3 "probe_points"
+
+List of spatial locations (in μm) at which the electric field time series will be recorded. Primarily used by custom classical drivers such as `chen2010_fig1`.
+
+```json
+{
+  "probe_points": [
+    [0.011, 0, 0],
+    [0.012, 0, 0]
+  ]
+}
+```
+
+Each entry is a list of three floats `[x, y, z]`.
+
+### 5.4 Using a Custom Driver
+
+To run a completely custom workflow, set the driver name in `settings` and (optionally) supply extra parameters under `additional_parameters`.
+
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 100,
+    "driver": "my_awesome_driver"
+  },
+  "additional_parameters": {
+    "my_custom_setting": 42
+  }
+}
+```
+
+See the dedicated guide [Adding Custom Drivers](adding_custom_drivers.md) for the full procedure (creating the driver file, registering it in `get_driver()`, and adding parameter definitions).
+
+---
+
+*This document reflects PlasMol v1.1.0 JSON input format.*

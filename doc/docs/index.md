@@ -1,128 +1,77 @@
-# PlasMol: Simulating Plasmon-Molecule Interactions
+# PlasMol: Plasmon-Molecule Interactions
 
-![PlasMol Logo](PlasMol.png) <!-- Replace with your actual logo if available -->
+![PlasMol Logo](PlasMol.png)
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg)](https://www.python.org/downloads/)
-[![GitHub Issues](https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg)](https://github.com/kombatEldridge/PlasMol/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social)](https://github.com/kombatEldridge/PlasMol/stargazers) <!-- Placeholders: Update with real badges or remove -->
 
-PlasMol is an open-source tool for simulating plasmon-molecule interactions, combining classical Finite-Difference Time-Domain (FDTD) electromagnetics with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT). Built on [Meep](https://meep.readthedocs.io/) for FDTD and [PySCF](https://pyscf.org/) for quantum calculations, it enables studies of nanoparticle-molecule systems, such as plasmon-enhanced spectroscopy or SERS.
+**PlasMol** is an open-source Python package for simulating plasmon-molecule interactions. It tightly couples classical Finite-Difference Time-Domain (FDTD) electromagnetics (via [Meep](https://meep.readthedocs.io/)) with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT) (via custom code and [PySCF](https://pyscf.org/) molecule construction).
 
-Whether you're running isolated NP simulations, molecular RT-TDDFT, or full hybrid PlasMol runs, this package provides a flexible framework. For more details, see the [About page](about.md).
+It supports **three** primary modes (though more can be added through the [custom drivers](custom_drivers.md)):
 
-## Key Features
-
-- **Simulation Modes**:
-    - Classical FDTD: Simulate nanoparticles (e.g., gold/silver spheres) with custom sources.
-    - Quantum RT-TDDFT: Compute molecular responses like induced dipoles or absorption spectra.
-    - Full PlasMol: Couple FDTD and RT-TDDFT for plasmon-molecule dynamics.
-- **Customizable Sources**: Continuous, Gaussian, chirped, or pulsed fields.
-- **Outputs**: CSVs for fields/dipoles, HDF5 images/GIFs, absorption spectra, and checkpoints.
-- **Propagators**: Step, RK4, or 2nd-order Magnus for RT-TDDFT.
-- **Extensible**: Add custom tracking (e.g., SERS) via code injections—see [API Reference](api-reference.md).
+1. **Classical FDTD** — Spherical nanoparticle (NP) simulations (e.g., Au/Ag spheres) with custom sources, symmetries, PML, and optional field imaging/GIFs or abs/scat cross-section calculations.
+2. **Quantum RT-TDDFT** — Isolated molecule simulations with support for absorption spectra via Fourier transform, MO energy comparisons, [Lopata-style](https://pubs.acs.org/doi/abs/10.1021/ct400569s) broadening, and checkpointing.
+3. **Full Hybrid PlasMol** — Self-consistent NP + molecule simulations where the classical electric field drives quantum propagation and the induced molecular dipole is fed back as a point source in FDTD.
 
 ## Quick Start
 
-### Installation
-
-PlasMol requires Python 3.8+ and dependencies like Meep and PySCF. For full steps, see the [Installation Guide](installation.md).
-
 ```bash
+conda create -n plasmol python=3.12
+conda activate plasmol
+conda install -c conda-forge meep
+
+# Verify:
+python -c "import meep as mp; print(mp.__version__)"
+
 git clone https://github.com/kombatEldridge/PlasMol.git
 cd PlasMol
 pip install -e .
 ```
 
-### Basic Usage
+Run with a JSON input file:
+```bash
+python -m plasmol.main -f input.json -vv -l plasmol.log
+```
 
-Run simulations via command line with an input file (e.g., from `templates/`):
+Use `--describe` to see every supported parameter with defaults and descriptions:
 
 ```bash
-python plasmol/main.py -f templates/template-plasmol.in -vv -l plasmol.log -r
+python -m plasmol.main --describe
 ```
 
-- `-f`: Input file path.
-- `-vv`: Debug logging.
-- `-l`: Log file.
-- `-r`: Restart (clears old outputs).
+See the [Usage](usage.md) page for the full JSON schema and [Tutorials](tutorials.md) for complete working examples.
 
-For detailed instructions and examples, see [Usage](usage.md) and [Tutorials](tutorials.md).
+## Documentation Sections
 
-#### Example: Full PlasMol Simulation
+- [Installation Guide](installation.md)
+- [Usage](usage.md) — JSON input format, all parameters, validation rules
+- [Tutorials](tutorials.md) — Step-by-step examples for classical, quantum, hybrid, spectra, etc.
+- [API Reference](api-reference.md) — Code structure, key classes, extension points
+- [Theory & Methodology](methodology.md)
+- [Contributing](contributing.md)
+- [Custom Drivers](custom_drivers.md)
+- [About](about.md) — History, citation, contact
 
-Input snippet (from `template-plasmol.in`):
+## Citation
 
-```lua
-start general
-    dt 0.1
-    t_end 4000
-end general
+If you use PlasMol in your work, please cite the GitHub repository:
 
-start quantum
-    start rttddft
-        start geometry
-            O 0.0 0.0 -0.13
-            H 1.49 0.0 1.03
-            H -1.49 0.0 1.03
-        end geometry
-        units bohr
-        basis 6-31g
-        xc pbe0
-        propagator magnus2
-    end rttddft
-end quantum
-
-start classical
-    start source
-        sourceType continuous
-        sourceCenter -0.04
-        sourceSize 0 0.1 0.1
-        frequency 5
-    end source
-    start simulation
-        cellLength 0.1
-        pmlThickness 0.01
-    end simulation
-    start object
-        material Au
-        radius 0.03
-        center 0 0 0
-    end object
-end classical
+```bibtex
+@software{PlasMol,
+  author = {Brinton King Eldridge},
+  title = {PlasMol: Simulating Plasmon-Molecule Interactions},
+  url = {https://github.com/kombatEldridge/PlasMol},
+  version = {1.1.0},
+  year = {2026}
+}
 ```
 
-Outputs include field CSVs and optional GIFs/spectra.
+## License & Acknowledgments
 
-## Documentation
+GPL-3.0 License. Built on Meep, PySCF, NumPy, SciPy, Matplotlib, Pandas, and Rich.
 
-- [Installation Guide](installation.md): Step-by-step setup.
-- [Usage](usage.md): Input file structure and parameters.
-- [Tutorials](tutorials.md): Hands-on examples for classical, quantum, and full simulations.
-- [API Reference](api-reference.md): Code details for customization.
-- [Contributing](contributing.md): How to add features or report issues.
-- [About](about.md): Project history, releases, and citations.
+- **Developer**: Brinton King Eldridge [[Google Scholar](https://scholar.google.com/citations?hl=en&user=8OgnrHMAAAAJ)]
+- **Advisors**: Dr. Daniel Nascimento [[Google Scholar](https://scholar.google.com/citations?hl=en&user=VVPFNW8AAAAJ)], Dr. Yongmei Wang [[Google Scholar](https://scholar.google.com/citations?hl=en&user=TLvIKj0AAAAJ)]
+- **Association**: University of Memphis
 
-## Contributing
-
-Contributions are welcome! Whether fixing bugs, adding propagators/sources, or improving docs, check the [Contributing Guide](contributing.md) for details. Open an issue or PR on [GitHub](https://github.com/kombatEldridge/PlasMol).
-
-We especially need help with test suites, new nanoparticle shapes, and SERS tracking.
-
-## License
-
-[GPL-3.0 License](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE).
-
-## Acknowledgments
-
-- Built on [Meep](https://meep.readthedocs.io/), [PySCF](https://pyscf.org/), NumPy, and more.
-- Contributors: [Brinton Eldridge](https://github.com/kombatEldridge).
-- Advisors: Dr. Daniel Nascimento, Dr. Yongmei Wang.
-
-## Contact
-
-- Email: [bldrdge1@memphis.edu](mailto:bldrdge1@memphis.edu)
-- GitHub: [kombatEldridge](https://github.com/kombatEldridge)
-- LinkedIn: [Brinton Eldridge](https://www.linkedin.com/in/brinton-eldridge/)
-
-Star the repo if you find it useful! ⭐
+For questions or collaboration: bldrdge1@memphis.edu or open an issue on GitHub.

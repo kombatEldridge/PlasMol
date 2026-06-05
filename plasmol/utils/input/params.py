@@ -169,11 +169,10 @@ class PARAMS:
                 if self.plasmon_source_component not in self.xyz:
                     raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
                 if getattr(self, "plasmon_source_additional_parameters", None) is not None:
-                    if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters and not self.plasmon_source_type == 'custom':
+                    if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                         raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")
-                elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and self.plasmon_source_type != 'custom':
+                elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                     raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.plasmon_source_type} source.")
-
                 if self.plasmon_source_type == 'custom':
                     if not hasattr(self, 'plasmon_source_additional_parameters') or 'src_func' not in self.plasmon_source_additional_parameters:
                         raise ValueError(f"Custom source requires 'src_func' in 'plasmon_source_additional_parameters' attribute.")
@@ -181,7 +180,6 @@ class PARAMS:
                         walk_through_src_funcs(self.plasmon_source_additional_parameters['src_func'])
                     except ValueError as e:
                         raise ValueError(f"Error occurred while processing custom source function: {e}")
-
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
 
@@ -301,8 +299,8 @@ class PARAMS:
                     msap = getattr(self, 'molecule_source_additional_parameters', {})
                     if 'wavelength' not in msap and 'frequency' not in msap:
                         raise ValueError("Molecule source of type 'pulse' requires 'wavelength' or 'frequency' attribute.")
-                if self.molecule_source_type.lower() not in ['pulse', 'kick']:
-                    raise ValueError(f"Molecule source must be of type 'pulse' or 'kick' and not '{self.molecule_source_type}'.")
+                if self.molecule_source_type.lower() not in ['pulse', 'kick', 'custom_shape']:
+                    raise ValueError(f"Molecule source must be of type 'pulse', 'kick', or 'custom_shape' and not '{self.molecule_source_type}'.")
                 if hasattr(self, 'molecule_source_additional_parameters') and self.molecule_source_additional_parameters is not None:
                     for attr in self.molecule_source_additional_parameters:
                         value = self.molecule_source_additional_parameters.get(attr)
@@ -752,7 +750,7 @@ class PARAMS:
             (attr, _, is_section_dict, _, default_value,
              _, data_type, description, units) = entry
 
-            if is_section_dict:          # skip container dicts (plasmon_dict, etc.)
+            if attr.endswith('_dict'):          # skip container dicts (plasmon_dict, etc.)
                 continue
 
             type_str = _type_name(data_type)

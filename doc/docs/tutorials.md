@@ -1,339 +1,348 @@
-
 # Tutorials
 
-This section provides hands-on tutorials for using PlasMol. Each tutorial uses a template input file from the `templates/` directory. Run commands from your project root, e.g.:
+!!! danger "this page is a WIP"
+    I still need to go through these tutorials and add data and check the template files. 
 
-```bash
-python plasmol/main.p -f templates/template-classical.in -vv -l plasmol.log
+
+
+## Tutorial 1: Classical Nanoparticle Simulation (FDTD Only)
+
+Simulate a gold sphere in water interacting with a continuous-wave source. Produces field CSVs and optional PNG/GIF frames.
+
+**JSON input** (`classical.json`):
+
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 50
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.1,
+      "pml_thickness": 0.01,
+      "surrounding_material_index": 1.33,
+      "symmetries": ["Y", 1, "Z", -1]
+    },
+    "source": {
+      "type": "continuous",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.1, 0.1],
+      "component": "z",
+      "additional_parameters": {
+        "frequency": 5.0
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.03,
+      "center": [0, 0, 0]
+    },
+    "images": {
+      "timesteps_between": 2,
+      "dir_name": "classical_frames",
+      "make_gif": true
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv"
+  }
+}
 ```
 
-Outputs will appear in your working directory (e.g., CSVs, images).
+**Run**:
+```bash
+python -m plasmol.main -f classical.json -vv -l classical.log
+```
 
-## Tutorial 1: Classical NP Simulation (FDTD Only)
+**Outputs**:
 
-Simulate a gold nanoparticle interacting with a continuous electric field. This demonstrates basic FDTD output, including the optional cross-section images.
+- `field_e.csv` — Electric field time series at origin (or probe points if added).
+- `classical_frames/` + `classical_frames.gif` — 2D slices of |Ez|.
 
-1. **Prepare Input**: Copy `template-classical.in` and adjust parameters (e.g., increase `t_end` for longer simulation). Example snippet:
+You can add `probe_points` under `additional_parameters` and use the `scatter_response_fxn` driver for more advanced post-processing (see custom drivers).
 
-  ```lua
-    start general -- 'general' block wrappers are not necessary
-        dt 0.1 -- au
-        t_end 50  -- au
-        field_e_path field_e.csv
-    end general
+---
 
-    -- classical portion
-    start classical
-        start source
-            sourceType continuous
-            sourceCenter -0.04
-            sourceSize 0 0.1 0.1
-            frequency 5
-        end source
+## Tutorial 2: Quantum RT-TDDFT — Induced Dipole of a Molecule
 
-        start simulation
-            cellLength 0.1
-            pmlThickness 0.01
-            -- spherical objects with an incident electric field propagating in the
-            -- +y direction with a z electric component will have the following symmetry
-            symmetries Y 1 Z -1
-            surroundingMaterialIndex 1.33 -- surrounds NP in water
-        end simulation
+Compute the time-dependent induced dipole of a water molecule under a pulsed electric field.
 
-        start object
-            material Au
-            radius 0.03
-            center 0 0 0
-        end object
+**JSON input** (`quantum_pulse.json`):
 
-        start hdf5
-            timestepsBetween 1 -- saves a picture every timestep
-            intensityMin 3
-            intensityMax 10
-            imageDirName hello -- saves images to path hello/.
-        end hdf5
-    end classical
-  ```
+```json
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 1000
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
+    "geometry_units": "bohr",
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "charge": 0,
+    "spin": 0,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "source": {
+      "type": "pulse",
+      "intensity": 5e-5,
+      "peak_time": 200,
+      "width_steps": 1000,
+      "component": "z",
+      "additional_parameters": {
+        "wavelength": 0.4
+      }
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "field_vs_polarization.png"
+  }
+}
+```
 
-2. **Run Simulation**:
+**Run**:
+```bash
+python -m plasmol.main -f quantum_pulse.json -vv -l quantum.log
+```
 
-   ```bash
-   python plasmol/main.py -f /path/to/classical.in -vv -l plasmol.log
-   ```
+**Outputs**:
 
-   or
+- `field_e.csv` + `field_p.csv` — Incident field and induced dipole (polarization) vs time.
+- `field_vs_polarization.png` — Side-by-side plot (generated automatically).
 
-   ```bash
-   python -m plasmol.main -f /path/to/classical.in -vv -l plasmol.log
-   ```
+---
 
-3. **View Outputs**:
+## Tutorial 3: Molecular Absorption Spectrum (Fourier Workflow)
 
-    - `field_e.csv`: Electric field data. Path defined in input file.
-    - `hello/`: PNG cross-sections (if HDF5 enabled); a GIF is auto-generated.
-    ![Cross-section of NP simulation](classical.gif)
-    *Cross-section of a spherical nanoparticle in the xy-plane receiving incident light, whose electric component is measured in the z-direction. Dashed outline added for clarity.*
+Compute the absorption spectrum of water using three directional delta-kick simulations + Fourier transform. This is the recommended way to obtain spectra.
 
-    - For extinction spectra, add custom tracking in `plasmol/classical/simulation.py` (see [API Reference](api-reference.md)).
-    ![FDTD Qext spectrum](MEEPvsDDSCAT.png)
-    *Using instructions from [MEEP's documentation](https://meep.readthedocs.io/en/master/Python_Tutorials/Basics/#mie-scattering-of-a-lossless-dielectric-sphere) and [code examples](https://github.com/NanoComp/meep/blob/04ae6b786ab145a35ab8d290ede4cdce105d0677/python/examples/mie_scattering.py), one can compare the Qext spectrum between the FDTD and DDA methods, implemented using MEEP and DDSCAT respectively.*
+**JSON input** (`absorption_spectrum.json`):
 
-## Tutorial 2: Quantum Molecule Simulation (RT-TDDFT Only)
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 4000
+  },
+  "molecule": {
+    "geometry": [ ... same water geometry ... ],
+    "geometry_units": "bohr",
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "propagator": {"type": "magnus2"},
+    "source": {
+      "type": "kick",
+      "intensity": 5e-5,
+      "peak_time": 0.1,
+      "width_steps": 5,
+      "component": "z"
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "raw_response.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "gamma": 0.005,
+      "min_ev": 1.5,
+      "max_ev": 12.0,
+      "spectrum_filepath": "water_absorption_spectrum.png",
+      "field_p_damping_gamma": 0.01
+    }
+  }
+}
+```
 
-Compute the induced dipole of a water molecule using a pulsed field. This uses only RT-TDDFT.
+**Run**:
+```bash
+python -m plasmol.main -f absorption_spectrum.json -vv -l spectrum.log
+```
 
-1. **Prepare Input**: Copy `template-quantum.in`. Unless you want an absorption spectrum (see [Tutorial 3](#tutorial-3-molecular-absorption-spectrum-rt-tddft-with-transform-flag)), do *not* add `transform` to rttddft block.
+PlasMol automatically runs **three parallel simulations** (x/y/z kicks), applies damping, performs the FFT, and produces a normalized absorption spectrum.
 
-    Example snippet:
+**Outputs**:
 
-    ```lua
-    start general -- 'general' block wrappers are not necessary
-        dt 0.05 -- au
-        t_end 1000  -- au
-        field_e_path field_e.csv
-    end general
+- `x_dir/`, `y_dir/`, `z_dir/` subdirectories with per-direction CSVs.
+- `water_absorption_spectrum.png` — Final absorption spectrum (eV vs. intensity).
+- Optional `.npz` file with raw Fourier data.
 
-    -- rt-tddft portion
-    start quantum
-        start rttddft
-            start geometry
-                O      0.0000000000       0.0000000000       -0.1302052882
-                H      1.4891244004       0.0000000000        1.0332262019
-                H     -1.4891244004       0.0000000000        1.0332262019
-            end geometry
-            units bohr
-            check_tolerance 1e-12
-            charge 0
-            spin 0
-            basis 6-31g
-            xc pbe0
-            resplimit 1e-20
-            propagator magnus2
-            pc_convergence 1e-12
-            maxiter 200
-            transform -- important to include this flag for abs spectrum simulation
-        end rttddft
+---
 
-        start files
-            start checkpoint -- in case simulation crashes
-                frequency 100
-                path checkpoint.npz
-            end checkpoint
-            pField_path pField.csv
-            pField_Transform_path pField-transformed.npz
-            field_e_vs_pField_path output.png
-            eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
-        end files
+## Tutorial 4: Full Hybrid PlasMol Simulation (NP + Molecule)
 
-        start source
-            shape pulse
-            peak_time_au 200
-            width_steps 1000
-            wavelength_nm 400 -- nm
-            intensity_au 5e-5
-            dir z
-        end source  
-    end quantum
-    ```
+Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the local field; its induced dipole is fed back into Meep.
 
-2. **Run Simulation**:
+**JSON input** (`hybrid.json`):
 
-    ```bash
-    python plasmol/main.py -f /path/to/quantum.in -vv -l plasmol.log -r
-    ```
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 2000
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.12,
+      "pml_thickness": 0.015,
+      "tolerance_field_e": 1e-12,
+      "surrounding_material_index": 1.33
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.05, 0, 0],
+      "size": [0, 0.08, 0.08],
+      "component": "z",
+      "additional_parameters": {
+        "frequency": 2.5,
+        "width": 0.8
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.025,
+      "center": [0, 0, 0]
+    },
+    "molecule": {
+      "position": [0.035, 0, 0],
+      "back_propagation": true
+    },
+    "images": {
+      "timesteps_between": 5,
+      "dir_name": "hybrid_frames",
+      "make_gif": true
+    }
+  },
+  "molecule": {
+    "geometry": [ ... water ... ],
+    "geometry_units": "bohr",
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "propagator": {"type": "magnus2"}
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "hybrid_response.png"
+  }
+}
+```
 
-    or
+**Run**:
+```bash
+python -m plasmol.main -f hybrid.json -vv -l hybrid.log
+```
 
-    ```bash
-    python -m plasmol.main -f /path/to/quantum.in -vv -l plasmol.log -r
-    ```
+**What happens internally**:
 
-3. **View Outputs**:
-    - `field_e.csv`: Incident field; plots using `plasmol/utils/plotting.py` for visualization.
-    - `pField.csv`: Induced dipole (polarization) data.
+1. Meep starts with the Au sphere and incident source.
+2. Every time step, if |E| at molecule position > tolerance, the quantum propagator is called.
+3. Induced dipole is stored and injected back into Meep as a CustomSource (point dipole).
+4. Both `field_e.csv` (local field felt by molecule) and `field_p.csv` (molecular response) are written.
 
-    ![Electric field vs. polarization plot](field_evpField.png)
-    *Example spectra comparing a pulse felt by the molecule (left) with the molecule's induced dipole (right). Inset highlights molecules small oscillations due to excitement.*
+This is the core capability of PlasMol for studying plasmon-enhanced phenomena (SERS, energy transfer, etc.).
 
-## Tutorial 3: Molecular Absorption Spectrum (RT-TDDFT with `transform` flag)
+---
 
-Compute the absorption spectrum of a water molecule using three Dirac delta kicks. This uses multithreaded RT-TDDFT and Fourier transform.
+## Tutorial 5: Molecular Orbital Energy Comparison
 
-1. **Prepare Input**: Copy `template-quantum.in`. Enable `transform` for spectrum calculation.
+Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and functionals (very useful for method benchmarking).
 
-    Example snippet:
+**JSON input** (`mo_comparison.json`):
 
-    ```lua
-    start general -- 'general' block wrappers are not necessary
-        dt 0.1 -- au
-        t_end 4000  -- au
-        field_e_path field_e.csv
-    end general
+```json
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 10
+  },
+  "molecule": {
+    "geometry": [ ... water or any molecule ... ],
+    "geometry_units": "bohr",
+    "basis": "6-31g",   // will be overridden by comparison
+    "xc": "pbe0",
+    "propagator": {"type": "magnus2"}
+  },
+  "additional_parameters": {
+    "comparison": {
+      "bases": ["6-31g", "6-31g*", "def2-svp", "aug-cc-pvdz"],
+      "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
+      "lrc_parameters": {"cam-b3lyp": 0.33},
+      "num_occupied": 5,
+      "num_virtual": 8,
+      "y_min": -0.8,
+      "y_max": 0.6,
+      "dir_name": "mo_comparison"
+    }
+  }
+}
+```
 
-    -- rt-tddft portion
-    start quantum
-        start rttddft
-            start geometry
-                O      0.0000000000       0.0000000000       -0.1302052882
-                H      1.4891244004       0.0000000000        1.0332262019
-                H     -1.4891244004       0.0000000000        1.0332262019
-            end geometry
-            units bohr
-            check_tolerance 1e-12
-            charge 0
-            spin 0
-            basis 6-31g
-            xc pbe0
-            resplimit 1e-20
-            propagator magnus2
-            pc_convergence 1e-12
-            maxiter 200
-            transform -- important to include this flag for abs spectrum simulation
-        end rttddft
+**Run**:
+```bash
+python -m plasmol.main -f mo_comparison.json -vv
+```
 
-        start files
-            start checkpoint -- in case simulation crashes
-                frequency 100
-                path checkpoint.npz
-            end checkpoint
-            pField_path pField.csv
-            pField_Transform_path pField-transformed.npz
-            field_e_vs_pField_path output.png
-            eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
-        end files
+**Outputs**:
 
-        start source
-            shape kick -- needs to be a delta 'kick', not 'pulse'
-            peak_time_au 0.1
-            width_steps 5
-            intensity_au 5e-5
-            -- dir z -- do not need to specify direction when transform flag used
-        end source  
-    end quantum
-    ```
+- `mo_comparison/individuals/` — One PNG per (basis, xc) pair.
+- `mo_comparison/all_mo_energies.png` — Beautiful grid plot with HOMO/LUMO annotations and color-coded background (red = negative virtual orbitals, yellow = near-zero LUMO, green = healthy).
 
-2. **Run Simulation**:
+The comparison driver only performs ground-state SCF calculations — no time propagation is needed.
 
-    ```bash
-    python plasmol/main.py -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
-    ```
+---
 
-    or
+## Tutorial 6: Nanoparticle Absorption & Scattering Cross-Sections
 
-    ```bash
-    python -m plasmol.main -f /path/to/abs_spectrum.in -vv -l plasmol.log -r
-    ```
+Use the dedicated `np_abs_cross_sec` driver to compute absorption, scattering, and extinction efficiencies of a nanoparticle (Mie-type calculation with flux boxes).
 
-3. **View Outputs**:
-    - `pField.csv`: Induced dipole (polarization) data.
-    - `spectrum.png`: Absorption spectrum plot.
+Add to your JSON:
 
-    ![Absorption spectrum of water molecule](Final-Comparison.png)
-    *Absorption spectrum run as compared to an LR-TDDFT standard from nwchem.*
+```json
+{
+  "settings": {
+    "driver": "np_abs_cross_sec",
+    ...
+  },
+  "plasmon": {
+    "nanoparticle": { ... },
+    "source": {
+      "type": "gaussian",
+      "additional_parameters": {
+        "frequency": 2.0,
+        "fwidth": 1.5
+      }
+    },
+    ...
+  }
+}
+```
 
-## Tutorial 4: Full PlasMol Simulation (NP + Molecule)
+Then run with that driver. The script produces `output_arrays.txt`, efficiency plots, and a multi-peak Lorentzian fit of the plasmon resonance.
 
-Simulate a gold NP with a water molecule inside, tracking plasmon-molecule interactions.
+Similar workflow exists for the full `plasmol_abs_cross_sec` driver (hybrid NP + molecule cross-sections).
 
-1. **Prepare Input**: Copy `template-plasmol.in`. Combine classical NP with quantum molecule.
-    Example snippet:
+---
 
-    ```lua
-        start general -- 'general' block wrappers are not necessary
-            dt 0.1 -- au
-            t_end 4000  -- au
-            field_e_path field_e.csv
-        end general
+## Advanced / Custom Workflows
 
-        -- rt-tddft portion
-        start quantum
-            start rttddft
-                start geometry
-                    O      0.0000000000       0.0000000000       -0.1302052882
-                    H      1.4891244004       0.0000000000        1.0332262019
-                    H     -1.4891244004       0.0000000000        1.0332262019
-                end geometry
-                units bohr
-                check_tolerance 1e-12
-                charge 0
-                spin 0
-                basis 6-31g
-                xc pbe0
-                resplimit 1e-20
-                propagator magnus2
-                pc_convergence 1e-12
-                maxiter 200
-                transform -- important to include this flag for abs spectrum simulation
-            end rttddft
+- **Chen 2010 replication** (`driver: "scatter_response_fxn"`): Runs four parallel FDTD simulations (X/Y pol × NP/VAC) and saves probe-point field data for post-processing of λ-dependent response.
+- **Adding custom observables**: In `quantum/molecule.py` add a new method (e.g. `calculate_sers_enhancement()`), then call it inside `quantum/propagation.py` after each step. The result can be written to CSV.
+- **New electric field shapes**: Add to `classical/sources.py` (MEEPSOURCE) or `quantum/sources.py` (QUANTUMSOURCE) and register in the JSON schema via `params.py`.
+- **New propagators**: Implement in `quantum/propagators/`, add to the map in `params.py`, and update validation.
 
-            start files
-                start checkpoint -- in case simulation crashes
-                    frequency 100
-                    path checkpoint.npz
-                end checkpoint
-                pField_path pField.csv
-                pField_Transform_path pField-transformed.npz
-                field_e_vs_pField_path output.png
-                eV_spectrum_path spectrum.png -- this image will display the absorption spectrum
-            end files
+All extension points are documented with comments in the source code.
 
-            -- if source is given in quantum block but a classical block is found, 
-            -- this source will be ignored.
-            -- start source
-                -- shape kick
-                -- peak_time_au 0.1
-                -- width_steps 5
-                -- intensity_au 5e-5
-            -- end source  
-        end quantum
-
-        -- classical portion
-        start classical
-            start source
-                sourceType continuous
-                sourceCenter -0.04
-                sourceSize 0 0.1 0.1
-                frequency 5
-            end source
-
-            start simulation
-                cellLength 0.1
-                pmlThickness 0.01
-                -- spherical objects with an incident electric field propagating in the
-                -- +y direction with a z electric component will have the following symmetry
-                symmetries Y 1 Z -1
-                surroundingMaterialIndex 1.33 -- surrounds NP in water
-            end simulation
-
-            start object
-                material Au
-                radius 0.03
-                center 0 0 0
-            end object
-
-            start hdf5
-                timestepsBetween 1 -- saves a picture every timestep
-                intensityMin 3
-                intensityMax 10
-                imageDirName hello -- saves images to path hello/.
-            end hdf5
-        end classical
-   ```
-
-2. **Run Simulation**:
-
-    ```bash
-    python plasmol/main.py -f /path/to/plasmol.in -vv -l plasmol.log -r
-    ```
-
-    or
-
-    ```bash
-    python -m plasmol.main -f /path/to/plasmol.in -vv -l plasmol.log -r
-    ```
-
-3. **View Outputs**:
-    - Similar images, gifs, and spectra to the tutorials above can be found in this instance too.
-    - For SERS or other metrics, inject custom functions (see [API Reference](api-reference.md)).
-
-These tutorials cover basics—experiment with parameters and check logs for issues. For advanced topics, see [API Reference](api-reference.md).
+These tutorials cover the vast majority of use cases. For the complete parameter reference, see [Usage](usage.md) or run `--describe`. Happy simulating!

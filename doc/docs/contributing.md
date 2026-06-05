@@ -1,15 +1,69 @@
 # Contributing Guide
 
-As of the release of v1.0.0, work has paused on this project.
+Thank you for your interest in PlasMol! Contributions of all kinds are welcome — bug fixes, new features, documentation improvements, example inputs, and especially **test cases**.
 
-For students in the same or adjacent fields, perhaps the PlasMol skeleton can inspire you to pick it up for your lab's specific desired outcomes. As is the nature of DFT work, one can track many things as a NP + Molecule simulation propagates by contracting the corresponding operator with the current density matrix. Empty commented sections are left in certain files to make adding custom functions easier.
+## How to Contribute
 
-Particular work on monitoring SERS enhancements could put this code to great use, especially given that this was the original intention of the code.
+1. **Fork** the repository on GitHub.
+2. **Create a feature branch** (`git checkout -b my-new-feature`).
+3. **Make your changes** (see extension points below).
+4. **Test** your changes (run existing tutorials + any new tests).
+5. **Submit a Pull Request** with a clear description of what was changed and why.
 
-## Adding Features
+## Most Needed Contributions (as of v1.1.0)
 
-For contributors who want their code added to the main branch, submitting a PR would be good. General guidelines for doing so can be found on [GitHub's docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
+- **Test suite** — Currently the biggest gap. Even simple regression tests for the quantum propagators, JSON validation, and end-to-end hybrid runs would be extremely valuable.
+- **More nanoparticle shapes** — Support for rods, shells, dimers, etc. in the classical module.
+- **Additional electric field shapes** — Both classical (chirped pulses, custom waveforms) and quantum.
+- **New custom drivers** — Especially for SERS enhancement mapping, hot-electron dynamics, or plexciton spectra.
+- **Documentation & examples** — More tutorial JSON files, Jupyter notebooks, and real-world research examples.
+- **Performance / GPU** — Exploration of PySCF + Meep GPU paths or surrogate models for the quantum step.
 
-## Most needed contributions
+## Adding New Features — Recommended Workflow
 
-Of course, bolstering the list of supported nanoparticle shapes or the supported electric field shapes (for the classical side and quantum side) would be nice, but the main concern is a test suite right now for those contributions to be helpful.
+### 1. New JSON Parameter
+
+- Add a row to `plasmol/utils/input/struct.py:param_defs`.
+- Add validation logic in `PARAMS._validate_all()`.
+- Handle the attribute in `PARAMS._attribute_formation()` if it needs special processing.
+- Document it in `usage.md`.
+
+### 2. New Propagator
+
+- Implement `propagate_xxx(**params, molecule, exc)` in `quantum/propagators/`.
+- Add it to the `propagator_map` in `params.py`.
+- Update validation and `--describe` table.
+- Add a short description in `api-reference.md` and `methodology.md`.
+
+### 3. New Custom Driver
+
+- Create `plasmol/drivers/custom_drivers/my_driver.py` with a top-level `def run(params):`.
+- Register it in `plasmol/drivers/__init__.py:get_driver()`.
+- Document usage in `tutorials.md` and `usage.md`.
+
+### 4. New Observable / Measurable
+
+- Add a method to `quantum/molecule.py` (e.g. `calculate_custom_observable()`).
+- Call it inside `quantum/propagation.py` after the dipole calculation.
+- Write results using `utils/csv.py:update_csv`.
+- (Optional) Add visualization in `utils/plotting.py`.
+
+### 5. New Classical Source or Geometry
+
+- Extend `classical/sources.py` (MEEPSOURCE class).
+- For geometry, extend the handling inside `SIMULATION.__init__`.
+- Update JSON schema and validation.
+
+## Code Style & Quality
+
+- Follow PEP 8.
+- Use type hints where reasonable.
+- Keep functions focused and well-documented (Google or NumPy style docstrings).
+- Run `black` and `flake8` (or the dev requirements) before submitting a PR.
+- All new functionality should be accompanied by at least a minimal test or a working tutorial JSON.
+
+## Questions?
+
+Open an issue on GitHub or email the maintainer (bldrdge1@memphis.edu). We are happy to discuss design decisions before you invest a lot of time.
+
+**Thank you for helping make PlasMol better for the plasmonics and quantum chemistry communities!**

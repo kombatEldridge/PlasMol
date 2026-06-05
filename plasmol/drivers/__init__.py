@@ -4,7 +4,7 @@ from plasmol.drivers.plasmol import run as run_plasmol
 from plasmol.drivers.quantum import run as run_quantum
 from plasmol.drivers.custom_drivers.comparison import run as run_comparison
 from plasmol.drivers.custom_drivers.fourier import run as run_fourier
-from plasmol.drivers.custom_drivers.chen2010_fig1 import run as chen2010_fig1
+from plasmol.drivers.custom_drivers.scatter_response_fxn import run as scatter_response_fxn
 from plasmol.drivers.custom_drivers.np_abs_cross_sec import run as run_np_abs_cross_sec
 from plasmol.drivers.custom_drivers.plasmol_abs_cross_sec import run as run_plasmol_abs_cross_sec
 
@@ -19,8 +19,8 @@ def get_driver(driver_str):
         return run_comparison
     elif driver_str == 'fourier':
         return run_fourier
-    elif driver_str == 'chen2010_fig1':
-        return chen2010_fig1
+    elif driver_str == 'scatter_response_fxn':
+        return scatter_response_fxn
     elif driver_str == 'np_abs_cross_sec':
         return run_np_abs_cross_sec
     elif driver_str == 'plasmol_abs_cross_sec':
@@ -35,6 +35,6 @@ __all__ = [
     'run_quantum', 
     'run_comparison', 
     'run_fourier', 
-    'chen2010_fig1',
+    'scatter_response_fxn',
     'run_np_abs_cross_sec',
     ]

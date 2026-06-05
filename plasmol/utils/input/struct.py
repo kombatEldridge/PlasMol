@@ -1,4 +1,4 @@
-from datetime import datetime
+# utils/input/struct.py
 
 # Each entry is a tuple:
 # (attribute_name, path_as_list, is_section_dict, boolean_name, default_value, section_condition, data_type, description, units)
@@ -13,7 +13,6 @@ param_defs = [
 
     # Plasmon simulation params
     ('plasmon_simulation_dict', ['plasmon', 'simulation'], True, 'has_simulation', None, 'plasmon', dict, None, None),
-    ('plasmon_tolerance_field_e', ['plasmon', 'simulation', "tolerance_field_e"], False, 'has_simulation', 1e-20, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmon_cell_length', ['plasmon', 'simulation', "cell_length"], False, 'has_simulation', 0.1, 'plasmon', (int, float), "Length of the simulation cell (used if cell_volume not provided)", "μm"),
     ('plasmon_cell_volume', ['plasmon', 'simulation', "cell_volume"], False, 'has_simulation', None, 'plasmon', list, "Simulation cell volume (overrides cell_length if provided)", "μm"),
     ('plasmon_pml_thickness', ['plasmon', 'simulation', "pml_thickness"], False, 'has_simulation', 0.01, 'plasmon', (int, float), "Thickness of the PML absorbing boundary layers (recommended to be close to half the largest wavelength)", "μm"),
@@ -41,11 +40,12 @@ param_defs = [
     ('images_dict', ['plasmon', 'images'], True, "has_images", None, 'plasmon', dict, None, None),
     ('images_timesteps_between', ['plasmon', 'images', 'timesteps_between'], False, 'has_images', None, 'plasmon', int, "Number of Meep timesteps between PNG frame outputs", None),
     ('images_additional_parameters', ['plasmon', 'images', 'additional_parameters'], False, 'has_images', ["-Zc dkbluered", "-S 10"], 'plasmon', list, "Additional arguments passed to Meep's output_png (from h5topng)", None),
-    ('images_dir_name', ['plasmon', 'images', 'dir_name'], False, 'has_images', f"plasmol-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'plasmon', str, "Directory name where PNG frames will be saved", None),
+    ('images_dir_name', ['plasmon', 'images', 'dir_name'], False, 'has_images', "plasmol-images", 'plasmon', str, "Directory name where PNG frames will be saved", None),
     ('images_make_gif', ['plasmon', 'images', 'make_gif'], False, 'has_images', True, 'plasmon', bool, "Automatically create animated GIF from the PNG frames after simulation", None),
 
     # Molecule w/in Plasmon params
     ('plasmol_molecule_position', ['plasmon', 'molecule', 'position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
+    ('plasmon_tolerance_field_e', ['plasmon', 'molecule', "tolerance_field_e"], False, 'has_molecule_position', 1e-20, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmol_back_propagation', ['plasmon', 'molecule', 'back_propagation'], False, "has_molecule_position", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
 
     # Molecule params
@@ -88,7 +88,7 @@ param_defs = [
     # Files
     ('field_e_filepath', ['files', 'field_e_filepath'], False, None, "field_e.csv", None, str, "File path for electric field at molecule position", None),
     ('field_p_filepath', ['files', 'field_p_filepath'], False, None, "field_p.csv", None, str, "File path for induced polarization at molecule position", None),
-    ('spectra_e_vs_p_filepath', ['files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p-{datetime.now().strftime('%m%d%Y_%H%M%S')}.png", None, str, "File path for electric vs polarization field plot", None),
+    ('spectra_e_vs_p_filepath', ['files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p.png", None, str, "File path for electric vs polarization field plot", None),
 
     # Additional Parameters
     
@@ -112,8 +112,8 @@ param_defs = [
     ('comparison_y_max', ['additional_parameters', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float), "Maximum energy for MO plot (Hartree)", "Ha"),
     ('comparison_index_min', ['additional_parameters', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float), "Lowest MO index to plot (1-indexed)", None),
     ('comparison_index_max', ['additional_parameters', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float), "Highest MO index to plot (1-indexed)", None),
-    ('comparison_dir_name', ['additional_parameters', 'comparison', 'dir_name'], False, 'has_comparison', f"img-{datetime.now().strftime('%m%d%Y_%H%M%S')}", 'molecule', str, "Directory name for comparison plots", None),
+    ('comparison_dir_name', ['additional_parameters', 'comparison', 'dir_name'], False, 'has_comparison', "comparison-plots", 'molecule', str, "Directory name for comparison plots", None),
     
-    ## Driver: chen2010_fig1.py
-    ('probe_points', ['additional_parameters', 'probe_points'], False, 'has_chen2010_fig1', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
+    ## Driver: scatter_response_fxn.py
+    ('probe_points', ['additional_parameters', 'probe_points'], False, 'has_scatter_response_fxn', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
 ]

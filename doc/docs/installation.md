@@ -1,82 +1,55 @@
 # Installation Guide
 
-PlasMol requires Python 3.8+ and several scientific libraries. Follow these steps to set up the environment.
-
 ## Prerequisites
 
-- Python 3.8 or higher.
-- Git (for cloning the repository).
-- Optional: Conda or virtualenv for isolated environments.
+- Python ≥ 3.8
+- Git
+- Meep (via conda is strongly recommended)
+- Optional but recommended: `conda` or `venv` for environment isolation
 
-## Step 0: Install MEEP
+## Step-by-Step Installation
 
-Please visit the [installation page](https://meep.readthedocs.io/en/master/Installation/) for MEEP to install it for use in PlasMol.
-
-For basic install (quantum only):
-pip install PlasMol
-
-For classical simulations (requires meep):
-conda install -c conda-forge meep
-pip install "PlasMol[classical]"
-
-For development:
-pip install -r requirements-dev.txt
-
-## Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/kombatEldridge/PlasMol.git  # [TODO: Replace with actual repo URL]
-cd PlasMol
-```
-
-## Step 2: Create a Virtual Environment
-
-If a virtual/conda environment for MEEP was not used for install, you can set up one here.
-
-Using virtualenv:
-
-```bash
-python -m venv plasmol
-source plasmol/bin/activate  # On Windows: env\Scripts\activate
-```
-
-Or with Conda:
+### 1. Install Meep
 
 ```bash
 conda create -n plasmol python=3.12
 conda activate plasmol
+conda install -c conda-forge meep
 ```
 
-## Step 3: Install Dependencies
+Verify:
+```bash
+python -c "import meep as mp; print(mp.__version__)"
+```
 
-PlasMol uses:
-
-- Meep for electromagnetics (should already be installed).
-- PySCF for quantum calculations.
-- NumPy, SciPy, Pandas, Matplotlib for data handling and plotting.
-
-Install via pip:
+### 2. Clone PlasMol
 
 ```bash
-pip install pyscf numpy scipy pandas matplotlib logging argparse
+git clone https://github.com/kombatEldridge/PlasMol.git
+cd PlasMol
 ```
 
-## Step 4: Install PlasMol as a Package (Optional)
-
-To make it importable system-wide:
+### 3. Install Python dependencies & PlasMol
 
 ```bash
 pip install -e .
 ```
 
-This assumes a `setup.py` or `pyproject.toml` in the root (e.g., for editable install).
+This installs:
+- pyscf, numpy, scipy, pandas, matplotlib
+- rich (for `--describe` table)
+- All other runtime requirements
 
-## Step 5: Verify Installation
+For development (linting, testing, docs):
+```bash
+pip install -r requirements-dev.txt
+```
 
-Run a test:
+### 4. Verify Installation
 
 ```bash
 python -m plasmol.main --help
+python -m plasmol.main --describe | head -30
 ```
 
-If you see the CLI help message, it's working.
+You should see the CLI help and a beautiful parameter table.

@@ -1,40 +1,54 @@
 # About PlasMol
 
-PlasMol is developed for simulating plasmon-molecule interactions, blending classical FDTD with quantum RT-TDDFT.
+**PlasMol** is a hybrid simulation framework for studying plasmon-molecule interactions. It combines the power of Meep (classical FDTD) with PySCF (quantum RT-TDDFT) in a tightly coupled, self-consistent loop.
+
+## Current Version: v1.1.0 (June 2026)
+
+Major improvements since v1.0.0:
+- Complete migration to modern **JSON input format** with validation and the `--describe` CLI flag.
+- Support for **Lopata broadening** (static & dynamic) and automatic tuning of LRC parameters / vacuum level.
+- **Checkpoint / restart** capability for long quantum simulations.
+- Multiple **custom drivers** (Fourier absorption spectra, MO comparison, NP/plasmon cross-section calculations).
+- Improved multiprocessing safety, logging, and error messages.
+- Many new parameters exposed via the single source-of-truth `param_defs` table.
 
 ## Releases
 
-- [**v1.0.0**](https://github.com/kombatEldridge/PlasMol): Initial release containing three main capabilities based on contents of the input file:
-    1. **Input contains Nanoparticle (NP) Only**: The team behind [Meep](https://meep.readthedocs.io/en/master/) have built a fantastic codebase with powerful FDTD-based outcomes. When given only parameters surrounding the simulation of a NP, PlasMol acts as a wrapper to Meep, allowing for the simulation of one NP object at a time. As it is the basis of the FDTD implementation for PlasMol, we recommend users visit and use Meep directly, but this is an option in PlasMol for those who want to compare other PlasMol (NP + Molecule) results to an isolated NP simulation. By default, this option only produces real time images of the NP interacting with an electric field. By adding other input flags (described in the docs), PlasMol will track and produce a cross-section extinction spectrum of the NP. Commented sections in the codebase direct users to modify/add functions to track other desired outcomes.
-    2. **Input contains Molecule Only**: For inputs with only molecule-based parameters, PlasMol will run a Real-Time Time Dependent Density Functional Theory (RT-TDDFT) simulation. Though more details can be found in the docs, briefly, without any NP present, PlasMol will track the electric field felt by the molecule and the induced dipole moment of the molecule. With some additional flags, PlasMol can produce an absorption spectrum of the molecule.
-    3. **Input contains NP and Molecule**: This is the main purpose of PlasMol. A Meep simulation will begin with a molecule inside, whose initial electronic structure is built by PySCF. Every time step, the electric field at the molecule's position is measured and sent to the "quantum" portion of the code where the density matrix is propagated by the electric field. As an end result, the induced dipole moment of the molecule can be calculated. Finally, the induced dipole moment is fed back into the Meep simulation as the intensity of a point dipole at the position of the molecule.
+- **v1.1.0** (current) — JSON schema, broadening, checkpointing, custom drivers, extensive validation.
+- **v1.0.0** — Initial public release with block-style input files and "proof-of-concept" capabilities.
 
-## Call For Contributions
+## Philosophy & Design Goals
 
-(as of July 24th, 2025) This project has been a stepping stone for me in developing my expertise in modern quantum chemistry and computational methods. That being said, when I began work on PlasMol, I had loftier plans than just posting a minimal working version on GitHub, but plans and priorities change. As of the release of v1.0.0, work has paused on this project.
+PlasMol was created to enable research on plasmon-enhanced phenomena without having to glue together separate classical and quantum codes by hand. The bidirectional coupling (E-field → quantum propagation → induced dipole → back into FDTD) is handled automatically.
 
-For students in the same or adjacent fields, perhaps the PlasMol skeleton can inspire you to pick it up for your lab's specific desired outcomes. As is the nature of DFT work, one can track many things as a NP + Molecule simulation propagates by contracting the corresponding operator with the current density matrix. Empty commented sections are left in certain files to make adding custom functions easier.
-
-Particular work on monitoring SERS enhancements could put this code to great use, especially given that this was the original intention of the code.
+The codebase is intentionally **extensible**. Empty commented sections and clear extension points exist throughout so that researchers can add custom observables, sources, or post-processing with minimal friction.
 
 ## Citation
 
-There is no publication on this work presently. If I don't get around to getting a publication on this work before you want to use/modify it, please just drop a link in your work to the project's [GitHub](https://github.com/kombatEldridge/PlasMol).
+There is no formal journal publication yet. If you use PlasMol, please cite:
 
-## License
-
-[GPL-3.0 license](https://github.com/kombatEldridge/PlasMol/blob/82712e35aacd37a5e1fb0e5dce74a3f3f678d93f/LICENSE)
+```bibtex
+@software{PlasMol,
+  author = {Brinton King Eldridge},
+  title = {PlasMol: Simulating Plasmon-Molecule Interactions},
+  url = {https://github.com/kombatEldridge/PlasMol},
+  version = {1.1.0},
+  year = {2026}
+}
+```
 
 ## Acknowledgments
 
-- Libraries: [Meep](https://meep.readthedocs.io/en/master/), [PySCF](https://pypi.org/project/pyscf/), [NumPy](https://pypi.org/project/numpy/).
-- Contributors: [Brinton Eldridge](https://scholar.google.com/citations?user=8OgnrHMAAAAJ&hl=en&oi=ao).
-- Advisors: [Dr. Daniel Nascimento](https://scholar.google.com/citations?user=VVPFNW8AAAAJ&hl=en&oi=ao), [Dr. Yongmei Wang](https://scholar.google.com/citations?user=TLvIKj0AAAAJ&hl=en&oi=ao).
+- **Developer**: Brinton King Eldridge [[Google Scholar](https://scholar.google.com/citations?hl=en&user=8OgnrHMAAAAJ)]
+- **Advisors**: Dr. Daniel Nascimento [[Google Scholar](https://scholar.google.com/citations?hl=en&user=VVPFNW8AAAAJ)], Dr. Yongmei Wang [[Google Scholar](https://scholar.google.com/citations?hl=en&user=TLvIKj0AAAAJ)]
+- **Association**: University of Memphis
 
-## Contact Information
+## Contact & Community
 
-- Brinton Eldridge
-    - Email: [bldrdge1@memphis.edu](mailto:bldrdge1@memphis.edu)
-    - GitHub: [https://github.com/kombatEldridge](https://github.com/kombatEldridge?tab=repositories)
-    - Organization: University of Memphis
-    - LinkedIn: [https://www.linkedin.com/in/brinton-eldridge/](https://www.linkedin.com/in/brinton-eldridge/)
+- Email: bldrdge1@memphis.edu
+- GitHub: https://github.com/kombatEldridge/PlasMol
+- Issues & Pull Requests are very welcome!
+
+## License
+
+GPL-3.0 (see LICENSE file).

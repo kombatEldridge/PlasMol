@@ -6,7 +6,6 @@
   },
   "plasmon": {
     "simulation": {
-      "tolerance_field_e": 1e-12,
       "cell_length": 0.1,
       "cell_volume": [0.1, 0.1, 0.1],
       "pml_thickness": 0.01,
@@ -29,8 +28,7 @@
         "width": 0,
         "fwidth": null,
         "slowness": 3.0,
-        "cutoff": 5.0,
-        "src_func": null
+        "cutoff": 5.0
       }
     },
     "nanoparticle": {
@@ -51,6 +49,7 @@
     },
     "molecule": {
       "position": [0, 0, 0],
+      "tolerance_field_e": 1e-20,
       "back_propagation": true
     }
   },
