@@ -24,20 +24,9 @@ logger = logging.getLogger("main")
 
 class PARAMS:
     def __init__(self, args):
-        if hasattr(args, 'checkpoint') and args.checkpoint is not None:
-            if os.path.exists(args.checkpoint):
-                from plasmol.utils.checkpoint import resume_from_checkpoint
-                logger.info(f"Checkpoint file {args.checkpoint} found.")
-                params = resume_from_checkpoint(args)
-                for attr, value in params.__dict__.items():
-                    setattr(self, attr, value)
-                return
-            else:
-                raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
-        else:
-            self.resumed_from_checkpoint = False
-        
         self.preparams = self._parse_input_file(args)
+        self.verbose = getattr(args, 'verbose', 1)
+        self.log = getattr(args, 'log', None)
         self.input_file_path = self.preparams["args"]["input"]
         self.simulation_types = self.preparams["simulation_types"]
         self.xyz = ['x', 'y', 'z']
@@ -99,11 +88,47 @@ class PARAMS:
 
         self._attribute_checks()
         self._attribute_formation()
-        delattr(self, 'preparams')
         logger.info("All parameters successfully parsed and validated.")
+        delattr(self, 'preparams')
 
-        self.verbose = getattr(args, 'verbose', 1)
-        self.log = getattr(args, 'log', None)
+        if hasattr(args, 'checkpoint') and args.checkpoint is not None:
+            if os.path.exists(args.checkpoint):
+                from plasmol.utils.checkpoint import resume_from_checkpoint
+                logger.info(f"Checkpoint file {args.checkpoint} found.")
+                params = resume_from_checkpoint(args)
+                # establish a list of keys that are allowed to be altered after resuming a checkpoint run
+                CHANGABLE_KEYS = {
+                    'dt', 't_end', 
+                    'checkpoint_dict', 'checkpoint_frequency_time', 
+                    'checkpoint_frequency_steps', 'checkpoint_filepath',
+                    'custom_parameters', 'fourier_dict', 'fourier_max_ev',
+                    'fourier_min_ev', 'fourier_gamma', 'fourier_npz_filepath',
+                    'fourier_spectrum_filepath', 'geometry_xyz_filepath', 'input_file_path',
+                    'log', 'molecule_dict', 'spectra_e_vs_p_filepath', 'times', 'verbose'
+                    }
+                QUIET_CHANGABLE_KEYS = {
+                    'checkpoint_dict', 'custom_parameters', 'fourier_dict', 'molecule_dict', 'times'
+                }
+                for attr, value in params.__dict__.items():
+                    try:
+                        is_different = (value != getattr(self, attr, value))
+                    except:
+                        is_different = True
+                    if attr not in CHANGABLE_KEYS:
+                        if is_different:
+                            raise ValueError(f"Parameter '{attr}' differs between checkpoint and current settings.")
+                        else:
+                            setattr(self, attr, value)
+                    else:
+                        if is_different:
+                            if attr not in QUIET_CHANGABLE_KEYS:
+                                logger.warning(f"Parameter '{attr}' differs between checkpoint ({attr} = {value}) and current settings ({attr} = {getattr(self, attr)}).")
+                                logger.warning(f"This simulation will use the value from the current settings: {attr} = {getattr(self, attr)}.")
+                logger.info("===== Directory is now setup to resume from checkpoint =====")
+            else:
+                raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
+        else:
+            self.resumed_from_checkpoint = False
 
     def _attribute_checks(self):
         """Perform checks and instantiations based on attributes."""
@@ -603,6 +628,8 @@ class PARAMS:
                 atom = parts[0]
                 coord = [float(x) for x in parts[1:4]]
                 geometry.append({"atom": atom, "coord": coord})
+
+            self.geometry_xyz_filepath = path
 
         if not isinstance(geometry, list):
             raise ValueError("geometry must be a list of dicts or a path to a .xyz file.")

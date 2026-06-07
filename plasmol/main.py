@@ -1,6 +1,7 @@
 # main.py
 import os
 import sys
+from pathlib import Path
 
 if __name__ == "__main__" and __package__ is None:
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +17,7 @@ from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
 from plasmol.utils.input.cli import parse_arguments
 from plasmol.utils.input.params import PARAMS
-from plasmol.utils.checkpoint import init_checkpoint, update_checkpoint
+from plasmol.utils.checkpoint import init_checkpoint, update_checkpoint, cleanup_checkpoint
 
 if __name__ == "__main__":
     # Step 1: Grab CLI args
@@ -60,9 +61,18 @@ if __name__ == "__main__":
     logger.info(f"The timestep for this simulation is {params.dt} au (roughly {np.round(params.dt / constants.T_AU_FS, decimals=5)} fs).")
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     
-    if params.has_checkpoint and not params.resumed_from_checkpoint:
+    if params.has_checkpoint :
+        if params.resumed_from_checkpoint:
+            params.checkpoint_filepath = f"{Path(params.checkpoint_filepath).with_suffix('')}_new.npz"
         init_checkpoint(params)
         params.checkpoint_written_after_init = False
-    
+        params.final_checkpoint_filepath = f"final-{params.checkpoint_filepath}"
+        init_checkpoint(params, params.final_checkpoint_filepath)
+        params.final_checkpoint_written_after_init = False
+
     # Step 3: Execute proper workflow
     params.driver(params)
+
+    # Step 4: Clean Up! Clean Up! Everybody, Everywhere!
+    if params.has_checkpoint:
+        cleanup_checkpoint(params)

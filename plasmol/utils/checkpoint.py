@@ -8,7 +8,7 @@ from argparse import Namespace
 import fcntl
 import time
 from contextlib import contextmanager
-
+from pathlib import Path
 logger = logging.getLogger("main")
 
 
@@ -20,14 +20,17 @@ REQUIRED_CHECKPOINT_KEYS = {
     "params_dict",
     "input_file_path",
     "input_file_content",
-    "is_fourier"
+    "is_fourier",
+    "updated_after_init",
+    "xyz_file_path",
+    "xyz_content",
 }
 
 OPTIONAL_KEYS = {
     "checkpoint_time",
     "C_orth_ndt", "F_orth_n12dt", 
     "field_e_content", "field_p_content", 
-    "D_ao_0", "mo_coeff",
+    "D_ao_0", "mo_coeff", 
     # Fourier-specific (3 directions × 2 fields)
     "field_e_x_content", "field_p_x_content",
     "field_e_y_content", "field_p_y_content", 
@@ -37,6 +40,7 @@ OPTIONAL_KEYS = {
     "D_ao_0_x", "D_ao_0_y", "D_ao_0_z", 
     "mo_coeff_x", "mo_coeff_y", "mo_coeff_z", 
     "checkpoint_time_x", "checkpoint_time_y", "checkpoint_time_z",
+    'is_open_shell'
 }
 
 
@@ -75,7 +79,7 @@ def _checkpoint_lock(checkpoint_path: str, timeout: float = 45.0):
             lock_fd.close()
 
 
-def _get_restored_filepath(original_path, include_dir=True, restored_text="restored"):
+def _get_restored_filepath(original_path, include_dir=True, restored_text="_restored"):
     """Append '_restored' to the filename (before the extension)."""
     if not original_path:
         return None
@@ -83,17 +87,20 @@ def _get_restored_filepath(original_path, include_dir=True, restored_text="resto
     dir_name = os.path.dirname(path)
     base_name = os.path.basename(path)
     name, ext = os.path.splitext(base_name)
-    restored_name = f"{name}_{restored_text}{ext}"
+    restored_name = f"{name}{restored_text}{ext}"
     return os.path.join(dir_name, restored_name) if dir_name and include_dir else restored_name
 
 
-def init_checkpoint(params):
+def init_checkpoint(params, final_checkpoint_filepath=None):
     """Initialize the checkpoint file with the invariant data only.
     This should be called once at the start (before any Fourier directions run).
     Creates the .npz with params_dict, input_file_path, input_file_content,
     is_fourier, and all optional keys pre-initialized to None.
     """
-    checkpoint_path = params.checkpoint_filepath
+    if final_checkpoint_filepath:
+        checkpoint_path = final_checkpoint_filepath
+    else:
+        checkpoint_path = params.checkpoint_filepath
 
     # Load existing checkpoint
     if os.path.exists(checkpoint_path):
@@ -110,12 +117,23 @@ def init_checkpoint(params):
     with open(input_file_path, "rb") as f:
         input_file_content = f.read()
 
+    if hasattr(params, 'geometry_xyz_filepath') and params.geometry_xyz_filepath:
+        xyz_file_path = params.geometry_xyz_filepath
+        with open(xyz_file_path, "rb") as f:
+            xyz_content = f.read()
+    else:
+        xyz_file_path = None
+        xyz_content = None
+
     save_dict = {
-        "params_dict":        dict(params.__dict__),
-        "input_file_path":    input_file_path,
-        "input_file_content": input_file_content,
-        "is_fourier":         getattr(params, 'has_fourier', False),
-        "is_open_shell": getattr(params, "molecule_spin", 0) != 0,
+        "params_dict":         dict(params.__dict__),
+        "input_file_path":     input_file_path,
+        "input_file_content":  input_file_content,
+        "is_fourier":          getattr(params, 'has_fourier', False),
+        "is_open_shell":       getattr(params, "molecule_spin", 0) != 0,
+        "updated_after_init":  False,
+        "xyz_file_path":       xyz_file_path,
+        "xyz_content":         xyz_content,
     }
 
     for dir in params.xyz:
@@ -137,14 +155,17 @@ def init_checkpoint(params):
                  f"with keys: {list(save_dict.keys())}")
 
 
-def add_field_e_checkpoint(params, field_e_filepath):
+def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=None):
     """
     Add the electric field content to the checkpoint.
     """
     if not getattr(params, "checkpoint_filepath", None):
         raise ValueError("params.checkpoint_filepath is not set - cannot write checkpoint")
 
-    checkpoint_path = params.checkpoint_filepath
+    if final_checkpoint_filepath:
+        checkpoint_path = final_checkpoint_filepath
+    else:
+        checkpoint_path = params.checkpoint_filepath
 
     # === Locked read-modify-write ===
     with _checkpoint_lock(checkpoint_path):
@@ -156,7 +177,7 @@ def add_field_e_checkpoint(params, field_e_filepath):
             raise FileNotFoundError("Checkpoint file not found during update")
         
         is_fourier = save_dict["is_fourier"]
-        dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if is_fourier else None
+        dir_component = getattr(params, 'molecule_source_component') if is_fourier else None
         suffix = f"_{dir_component}" if is_fourier and dir_component else ""
 
         with open(field_e_filepath, "rb") as f:
@@ -167,16 +188,16 @@ def add_field_e_checkpoint(params, field_e_filepath):
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
 
-def update_checkpoint(params, molecule, checkpoint_time):
+def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepath=None):
     """
     Update only the dynamic/simulation-state values for the current direction.
     Loads the existing checkpoint first, merges the new data, then writes it back.
     In Fourier mode this guarantees that data for the other two directions is preserved.
     """
-    if not getattr(params, "checkpoint_filepath", None):
-        raise ValueError("params.checkpoint_filepath is not set - cannot write checkpoint")
-
-    checkpoint_path = params.checkpoint_filepath
+    if final_checkpoint_filepath:
+        checkpoint_path = final_checkpoint_filepath
+    else:
+        checkpoint_path = params.checkpoint_filepath
 
     # === Locked read-modify-write (this was the crashing function) ===
     with _checkpoint_lock(checkpoint_path):
@@ -200,7 +221,7 @@ def update_checkpoint(params, molecule, checkpoint_time):
         is_fourier = getattr(params, 'has_fourier', False)
 
         # Determine current direction (x/y/z) only in Fourier mode
-        dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if is_fourier else None
+        dir_component = getattr(params, 'molecule_source_component') if is_fourier else None
 
         # === Embed the CSV files as exact raw bytes (direction-aware) ===
         dir_path = f"{dir_component}_dir" if is_fourier and dir_component else ''
@@ -230,6 +251,7 @@ def update_checkpoint(params, molecule, checkpoint_time):
             save_dict[f"C_orth_ndt{suffix}"] = molecule.C_orth_ndt
         elif method == "magnus2":
             save_dict[f"F_orth_n12dt{suffix}"] = molecule.F_orth_n12dt
+        save_dict["updated_after_init"] = True
 
         # Enforce core content
         missing = REQUIRED_CHECKPOINT_KEYS - set(save_dict.keys())
@@ -267,11 +289,18 @@ def resume_from_checkpoint(args):
     logger.info(f"Loading checkpoint.")
 
     # === Construct restored input file ===
-    restored_input_filepath = _get_restored_filepath(data["input_file_path"], False)
+    restored_input_filepath = _get_restored_filepath(data["input_file_path"], False, restored_text="_restored")
     content = np.ndarray.item(data["input_file_content"])
     with open(restored_input_filepath, "w", encoding="utf-8") as f:
         f.write(content.decode("utf-8"))
     logger.debug(f"Input file reconstructed from checkpoint: {restored_input_filepath}")
+
+    if data["xyz_file_path"] is not None:
+        restored_xyz_filepath = _get_restored_filepath(data["xyz_file_path"], False, restored_text="_restored")
+        content = np.ndarray.item(data["xyz_content"])
+        with open(restored_xyz_filepath, "w", encoding="utf-8") as f:
+            f.write(content.decode("utf-8"))
+        logger.debug(f"Geometry xyz file reconstructed from checkpoint: {restored_xyz_filepath}")
 
     # === Validate core content ===
     loaded_keys = set(data.keys())
@@ -296,10 +325,8 @@ def resume_from_checkpoint(args):
     if saved_open_shell != (saved_params_dict.get("molecule_spin", 0) != 0):
         raise RuntimeError("Checkpoint open-shell flag inconsistent with molecule_spin")
 
-
     # === Restore CSV files ===
     if is_fourier:
-        # Fixed: do NOT modify list while iterating
         checkpoint_dirs = [d for d in params.xyz 
                            if float(data.get(f"checkpoint_time_{d}", 0.0)) > 1e-12]
         if len(checkpoint_dirs) < len(params.xyz):
@@ -315,7 +342,7 @@ def resume_from_checkpoint(args):
         if content_key in data and data[content_key] is not None:
             original_filepath = getattr(params, f"{name}_filepath", None)
             if original_filepath:
-                restored_filepath = _get_restored_filepath(original_filepath)
+                restored_filepath = _get_restored_filepath(original_filepath, restored_text="")
                 try:
                     os.makedirs(os.path.dirname(restored_filepath) or ".", exist_ok=True)
                     if is_fourier and name in [f"field_p_{d}" for d in params.not_checkpointed_dirs]:
@@ -332,26 +359,26 @@ def resume_from_checkpoint(args):
         else:
             logger.debug(f"No {name}_content in checkpoint (old checkpoint)")
 
-    params.checkpoint_dict = {}
+    params.values_from_checkpoint = {}
     method = getattr(params, "propagator", getattr(params, "molecule_propagator_str", "")).lower()
     if is_fourier:
         for dir in params.xyz:
-            params.checkpoint_dict[f"checkpoint_time_{dir}"] = float(data[f"checkpoint_time_{dir}"])
+            params.values_from_checkpoint[f"checkpoint_time_{dir}"] = float(data[f"checkpoint_time_{dir}"])
             if dir in checkpoint_dirs:
-                params.checkpoint_dict[f"D_ao_0_{dir}"] = data[f"D_ao_0_{dir}"]
-                params.checkpoint_dict[f"mo_coeff_{dir}"] = data[f"mo_coeff_{dir}"]
+                params.values_from_checkpoint[f"D_ao_0_{dir}"] = data[f"D_ao_0_{dir}"]
+                params.values_from_checkpoint[f"mo_coeff_{dir}"] = data[f"mo_coeff_{dir}"]
                 if method == "step":
-                    params.checkpoint_dict[f"C_orth_ndt_{dir}"] = data[f"C_orth_ndt_{dir}"]
+                    params.values_from_checkpoint[f"C_orth_ndt_{dir}"] = data[f"C_orth_ndt_{dir}"]
                 elif method == "magnus2":
-                    params.checkpoint_dict[f"F_orth_n12dt_{dir}"] = data[f"F_orth_n12dt_{dir}"]
+                    params.values_from_checkpoint[f"F_orth_n12dt_{dir}"] = data[f"F_orth_n12dt_{dir}"]
     else:
-        params.checkpoint_dict["checkpoint_time"] = float(data["checkpoint_time"])
-        params.checkpoint_dict["D_ao_0"] = data["D_ao_0"]
-        params.checkpoint_dict["mo_coeff"] = data["mo_coeff"]
+        params.values_from_checkpoint["checkpoint_time"] = float(data["checkpoint_time"])
+        params.values_from_checkpoint["D_ao_0"] = data["D_ao_0"]
+        params.values_from_checkpoint["mo_coeff"] = data["mo_coeff"]
         if method == "step":
-            params.checkpoint_dict["C_orth_ndt"] = data["C_orth_ndt"]
+            params.values_from_checkpoint["C_orth_ndt"] = data["C_orth_ndt"]
         elif method == "magnus2":
-            params.checkpoint_dict["F_orth_n12dt"] = data["F_orth_n12dt"]
+            params.values_from_checkpoint["F_orth_n12dt"] = data["F_orth_n12dt"]
 
     # === Final validation ===
     try:
@@ -371,17 +398,37 @@ def resume_from_checkpoint(args):
     params.resumed_from_checkpoint = True
     if is_fourier:
         logger.info(f"Loaded fourier checkpoint with data at "
-                    f"t_x={params.checkpoint_dict['checkpoint_time_x']} au, "
-                    f"t_y={params.checkpoint_dict['checkpoint_time_y']} au, "
-                    f"t_z={params.checkpoint_dict['checkpoint_time_z']} au.")
+                    f"t_x={params.values_from_checkpoint['checkpoint_time_x']} au, "
+                    f"t_y={params.values_from_checkpoint['checkpoint_time_y']} au, "
+                    f"t_z={params.values_from_checkpoint['checkpoint_time_z']} au.")
     else:
-        logger.info(f"Loaded checkpoint with data at t={params.checkpoint_dict['checkpoint_time']} au.")
+        logger.info(f"Loaded checkpoint with data at t={params.values_from_checkpoint['checkpoint_time']} au.")
     return params
 
 def cleanup_checkpoint(params):
-    if hasattr(params, "checkpoint_written_after_init") and params.checkpoint_written_after_init == False:
+    if _not_updated_after_init(params.checkpoint_filepath):
         logger.warning(f"First checkpoint file ({params.checkpoint_filepath}) was initialized but never completed. Removing...")
         os.remove(params.checkpoint_filepath)
+    if _not_updated_after_init(params.final_checkpoint_filepath):
+        logger.warning(f"Final checkpoint file ({params.final_checkpoint_filepath}) was initialized but never completed. Removing...")
+        os.remove(params.final_checkpoint_filepath)
     for filename in os.listdir("."):
-        if filename.endswith(".npz.lock"):
+        if filename.endswith(".lock"):
             os.remove(filename)
+
+def _not_updated_after_init(path):
+        with _checkpoint_lock(path):
+            loaded = np.load(path, allow_pickle=True)
+            # Deep copy everything to avoid NumPy reference issues across processes
+            save_dict = {}
+            for key in loaded.files:
+                val = loaded[key]
+                if isinstance(val, np.ndarray):
+                    save_dict[key] = val.copy()
+                elif hasattr(val, "copy"):
+                    save_dict[key] = val.copy()
+                else:
+                    save_dict[key] = val
+            loaded.close()
+            
+            return (not save_dict["updated_after_init"])

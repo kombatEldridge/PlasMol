@@ -27,23 +27,32 @@ def run(params):
             writer = csv.writer(csvfile)
             writer.writerows(rows)
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
-        if params.has_checkpoint:
-            add_field_e_checkpoint(params, params.field_e_filepath)
     else:
-        logger.debug("Resuming from checkpoint - skipping CSV initialization.")
+        # find index within params.times for checkpoint_time
+        dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
+        suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
+        checkpoint_time = params.values_from_checkpoint[f"checkpoint_time{suffix}"]
+        index = next(i for i, t in enumerate(params.times) if t >= checkpoint_time) + 1
+        rows = ((t, i0, i1, i2) for t, (i0, i1, i2) in zip(params.times[index:], params.molecule_source_field[index:]))
+        with open(params.field_e_filepath, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(rows)
+
+    if params.has_checkpoint:
+        add_field_e_checkpoint(params, params.field_e_filepath)
 
     molecule = MOLECULE(params)
-    logger.debug(f"Electric field successfully added to {params.field_e_filepath}")
 
     total_steps = len(params.times)
     report_interval = max(1, total_steps // 10)
     try:
-        time = 0
         for index, current_time in enumerate(params.times):
             if params.resumed_from_checkpoint:
-                dir_component = getattr(params, 'molecule_source_dict', {}).get('component') if params.has_fourier else None
+                dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
                 suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
-                if current_time <= params.checkpoint_dict[f'checkpoint_time{suffix}']:
+                if params.times[-1] <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
+                    raise ValueError(f"The latest checkpoint time {params.values_from_checkpoint[f'checkpoint_time{suffix}']} is past the t_end. Please adjust your input file to continue past this point.")
+                if current_time <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     continue
             mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
             logging.debug(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
@@ -61,13 +70,9 @@ def run(params):
     except Exception as e:
         logger.error(f"An error occurred during simulation: {e}")
     finally:
-        # checkpoint_filepath = getattr(params, "checkpoint_filepath", "checkpoint.npz")
-        # setattr(params, 'checkpoint_filepath', f"final-{checkpoint_filepath}")
-        # init_checkpoint(params)
-        # update_checkpoint(params, molecule, time)
-        # setattr(params, 'checkpoint_filepath', checkpoint_filepath)
-        # cleanup_checkpoint(params)
-
+        add_field_e_checkpoint(params, params.field_e_filepath, params.final_checkpoint_filepath)
+        update_checkpoint(params, molecule, time, params.final_checkpoint_filepath)
+        params.final_checkpoint_written_after_init = True
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
 
