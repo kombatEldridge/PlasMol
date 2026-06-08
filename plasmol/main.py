@@ -23,6 +23,9 @@ if __name__ == "__main__":
     # Step 1: Grab CLI args
     args = parse_arguments()
 
+    if args.input:
+        os.chdir(Path(args.input).resolve().parent)
+
     if getattr(args, 'describe', False):
         from plasmol.utils.input.params import PARAMS   # adjust import path as needed
         PARAMS.describe_parameters()

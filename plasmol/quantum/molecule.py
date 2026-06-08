@@ -63,8 +63,6 @@ class MOLECULE():
                 eps0 = self.compute_vacuum_level()
                 self.broadening_dict["eps0"] = eps0
                 logger.info(f"Vacuum level ε₀ = {eps0:.6f} Ha")
-
-        sys.exit(0)
         
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1

@@ -17,3 +17,5 @@ merge/
 build/
 img/
 mcp_runs/
+mcp/__pycache__
+plasmol.egg-info

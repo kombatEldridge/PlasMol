@@ -1,7 +1,7 @@
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 1,
+    "t_end": 2000,
     "driver": "fourier"
   },
   "molecule": {
@@ -13,14 +13,14 @@
     "geometry_units": "bohr",
     "basis": "aug-cc-pVTZ",
     "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": "tune",
+    "lrc_parameter": 0.513,
     "propagator": { 
       "type": "magnus2"
     },
     "broadening": {
       "gam0": 1,
       "xi": 0.5,
-      "eps0": "tune",
+      "eps0": 0.0477,
       "clamp": 100
     },
     "source": {

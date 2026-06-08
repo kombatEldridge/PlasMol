@@ -13,10 +13,6 @@ from mcp.server.fastmcp import FastMCP
 
 from plasmol.utils.input.params import PARAMS
 
-# plasmol imports meep, which registers an atexit handler that prints elapsed
-# runtime to stderr on shutdown. The MCP inspector closes stdio before exit, so
-# that print raises and the inspector proxy crashes trying to forward stderr
-# over a closed SSE connection ("Not connected").
 try:
     import meep as mp
     atexit.unregister(mp.report_elapsed_time)
@@ -36,6 +32,42 @@ def _create_run_directory(job_id: str) -> Path:
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir
 
+def _load_json_strip_comments(path: Path) -> dict:
+    with open(path, "r") as f:
+        content = "".join(
+            re.sub(r"(#|--|%|//)(.*)$", "", line)
+            for line in f
+            if not line.strip().startswith(("#", "--", "%", "//"))
+        )
+    return json.loads(content)
+
+def _stage_input_into_run_dir(src: Path, run_dir: Path) -> Path:
+    """Copy the input JSON and any referenced files into the run directory."""
+    dst = run_dir / src.name
+    shutil.copy2(src, dst)
+
+    data = _load_json_strip_comments(dst)
+    changed = False
+
+    molecule = data.get("molecule") or {}
+    geometry = molecule.get("geometry")
+    if isinstance(geometry, str):
+        geom_src = Path(geometry)
+        if not geom_src.is_absolute():
+            geom_src = (src.parent / geometry).resolve()
+        if geom_src.exists():
+            geom_dst = run_dir / geom_src.name
+            if geom_src != geom_dst:
+                shutil.copy2(geom_src, geom_dst)
+            molecule["geometry"] = geom_dst.name
+            changed = True
+
+    if changed:
+        with open(dst, "w") as f:
+            json.dump(data, f, indent=2)
+
+    return dst
+
 def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
     """Background worker that does the actual work."""
     jobs[job_id]["status"] = "running"
@@ -50,8 +82,7 @@ def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
         if not src.exists():
             raise FileNotFoundError(f"Input file not found: {input_file}")
 
-        dst = run_dir / src.name
-        shutil.copy2(src, dst)
+        dst = _stage_input_into_run_dir(src, run_dir)
         jobs[job_id]["copied_file"] = str(dst)
 
         if not conda_env:
@@ -60,17 +91,21 @@ def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
                 "or set CONDA_ENV to an existing environment with pymeep installed."
             )
 
-        # 2. Build the command with conda run + fixed command
+        run_dir = run_dir.resolve()
         cmd = [
-            "conda", "run", "-n", conda_env,
+            "conda", "run", "-n", conda_env, "--cwd", str(run_dir),
             "python", "-m", "plasmol.main",
-            "-f", dst.name,
-            "-vv", "-l", "log.out",
+            dst.name, "-vv", "-l", "log.out",
         ]
 
-        # 3. Run from inside the new directory
         with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
-            proc = subprocess.Popen( cmd, cwd=run_dir, stdout=out, stderr=err, text=True)
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(run_dir),
+                stdout=out,
+                stderr=err,
+                text=True,
+            )
             jobs[job_id]["pid"] = proc.pid
             jobs[job_id]["proc"] = proc
             exit_code = proc.wait()
@@ -93,28 +128,29 @@ def _run_conda_setup_job(job_id: str, log_dir: Path, env_name: str):
     stdout_file = log_dir / "stdout.log"
     stderr_file = log_dir / "stderr.log"
     try:
-        create_cmd = ["conda", "create", "-n", env_name, "python=3.12", "-y"]
+        setup_cmds = [
+            ["conda", "create", "-n", env_name, "-y"],
+            [
+                "conda", "install", "-n", env_name, "-c", "conda-forge",
+                "pymeep", "pyscf", "pip", "-y",
+            ],
+            ["conda", "run", "-n", env_name, "pip", "install", "-e", str(BASE_DIR)],
+        ]
+        exit_code = 0
         with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
-            proc1 = subprocess.Popen(
-                create_cmd,
-                cwd=Path.cwd(),
-                stdout=out,
-                stderr=err,
-                text=True,
-            )
-            exit1 = proc1.wait()
-            # Step 2: Install meep (with -n and -y)
-            install_cmd = ["conda", "install", "-n", env_name, "-c", "conda-forge", "pymeep=1.33", "-y"]
-            proc2 = subprocess.Popen(
-                install_cmd,
-                cwd=Path.cwd(),
-                stdout=out,
-                stderr=err,
-                text=True,
-            )
-            exit2 = proc2.wait()
-        jobs[job_id]["exit_code"] = exit2 if exit1 == 0 else exit1
-        if exit1 == 0 and exit2 == 0:
+            for cmd in setup_cmds:
+                if exit_code != 0:
+                    break
+                proc = subprocess.Popen(
+                    cmd,
+                    cwd=str(BASE_DIR),
+                    stdout=out,
+                    stderr=err,
+                    text=True,
+                )
+                exit_code = proc.wait()
+        jobs[job_id]["exit_code"] = exit_code
+        if exit_code == 0:
             jobs[job_id]["status"] = "completed"
             jobs[job_id]["message"] = f"✅ '{env_name}' conda environment is ready."
         else:
