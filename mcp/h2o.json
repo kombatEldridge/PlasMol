@@ -1,0 +1,50 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 1,
+    "driver": "fourier"
+  },
+  "molecule": {
+    "geometry": [
+        {"atom": "O", "coord": [ 0.0000000000, 0.0000000000, -0.1302052882]},
+        {"atom": "H", "coord": [ 1.4891244004, 0.0000000000,  1.0332262019]},
+        {"atom": "H", "coord": [-1.4891244004, 0.0000000000,  1.0332262019]}
+    ],
+    "geometry_units": "bohr",
+    "basis": "aug-cc-pVTZ",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": "tune",
+    "propagator": { 
+      "type": "magnus2"
+    },
+    "broadening": {
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": "tune",
+      "clamp": 100
+    },
+    "source": {
+      "type": "kick",
+      "intensity": 5e-5,
+      "peak_time": 0.1,
+      "width_steps": 3
+    }
+  },
+  "files": {
+    "checkpoint": {
+      "filepath": "checkpoint.npz",
+      "frequency_time": 1000
+    },
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "min_ev": 1,
+      "max_ev": 35,
+      "npz_filepath": "fourier.npz",
+      "spectrum_filepath": "spectrum.png"
+    }
+  }
+}

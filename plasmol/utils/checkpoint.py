@@ -102,6 +102,8 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
     else:
         checkpoint_path = params.checkpoint_filepath
 
+    checkpoint_path = "".join([".", checkpoint_path])
+
     # Load existing checkpoint
     if os.path.exists(checkpoint_path):
         try:
@@ -151,21 +153,19 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
     with _checkpoint_lock(checkpoint_path):
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
-    logger.debug(f"Initialized checkpoint to {checkpoint_path} "
-                 f"with keys: {list(save_dict.keys())}")
+    logger.debug(f"Initialized checkpoint to {checkpoint_path}")
 
 
 def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=None):
     """
     Add the electric field content to the checkpoint.
     """
-    if not getattr(params, "checkpoint_filepath", None):
-        raise ValueError("params.checkpoint_filepath is not set - cannot write checkpoint")
-
     if final_checkpoint_filepath:
         checkpoint_path = final_checkpoint_filepath
     else:
         checkpoint_path = params.checkpoint_filepath
+
+    checkpoint_path = "".join([".", checkpoint_path])
 
     # === Locked read-modify-write ===
     with _checkpoint_lock(checkpoint_path):
@@ -198,6 +198,8 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
         checkpoint_path = final_checkpoint_filepath
     else:
         checkpoint_path = params.checkpoint_filepath
+
+    checkpoint_path = "".join([".", checkpoint_path])
 
     # === Locked read-modify-write (this was the crashing function) ===
     with _checkpoint_lock(checkpoint_path):
@@ -260,6 +262,9 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
         
         # In case 'allow_pickle=True' is in the save_dict
         save_dict.pop('allow_pickle', None)
+            
+        # remove "." at front of temp file name
+        checkpoint_path = checkpoint_path[1:]
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
     time_log_str = f"{'='*40} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time} "
@@ -406,29 +411,12 @@ def resume_from_checkpoint(args):
     return params
 
 def cleanup_checkpoint(params):
-    if _not_updated_after_init(params.checkpoint_filepath):
-        logger.warning(f"First checkpoint file ({params.checkpoint_filepath}) was initialized but never completed. Removing...")
-        os.remove(params.checkpoint_filepath)
-    if _not_updated_after_init(params.final_checkpoint_filepath):
-        logger.warning(f"Final checkpoint file ({params.final_checkpoint_filepath}) was initialized but never completed. Removing...")
-        os.remove(params.final_checkpoint_filepath)
+    checkpoint_path = "".join([".", params.checkpoint_filepath])
+    if os.path.isfile(checkpoint_path):
+        os.remove(checkpoint_path)
+    final_checkpoint_path = "".join([".", params.final_checkpoint_filepath])
+    if os.path.isfile(final_checkpoint_path):
+        os.remove(final_checkpoint_path)
     for filename in os.listdir("."):
         if filename.endswith(".lock"):
             os.remove(filename)
-
-def _not_updated_after_init(path):
-        with _checkpoint_lock(path):
-            loaded = np.load(path, allow_pickle=True)
-            # Deep copy everything to avoid NumPy reference issues across processes
-            save_dict = {}
-            for key in loaded.files:
-                val = loaded[key]
-                if isinstance(val, np.ndarray):
-                    save_dict[key] = val.copy()
-                elif hasattr(val, "copy"):
-                    save_dict[key] = val.copy()
-                else:
-                    save_dict[key] = val
-            loaded.close()
-            
-            return (not save_dict["updated_after_init"])

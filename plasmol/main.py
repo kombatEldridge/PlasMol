@@ -71,8 +71,9 @@ if __name__ == "__main__":
         params.final_checkpoint_written_after_init = False
 
     # Step 3: Execute proper workflow
-    params.driver(params)
-
-    # Step 4: Clean Up! Clean Up! Everybody, Everywhere!
-    if params.has_checkpoint:
-        cleanup_checkpoint(params)
+    try:
+        params.driver(params)
+    finally:
+        # Step 4: Clean Up! Clean Up! Everybody, Everywhere!
+        if params.has_checkpoint:
+            cleanup_checkpoint(params)

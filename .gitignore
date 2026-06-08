@@ -1,5 +1,7 @@
 .DS_Store
 .vscode
+.venv
+.pytest_cache
 jobs/
 doc/site/
 plasmol/__pycache__
@@ -14,4 +16,4 @@ tests/__pycache__
 merge/
 build/
 img/
-mcp_xAI/
+mcp_runs/

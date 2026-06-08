@@ -14,7 +14,7 @@
 ```bash
 conda create -n plasmol python=3.12
 conda activate plasmol
-conda install -c conda-forge meep
+conda install -c conda-forge pymeep
 ```
 
 Verify:
