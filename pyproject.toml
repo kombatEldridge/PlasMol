@@ -13,6 +13,7 @@ dependencies = [
     "pyscf",
     "rich",
     "scipy",
+    "basis-set-exchange",
 ]
 
 [tool.pytest.ini_options]

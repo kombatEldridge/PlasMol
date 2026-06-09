@@ -62,7 +62,6 @@ class MOLECULE():
             if self.broadening_dict["eps0"] == "tune":
                 eps0 = self.compute_vacuum_level()
                 self.broadening_dict["eps0"] = eps0
-                logger.info(f"Vacuum level ε₀ = {eps0:.6f} Ha")
         
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
@@ -131,11 +130,8 @@ class MOLECULE():
         """
         Tune μ for LC functionals to minimize |E_cat - E_neut + ε_HOMO|.
         """
-        mol_neutral = gto.M(atom=self.molecule_coords, basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin)
-        mol_cation = gto.M(atom=self.molecule_coords, basis=self.molecule_basis, charge=self.molecule_charge + 1, spin=abs(self.molecule_spin - 1))
-
-        mol_neutral.verbose = 0
-        mol_cation.verbose = 0
+        mol_neutral = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin, verbose=0)
+        mol_cation = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge + 1, spin=abs(self.molecule_spin - 1), verbose=0)
 
         def get_homo(mf):
             """Return the highest occupied orbital energy (works for RKS and UKS)."""
@@ -186,7 +182,7 @@ class MOLECULE():
             return J
 
         logger.info("Calculating μ parameter for xc functional")
-        res = minimize_scalar(compute_J, bounds=(0.1, 0.6), method="bounded", options={'xatol': 1e-7, 'maxiter': 1000})
+        res = minimize_scalar(compute_J, bounds=(0.1, 0.7), method="bounded", options={'xatol': 1e-7, 'maxiter': 1000})
         logger.info(f"Optimal μ = {res.x:.6f}")
         return res.x
 
@@ -196,11 +192,8 @@ class MOLECULE():
         """
         logger.info("Calculating vacuum level ε_0")
 
-        mol_neutral = gto.M(atom=self.molecule_coords, basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin)
-        mol_anion = gto.M(atom=self.molecule_coords, basis=self.molecule_basis, charge=self.molecule_charge - 1, spin=abs(self.molecule_spin - 1))
-
-        mol_neutral.verbose = 0
-        mol_anion.verbose = 0
+        mol_neutral = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin, verbose=0)
+        mol_anion = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge - 1, spin=abs(self.molecule_spin - 1), verbose=0)
 
         # 1. Ground-state calculations
         if self.molecule_spin == 0:
@@ -229,10 +222,10 @@ class MOLECULE():
         n_virt = len(virt_energies)
         n_states = max(20, n_virt - 1)
 
-        td = tdscf.TDDFT(mf_a)
-        td.conv_tol = 1e-6
+        td = tdscf.TDA(mf_a)
+        td.conv_tol = 1e-5
         td.max_cycle = 100
-        td.lindep = 1e-10
+        td.lindep = 1e-8
         td.kernel(nstates=n_states)
         nu = td.e * 27.2114
 
@@ -250,7 +243,8 @@ class MOLECULE():
         f = interp1d(estimated_EA, virt_eV, kind='linear', fill_value='extrapolate')
         epsilon0_eV = f(0.0)
         epsilon0 = epsilon0_eV / 27.2114
-        
+        logger.info(f"Vacuum level ε₀ = {epsilon0:.6f} Ha")
+
         return epsilon0
 
 

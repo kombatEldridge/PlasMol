@@ -1,6 +1,6 @@
 {
   "settings": {
-    "dt": 0.1,
+    "dt": 0.01,
     "t_end": 2000,
     "driver": "fourier"
   },
@@ -11,22 +11,22 @@
         {"atom": "H", "coord": [-1.4891244004, 0.0000000000,  1.0332262019]}
     ],
     "geometry_units": "bohr",
-    "basis": "aug-cc-pVTZ",
-    "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": 0.513,
+    "basis": "631g*",
+    "xc": "HYB_GGA_XC_LC_PBEOP",
+    "lrc_parameter": 0.581692,
     "propagator": { 
       "type": "magnus2"
     },
     "broadening": {
       "gam0": 1,
       "xi": 0.5,
-      "eps0": 0.0477,
+      "eps0": 0.177536,
       "clamp": 100
     },
     "source": {
       "type": "kick",
       "intensity": 5e-5,
-      "peak_time": 0.1,
+      "peak_time": 0.05,
       "width_steps": 3
     }
   },

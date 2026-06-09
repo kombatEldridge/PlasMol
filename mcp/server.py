@@ -95,7 +95,7 @@ def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
         cmd = [
             "conda", "run", "-n", conda_env, "--cwd", str(run_dir),
             "python", "-m", "plasmol.main",
-            dst.name, "-vv", "-l", "log.out",
+            dst.name, "-l", "log.out",
         ]
 
         with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
