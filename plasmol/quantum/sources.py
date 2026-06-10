@@ -52,7 +52,6 @@ class QUANTUMSOURCE:
             envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
             active_component = self.intensity_au * np.real(carrier * envelope)
         elif self.source_type == 'kick':
-            envelope = np.exp(-((t - self.peak_time_au)**2) / (2 * self.width_au**2))
             active_component = np.zeros_like(t)
             mask = np.isclose(t, self.peak_time_au, atol=1e-10)
             if np.any(mask):
