@@ -6,12 +6,15 @@ import shutil
 import json
 import atexit
 import re
+import sys
 from pathlib import Path
 from datetime import datetime
 from types import SimpleNamespace
 from mcp.server.fastmcp import FastMCP
 
 from plasmol.utils.input.params import PARAMS
+
+from inject import BUG_CATEGORIES
 
 try:
     import meep as mp
@@ -25,6 +28,13 @@ BASE_DIR = Path.cwd().resolve()
 BASE_RUNS_DIR = BASE_DIR / "mcp_runs"
 CONDA_ENV = ""
 SETUP_JOB_ID = 0
+
+def _normalize_line_list(value: str | list[str], field_name: str) -> list[str] | str:
+    if isinstance(value, str):
+        return [value] if value else []
+    if isinstance(value, list) and all(isinstance(line, str) for line in value):
+        return value
+    return f"Error: {field_name} must be a string or list of strings."
 
 def _create_run_directory(job_id: str) -> Path:
     """Create a fresh directory for this run."""
@@ -542,16 +552,63 @@ def reference_spectrum(molecule: str, condition: str) -> str:
     return reference_data.get((molecule, condition), failed_statement)
 
 @mcp.tool()
-def submit_diagnosis(soln_desc: str, strategy_desc: str, confidence: int) -> str:
-    """Return the preformatted RESULTS.md with the proposed solution, the strategy the model undertook to prove it, and a percentage confidence (0-100)."""
-    diagnosis_md = f"""# Diagnosis
-**Solution Description:** {soln_desc}
-**Strategy for Proof:** {strategy_desc}
-**Confidence Level:** {confidence}
-"""
-    with open("RESULTS.md", "w") as f:
-        f.write(diagnosis_md)
-    return "RESULTS.md updated."
+def list_bug_categories() -> list[str]:
+    """Return the valid bug category strings that may be passed to submit_diagnosis."""
+    return BUG_CATEGORIES
+
+@mcp.tool()
+def submit_diagnosis(
+    soln_desc: str,
+    strategy_desc: str,
+    confidence: int,
+    bug_category: str,
+    broken_lines: str | list[str],
+    fixed_lines: str | list[str],
+) -> str:
+    """Write submission.json with the diagnosis, exact broken source line(s), and exact fixed replacement line(s); return the JSON text."""
+    if bug_category not in BUG_CATEGORIES:
+        return (
+            f"Error: invalid bug_category '{bug_category}'. "
+            f"Use list_bug_categories() for valid values."
+        )
+
+    normalized_broken = _normalize_line_list(broken_lines, "broken_lines")
+    if isinstance(normalized_broken, str):
+        return normalized_broken
+    normalized_fixed = _normalize_line_list(fixed_lines, "fixed_lines")
+    if isinstance(normalized_fixed, str):
+        return normalized_fixed
+
+    if len(normalized_broken) != len(normalized_fixed):
+        return (
+            "Error: broken_lines and fixed_lines must contain the same number "
+            "of entries."
+        )
+
+    if bug_category == "no_fault":
+        if normalized_broken or normalized_fixed:
+            return (
+                "Error: broken_lines and fixed_lines must be empty when "
+                "bug_category is 'no_fault'."
+            )
+    elif not normalized_broken:
+        return (
+            "Error: broken_lines and fixed_lines must each contain at least "
+            "one exact source line when a bug is reported."
+        )
+
+    submission = {
+        "bug_category": bug_category,
+        "soln_desc": soln_desc,
+        "strategy_desc": strategy_desc,
+        "confidence": confidence,
+        "broken_lines": normalized_broken,
+        "fixed_lines": normalized_fixed,
+    }
+    submission_json = json.dumps(submission, indent=2)
+    with open("submission.json", "w") as f:
+        f.write(submission_json)
+    return submission_json
 
 if __name__ == "__main__":
     BASE_RUNS_DIR.mkdir(exist_ok=True)

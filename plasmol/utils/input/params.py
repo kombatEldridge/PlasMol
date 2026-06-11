@@ -51,6 +51,8 @@ class PARAMS:
         for bname in boolean_names:
             setattr(self, bname, False)
 
+        default_values_used = []
+
         # Populate attributes from param_defs
         for attr, path, is_section_dict, boolean_name, default_value, section_condition, data_type, _, _ in param_defs:
             if section_condition is not None:
@@ -83,8 +85,13 @@ class PARAMS:
                     # Apply default if the section is active (or no section boolean)
                     if boolean_name is None or getattr(self, boolean_name, False):
                         if default_value is not None:
-                            logger.warning(f"Using default value for {attr}: {default_value}")
+                            default_values_used.append((attr, default_value))
                             setattr(self, attr, default_value)
+
+        if default_values_used:
+            logger.debug("The following variables are using default values because none were specified:")
+            for attr, default_value in default_values_used:
+                logger.debug(f"    {attr}: {default_value}")
 
         self._attribute_checks()
         self._attribute_formation()

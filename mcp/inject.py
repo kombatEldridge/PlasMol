@@ -10,7 +10,7 @@ Writes the ground truth to <src_root>/../injected.json (kept OUTSIDE agent view)
 import sys, json, random, os
 
 BUGS = {
-    "electric_field_intensity_au": [
+    "bug_intensity_au": [
         "plasmol/quantum/sources.py",
         [
             (
@@ -19,7 +19,7 @@ BUGS = {
             ),
         ],
     ],
-    "dt_wrong_unit": [
+    "bug_dt_meep": [
         "plasmol/classical/simulation.py",
         [
             (
@@ -28,7 +28,7 @@ BUGS = {
             ),
         ],
     ],
-    "t_end_wrong_unit": [
+    "bug_t_end_meep": [
         "plasmol/classical/simulation.py",
         [
             (
@@ -37,7 +37,7 @@ BUGS = {
             ),
         ],
     ],
-    "fourier_field_p_damping_gamma_flipped": [
+    "bug_fourier_damp": [
         "plasmol/utils/input/params.py",
         [
             (
@@ -55,7 +55,7 @@ BUGS = {
 
         ],
     ],
-    "get_gamma_ao_wrong": [
+    "bug_gamma": [
         "plasmol/quantum/molecule.py",
         [
             (
@@ -64,7 +64,7 @@ BUGS = {
             ),
         ],
     ],
-    "absorption_missing_factor_4": [
+    "bug_absorption": [
         "plasmol/drivers/custom_drivers/fourier.py",
         [
             (
@@ -73,7 +73,7 @@ BUGS = {
             ),
         ],
     ],
-    "mf_omega_zero": [
+    "bug_mf_omega": [
         "plasmol/quantum/molecule.py",
         [
             (
@@ -83,6 +83,8 @@ BUGS = {
         ],
     ],
 }
+
+BUG_CATEGORIES = list(BUGS.keys()) + ["no_fault"]
 
 def apply_edit(root, rel, old, new):
     path = os.path.join(root, rel)
@@ -100,18 +102,7 @@ def main():
     root = sys.argv[1]
     seed = int(sys.argv[2])
     rng = random.Random(seed)
-    choice = rng.choice(
-        [
-            "electric_field_intensity_au",
-            "dt_wrong_unit",
-            "t_end_wrong_unit",
-            "fourier_field_p_damping_gamma_flipped",
-            "get_gamma_ao_wrong",
-            "absorption_missing_factor_4",
-            "mf_omega_zero",
-            "no_fault",
-        ]
-    )
+    choice = rng.choice(BUG_CATEGORIES)
 
     truth = {"category": choice, "edits": []}
     if choice != "no_fault":

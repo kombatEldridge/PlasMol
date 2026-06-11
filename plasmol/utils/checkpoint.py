@@ -188,7 +188,7 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
         except Exception as e:
             raise RuntimeError(f"Error occurred while checking existing checkpoint: {e}")
         finally:
-            params.checkpoint_filepath = _get_restored_filepath(params.checkpoint_filepath, restored_text="new")
+            params.checkpoint_filepath = _get_restored_filepath(params.checkpoint_filepath, restored_text="_new")
             logger.warning(f"Previous checkpoint file exists, moving new one to {params.checkpoint_filepath}")
             checkpoint_path = params.checkpoint_filepath
 

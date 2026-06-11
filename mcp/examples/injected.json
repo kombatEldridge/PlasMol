@@ -1,0 +1,10 @@
+{
+  "category": "bug_dt_meep",
+  "edits": [
+    {
+      "file": "plasmol/classical/simulation.py",
+      "old": "self.dt_meep = self.dt / constants.convertTimeMeep2Atomic",
+      "new": "self.dt_meep = self.dt * constants.convertTimeMeep2Atomic"
+    }
+  ]
+}

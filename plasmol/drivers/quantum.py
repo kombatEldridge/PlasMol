@@ -66,11 +66,11 @@ def run(params):
                 mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
                 source_has_been_zero = False
             logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
-            if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
-                percent = int(round((index + 1) / total_steps * 100))
-                logger.info(f"Simulation progress: {percent}% done ({index + 1}/{total_steps} steps)")
             update_csv(params.field_p_filepath, params.times[index+1], *mu_arr)
             time = current_time
+            if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
+                percent = int(round((index + 1) / total_steps * 100))
+                logger.info(f"Simulation progress: {percent}% done ({index + 1}/{total_steps} steps || {time}/{params.times[-1]} au)")
             if params.has_checkpoint and not current_time == 0.0:
                 n_steps = round(index / params.checkpoint_frequency_steps)
                 reconstructed = n_steps * params.checkpoint_frequency_steps

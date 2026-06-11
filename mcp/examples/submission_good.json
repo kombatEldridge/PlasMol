@@ -1,0 +1,12 @@
+{
+  "bug_category": "bug_dt_meep",
+  "soln_desc": "Meep timestep uses multiplication instead of division for unit conversion.",
+  "strategy_desc": "Compared parse_params timing with read_log, then inspected simulation.py.",
+  "confidence": 91,
+  "broken_lines": [
+    "self.dt_meep=self.dt*constants.convertTimeMeep2Atomic"
+  ],
+  "fixed_lines": [
+    "self.dt_meep = self.dt / constants.convertTimeMeep2Atomic"
+  ]
+}

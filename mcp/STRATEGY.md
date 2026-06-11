@@ -45,7 +45,7 @@ Use this pipeline for every run. Subsequent sections explain what to look for at
 
 ---
 
-## 1. `electric_field_intensity_au`
+## 1. `bug_intensity_au`
 
 **Injection:** `plasmol/quantum/sources.py` — kick amplitude multiplied by `1e5` at the peak-time mask.
 
@@ -63,16 +63,16 @@ Use this pipeline for every run. Subsequent sections explain what to look for at
 
 ### Diagnosis strategy
 
-1. Run baseline workflow through step 8. Treat any bad spectrum as **suspicious but not sufficient** on its own — `mf_omega_zero` and `get_gamma_ao_wrong` also distort spectra.
+1. Run baseline workflow through step 8. Treat any bad spectrum as **suspicious but not sufficient** on its own — `bug_mf_omega` and `bug_gamma` also distort spectra.
 2. **Primary check (smoking gun):** `parse_params("mcp/h2o.json")` → note `molecule_source_intensity`. Then `read_field_csv(job_id, "e")` → find the row at `t ≈ 0.05` and read the excited component amplitude.
    - Good run: kick ≈ `5e-5` au.
    - Injected run: kick ≈ `5` au.
    - A ~100,000× mismatch between parsed intensity and field CSV proves the bug is in source construction, not parameter parsing.
 3. **Secondary check:** `read_field_csv(job_id, "p")` — confirm an enormous, short-lived dipole spike right after the kick. The response should look unphysical relative to a `5e-5` driving field, which reinforces that the *field* was wrong, not just the spectrum post-processing.
 4. **Rule out lookalikes before editing code:**
-   - `mf_omega_zero` → `parse_params` LRC looks fine **and** `read_field_csv(e)` kick matches parsed intensity (only peak *positions* are wrong).
-   - `get_gamma_ao_wrong` → field kick matches params; dipole *decay envelope* is wrong, not the kick magnitude.
-   - `absorption_missing_factor_4` → field and dipole CSVs match a good run; only unnormalized absorption scale is off.
+   - `bug_mf_omega` → `parse_params` LRC looks fine **and** `read_field_csv(e)` kick matches parsed intensity (only peak *positions* are wrong).
+   - `bug_gamma` → field kick matches params; dipole *decay envelope* is wrong, not the kick magnitude.
+   - `bug_absorption` → field and dipole CSVs match a good run; only unnormalized absorption scale is off.
 5. Confirm in source:
    ```
    search_code("intensity_au", "plasmol/quantum/sources.py")
@@ -83,7 +83,7 @@ Use this pipeline for every run. Subsequent sections explain what to look for at
 
 ---
 
-## 2. `dt_wrong_unit`
+## 2. `bug_dt_meep`
 
 **Injection:** `plasmol/classical/simulation.py` — Meep timestep uses the wrong unit conversion:
 
@@ -125,7 +125,7 @@ self.dt_meep = self.dt * constants.convertTimeMeep2Atomic
 
 ---
 
-## 3. `t_end_wrong_unit`
+## 3. `bug_t_end_meep`
 
 **Injection:** `plasmol/classical/simulation.py` — Meep end time uses the wrong unit conversion:
 
@@ -136,7 +136,7 @@ self.t_end_meep = self.t_end / constants.convertTimeMeep2Atomic
 self.t_end_meep = self.t_end * constants.convertTimeMeep2Atomic
 ```
 
-**Scope:** Same as `dt_wrong_unit` — classical/hybrid only; **inert for `mcp/h2o.json`**.
+**Scope:** Same as `bug_dt_meep` — classical/hybrid only; **inert for `mcp/h2o.json`**.
 
 **Physical effect (hybrid/classical):** Meep runs far too long or far too short relative to the configured atomic `t_end`. Hybrid simulations may terminate before the plasmon field fully interacts with the molecule, or run far past the intended end.
 
@@ -167,7 +167,7 @@ self.t_end_meep = self.t_end * constants.convertTimeMeep2Atomic
 
 ---
 
-## 4. `fourier_field_p_damping_gamma_flipped`
+## 4. `bug_fourier_damp`
 
 **Injection:** `plasmol/utils/input/params.py` — swaps the `fourier_damp` True/False assignments tied to `fourier_field_p_damping_gamma`.
 
@@ -200,7 +200,7 @@ If the input **did** include `field_p_damping_gamma`, the symptom would instead 
 
 ---
 
-## 5. `get_gamma_ao_wrong`
+## 5. `bug_gamma`
 
 **Injection:** `plasmol/quantum/molecule.py` — replaces Lopata damping `gam0 * (exp(xi * e_tilde) - 1)` with `gam0 * exp(xi * e_tilde)`.
 
@@ -232,7 +232,7 @@ If the input **did** include `field_p_damping_gamma`, the symptom would instead 
 
 ---
 
-## 6. `absorption_missing_factor_4`
+## 6. `bug_absorption`
 
 **Injection:** `plasmol/drivers/custom_drivers/fourier.py` — removes the factor of `4` in `return - 4 * np.pi * freqs / 3 / C_AU * fullsum`.
 
@@ -267,7 +267,7 @@ This is the hardest bug to catch from spectrum alone. Work backwards:
 
 ---
 
-## 7. `mf_omega_zero`
+## 7. `bug_mf_omega`
 
 **Injection:** `plasmol/quantum/molecule.py` — `self.mf.omega = 0` instead of `self.molecule_lrc_parameter`.
 
@@ -284,7 +284,7 @@ This is the hardest bug to catch from spectrum alone. Work backwards:
 
 ### Diagnosis strategy
 
-1. `read_fourier_spectrum` — focus on peak **positions**, not just amplitude (contrast with `electric_field_intensity_au`, where the field CSV kick magnitude is the primary clue, and `absorption_missing_factor_4`).
+1. `read_fourier_spectrum` — focus on peak **positions**, not just amplitude (contrast with `bug_intensity_au`, where the field CSV kick magnitude is the primary clue, and `bug_absorption`).
 2. `parse_params` confirms LRC parameter in JSON is fine → bug is in how it is applied to PySCF.
 3. Confirm:
    ```
@@ -318,22 +318,22 @@ All workflow steps succeed. `read_fourier_spectrum` matches a known-good referen
 
 ```
 Job failed?
-  └─ stderr mentions fourier_field_p_damping_gamma → fourier_field_p_damping_gamma_flipped
+  └─ stderr mentions fourier_field_p_damping_gamma → bug_fourier_damp
 
 Hybrid/classical run, parse_params dt/t_end match JSON, but CSV timestamps disagree?
-  └─ dt_wrong_unit or t_end_wrong_unit (check classical/simulation.py Meep conversions)
+  └─ bug_dt_meep or bug_t_end_meep (check classical/simulation.py Meep conversions)
 
 read_field_csv(e) kick at peak_time ≈ 5 au but parse_params intensity ≈ 5e-5?
-  └─ electric_field_intensity_au (check sources.py for 1e5 multiplier)
+  └─ bug_intensity_au (check sources.py for 1e5 multiplier)
 
 Spectrum peak positions wrong, field_e kick matches parse_params intensity?
-  └─ mf_omega_zero
+  └─ bug_mf_omega
 
 Spectrum peak widths wrong, field kick matches params, dipole decay too fast?
-  └─ get_gamma_ao_wrong
+  └─ bug_gamma
 
 Dipole CSV matches good run, spectrum normalized shape matches good run?
-  └─ absorption_missing_factor_4 (check fourier.py formula)
+  └─ bug_absorption (check fourier.py formula)
      OR no_fault (if all intermediate checks pass)
 ```
 
@@ -345,16 +345,16 @@ These are not essential for every bug, but they close blind spots in the current
 
 | Proposed tool | Why it helps |
 |---------------|--------------|
-| `field_csv_summary(job_id, field)` | Return row count, inferred `dt`, max/mean dipole or field amplitude without transferring full CSVs. Speeds detection of Meep conversion bugs (`dt_wrong_unit`, `t_end_wrong_unit`) and `electric_field_intensity_au`. |
-| `read_spectrum_raw(job_id)` | Return unnormalized absorption (`abs` before `max(abs)`). **Essential** for reliably catching `absorption_missing_factor_4` and `electric_field_intensity_au`. |
+| `field_csv_summary(job_id, field)` | Return row count, inferred `dt`, max/mean dipole or field amplitude without transferring full CSVs. Speeds detection of Meep conversion bugs (`bug_dt_meep`, `bug_t_end_meep`) and `bug_intensity_au`. |
+| `read_spectrum_raw(job_id)` | Return unnormalized absorption (`abs` before `max(abs)`). **Essential** for reliably catching `bug_absorption` and `bug_intensity_au`. |
 | `read_fourier_npz(job_id)` | Load `fourier.npz` (`abs_imag`, `freqs`) for per-axis FFT debugging without re-running. |
 | `grep_log(job_id, pattern)` | Search stdout/stderr for timestep lines, damping messages, errors — faster than reading full logs. |
 | `list_run_outputs(job_id)` | List files in the run directory (`x_dir/`, `spectrum.csv`, `fourier.npz`, etc.) to guide which reader to call next. |
-| `compare_spectrum(job_id, reference_path)` | Peak-pick and report position/width/height deltas vs a known-good `spectrum.csv`. Automates the manual comparison steps for `get_gamma_ao_wrong` and `mf_omega_zero`. |
+| `compare_spectrum(job_id, reference_path)` | Peak-pick and report position/width/height deltas vs a known-good `spectrum.csv`. Automates the manual comparison steps for `bug_gamma` and `bug_mf_omega`. |
 
 ### Priority additions
 
-1. **`read_spectrum_raw`** — without it, `absorption_missing_factor_4` is theoretically undetectable from `read_fourier_spectrum` alone.
+1. **`read_spectrum_raw`** — without it, `bug_absorption` is theoretically undetectable from `read_fourier_spectrum` alone.
 2. **`field_csv_summary`** — cheap confirmation of timestep and duration bugs before reading megabyte CSVs.
 
 ---

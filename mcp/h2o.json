@@ -1,7 +1,7 @@
 {
   "settings": {
-    "dt": 0.01,
-    "t_end": 1000,
+    "dt": 0.1,
+    "t_end": 2000,
     "driver": "fourier"
   },
   "molecule": {
@@ -11,7 +11,7 @@
         {"atom": "H", "coord": [-1.4891244004, 0.0000000000,  1.0332262019]}
     ],
     "geometry_units": "bohr",
-    "basis": "augccpvtz",
+    "basis": "631g*",
     "xc": "RSH(0.516, 1, -1.0) + PBE, PBE",
     "propagator": { 
       "type": "magnus2"

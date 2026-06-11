@@ -1,0 +1,12 @@
+{
+  "bug_category": "bug_dt_meep",
+  "soln_desc": "Suspected dt conversion issue.",
+  "strategy_desc": "Read simulation.py.",
+  "confidence": 70,
+  "broken_lines": [
+    "self.dt_meep = self.dt * constants.convertTimeMeep2Atomic"
+  ],
+  "fixed_lines": [
+    "self.dt_meep = self.dt + constants.convertTimeMeep2Atomic"
+  ]
+}
