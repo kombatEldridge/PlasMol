@@ -58,10 +58,10 @@ class MOLECULE():
             if self.molecule_lrc_parameter == "tune":
                 self.molecule_lrc_parameter = self.xc_tuning()
             self.mf.omega = self.molecule_lrc_parameter
-        if self.has_broadening:
-            if self.broadening_dict["eps0"] == "tune":
+        if self.has_cap:
+            if self.cap_dict["eps0"] == "tune":
                 eps0 = self.compute_vacuum_level()
-                self.broadening_dict["eps0"] = eps0
+                self.cap_dict["eps0"] = eps0
         
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
@@ -267,13 +267,13 @@ class MOLECULE():
         F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
         if exc is not None:
             F_ao += self.calculate_potential(exc)
-        if self.has_broadening:
+        if self.has_cap:
             if not hasattr(self, 'Gamma_ao_0'):
-                self.Gamma_ao_0 = self.get_gamma_ao(**self.broadening_dict)
-            if self.broadening_type == 'static':
+                self.Gamma_ao_0 = self.get_gamma_ao(**self.cap_dict)
+            if self.cap_type == 'static':
                 F_ao -= 1j * self.Gamma_ao_0
-            elif self.broadening_type == 'dynamic':
-                F_ao -= 1j * self.get_gamma_ao(**self.broadening_dict, D_ao=D_ao)
+            elif self.cap_type == 'dynamic':
+                F_ao -= 1j * self.get_gamma_ao(**self.cap_dict, D_ao=D_ao)
         return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
 
     def rotate_coeff_to_orth(self, coeff_ao):

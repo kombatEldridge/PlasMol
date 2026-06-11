@@ -6,7 +6,7 @@
 
 Major improvements since v1.0.0:
 - Complete migration to modern **JSON input format** with validation and the `--describe` CLI flag.
-- Support for **Lopata broadening** (static & dynamic) and automatic tuning of LRC parameters / vacuum level.
+- Support for **Lopata CAP broadening** (static & dynamic) and automatic tuning of LRC parameters / vacuum level.
 - **Checkpoint / restart** capability for long quantum simulations.
 - Multiple **custom drivers** (Fourier absorption spectra, MO comparison, NP/plasmon cross-section calculations).
 - Improved multiprocessing safety, logging, and error messages.
@@ -14,7 +14,7 @@ Major improvements since v1.0.0:
 
 ## Releases
 
-- **v1.1.0** (current) — JSON schema, broadening, checkpointing, custom drivers, extensive validation.
+- **v1.1.0** (current) — JSON schema, CAP broadening, checkpointing, custom drivers, extensive validation.
 - **v1.0.0** — Initial public release with block-style input files and "proof-of-concept" capabilities.
 
 ## Philosophy & Design Goals

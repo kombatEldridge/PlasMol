@@ -315,40 +315,40 @@ def test_fourier_field_p_damping_gamma_non_positive(tmp_path):
         ValueError, "Damping 'gamma' must be a positive value")
 
 
-def test_broadening_missing_type(tmp_path):
+def test_cap_missing_type(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"gam0": 1.0}}})),
-        ValueError, "Broadening modifier requires 'type' attribute")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"gam0": 1.0}}})),
+        ValueError, "CAP modifier requires 'type' attribute")
 
 
-def test_broadening_invalid_type(tmp_path):
+def test_cap_invalid_type(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"type": "invalid"}}})),
-        ValueError, "Broadening 'type' must be 'static' or 'dynamic'")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "invalid"}}})),
+        ValueError, "CAP 'type' must be 'static' or 'dynamic'")
 
 
-def test_broadening_gam0_non_positive(tmp_path):
+def test_cap_gam0_non_positive(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"type": "static", "gam0": -1.0}}})),
-        ValueError, "Broadening 'gam0' must be a positive value")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "static", "gam0": -1.0}}})),
+        ValueError, "CAP 'gam0' must be a positive value")
 
 
-def test_broadening_xi_negative(tmp_path):
+def test_cap_xi_negative(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"type": "dynamic", "xi": -0.1}}})),
-        ValueError, "Broadening 'xi' must be a non-negative value")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "dynamic", "xi": -0.1}}})),
+        ValueError, "CAP 'xi' must be a non-negative value")
 
 
-def test_broadening_eps0_negative(tmp_path):
+def test_cap_eps0_negative(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"type": "dynamic", "eps0": -0.01}}})),
-        ValueError, "Broadening 'eps0' must be a non-negative value")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "dynamic", "eps0": -0.01}}})),
+        ValueError, "CAP 'eps0' must be a non-negative value")
 
 
-def test_broadening_clamp_non_positive(tmp_path):
+def test_cap_clamp_non_positive(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"broadening": {"type": "static", "clamp": -10}}})),
-        ValueError, "Broadening 'clamp' must be a positive value")
+        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "static", "clamp": -10}}})),
+        ValueError, "CAP 'clamp' must be a positive value")
 
 
 def test_nanoparticle_missing_required_fields(tmp_path):

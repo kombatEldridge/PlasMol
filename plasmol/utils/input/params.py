@@ -361,19 +361,19 @@ class PARAMS:
                 else:
                     self.fourier_damp = False
 
-            # Lopata Broadening params
-            if self.has_broadening:
-                logger.info("Broadening modifier selected; applying Lopata broadening to spectra.")
-                if self.broadening_type.lower() not in ['static', 'dynamic']:
-                    raise ValueError("Broadening 'type' must be 'static' or 'dynamic'.")
-                if self.broadening_gam0 <= 0:
-                    raise ValueError("Broadening 'gam0' must be a positive value.")
-                if self.broadening_xi < 0:
-                    raise ValueError("Broadening 'xi' must be a non-negative value.")
-                if type(self.broadening_eps0) == float and self.broadening_eps0 < 0:
-                        raise ValueError("Broadening 'eps0' must be a non-negative value.") 
-                if self.broadening_clamp <= 0:
-                    raise ValueError("Broadening 'clamp' must be a positive value.")
+            # Lopata CAP params
+            if self.has_cap:
+                logger.info("CAP modifier selected; applying Lopata CAP to spectra.")
+                if self.cap_type.lower() not in ['static', 'dynamic']:
+                    raise ValueError("CAP 'type' must be 'static' or 'dynamic'.")
+                if self.cap_gam0 <= 0:
+                    raise ValueError("CAP 'gam0' must be a positive value.")
+                if self.cap_xi < 0:
+                    raise ValueError("CAP 'xi' must be a non-negative value.")
+                if type(self.cap_eps0) == float and self.cap_eps0 < 0:
+                        raise ValueError("CAP 'eps0' must be a non-negative value.") 
+                if self.cap_clamp <= 0:
+                    raise ValueError("CAP 'clamp' must be a positive value.")
 
             # Comparison mode params
             if self.has_comparison:
@@ -447,7 +447,7 @@ class PARAMS:
                 
         # Misc/Add'l Parameters
         if self.has_custom:
-            logger.info(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
+            logger.debug(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
 
     def _attribute_formation(self):
         """

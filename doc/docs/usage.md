@@ -303,13 +303,13 @@ When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must
 
 For absorption spectra use `"type": "kick"` together with the `"fourier"` section under `additional_parameters` top-level key.
 
-### 3.4 Broadening (Lopata-style)
+### 3.4 CAP (Lopata-style)
 
 Optional energy-dependent imaginary potential added to the Fock matrix for lifetime effects and smoother spectra. See the [Lopata paper](https://pubs.acs.org/doi/abs/10.1021/ct400569s) for more details.
 
 ```json
 {
-  "broadening": {
+  "cap": {
     "type": "static",
     "gam0": 1.0,
     "xi": 0.5,
@@ -321,11 +321,11 @@ Optional energy-dependent imaginary potential added to the Fock matrix for lifet
 
 | Key | Type | Description | Default | Units |
 |-----|------|---------|-------------|-------|
-| `type` | str | `"static"` or `"dynamic"` broadening | `"static"` | – |
-| `gam0` | float | Base broadening strength | 1.0 | a.u. |
-| `xi` | float | Exponent controlling energy dependence of broadening | 0.5 | – |
+| `type` | str | `"static"` or `"dynamic"` CAP | `"static"` | – |
+| `gam0` | float | Base CAP strength | 1.0 | a.u. |
+| `xi` | float | Exponent controlling energy dependence of CAP | 0.5 | – |
 | `eps0` | float or `"tune"` | Reference energy (vacuum level); use `"tune"` for automatic estimation | 0.05 | a.u. |
-| `clamp` | float | Maximum allowed broadening value | 100 | a.u. |
+| `clamp` | float | Maximum allowed CAP value | 100 | a.u. |
 
 ## 4. "files"
 

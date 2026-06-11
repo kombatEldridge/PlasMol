@@ -45,7 +45,8 @@ def run(params):
 
     total_steps = len(params.times)
     report_interval = max(1, total_steps // 10)
-    time = 0.0  # ensure finally block always has a value for the final checkpoint write
+    time = 0.0 
+    source_has_been_zero = True
     try:
         for index, current_time in enumerate(params.times):
             if params.resumed_from_checkpoint:
@@ -57,12 +58,18 @@ def run(params):
                     time = current_time
                 if current_time <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     continue
-            mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
-            logging.debug(f"At {np.round(current_time, params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
+            if current_time == 0:
+                update_csv(params.field_p_filepath, current_time, *np.zeros(3))
+            if (params.molecule_source_field[index] == 0).all() and source_has_been_zero:
+                mu_arr = np.zeros(3)
+            else:
+                mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
+                source_has_been_zero = False
+            logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
             if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
                 percent = int(round((index + 1) / total_steps * 100))
                 logger.info(f"Simulation progress: {percent}% done ({index + 1}/{total_steps} steps)")
-            update_csv(params.field_p_filepath, current_time, *mu_arr)
+            update_csv(params.field_p_filepath, params.times[index+1], *mu_arr)
             time = current_time
             if params.has_checkpoint and not current_time == 0.0:
                 n_steps = round(index / params.checkpoint_frequency_steps)

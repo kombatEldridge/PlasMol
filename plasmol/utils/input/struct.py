@@ -71,13 +71,13 @@ param_defs = [
     ('molecule_source_component', ['molecule', 'source', 'component'], False, 'has_molecule_source', None, 'molecule', str, "Direction of the electric field", None),
     ('molecule_source_additional_parameters', ['molecule', 'source', 'additional_parameters'], False, 'has_molecule_source', None, 'molecule', dict, "Additional parameters (wavelength or frequency for pulse)", "μm"),
 
-    # Lopata Broadening params
-    ('broadening_dict', ['molecule', 'broadening'], True, "has_broadening", None, 'molecule', dict, None, None),
-    ('broadening_type', ['molecule', 'broadening', "type"], False, 'has_broadening', "static", 'molecule', str, "Type of broadening (static or dynamic)", None),
-    ('broadening_gam0', ['molecule', 'broadening', "gam0"], False, 'has_broadening', 1.0, 'molecule', (int, float), "Base broadening strength", "a.u."),
-    ('broadening_xi', ['molecule', 'broadening', "xi"], False, 'has_broadening', 0.5, 'molecule', (int, float), "Energy-dependent broadening exponent", None),
-    ('broadening_eps0', ['molecule', 'broadening', "eps0"], False, 'has_broadening', 0.05, 'molecule', (int, float, str), "Reference energy for broadening", "a.u."),
-    ('broadening_clamp', ['molecule', 'broadening', "clamp"], False, 'has_broadening', 100, 'molecule', (int, float), "Maximum allowed broadening value", "a.u."),
+    # Lopata CAP params
+    ('cap_dict', ['molecule', 'cap'], True, "has_cap", None, 'molecule', dict, None, None),
+    ('cap_type', ['molecule', 'cap', "type"], False, 'has_cap', "static", 'molecule', str, "Type of CAP (static or dynamic)", None),
+    ('cap_gam0', ['molecule', 'cap', "gam0"], False, 'has_cap', 1.0, 'molecule', (int, float), "Base CAP strength", "a.u."),
+    ('cap_xi', ['molecule', 'cap', "xi"], False, 'has_cap', 0.5, 'molecule', (int, float), "Energy-dependent CAP exponent", None),
+    ('cap_eps0', ['molecule', 'cap', "eps0"], False, 'has_cap', 0.05, 'molecule', (int, float, str), "Reference energy for CAP", "a.u."),
+    ('cap_clamp', ['molecule', 'cap', "clamp"], False, 'has_cap', 100, 'molecule', (int, float), "Maximum allowed CAP value", "a.u."),
 
     # Checkpointing params
     ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),

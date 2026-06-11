@@ -174,9 +174,6 @@ def run(params):
                     logger.error(f"{direction}-dir quantum run failed: {e}")
     finally:
         if getattr(params, 'has_checkpoint', False):
-            # Merge regular per-direction checkpoints (written during the run) and the final ones.
-            # Both merges are in the finally so they happen even if the overall job or some
-            # directions crash.
             reg_fp = getattr(params, 'checkpoint_filepath', None)
             if reg_fp:
                 try:
@@ -191,33 +188,32 @@ def run(params):
                 except Exception as me:
                     logger.error(f"Failed to merge per-direction final checkpoints: {me}")
 
-    # Add damping to the polarizability fields if mu_damping is set
-    for params_copy in params_copies:
-        if params.fourier_damp:
-            mu_arrs = read_field_csv(params_copy.field_p_filepath)
-            mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_field_p_damping_gamma)
-            params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
-            init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
-            for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
-                update_csv(params_copy.field_p_filepath, t, x, y, z)
-            logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")
+        # Add damping to the polarizability fields if mu_damping is set
+        for params_copy in params_copies:
+            if params.fourier_damp:
+                mu_arrs = read_field_csv(params_copy.field_p_filepath)
+                mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_field_p_damping_gamma)
+                params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
+                init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
+                for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
+                    update_csv(params_copy.field_p_filepath, t, x, y, z)
+                logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")
 
-    # Apply Fourier transform to the field_p CSV files
-    time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
-
-    abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, params.fourier_min_ev, params.fourier_max_ev, npz=getattr(params, 'fourier_npz_filepath', None))
-    if len(freqs) == 0:
-        raise ValueError("No valid frequencies found for Fourier transform. Try running the simulation for longer.")
-    abs = absorption(abs_imag, freqs)
-    
-    pd.DataFrame({'Frequency': freqs, 'Absorption': abs/max(abs)}).to_csv(Path(params.fourier_spectrum_filepath).with_suffix(".csv"), index=False)
-    plt.figure(figsize=(14, 8))
-    plt.plot(freqs, abs/max(abs), color='green', label='Spectrum')
-    plt.xlabel('Energy (eV)', fontsize=16)
-    plt.ylabel('Absorption', fontsize=16)
-    plt.title('Absorption Spectrum', fontsize=20)
-    plt.xlim(params.fourier_min_ev, params.fourier_max_ev)
-    plt.grid(True)
-    plt.legend(fontsize=16)
-    plt.tight_layout()
-    plt.savefig(params.fourier_spectrum_filepath, dpi=600)
+        # Apply Fourier transform to the field_p CSV files
+        time_points, dipole_moment = fold(params_copies[0].field_p_filepath, params_copies[1].field_p_filepath, params_copies[2].field_p_filepath)
+        abs_imag, freqs = fourier(time_points, dipole_moment, params.fourier_gamma, params.fourier_min_ev, params.fourier_max_ev, npz=getattr(params, 'fourier_npz_filepath', None))
+        if len(freqs) == 0:
+            raise ValueError("No valid frequencies found for Fourier transform. Try running the simulation for longer.")
+        abs = absorption(abs_imag, freqs)
+        
+        pd.DataFrame({'Frequency': freqs, 'Absorption': abs/max(abs)}).to_csv(Path(params.fourier_spectrum_filepath).with_suffix(".csv"), index=False)
+        plt.figure(figsize=(14, 8))
+        plt.plot(freqs, abs/max(abs), color='green', label='Spectrum')
+        plt.xlabel('Energy (eV)', fontsize=16)
+        plt.ylabel('Absorption', fontsize=16)
+        plt.title('Absorption Spectrum', fontsize=20)
+        plt.xlim(params.fourier_min_ev, params.fourier_max_ev)
+        plt.grid(True)
+        plt.legend(fontsize=16)
+        plt.tight_layout()
+        plt.savefig(params.fourier_spectrum_filepath, dpi=600)

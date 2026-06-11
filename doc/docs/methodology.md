@@ -13,7 +13,7 @@ PlasMol performs **self-consistent hybrid FDTD–RT-TDDFT** simulations of plasm
 3. **Quantum propagation** (RT-TDDFT)
       - Build time-dependent Fock matrix in the orthogonal basis:
       ```
-      F_orth(t) = F_0 + V_ext(E(t)) - i Γ(t)   (optional Lopata broadening)
+      F_orth(t) = F_0 + V_ext(E(t)) - i Γ(t)   (optional Lopata CAP broadening)
       ```
       - Propagate molecular orbitals / density matrix using chosen propagator (default: 2nd-order Magnus + predictor-corrector).
       - Compute induced dipole:

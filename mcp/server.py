@@ -74,7 +74,6 @@ def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
     jobs[job_id]["started_at"] = datetime.now().isoformat()
     jobs[job_id]["run_dir"] = str(run_dir)
 
-    stdout_file = run_dir / "stdout.log"
     stderr_file = run_dir / "stderr.log"
 
     try:
@@ -95,14 +94,13 @@ def _run_job(job_id: str, conda_env: str, input_file: str, run_dir: Path):
         cmd = [
             "conda", "run", "-n", conda_env, "--cwd", str(run_dir),
             "python", "-m", "plasmol.main",
-            dst.name, "-l", "log.out",
+            dst.name, "-l", "stdout.log",
         ]
 
-        with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
+        with open(stderr_file, "w") as err:
             proc = subprocess.Popen(
                 cmd,
                 cwd=str(run_dir),
-                stdout=out,
                 stderr=err,
                 text=True,
             )

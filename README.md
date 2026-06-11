@@ -18,7 +18,7 @@ PlasMol is an open-source Python package for simulating plasmon-molecule interac
 PlasMol supports three primary modes (additional workflows are available through [custom drivers](doc/docs/custom_drivers.md)):
 
 1. **Classical FDTD** — Spherical nanoparticle simulations (e.g., Au/Ag spheres) with custom sources, symmetries, PML, optional field imaging/GIFs, and absorption/scattering cross-section calculations.
-2. **Quantum RT-TDDFT** — Isolated molecule simulations with absorption spectra (Fourier workflow), MO energy comparisons, [Lopata-style](https://pubs.acs.org/doi/abs/10.1021/ct400569s) broadening, and checkpoint/restart support.
+2. **Quantum RT-TDDFT** — Isolated molecule simulations with absorption spectra (Fourier workflow), MO energy comparisons, [Lopata-style](https://pubs.acs.org/doi/abs/10.1021/ct400569s) CAP broadening, and checkpoint/restart support.
 3. **Full Hybrid PlasMol** — Self-consistent NP + molecule simulations where the classical electric field drives quantum propagation and the induced molecular dipole is fed back as a point source in FDTD.
 
 The driver is inferred from your JSON input (`molecule` only → quantum, `plasmon` only → classical, both → plasmol), or you can set `"driver"` explicitly in `settings`.
@@ -27,7 +27,7 @@ The driver is inferred from your JSON input (`molecule` only → quantum, `plasm
 
 - **JSON input format** with validation and the `--describe` CLI flag for exploring every supported parameter.
 - **Custom drivers** for Fourier absorption spectra, MO comparison, NP/plasmon cross-sections, and user-defined workflows.
-- **Lopata broadening** (static and dynamic) with automatic tuning of LRC parameters and vacuum level.
+- **Lopata CAP broadening** (static and dynamic) with automatic tuning of LRC parameters and vacuum level.
 - **Checkpoint/restart** for long quantum simulations.
 - **Propagators**: Magnus2 (default), RK4, or step for RT-TDDFT.
 - **Outputs**: CSVs for fields and dipoles, PNG/GIF field evolution, absorption spectra, MO diagrams, and checkpoints.

@@ -10,7 +10,7 @@
 It supports **three** primary modes (though more can be added through the [custom drivers](custom_drivers.md)):
 
 1. **Classical FDTD** — Spherical nanoparticle (NP) simulations (e.g., Au/Ag spheres) with custom sources, symmetries, PML, and optional field imaging/GIFs or abs/scat cross-section calculations.
-2. **Quantum RT-TDDFT** — Isolated molecule simulations with support for absorption spectra via Fourier transform, MO energy comparisons, [Lopata-style](https://pubs.acs.org/doi/abs/10.1021/ct400569s) broadening, and checkpointing.
+2. **Quantum RT-TDDFT** — Isolated molecule simulations with support for absorption spectra via Fourier transform, MO energy comparisons, [Lopata-style](https://pubs.acs.org/doi/abs/10.1021/ct400569s) CAP broadening, and checkpointing.
 3. **Full Hybrid PlasMol** — Self-consistent NP + molecule simulations where the classical electric field drives quantum propagation and the induced molecular dipole is fed back as a point source in FDTD.
 
 ## Quick Start

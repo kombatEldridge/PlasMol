@@ -7,7 +7,7 @@ logger = logging.getLogger("main")
 
 def propagate(dt, molecule, exc):
     """
-    Propagate molecular orbitals using the Runge-Kutta 4 method.
+    Propagate molecular orbitals using the Runge-Kutta 4 method with a frozen Fock matrix.
 
     Parameters:
     dt : float

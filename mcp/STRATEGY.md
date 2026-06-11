@@ -204,22 +204,22 @@ If the input **did** include `field_p_damping_gamma`, the symptom would instead 
 
 **Injection:** `plasmol/quantum/molecule.py` — replaces Lopata damping `gam0 * (exp(xi * e_tilde) - 1)` with `gam0 * exp(xi * e_tilde)`.
 
-**Physical effect:** Artificial broadening in the Fock matrix is too large (missing the `-1` offset). Static broadening (`h2o.json` default) injects excess imaginary damping during propagation.
+**Physical effect:** Artificial CAP broadening in the Fock matrix is too large (missing the `-1` offset). Static broadening (`h2o.json` default) injects excess imaginary damping during propagation.
 
 ### Expected symptoms
 
 | Stage | Signal |
 |-------|--------|
-| `parse_params` | Broadening block looks normal (gam0, xi, eps0) |
-| `read_log` | "Broadening modifier selected" — completes without error |
+| `parse_params` | CAP broadening block looks normal (gam0, xi, eps0) |
+| `read_log` | "CAP broadening modifier selected" — completes without error |
 | `read_fourier_spectrum` | **Peak widths differ** from good run; peaks may be overly broad or suppressed |
 | `read_field_csv(..., "p")` | Faster decay / stronger damping envelope in dipole trace |
 
 ### Diagnosis strategy
 
 1. `read_fourier_spectrum` — compare linewidths and relative peak heights to a good run (not just positions).
-2. `read_field_csv(..., "p")` — inspect post-kick dipole decay; excessive decay suggests broadening/Gamma error.
-3. `lab_manual()` — read methodology on Lopata broadening to know the expected `(exp(ξε̃) − 1)` form.
+2. `read_field_csv(..., "p")` — inspect post-kick dipole decay; excessive decay suggests CAP broadening/Gamma error.
+3. `lab_manual()` — read methodology on Lopata CAP broadening to know the expected `(exp(ξε̃) − 1)` form.
 4. Confirm:
    ```
    search_code("exp\\(xi \\* e_tilde\\)", "plasmol/quantum/molecule.py")
