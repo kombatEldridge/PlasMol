@@ -17,7 +17,7 @@ from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
 from plasmol.utils.input.cli import parse_arguments
 from plasmol.utils.input.params import PARAMS
-from plasmol.utils.checkpoint import init_checkpoint, update_checkpoint, cleanup_checkpoint
+from plasmol.utils.checkpoint import init_checkpoint, cleanup_checkpoint
 
 if __name__ == "__main__":
     # Step 1: Grab CLI args

@@ -1,95 +1,85 @@
-# Bug-Diagnosis Strategies for `mcp/h2o.json` Fourier Runs
-
-This document describes how to identify each injected fault from `randomizer.py` by working **backwards from the Fourier absorption spectrum**, using only the PlasMol MCP tools (plus targeted, hypothesis-driven code search). The goal is to localize the culprit without reading the entire codebase.
-
 ## Baseline workflow (all bugs)
 
 Use this pipeline for every run. Subsequent sections explain what to look for at each step.
 
 ```
 1. lab_manual()
-      → skim installation, usage, and methodology; note the Fourier driver runs
-        three directional kick simulations (x/y/z), folds dipole CSVs, FFTs, normalizes.
+      → skim installation, usage, and methodology documentation; model will learn about the 'Fourier' driver process.
 
 2. read_json("mcp/h2o.json")
-      → confirm driver=fourier, dt=0.01, t_end=2000, kick intensity=5e-5,
-        lrc_parameter=0.581692, broadening gam0/xi/eps0.
+      → model will confirm the input file should theoretically produce an absorption spectrum.
 
 3. parse_params("mcp/h2o.json")
-      → record effective dt, t_end, fourier_gamma, broadening settings.
-        Compare these to the JSON — mismatches here still flag input-parsing bugs,
-        but `dt_wrong_unit` / `t_end_wrong_unit` now live in `classical/simulation.py`
-        and do not change parsed params.
+      → model will confirm the system has correctly parsed the json input file.
 
-4. setup_conda_environment() → list_jobs() → confirm_conda_environment_setup()
-      → environment must be ready before run_simulation().
+4. setup_conda_environment() + confirm_conda_environment_setup()
+      → sets up a conda env with the necessary packages; environment must be ready before run_simulation().
 
-5. run_simulation("mcp/h2o.json") → job_id
+5. run_simulation("mcp/h2o.json") 
+      → runs an absorption spectrum simulation using the `mcp/h2o.json` input file.
 
 6. list_jobs() → read_log(job_id)
-      → check status (completed / failed), runtime, logged dt/t_end in au and fs,
-        Fourier gamma, damping messages, errors in stderr.
+      → check status (completed / failed), runtime, and read the log file for the job.
 
 7. read_fourier_spectrum(job_id)
-      → primary observable; note peak positions (eV) and relative heights.
-        For h2o, expect prominent features roughly near 7–10 eV and ~12 eV
-        (compare against a known-good run if available).
+      → primary observable; model should note peak positions (eV) and relative heights.
 
-8. read_field_csv(job_id, "p")  and  read_field_csv(job_id, "e")
-      → inspect time-domain dipole (polarization) and driving field.
-        Count rows, infer timestep from timestamps, check kick magnitude and decay.
+8. read_field_csv(job_id, "e"||"p", "x"||"y"||"z")
+      → inspect time-domain dipole (polarization) or driving field before fourier transformation in one of the three directions excited.
 
 9. reference_spectrum(molecule, condition)
-      → placeholder reference only; useful for workflow practice, not for water.
+      → shows reference value for absorption spectrum of water; model should use this to learn if its result is appropriate.
 
 10. Hypothesis → search_code("<pattern>", "plasmol/")
       → one targeted grep, not a full-tree read.
 
 11. read_file("<suspect>", start, end)
-      → confirm the single offending line.
+      → read around the targeted search string to gather more context.
 
-12. submit_diagnosis(soln_desc, strategy_desc, uncertainty)
+11. edit_file(path, old_line, new_line)
+      → alter the suspected file to confirm a change in the line(s) would fix the issue.
+
+13. submit_diagnosis(soln_desc, strategy_desc, uncertainty)
+      → once a suspected issue is confirmed, the model can submit its solution to fixing the issue, its strategy it underwent to confirm, and its percent of uncertainty.
 ```
-
-### Known-good anchors for `h2o.json`
-
-Keep a spectrum from a clean tree (no injection) as a mental reference. The MCP
-`read_fourier_spectrum` output is **max-normalized** (`abs / max(abs)`), so bugs
-that only scale absorption uniformly can be invisible in step 7 alone.
 
 ---
 
 ## 1. `electric_field_intensity_au`
 
-**Injection:** `plasmol/quantum/sources.py` — kick amplitude multiplied by `1e2` at the peak-time mask.
+**Injection:** `plasmol/quantum/sources.py` — kick amplitude multiplied by `1e5` at the peak-time mask.
 
-**Physical effect:** Driving field is 100× stronger; induced dipole and raw absorption scale ~100× (linear response). Input JSON still says `intensity: 5e-5`.
+**Physical effect:** Configured intensity stays `5e-5` au, but the realized kick is **`5` au** (100,000× too strong). This is far beyond the weak-perturbation regime used for absorption spectroscopy; the molecule is driven nonlinearly at the kick timestep. Dipole response and spectrum shape can both look wrong.
 
 ### Expected symptoms
 
 | Stage | Signal |
 |-------|--------|
-| `parse_params` | `molecule_source_intensity` unchanged (5e-5) — bug is downstream |
-| `read_field_csv(job_id, "e")` | Kick column magnitude ~100× larger than a good run at `peak_time ≈ 0.05` au |
-| `read_field_csv(job_id, "p")` | Dipole amplitude ~100× larger throughout |
-| `read_fourier_spectrum` | **Normalized shape may match a good run** (scaling cancels in `abs/max(abs)`) |
-| `read_log` | Simulation completes normally |
+| `parse_params` | `molecule_source_intensity: 5e-5` — input layer is correct |
+| `read_field_csv(job_id, "e")` | Nonzero field **only** at `t ≈ 0.05` au; magnitude ≈ **`5` au**, not `5e-5` |
+| `read_field_csv(job_id, "p")` | Huge post-kick dipole transient; amplitude **not** a simple 100,000× scaling of a good run (nonlinear response) |
+| `read_fourier_spectrum` | Peak positions, widths, and/or relative heights likely **distorted** vs reference — normalization hides raw scale but not nonlinear shape changes |
+| `read_log` | May still report `completed`; watch for propagator warnings or unusually large dipole debug lines |
 
 ### Diagnosis strategy
 
-1. Run baseline workflow through step 8.
-2. Compare `read_field_csv(..., "e")` kick value against `parse_params` intensity — a 100× gap between configured intensity and realized field implicates the source constructor.
-3. If only the spectrum is available, compare unnormalized absorption magnitudes (see **Recommended additional tools** — this bug is hard to catch from normalized spectrum alone).
-4. Confirm:
+1. Run baseline workflow through step 8. Treat any bad spectrum as **suspicious but not sufficient** on its own — `mf_omega_zero` and `get_gamma_ao_wrong` also distort spectra.
+2. **Primary check (smoking gun):** `parse_params("mcp/h2o.json")` → note `molecule_source_intensity`. Then `read_field_csv(job_id, "e")` → find the row at `t ≈ 0.05` and read the excited component amplitude.
+   - Good run: kick ≈ `5e-5` au.
+   - Injected run: kick ≈ `5` au.
+   - A ~100,000× mismatch between parsed intensity and field CSV proves the bug is in source construction, not parameter parsing.
+3. **Secondary check:** `read_field_csv(job_id, "p")` — confirm an enormous, short-lived dipole spike right after the kick. The response should look unphysical relative to a `5e-5` driving field, which reinforces that the *field* was wrong, not just the spectrum post-processing.
+4. **Rule out lookalikes before editing code:**
+   - `mf_omega_zero` → `parse_params` LRC looks fine **and** `read_field_csv(e)` kick matches parsed intensity (only peak *positions* are wrong).
+   - `get_gamma_ao_wrong` → field kick matches params; dipole *decay envelope* is wrong, not the kick magnitude.
+   - `absorption_missing_factor_4` → field and dipole CSVs match a good run; only unnormalized absorption scale is off.
+5. Confirm in source:
    ```
    search_code("intensity_au", "plasmol/quantum/sources.py")
    read_file("plasmol/quantum/sources.py", 54, 62)
    ```
-   Look for `1e2 * self.intensity_au` on the kick branch.
-
-### MCP tool sequence (concise)
-
-`parse_params` → `run_simulation` → `read_field_csv(e)` → `read_field_csv(p)` → `search_code` → `read_file` → `submit_diagnosis`
+   Look for `1e5 * self.intensity_au` on the kick branch.
+6. Optional fix verification: `edit_file` to remove the `1e5 *` factor, re-run, and confirm the kick row returns to `5e-5` and the spectrum moves toward reference.
 
 ---
 
@@ -294,7 +284,7 @@ This is the hardest bug to catch from spectrum alone. Work backwards:
 
 ### Diagnosis strategy
 
-1. `read_fourier_spectrum` — focus on peak **positions**, not just amplitude (contrast with `electric_field_intensity_au` and `absorption_missing_factor_4`).
+1. `read_fourier_spectrum` — focus on peak **positions**, not just amplitude (contrast with `electric_field_intensity_au`, where the field CSV kick magnitude is the primary clue, and `absorption_missing_factor_4`).
 2. `parse_params` confirms LRC parameter in JSON is fine → bug is in how it is applied to PySCF.
 3. Confirm:
    ```
@@ -333,14 +323,14 @@ Job failed?
 Hybrid/classical run, parse_params dt/t_end match JSON, but CSV timestamps disagree?
   └─ dt_wrong_unit or t_end_wrong_unit (check classical/simulation.py Meep conversions)
 
-Spectrum peak positions wrong, params look fine?
+read_field_csv(e) kick at peak_time ≈ 5 au but parse_params intensity ≈ 5e-5?
+  └─ electric_field_intensity_au (check sources.py for 1e5 multiplier)
+
+Spectrum peak positions wrong, field_e kick matches parse_params intensity?
   └─ mf_omega_zero
 
-Spectrum peak widths wrong, dipole decay too fast?
+Spectrum peak widths wrong, field kick matches params, dipole decay too fast?
   └─ get_gamma_ao_wrong
-
-field_e kick ~100× parse_params intensity?
-  └─ electric_field_intensity_au
 
 Dipole CSV matches good run, spectrum normalized shape matches good run?
   └─ absorption_missing_factor_4 (check fourier.py formula)

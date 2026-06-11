@@ -45,13 +45,16 @@ def run(params):
 
     total_steps = len(params.times)
     report_interval = max(1, total_steps // 10)
+    time = 0.0  # ensure finally block always has a value for the final checkpoint write
     try:
         for index, current_time in enumerate(params.times):
             if params.resumed_from_checkpoint:
                 dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
                 suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
-                if params.times[-1] <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
+                if params.times[-1] < params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     raise ValueError(f"The latest checkpoint time {params.values_from_checkpoint[f'checkpoint_time{suffix}']} is past the t_end. Please adjust your input file to continue past this point.")
+                if params.times[-1] == params.values_from_checkpoint[f'checkpoint_time{suffix}']:
+                    time = current_time
                 if current_time <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     continue
             mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)

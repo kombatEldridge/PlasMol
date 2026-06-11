@@ -15,6 +15,7 @@ from plasmol.drivers import *
 
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 from plasmol.utils.logging import setup_logging
+from plasmol.utils.checkpoint import merge_per_direction_checkpoints, merge_final_checkpoints
 
 logger = logging.getLogger("main")
 
@@ -106,6 +107,8 @@ def fourier(time, dipole, damp, min_ev, max_ev, npz=None):
     freqs_ev = freqs_au * 27.211386
     mask = (freqs_ev >= min_ev) & (freqs_ev <= max_ev)
 
+    logger.debug(f"Performing Fourier transform with damping gamma={damp} and frequency range {min_ev}-{max_ev} eV...")
+
     for axis in (0, 1, 2):
         logger.debug(f"Starting Fourier transform of direction { {0:'x', 1:'y', 2:'z'}[axis] }")
         dipole_windowed = dipole[axis] * np.exp(-damp * time)
@@ -153,19 +156,40 @@ def run(params):
     
     logger.info(f"Running {len(params_copies)} directional quantum simulations in parallel...")
 
-    with ProcessPoolExecutor(max_workers=len(params_copies)) as executor:
-        future_to_dir = {
-            executor.submit(_run_quantum_with_prefix, params_copy): params_copy.molecule_source_component
-            for params_copy in params_copies
-        }
+    # Run the three directions. Merge of their per-dir final checkpoints (if any)
+    # happens in the finally so it occurs even on crashes or partial failures.
+    try:
+        with ProcessPoolExecutor(max_workers=len(params_copies)) as executor:
+            future_to_dir = {
+                executor.submit(_run_quantum_with_prefix, params_copy): params_copy.molecule_source_component
+                for params_copy in params_copies
+            }
 
-        for future in as_completed(future_to_dir):
-            direction = future_to_dir[future]
-            try:
-                future.result()
-                logger.info(f"{direction}-dir quantum run completed successfully")
-            except Exception as e:
-                logger.error(f"{direction}-dir quantum run failed: {e}")
+            for future in as_completed(future_to_dir):
+                direction = future_to_dir[future]
+                try:
+                    future.result()
+                    logger.info(f"{direction}-dir quantum run completed successfully")
+                except Exception as e:
+                    logger.error(f"{direction}-dir quantum run failed: {e}")
+    finally:
+        if getattr(params, 'has_checkpoint', False):
+            # Merge regular per-direction checkpoints (written during the run) and the final ones.
+            # Both merges are in the finally so they happen even if the overall job or some
+            # directions crash.
+            reg_fp = getattr(params, 'checkpoint_filepath', None)
+            if reg_fp:
+                try:
+                    merge_per_direction_checkpoints(params, reg_fp)
+                except Exception as me:
+                    logger.error(f"Failed to merge per-direction regular checkpoints: {me}")
+
+            final_fp = getattr(params, 'final_checkpoint_filepath', None)
+            if final_fp:
+                try:
+                    merge_final_checkpoints(params, final_fp)
+                except Exception as me:
+                    logger.error(f"Failed to merge per-direction final checkpoints: {me}")
 
     # Add damping to the polarizability fields if mu_damping is set
     for params_copy in params_copies:

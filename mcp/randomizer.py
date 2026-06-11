@@ -15,7 +15,7 @@ BUGS = {
         [
             (
                 "active_component[mask] = self.intensity_au",
-                "active_component[mask] = 1e2 * self.intensity_au",
+                "active_component[mask] = 1e5 * self.intensity_au",
             ),
         ],
     ],

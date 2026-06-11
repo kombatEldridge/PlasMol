@@ -97,26 +97,30 @@ class PARAMS:
                 logger.info(f"Checkpoint file {args.checkpoint} found.")
                 params = resume_from_checkpoint(args)
                 # establish a list of keys that are allowed to be altered after resuming a checkpoint run
+                QUIET_CHANGABLE_KEYS = {
+                    'checkpoint_dict', 'custom_parameters', 'fourier_dict', 'molecule_dict', 
+                    'times', 'log', 'field_e_filepath', 'field_p_filepath', 'spectra_e_vs_p_filepath'
+                }
                 CHANGABLE_KEYS = {
                     'dt', 't_end', 
-                    'checkpoint_dict', 'checkpoint_frequency_time', 
+                    'checkpoint_frequency_time', 
                     'checkpoint_frequency_steps', 'checkpoint_filepath',
-                    'custom_parameters', 'fourier_dict', 'fourier_max_ev',
+                    'fourier_max_ev',
                     'fourier_min_ev', 'fourier_gamma', 'fourier_npz_filepath',
                     'fourier_spectrum_filepath', 'geometry_xyz_filepath', 'input_file_path',
-                    'log', 'molecule_dict', 'spectra_e_vs_p_filepath', 'times', 'verbose'
+                    'spectra_e_vs_p_filepath', 'verbose',
                     }
-                QUIET_CHANGABLE_KEYS = {
-                    'checkpoint_dict', 'custom_parameters', 'fourier_dict', 'molecule_dict', 'times'
-                }
+                CHANGABLE_KEYS.update(QUIET_CHANGABLE_KEYS)
+                
                 for attr, value in params.__dict__.items():
                     try:
-                        is_different = (value != getattr(self, attr, value))
+                        is_different = (value != getattr(self, attr, value)).any() if isinstance(value, np.ndarray) else (value != getattr(self, attr, value))
                     except:
                         is_different = True
+
                     if attr not in CHANGABLE_KEYS:
                         if is_different:
-                            raise ValueError(f"Parameter '{attr}' differs between checkpoint and current settings.")
+                            raise ValueError(f"Parameter '{attr}' differs between checkpoint ({attr} = {value}) and current settings ({attr} = {getattr(self, attr)}).")
                         else:
                             setattr(self, attr, value)
                     else:
@@ -347,11 +351,6 @@ class PARAMS:
                     raise ValueError(f"Fourier modifier 'max_ev' must be a non-negative value.")
                 if self.fourier_max_ev <= self.fourier_min_ev:
                     raise ValueError(f"Fourier modifier 'max_ev' must be greater than 'min_ev'.")
-                if not hasattr(self, 'fourier_gamma'):
-                    if not self.has_broadening:
-                        raise ValueError(f"Fourier modifier requires gamma attribute.")
-                    else:
-                        self.fourier_gamma = 0
                 if self.fourier_gamma < 0:
                     raise ValueError("Fourier modifier 'gamma' must be a non-negative value.")
                 if hasattr(self, 'fourier_field_p_damping_gamma'):

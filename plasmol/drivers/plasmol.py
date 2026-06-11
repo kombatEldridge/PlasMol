@@ -7,8 +7,8 @@ import logging
 from plasmol.classical.simulation import SIMULATION
 from plasmol.quantum.molecule import MOLECULE
 from plasmol.utils.plotting import plot_fields
-from plasmol.utils.csv import init_csv, read_field_csv
-from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint, init_checkpoint
+from plasmol.utils.csv import init_csv
+from plasmol.utils.checkpoint import init_checkpoint
 
 def run(params):
     try:

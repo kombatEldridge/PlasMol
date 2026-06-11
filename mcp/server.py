@@ -318,7 +318,6 @@ def confirm_conda_environment_setup() -> dict:
 @mcp.tool()
 def lab_manual() -> str:
     """Return the manual for the lab."""
-    # gather certain .md files from doc/docs/. and comppile them into one string block to return.
     md_files = ["doc/docs/index.md", "doc/docs/about.md", "doc/docs/installation.md", "doc/docs/usage.md", "doc/docs/methodology.md"]
     manual_content = ""
     for file in md_files:
@@ -476,11 +475,17 @@ def kill_job(job_id: str) -> dict:
         return {"message": f"Job {job_id} is not running."}
 
 @mcp.tool()
-def read_field_csv(job_id: str, field: str) -> str:
+def read_field_csv(job_id: str, field: str, direction: str) -> str:
     """Return the electric field or polarization CSV data for a given job."""
     if job_id not in jobs:
         return f"Error: Job '{job_id}' not found"
 
+    if direction not in {"x", "y", "z"}:
+        return f"Error: Invalid direction '{direction}'. Must be 'x', 'y', or 'z'."
+    
+    if field not in {"e", "p"}:
+        return f"Error: Invalid field '{field}'. Must be 'e' or 'p'."
+    
     job = jobs[job_id]
     if job.get("status") != "completed":
         return "Job not completed. Field data not available."
@@ -502,7 +507,7 @@ def read_field_csv(job_id: str, field: str) -> str:
     if "files" not in data or field_key not in data["files"]:
         return f"Error: '{field_key}' not found in input JSON"
 
-    field_csv = run_dir / data["files"][field_key]
+    field_csv = run_dir / f"{direction}_dir" / data["files"][field_key]
     if not field_csv.exists():
         return f"Error: {field_csv} not found"
 
@@ -539,13 +544,12 @@ def reference_spectrum(molecule: str, condition: str) -> str:
     return reference_data.get((molecule, condition), failed_statement)
 
 @mcp.tool()
-def submit_diagnosis(soln_desc: str, strategy_desc: str, uncertainty: float) -> str:
-    """Return the preformatted RESULTS.md."""
-    # Form a preformatted markdown string that includes the diagnosis, strategy, and uncertainty.
+def submit_diagnosis(soln_desc: str, strategy_desc: str, confidence: int) -> str:
+    """Return the preformatted RESULTS.md with the proposed solution, the strategy the model undertook to prove it, and a percentage confidence (0-100)."""
     diagnosis_md = f"""# Diagnosis
 **Solution Description:** {soln_desc}
-**Proposed Strategy:** {strategy_desc}
-**Uncertainty Level:** {uncertainty:.2f}
+**Strategy for Proof:** {strategy_desc}
+**Confidence Level:** {confidence}
 """
     with open("RESULTS.md", "w") as f:
         f.write(diagnosis_md)
