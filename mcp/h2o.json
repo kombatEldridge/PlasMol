@@ -6,15 +6,17 @@
   },
   "molecule": {
     "geometry": [
-        {"atom": "O", "coord": [ 0.0000000000, 0.0000000000, -0.1302052882]},
-        {"atom": "H", "coord": [ 1.4891244004, 0.0000000000,  1.0332262019]},
-        {"atom": "H", "coord": [-1.4891244004, 0.0000000000,  1.0332262019]}
+      {"atom": "O", "coord": [ 0.0000000000,  0.0000000000, -0.2114253400]},
+      {"atom": "H", "coord": [-1.4361258700,  0.0000000000,  0.8930262400]},
+      {"atom": "H", "coord": [ 1.4361258700,  0.0000000000,  0.8930262400]}
     ],
     "geometry_units": "bohr",
-    "basis": "631g*",
-    "xc": "RSH(0.516, 1, -1.0) + PBE, PBE",
+    "basis": "aug-cc-pVTZ",
+    "xc": "RSH(0.516, 1, -1) + wPBEH, PBE",
     "propagator": { 
-      "type": "magnus2"
+      "type": "magnus2",
+      "pc_convergence": 1e-8,
+      "maxiter": 100
     },
     "broadening": {
       "gam0": 1,
@@ -24,8 +26,8 @@
     },
     "source": {
       "type": "kick",
-      "intensity": 5e-5,
-      "peak_time": 0.1,
+      "intensity": 1e-4,
+      "peak_time": 0,
       "width_steps": 1
     }
   },

@@ -156,8 +156,6 @@ def run(params):
     
     logger.info(f"Running {len(params_copies)} directional quantum simulations in parallel...")
 
-    # Run the three directions. Merge of their per-dir final checkpoints (if any)
-    # happens in the finally so it occurs even on crashes or partial failures.
     try:
         with ProcessPoolExecutor(max_workers=len(params_copies)) as executor:
             future_to_dir = {
@@ -196,7 +194,7 @@ def run(params):
                 params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
                 init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
                 for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
-                    update_csv(params_copy.field_p_filepath, t, x, y, z)
+                    update_csv(params_copy.field_p_filepath, round(t, params.time_rounding_decimals), x, y, z)
                 logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")
 
         # Apply Fourier transform to the field_p CSV files

@@ -535,7 +535,7 @@ class PARAMS:
             
             if not self.has_plasmon:
                 time_values = np.arange(0, self.t_end + self.dt, self.dt)
-                self.times = np.linspace(0, time_values[-1], int(len(time_values)))
+                self.times = np.round(np.linspace(0, time_values[-1], int(len(time_values))), decimals=self.time_rounding_decimals)
                 if not self.has_fourier:
                     self.molecule_source_field = QUANTUMSOURCE(self).field
                 

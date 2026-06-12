@@ -22,10 +22,9 @@ def run(params):
         init_csv(params.field_e_filepath, "Electric Field intensity in atomic units")
         init_csv(params.field_p_filepath, "Molecule's Polarizability Field intensity in atomic units")
         logger.debug(f"Field files successfully initialized: {params.field_e_filepath} and {params.field_p_filepath}")
-        rows = ((t, i0, i1, i2) for t, (i0, i1, i2) in zip(params.times, params.molecule_source_field))
-        with open(params.field_e_filepath, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerows(rows)
+        rows = [(round(t, params.time_rounding_decimals), i0, i1, i2) for t, (i0, i1, i2) in zip(params.times, params.molecule_source_field)]
+        for row in rows:
+            update_csv(params.field_e_filepath, *row)
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
     else:
         # find index within params.times for checkpoint_time
@@ -33,10 +32,9 @@ def run(params):
         suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
         checkpoint_time = params.values_from_checkpoint[f"checkpoint_time{suffix}"]
         index = next(i for i, t in enumerate(params.times) if t >= checkpoint_time) + 1
-        rows = ((t, i0, i1, i2) for t, (i0, i1, i2) in zip(params.times[index:], params.molecule_source_field[index:]))
-        with open(params.field_e_filepath, 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerows(rows)
+        rows = [(round(t, params.time_rounding_decimals), i0, i1, i2) for t, (i0, i1, i2) in zip(params.times[index:], params.molecule_source_field[index:])]
+        for row in rows:
+            update_csv(params.field_e_filepath, *row)
 
     if params.has_checkpoint:
         add_field_e_checkpoint(params, params.field_e_filepath)
@@ -58,6 +56,8 @@ def run(params):
                     time = current_time
                 if current_time <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     continue
+            if current_time == params.times[-1]:
+                break
             if current_time == 0:
                 update_csv(params.field_p_filepath, current_time, *np.zeros(3))
             if (params.molecule_source_field[index] == 0).all() and source_has_been_zero:
@@ -66,11 +66,11 @@ def run(params):
                 mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
                 source_has_been_zero = False
             logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
-            update_csv(params.field_p_filepath, params.times[index+1], *mu_arr)
+            update_csv(params.field_p_filepath, round(params.times[index+1], params.time_rounding_decimals), *mu_arr)
             time = current_time
-            if (index + 1) % report_interval == 0 or (index + 1) == total_steps:
-                percent = int(round((index + 1) / total_steps * 100))
-                logger.info(f"Simulation progress: {percent}% done ({index + 1}/{total_steps} steps || {time}/{params.times[-1]} au)")
+            if (index) % report_interval == 0 or (index) == total_steps:
+                percent = int(round((index) / total_steps * 100))
+                logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time}/{params.times[-1]} au)")
             if params.has_checkpoint and not current_time == 0.0:
                 n_steps = round(index / params.checkpoint_frequency_steps)
                 reconstructed = n_steps * params.checkpoint_frequency_steps

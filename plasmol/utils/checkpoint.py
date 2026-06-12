@@ -354,7 +354,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
         np.savez(per_path, allow_pickle=True, **save_dict)
 
         time_log_str = f"{'='*20} Updated per-dir {kind} checkpoint {per_path} at time = {checkpoint_time} (direction: {dir_component}) {'='*20}"
-        logger.info(time_log_str)
+        logger.debug(time_log_str)
         return
 
     # === Original locked path for non-Fourier runs (and any other non-per-dir case) ===
@@ -427,7 +427,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
     time_log_str = f"{'='*20} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time} "
     time_log_str += f"(direction: {dir_component}) " if is_fourier else ""
     time_log_str += f"{'='*20}"
-    logger.info(time_log_str)
+    logger.debug(time_log_str)
 
 
 def resume_from_checkpoint(args):
