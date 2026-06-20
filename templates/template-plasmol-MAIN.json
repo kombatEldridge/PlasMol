@@ -71,7 +71,7 @@
       "max_iterations": 200
     },
     "hermiticity_tolerance": 1e-12,
-    "broadening": {
+    "cap": {
       "type": "static",
       "gam0": 1,
       "xi": 0.5,

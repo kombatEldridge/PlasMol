@@ -14,15 +14,7 @@
     "basis": "631g*",
     "xc": "RSH(0.516, 1, -1) + wPBEH, PBE",
     "propagator": { 
-      "type": "magnus2",
-      "pc_convergence": 1e-8,
-      "maxiter": 100
-    },
-    "cap": {
-      "gam0": 1,
-      "xi": 0.5,
-      "eps0": 0.0477,
-      "clamp": 100
+      "type": "magnus2"
     },
     "source": {
       "type": "kick",
@@ -44,8 +36,8 @@
     "fourier": {
       "min_ev": 1,
       "max_ev": 35,
-      "npz_filepath": "fourier.npz",
-      "spectrum_filepath": "spectrum.png"
+      "spectrum_filepath": "spectrum.png",
+      "gamma": 0.01
     }
   }
 }

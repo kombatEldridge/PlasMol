@@ -11,7 +11,7 @@
       {"atom": "H", "coord": [ 1.4361258700,  0.0000000000,  0.8930262400]}
     ],
     "geometry_units": "bohr",
-    "basis": "631g*",
+    "basis": "aug-cc-pVTZ",
     "xc": "RSH(0.516, 1, -1) + wPBEH, PBE",
     "propagator": { 
       "type": "magnus2",

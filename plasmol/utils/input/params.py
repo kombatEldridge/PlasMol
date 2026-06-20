@@ -316,6 +316,8 @@ class PARAMS:
                     if hasattr(self, 'molecule_source_component'):
                         logger.warning(f"Molecule source component being ignored because Fourier modifier is enabled.")
                 else:
+                    if not hasattr(self, 'molecule_source_component'):
+                        raise ValueError(f"Molecule source requires 'component' attribute.")
                     if self.molecule_source_component not in self.xyz:
                         raise ValueError(f"Molecule source component must be one of {self.xyz}.")
                 if hasattr(self, 'molecule_source_peak_time'):
@@ -574,6 +576,9 @@ class PARAMS:
 
     def _check_xc(self, func_name: str, omega: float = None):
         try:
+            func_name = func_name.upper()
+            if "{TUNE}" in func_name:
+                func_name = func_name.replace("{TUNE}", "0.4")
             orig_omega, _, _ = libxc.rsh_coeff(func_name)
             if omega is not None and orig_omega == 0:
                 raise ValueError(f"Functional '{func_name}' is not a range-separated hybrid (RSH) so lrc_parameter will be ignored.")

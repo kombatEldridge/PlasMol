@@ -11,18 +11,12 @@
       {"atom": "H", "coord": [ 1.4361258700,  0.0000000000,  0.8930262400]}
     ],
     "geometry_units": "bohr",
-    "basis": "631g*",
+    "basis": "aug-cc-pVTZ",
     "xc": "RSH(0.516, 1, -1) + wPBEH, PBE",
     "propagator": { 
       "type": "magnus2",
       "pc_convergence": 1e-8,
       "maxiter": 100
-    },
-    "cap": {
-      "gam0": 1,
-      "xi": 0.5,
-      "eps0": 0.0477,
-      "clamp": 100
     },
     "source": {
       "type": "kick",
@@ -45,7 +39,8 @@
       "min_ev": 1,
       "max_ev": 35,
       "npz_filepath": "fourier.npz",
-      "spectrum_filepath": "spectrum.png"
+      "spectrum_filepath": "spectrum.png",
+      "gamma": 0.01
     }
   }
 }

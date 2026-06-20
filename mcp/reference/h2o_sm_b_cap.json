@@ -44,7 +44,6 @@
     "fourier": {
       "min_ev": 1,
       "max_ev": 35,
-      "npz_filepath": "fourier.npz",
       "spectrum_filepath": "spectrum.png"
     }
   }

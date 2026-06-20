@@ -2,6 +2,7 @@
 import math
 import os
 import csv
+import sys
 import logging
 import numpy as np
 
@@ -41,10 +42,11 @@ def run(params):
 
     molecule = MOLECULE(params)
 
-    total_steps = len(params.times)
+    total_steps = len(params.times)-1
     report_interval = max(1, total_steps // 10)
     time = 0.0 
     source_has_been_zero = True
+    report_indices = {int(round(p / 100 * total_steps)) for p in range(0, 101, 10)}
     try:
         for index, current_time in enumerate(params.times):
             if params.resumed_from_checkpoint:
@@ -56,21 +58,21 @@ def run(params):
                     time = current_time
                 if current_time <= params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     continue
-            if current_time == params.times[-1]:
-                break
             if current_time == 0:
                 update_csv(params.field_p_filepath, current_time, *np.zeros(3))
+            if index in report_indices:
+                percent = int(round(index / total_steps * 100))
+                logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time}/{params.times[-1]} au)")
             if (params.molecule_source_field[index] == 0).all() and source_has_been_zero:
                 mu_arr = np.zeros(3)
+            elif current_time == params.times[-1]:
+                break
             else:
                 mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
                 source_has_been_zero = False
             logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
             update_csv(params.field_p_filepath, round(params.times[index+1], params.time_rounding_decimals), *mu_arr)
             time = current_time
-            if (index) % report_interval == 0 or (index) == total_steps:
-                percent = int(round((index) / total_steps * 100))
-                logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time}/{params.times[-1]} au)")
             if params.has_checkpoint and not current_time == 0.0:
                 n_steps = round(index / params.checkpoint_frequency_steps)
                 reconstructed = n_steps * params.checkpoint_frequency_steps

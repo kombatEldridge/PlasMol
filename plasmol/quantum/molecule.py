@@ -53,11 +53,13 @@ class MOLECULE():
             self.mf = dft.UKS(self.mol)
         else:
             self.mf = dft.RKS(self.mol)
-        self.mf.xc = self.molecule_xc
-        if hasattr(self, 'molecule_lrc_parameter'):
-            if self.molecule_lrc_parameter == "tune":
+        if hasattr(self, 'molecule_lrc_parameter') or "{TUNE}" in self.molecule_xc.upper():
+            if getattr(self, 'molecule_lrc_parameter', "") == "tune" or "{TUNE}" in self.molecule_xc.upper():
                 self.molecule_lrc_parameter = self.xc_tuning()
+            if "{TUNE}" in self.molecule_xc.upper():
+                self.molecule_xc = self.molecule_xc.upper().replace("{TUNE}", str(self.molecule_lrc_parameter))
             self.mf.omega = self.molecule_lrc_parameter
+        self.mf.xc = self.molecule_xc
         if self.has_cap:
             if self.cap_dict["eps0"] == "tune":
                 eps0 = self.compute_vacuum_level()
@@ -148,12 +150,15 @@ class MOLECULE():
         def compute_J(omega):
             """Compute J(ω) = |IP_ΔSCF + ε_HOMO| (in Hartree)."""
             omega = float(omega)
+            xc = self.molecule_xc
+            if "{TUNE}" in self.molecule_xc.upper():
+                xc = xc.upper().replace("{TUNE}", str(omega))
 
             # Neutral
             if self.molecule_spin == 0:
-                mf_n = dft.RKS(mol_neutral, xc=self.molecule_xc)
+                mf_n = dft.RKS(mol_neutral, xc=xc)
             else:
-                mf_n = dft.UKS(mol_neutral, xc=self.molecule_xc)
+                mf_n = dft.UKS(mol_neutral, xc=xc)
             mf_n.omega = omega
             mf_n.conv_tol = 1e-9
             mf_n.conv_tol_grad = 1e-7
@@ -166,9 +171,9 @@ class MOLECULE():
 
             # Cation
             if abs(self.molecule_spin - 1) == 0:
-                mf_c = dft.RKS(mol_cation, xc=self.molecule_xc)
+                mf_c = dft.RKS(mol_cation, xc=xc)
             else:
-                mf_c = dft.UKS(mol_cation, xc=self.molecule_xc)
+                mf_c = dft.UKS(mol_cation, xc=xc)
             mf_c.omega = omega
             mf_c.conv_tol = 1e-9
             mf_c.conv_tol_grad = 1e-7
@@ -411,3 +416,5 @@ class MOLECULE():
         if F_orth.ndim == 3:
             return np.stack([_gamma_one_spin(F_orth[s]) for s in range(F_orth.shape[0])])
         return _gamma_one_spin(F_orth)
+
+

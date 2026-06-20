@@ -540,16 +540,19 @@ def read_fourier_spectrum(job_id: str) -> str:
     return spectrum_file.read_text()
 
 @mcp.tool()
-def reference_spectrum(molecule: str, condition: str) -> str:
-    """Return the trusted reference spectrum at a few energies for a few conditions."""
+def reference_spectrum_description(spectrum_id: str) -> str:
+    """Return a reference spectrum's description."""
     reference_data = {
-        ("molecule1", "conditionA"): "energy (eV),absorption peaks (arb. units)\n1.0,0.5\n2.0,0.8\n",
-        ("molecule1", "conditionB"): "energy (eV),absorption peaks (arb. units)\n1.0,0.6\n2.0,0.9\n",
-        ("molecule2", "conditionA"): "energy (eV),absorption peaks (arb. units)\n1.0,0.4\n2.0,0.7\n",
-        ("molecule2", "conditionB"): "energy (eV),absorption peaks (arb. units)\n1.0,0.3\n2.0,0.6\n",
+        "h2o_sm_b_cap": "Water molecule with CAP active using a small 6-31G* basis set.",
+        "h2o_lg_b_cap": "Water molecule with CAP active using a large aug-cc-pVTZ basis set.",
+        "h2o_sm_b_no_cap": "Water molecule without CAP using a small 6-31G* basis set. Artificial broadening active to replicate CAP effect.",
+        "h2o_lg_b_no_cap": "Water molecule without CAP using a large aug-cc-pVTZ basis set. Artificial broadening active to replicate CAP effect.",
     }
-    failed_statement = "Reference data not available. The molecules and conditions in the reference dataset are {}.".format(", ".join([f"{m[0]} under {m[1]}" for m in reference_data.keys()]))
-    return reference_data.get((molecule, condition), failed_statement)
+    response = reference_data.get(spectrum_id, None)
+    if response is None:
+        return "Reference data not available. The spectrum_ids in the reference dataset are {}".format(", ".join(reference_data.keys()))
+    else:
+        return " ".join([response, f"Available files for each spectrum_id are {spectrum_id}.csv, {spectrum_id}.png, and {spectrum_id}.json."])
 
 @mcp.tool()
 def list_bug_categories() -> list[str]:
