@@ -12,7 +12,7 @@ if __name__ == "__main__" and __package__ is None:
 import logging
 import numpy as np
 
-from plasmol import constants
+from plasmol.utils import constants
 from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
 from plasmol.utils.input.cli import parse_arguments
@@ -64,19 +64,23 @@ if __name__ == "__main__":
     logger.info(f"The timestep for this simulation is {params.dt} au (roughly {np.round(params.dt / constants.T_AU_FS, decimals=5)} fs).")
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     
-    if params.has_checkpoint :
-        if params.resumed_from_checkpoint:
-            params.checkpoint_filepath = f"{Path(params.checkpoint_filepath).with_suffix('')}_new.npz"
-        init_checkpoint(params)
-        params.checkpoint_written_after_init = False
-        params.final_checkpoint_filepath = f"final-{params.checkpoint_filepath}"
-        init_checkpoint(params, params.final_checkpoint_filepath)
-        params.final_checkpoint_written_after_init = False
+    if getattr(params, 'has_checkpoint', False):
+        if getattr(params, 'has_nanoparticle', False):
+            # Safety: ensure no checkpointing occurs if nanoparticle present (should have been disabled during param parsing)
+            params.has_checkpoint = False
+        else:
+            if params.resumed_from_checkpoint:
+                params.checkpoint_filepath = f"{Path(params.checkpoint_filepath).with_suffix('')}_new.npz"
+            init_checkpoint(params)
+            params.checkpoint_written_after_init = False
+            params.final_checkpoint_filepath = f"final-{params.checkpoint_filepath}"
+            init_checkpoint(params, params.final_checkpoint_filepath)
+            params.final_checkpoint_written_after_init = False
 
     # Step 3: Execute proper workflow
     try:
         params.driver(params)
     finally:
         # Step 4: Clean Up! Clean Up! Everybody, Everywhere!
-        if params.has_checkpoint:
+        if getattr(params, 'has_checkpoint', False):
             cleanup_checkpoint(params)

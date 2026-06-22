@@ -2,7 +2,8 @@
 import logging
 import meep as mp
 import numpy as np
-# TODO: Make sure customsource works
+from plasmol.utils import constants
+
 class MEEPSOURCE:
     def __init__(self,
                  source_type,
@@ -46,6 +47,13 @@ class MEEPSOURCE:
                 - cutoff (float, optional): Number of widths before cutoff. Default: 5.0.
                 - width (float, optional): Temporal width. Default: 0 (but typically set >0).
                 - fwidth (float, optional): Frequency width (synonym for 1/width). Default: float('inf').
+
+            - For 'kick' (thin Gaussian delta-kick approximation for broadband plasmon excitation):
+                - peak_time (float, optional): Center time of the thin pulse. Default: 0.0.
+                - width (float, optional): Temporal width (extremely small for "thin"/delta-like). Default: 1e-5.
+                - cutoff (float, optional): Number of widths before cutoff. Default: 5.0.
+                - fwidth (float, optional): Frequency width (synonym for 1/width). Default: float('inf').
+                - frequency (float, optional): Carrier frequency (use 0 for non-oscillatory; non-zero may be needed to avoid NaN in some setups). Default: 0.0.
 
             - For <custom>:
                 - start_time (float, optional): Starting time. Default: -1e+20.
@@ -99,6 +107,25 @@ class MEEPSOURCE:
                 width=width,
                 start_time=start_time,
                 cutoff=cutoff,
+                is_integrated=is_integrated
+            )
+        elif self.source_type == 'kick':
+            start_time = kwargs.get('start_time', 1)
+            start_time_meep = start_time / constants.convertTimeMeep2fs
+            
+            end_time = kwargs.get('end_time', 1)
+            end_time_meep = end_time / constants.convertTimeMeep2fs
+
+            width  = kwargs.get('width', 0.1)  
+            width_meep = width / constants.convertTimeMeep2fs
+
+            def delta_kick_func(t):
+                return amplitude * np.exp(-((t - start_time_meep)**2) / (2 * width_meep**2))
+
+            src_time = mp.CustomSource(
+                src_func=delta_kick_func,
+                start_time=start_time_meep,
+                end_time=end_time_meep,
                 is_integrated=is_integrated
             )
         else:
@@ -160,7 +187,7 @@ def paper_pulse_chen2010(t):
     sigma_fs = 0.7
     lambda_um = 0.600   # 600 nm
 
-    from plasmol import constants
+    from plasmol.utils import constants
     t0_meep = t0_fs / constants.convertTimeMeep2fs
     sigma_meep = sigma_fs / constants.convertTimeMeep2fs
     omega_meep = 2 * np.pi / lambda_um 

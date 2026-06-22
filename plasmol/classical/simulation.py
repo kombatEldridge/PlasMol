@@ -2,8 +2,8 @@ import os
 import logging
 import meep as mp
 import numpy as np
-
-from plasmol import constants
+from pathlib import Path
+from plasmol.utils import constants
 from plasmol.utils.csv import update_csv, init_csv
 from plasmol.quantum.propagation import propagation
 
@@ -99,7 +99,7 @@ class SIMULATION:
         current_step = self._get_step(current_t_meep)
 
         if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
-            logging.debug(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, 4)} au (step {current_step})")
+            logging.debug(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)} au (step {current_step})")
 
             eArr = [field_e[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
@@ -120,12 +120,20 @@ class SIMULATION:
                 self.measured_dipole_response[comp][next_step + 1] = ind_dipole[digit]
 
             # Write polarization (induced dipole) to CSV in atomic units
-            timestamp_au = (current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic
+            timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
             update_csv(self.field_p_filepath, timestamp_au, *ind_dipole)
 
         # Always write electric field to CSV in atomic units
-        timestamp_au = (current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic
+        timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
         update_csv(self.field_e_filepath, timestamp_au, field_e['x'], field_e['y'], field_e['z'])
+
+    def _record_probe_fields(self, sim):
+        timestamp_au = round(sim.meep_time() * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
+        for i, point in enumerate(self.probe_points):
+            field_e_point = self._get_electric_field(sim, point)
+            self.field_data[str(point)].append((timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z']))
+            field_e_filepath = Path(self.field_e_filepath).with_suffix('')
+            update_csv(f"{field_e_filepath}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])
 
     def run(self):
         """
@@ -142,17 +150,19 @@ class SIMULATION:
                 self.simulation.use_output_directory(self.images_dir_name)
                 self.images_args += " -0z0"
                 run_functions.append(mp.at_every(self.images_timesteps_between * self.dt_meep, mp.output_png(mp.Ez, self.images_args)))
+                run_functions.append(mp.at_beginning(mp.output_png(mp.Ez, self.images_args)))
 
             if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
+                run_functions.append(mp.at_beginning(self._call_propagation))
 
-            # If needing multiple molecules positions (like replicating Chen2010 work)
-            # Currently just records e field
             if getattr(self, 'probe_points', None):
                 self.field_data = {str(p): [] for p in self.probe_points}
                 run_functions.append(mp.at_every(self.dt_meep, self._record_probe_fields))
+                run_functions.append(mp.at_beginning(self._record_probe_fields))
+                field_e_filepath = Path(self.field_e_filepath).with_suffix('')
                 for i, point in enumerate(self.probe_points):
-                    init_csv(f"{self.field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
+                    init_csv(f"{field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
 
             self.simulation.run(*run_functions, until=self.t_end_meep)
 
@@ -166,7 +176,7 @@ class SIMULATION:
             os.chdir(cwd)
 
     # ------------------------------------ #
-    #         Example custom methods       #
+    #             Custom methods           #
     # ------------------------------------ #
     def show3Dmap(self):
         import plotly.graph_objects as go
@@ -209,9 +219,4 @@ class SIMULATION:
         )
         fig.show()
 
-    def _record_probe_fields(self, sim):
-        timestamp_au = sim.meep_time() * constants.convertTimeMeep2Atomic
-        for i, point in enumerate(self.probe_points):
-            field_e_point = self._get_electric_field(sim, point)
-            self.field_data[str(point)].append((timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z']))
-            update_csv(f"{self.field_e_filepath}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])
+

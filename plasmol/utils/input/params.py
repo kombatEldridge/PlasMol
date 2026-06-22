@@ -13,7 +13,7 @@ from rich.table import Table
 from typing import Tuple, Union
 from rich.console import Console
 
-from plasmol import constants
+from plasmol.utils import constants
 from plasmol.drivers import *
 from plasmol.quantum.propagators import *
 from plasmol.utils.input.struct import param_defs
@@ -162,8 +162,9 @@ class PARAMS:
         if self.has_plasmon:
             # Plasmon simulation params
             if self.has_simulation:
-                if self.plasmon_tolerance_field_e <= 0:
-                    raise ValueError("'plasmon_tolerance_field_e' must be a positive value.")
+                if self.has_molecule:
+                    if self.plasmon_tolerance_field_e <= 0:
+                        raise ValueError("'plasmon_tolerance_field_e' must be a positive value.")
                 if hasattr(self, 'plasmon_cell_volume') and hasattr(self, 'plasmon_cell_length'):
                     logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
                 elif hasattr(self, 'plasmon_cell_length') and self.plasmon_cell_length <= 0:
@@ -192,7 +193,7 @@ class PARAMS:
 
             # Plasmon source params
             if self.has_plasmon_source:
-                for attr in ['plasmon_source_type', 'plasmon_source_center', 'plasmon_source_size', 'plasmon_source_component', 'plasmon_source_additional_parameters']:
+                for attr in ['plasmon_source_type', 'plasmon_source_center', 'plasmon_source_size', 'plasmon_source_component']:
                     if not hasattr(self, attr):
                         pretty = attr.removeprefix("plasmon_source_")
                         raise ValueError(f"Source requires '{pretty}' attribute.")
@@ -207,8 +208,10 @@ class PARAMS:
                 if getattr(self, "plasmon_source_additional_parameters", None) is not None:
                     if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                         raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")
-                elif self.plasmon_source_frequency is None and self.plasmon_source_wavelength is None and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
+                elif getattr(self, "plasmon_source_frequency", None) is None and getattr(self, "plasmon_source_wavelength", None) is None and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                     raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.plasmon_source_type} source.")
+                if self.plasmon_source_type == 'kick':
+                    pass 
                 if self.plasmon_source_type == 'custom':
                     if not hasattr(self, 'plasmon_source_additional_parameters') or 'src_func' not in self.plasmon_source_additional_parameters:
                         raise ValueError(f"Custom source requires 'src_func' in 'plasmon_source_additional_parameters' attribute.")
@@ -216,6 +219,9 @@ class PARAMS:
                         walk_through_src_funcs(self.plasmon_source_additional_parameters['src_func'])
                     except ValueError as e:
                         raise ValueError(f"Error occurred while processing custom source function: {e}")
+                if self.plasmon_source_type == 'kick':
+                    # kick (delta/impulse) does not require frequency/wavelength; use peak_time, width etc in additional_parameters
+                    pass
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
 
@@ -384,6 +390,32 @@ class PARAMS:
                 if self.cap_clamp <= 0:
                     raise ValueError("CAP 'clamp' must be a positive value.")
 
+            # Tuning ("tune" / {TUNE}) validation: must use driver="tune"
+            tune_requested = False
+            if hasattr(self, 'molecule_lrc_parameter') and self.molecule_lrc_parameter == "tune":
+                tune_requested = True
+            if hasattr(self, 'cap_eps0') and self.cap_eps0 == "tune":
+                tune_requested = True
+            xc_val = getattr(self, 'molecule_xc', None)
+            if isinstance(xc_val, str) and "{TUNE}" in xc_val.upper():
+                tune_requested = True
+
+            if tune_requested:
+                # Determine effective driver (mirrors logic in _attribute_formation but available here)
+                eff_driver = getattr(self, 'driver_str', None)
+                if eff_driver is None:
+                    if 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
+                        eff_driver = 'plasmol'
+                    elif 'molecule' in self.simulation_types:
+                        eff_driver = 'quantum'
+                    elif 'plasmon' in self.simulation_types:
+                        eff_driver = 'classical'
+                if eff_driver != 'tune':
+                    raise ValueError(
+                        "Use of 'tune' for lrc_parameter, cap 'eps0', or {TUNE} placeholder in xc is only allowed when "
+                        "using the dedicated tuning driver. Set \"driver\": \"tune\" under \"settings\"."
+                    )
+
             # Comparison mode params
             if self.has_comparison:
                 logger.info("Comparison modifier selected; preparing to run additional simulations for comparison to molecule results.")
@@ -418,34 +450,40 @@ class PARAMS:
                             raise ValueError(f"Comparison '{pretty}' must be at least 1.")
 
         # Checkpointing params
-        if self.has_checkpoint:
-            logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
+        if getattr(self, 'has_checkpoint', False):
             if self.has_plasmon:
-                raise ValueError("Checkpointing not supported on simulations including plasmons.")
-            if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
-                raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
-            if not hasattr(self, 'checkpoint_frequency_steps') and not hasattr(self, 'checkpoint_frequency_time'):
-                raise ValueError("Checkpointing requires 'frequency_steps' or 'frequency_time' attribute for snapshot frequency.")
-            if hasattr(self, 'checkpoint_frequency_steps') and hasattr(self, 'checkpoint_frequency_time'):
-                raise ValueError("Checkpointing requires either 'frequency_steps' or 'frequency_time' attribute, not both.")
-            if hasattr(self, 'checkpoint_frequency_steps') and self.checkpoint_frequency_steps <= 0:
-                raise ValueError("Checkpointing 'frequency_steps' must be a positive value.")
-            if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time <= 0:
-                raise ValueError("Checkpointing 'frequency_time' must be a positive value.")
-            if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time > self.t_end:
-                logger.warning(f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) is greater than simulation end time ({self.t_end}). Will only save checkpoint at simulation end.")
-            if hasattr(self, 'checkpoint_frequency_time'):
-                n_steps = round(self.checkpoint_frequency_time / self.dt)
-                reconstructed = n_steps * self.dt
-                if not math.isclose(reconstructed, self.checkpoint_frequency_time, rel_tol=1e-9, abs_tol=1e-12):
-                    remainder = self.checkpoint_frequency_time % self.dt
-                    raise ValueError(
-                        f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) must be a multiple of "
-                        f"the time step ({self.dt}), but got remainder = {remainder}"
-                    )
-                self.checkpoint_frequency_steps = n_steps
-            if not self.has_molecule:
-                raise ValueError("Checkpointing is only supported with molecule simulations.")
+                reason = "a nanoparticle is present" if self.has_nanoparticle else "a plasmon section is present"
+                logger.warning(f"Checkpointing disabled because {reason} in the simulation input (checkpointing is only supported for pure quantum simulations).")
+                self.has_checkpoint = False
+                for k in ('checkpoint_dict', 'checkpoint_filepath', 'checkpoint_frequency_steps', 'checkpoint_frequency_time'):
+                    if hasattr(self, k):
+                        delattr(self, k)
+            if self.has_checkpoint:
+                logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
+                if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
+                    raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
+                if not hasattr(self, 'checkpoint_frequency_steps') and not hasattr(self, 'checkpoint_frequency_time'):
+                    raise ValueError("Checkpointing requires 'frequency_steps' or 'frequency_time' attribute for snapshot frequency.")
+                if hasattr(self, 'checkpoint_frequency_steps') and hasattr(self, 'checkpoint_frequency_time'):
+                    raise ValueError("Checkpointing requires either 'frequency_steps' or 'frequency_time' attribute, not both.")
+                if hasattr(self, 'checkpoint_frequency_steps') and self.checkpoint_frequency_steps <= 0:
+                    raise ValueError("Checkpointing 'frequency_steps' must be a positive value.")
+                if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time <= 0:
+                    raise ValueError("Checkpointing 'frequency_time' must be a positive value.")
+                if hasattr(self, 'checkpoint_frequency_time') and self.checkpoint_frequency_time > self.t_end:
+                    logger.warning(f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) is greater than simulation end time ({self.t_end}). Will only save checkpoint at simulation end.")
+                if hasattr(self, 'checkpoint_frequency_time'):
+                    n_steps = round(self.checkpoint_frequency_time / self.dt)
+                    reconstructed = n_steps * self.dt
+                    if not math.isclose(reconstructed, self.checkpoint_frequency_time, rel_tol=1e-9, abs_tol=1e-12):
+                        remainder = self.checkpoint_frequency_time % self.dt
+                        raise ValueError(
+                            f"Checkpointing 'frequency_time' ({self.checkpoint_frequency_time}) must be a multiple of "
+                            f"the time step ({self.dt}), but got remainder = {remainder}"
+                        )
+                    self.checkpoint_frequency_steps = n_steps
+                if not self.has_molecule:
+                    raise ValueError("Checkpointing is only supported with molecule simulations.")
 
         # Files
         for file in ['field_e_filepath', 'field_p_filepath']:
@@ -502,7 +540,7 @@ class PARAMS:
                     component=self.plasmon_source_component.lower().strip(),
                     amplitude=self.plasmon_source_amplitude,
                     is_integrated=self.plasmon_source_is_integrated,
-                    **{k: v for k, v in self.plasmon_source_additional_parameters.items()}
+                    **{k: v for k, v in getattr(self, 'plasmon_source_additional_parameters', {}).items()}
                 )
 
             if self.has_nanoparticle:

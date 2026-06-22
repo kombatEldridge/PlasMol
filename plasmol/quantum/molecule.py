@@ -5,16 +5,13 @@ import math
 import logging
 import numpy as np
 import scipy.linalg
-import scipy.optimize as opt
 from pyscf import gto, dft
-from pyscf import scf, tdscf, lib
+from pyscf import lib
 from pyscf.scf import addons
 from pyscf.dft import libxc
-from scipy.interpolate import interp1d
 from scipy.linalg import inv
-from scipy.optimize import minimize_scalar
 
-from plasmol import constants
+from plasmol.utils import constants
 
 logger = logging.getLogger("main")
 
@@ -53,18 +50,10 @@ class MOLECULE():
             self.mf = dft.UKS(self.mol)
         else:
             self.mf = dft.RKS(self.mol)
-        if hasattr(self, 'molecule_lrc_parameter') or "{TUNE}" in self.molecule_xc.upper():
-            if getattr(self, 'molecule_lrc_parameter', "") == "tune" or "{TUNE}" in self.molecule_xc.upper():
-                self.molecule_lrc_parameter = self.xc_tuning()
-            if "{TUNE}" in self.molecule_xc.upper():
-                self.molecule_xc = self.molecule_xc.upper().replace("{TUNE}", str(self.molecule_lrc_parameter))
-            self.mf.omega = self.molecule_lrc_parameter
+        if hasattr(self, 'molecule_lrc_parameter'):
+            if isinstance(self.molecule_lrc_parameter, (int, float)):
+                self.mf.omega = self.molecule_lrc_parameter
         self.mf.xc = self.molecule_xc
-        if self.has_cap:
-            if self.cap_dict["eps0"] == "tune":
-                eps0 = self.compute_vacuum_level()
-                self.cap_dict["eps0"] = eps0
-        
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
@@ -127,131 +116,6 @@ class MOLECULE():
             raise ValueError("Initial density matrix in AO is not Hermitian")
         
         self.volume = self.get_volume(self.molecule_atoms)
-
-    def xc_tuning(self):
-        """
-        Tune μ for LC functionals to minimize |E_cat - E_neut + ε_HOMO|.
-        """
-        mol_neutral = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin, verbose=0)
-        mol_cation = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge + 1, spin=abs(self.molecule_spin - 1), verbose=0)
-
-        def get_homo(mf):
-            """Return the highest occupied orbital energy (works for RKS and UKS)."""
-            if isinstance(mf.mo_energy, list): 
-                occ_a = mf.mo_occ[0] > 0.5
-                homo_a = mf.mo_energy[0][occ_a][-1] if np.any(occ_a) else -np.inf
-                occ_b = mf.mo_occ[1] > 0.5
-                homo_b = mf.mo_energy[1][occ_b][-1] if np.any(occ_b) else -np.inf
-                return max(homo_a, homo_b)
-            else:
-                occ = mf.mo_occ > 0.5
-                return mf.mo_energy[occ][-1]
-
-        def compute_J(omega):
-            """Compute J(ω) = |IP_ΔSCF + ε_HOMO| (in Hartree)."""
-            omega = float(omega)
-            xc = self.molecule_xc
-            if "{TUNE}" in self.molecule_xc.upper():
-                xc = xc.upper().replace("{TUNE}", str(omega))
-
-            # Neutral
-            if self.molecule_spin == 0:
-                mf_n = dft.RKS(mol_neutral, xc=xc)
-            else:
-                mf_n = dft.UKS(mol_neutral, xc=xc)
-            mf_n.omega = omega
-            mf_n.conv_tol = 1e-9
-            mf_n.conv_tol_grad = 1e-7
-            mf_n.max_cycle = 120
-            mf_n.init_guess = 'minao'
-            mf_n.diis_space = 12
-            mf_n.kernel()
-            E_n = mf_n.e_tot
-            eps_homo_n = get_homo(mf_n)
-
-            # Cation
-            if abs(self.molecule_spin - 1) == 0:
-                mf_c = dft.RKS(mol_cation, xc=xc)
-            else:
-                mf_c = dft.UKS(mol_cation, xc=xc)
-            mf_c.omega = omega
-            mf_c.conv_tol = 1e-9
-            mf_c.conv_tol_grad = 1e-7
-            mf_c.max_cycle = 120
-            mf_c.init_guess = 'minao'
-            mf_c.diis_space = 12
-            mf_c.kernel()
-            E_c = mf_c.e_tot
-
-            J = abs(E_c - E_n + eps_homo_n)
-            return J
-
-        logger.info("Calculating μ parameter for xc functional")
-        res = minimize_scalar(compute_J, bounds=(0.1, 0.7), method="bounded", options={'xatol': 1e-7, 'maxiter': 1000})
-        logger.info(f"Optimal μ = {res.x:.6f}")
-        return res.x
-
-    def compute_vacuum_level(self):
-        """
-        Estimate ε_0.
-        """
-        logger.info("Calculating vacuum level ε_0")
-
-        mol_neutral = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge, spin=self.molecule_spin, verbose=0)
-        mol_anion = gto.M(atom=self.molecule_coords, unit='B', basis=self.molecule_basis, charge=self.molecule_charge - 1, spin=abs(self.molecule_spin - 1), verbose=0)
-
-        # 1. Ground-state calculations
-        if self.molecule_spin == 0:
-            mf_n = dft.RKS(mol_neutral, xc=self.molecule_xc)
-        else:
-            mf_n = dft.UKS(mol_neutral, xc=self.molecule_xc)
-        mf_n.omega = self.molecule_lrc_parameter
-        mf_n.kernel()
-        E_n = mf_n.e_tot
-
-        # Virtual orbital energies from neutral
-        if self.molecule_spin == 0: 
-            virt_energies = mf_n.mo_energy[mf_n.mo_occ < 0.5]
-        else:
-            virt_energies = mf_n.mo_energy[0][mf_n.mo_occ[0] < 0.5]
-
-        # Anion: always UKS
-        mf_a = dft.UKS(mol_anion, xc=self.molecule_xc)
-        mf_a.omega = self.molecule_lrc_parameter
-        mf_a.kernel()
-        E_a = mf_a.e_tot
-
-        EA1 = (E_a - E_n) * 27.2114
-
-        # 2. LRTDDFT on the anion
-        n_virt = len(virt_energies)
-        n_states = max(20, n_virt - 1)
-
-        td = tdscf.TDA(mf_a)
-        td.conv_tol = 1e-5
-        td.max_cycle = 100
-        td.lindep = 1e-8
-        td.kernel(nstates=n_states)
-        nu = td.e * 27.2114
-
-        # 3. Estimated EA for each virtual orbital
-        estimated_EA = np.zeros_like(virt_energies)
-        estimated_EA[0] = EA1
-        for k in range(1, len(virt_energies)):
-            if k - 1 < len(nu):
-                estimated_EA[k] = EA1 + nu[k - 1]
-            else:
-                estimated_EA[k] = estimated_EA[k - 1] + 2.0
-
-        # 4. Interpolate to find where EA = 0
-        virt_eV = virt_energies * 27.2114
-        f = interp1d(estimated_EA, virt_eV, kind='linear', fill_value='extrapolate')
-        epsilon0_eV = f(0.0)
-        epsilon0 = epsilon0_eV / 27.2114
-        logger.info(f"Vacuum level ε₀ = {epsilon0:.6f} Ha")
-
-        return epsilon0
-
 
     def get_F_orth(self, D_ao, exc=None):
         """

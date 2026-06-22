@@ -46,7 +46,6 @@ See the [Usage](usage.md) page for the full JSON schema and [Tutorials](tutorial
 - [Installation Guide](installation.md)
 - [Usage](usage.md) — JSON input format, all parameters, validation rules
 - [Tutorials](tutorials.md) — Step-by-step examples for classical, quantum, hybrid, spectra, etc.
-- [API Reference](api-reference.md) — Code structure, key classes, extension points
 - [Theory & Methodology](methodology.md)
 - [Contributing](contributing.md)
 - [Custom Drivers](custom_drivers.md)

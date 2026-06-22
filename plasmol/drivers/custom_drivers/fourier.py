@@ -9,7 +9,7 @@ import multiprocessing
 import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from plasmol import constants
+from plasmol.utils import constants
 from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.drivers import *
 
@@ -191,7 +191,8 @@ def run(params):
             if params.fourier_damp:
                 mu_arrs = read_field_csv(params_copy.field_p_filepath)
                 mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_field_p_damping_gamma)
-                params_copy.field_p_filepath = params_copy.field_p_filepath.replace('.csv', f'_damped.csv')
+                field_p_filepath = Path(params_copy.field_p_filepath).with_suffix('')
+                params_copy.field_p_filepath = f"{field_p_filepath}_damped.csv"
                 init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
                 for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
                     update_csv(params_copy.field_p_filepath, round(t, params.time_rounding_decimals), x, y, z)

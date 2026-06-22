@@ -63,7 +63,7 @@
     "charge": 0,
     "spin": 0,
     "basis": "6-31g",
-    "xc": "RSH(0.4, 1, -1.0) + PBE, PBE",
+    "xc": "RSH(0.4, 1, -1.0) + PBE, PBE", # can include "RSH({TUNE}, 1, -1.0) + PBE, PBE" if xc is custom like this.
     "lrc_parameter": 0.0, # or "tune"
     "propagator": { 
       "type": "magnus2",

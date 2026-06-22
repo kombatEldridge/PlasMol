@@ -37,7 +37,7 @@ def run(params):
         for row in rows:
             update_csv(params.field_e_filepath, *row)
 
-    if params.has_checkpoint:
+    if getattr(params, 'has_checkpoint', False):
         add_field_e_checkpoint(params, params.field_e_filepath)
 
     molecule = MOLECULE(params)
@@ -73,7 +73,7 @@ def run(params):
             logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
             update_csv(params.field_p_filepath, round(params.times[index+1], params.time_rounding_decimals), *mu_arr)
             time = current_time
-            if params.has_checkpoint and not current_time == 0.0:
+            if getattr(params, 'has_checkpoint', False) and not current_time == 0.0:
                 n_steps = round(index / params.checkpoint_frequency_steps)
                 reconstructed = n_steps * params.checkpoint_frequency_steps
                 if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
@@ -82,9 +82,10 @@ def run(params):
     except Exception as e:
         logger.error(f"An error occurred during simulation: {e}")
     finally:
-        add_field_e_checkpoint(params, params.field_e_filepath, params.final_checkpoint_filepath)
-        update_checkpoint(params, molecule, time, params.final_checkpoint_filepath)
-        params.final_checkpoint_written_after_init = True
+        if getattr(params, 'has_checkpoint', False):
+            add_field_e_checkpoint(params, params.field_e_filepath, getattr(params, 'final_checkpoint_filepath', None))
+            update_checkpoint(params, molecule, time, getattr(params, 'final_checkpoint_filepath', None))
+            params.final_checkpoint_written_after_init = True
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
 

@@ -22,7 +22,10 @@ def run(params):
         else:
             logger.debug("Resuming from checkpoint - skipping CSV initialization.")
        
-        if not params.resumed_from_checkpoint and params.has_checkpoint:
+        if not params.resumed_from_checkpoint and getattr(params, 'has_checkpoint', False):
+            if getattr(params, 'has_nanoparticle', False):
+                params.has_checkpoint = False
+            else:
                 init_checkpoint(params)
         
         params.molecule = MOLECULE(params)

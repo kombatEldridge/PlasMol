@@ -399,3 +399,18 @@ def test_comparison_invalid_lrc_parameter(tmp_path):
             }
         })),
         ValueError, "Error checking xc functional")
+
+
+def test_checkpoint_disabled_when_nanoparticle_present(tmp_path):
+    """If nanoparticle present, has_checkpoint must be forced off so no checkpointing occurs."""
+    cfg = copy.deepcopy(BASE_CONFIG)
+    cfg["plasmon"]["nanoparticle"] = {"material": "Au_JC_visible", "radius": 0.05, "center": [0, 0, 0]}
+    cfg["files"] = {"checkpoint": {"filepath": "ck.npz", "frequency_steps": 10}}
+    json_path = tmp_path / "nano_ckpt.json"
+    with open(json_path, "w") as f:
+        json.dump(cfg, f, indent=2)
+    args = Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None)
+    p = PARAMS(args)
+    assert p.has_nanoparticle is True
+    assert getattr(p, "has_checkpoint", False) is False
+    assert not hasattr(p, "checkpoint_filepath")

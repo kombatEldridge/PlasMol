@@ -451,8 +451,6 @@ To run a completely custom workflow, set the driver name in `settings` and (opti
 }
 ```
 
-See the dedicated guide [Adding Custom Drivers](adding_custom_drivers.md) for the full procedure (creating the driver file, registering it in `get_driver()`, and adding parameter definitions).
-
 ---
 
 *This document reflects PlasMol v1.1.0 JSON input format.*

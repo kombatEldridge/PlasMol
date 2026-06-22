@@ -22,7 +22,7 @@ param_defs = [
 
     # Plasmon source params
     ('plasmon_source_dict', ['plasmon', 'source'], True, "has_plasmon_source", None, 'plasmon', dict, None, None),
-    ('plasmon_source_type', ['plasmon', 'source', 'type'], False, 'has_plasmon_source', None, 'plasmon', str, "Type of source ('continuous', 'gaussian', or 'custom')", None),
+    ('plasmon_source_type', ['plasmon', 'source', 'type'], False, 'has_plasmon_source', None, 'plasmon', str, "Type of source ('continuous', 'gaussian', 'kick', or 'custom')", None),
     ('plasmon_source_center', ['plasmon', 'source', 'center'], False, 'has_plasmon_source', None, 'plasmon', list, "Center coordinates of the source", "μm"),
     ('plasmon_source_size', ['plasmon', 'source', 'size'], False, 'has_plasmon_source', None, 'plasmon', list, "Size of the source volume (for 3D simulations, propagation dimension should be zero)", "μm"),
     ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'has_plasmon_source', None, 'plasmon', str, "Electric field component the source acts on", None),
