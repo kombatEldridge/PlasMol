@@ -160,7 +160,7 @@ Compute the absorption spectrum of water using three directional delta-kick simu
       "min_ev": 1.5,
       "max_ev": 12.0,
       "spectrum_filepath": "water_absorption_spectrum.png",
-      "field_p_damping_gamma": 0.01
+      "tau": 0.01
     }
   }
 }

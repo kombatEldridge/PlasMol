@@ -210,8 +210,6 @@ class PARAMS:
                         raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")
                 elif getattr(self, "plasmon_source_frequency", None) is None and getattr(self, "plasmon_source_wavelength", None) is None and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                     raise ValueError(f"Either 'frequency' or 'wavelength' must be provided for {self.plasmon_source_type} source.")
-                if self.plasmon_source_type == 'kick':
-                    pass 
                 if self.plasmon_source_type == 'custom':
                     if not hasattr(self, 'plasmon_source_additional_parameters') or 'src_func' not in self.plasmon_source_additional_parameters:
                         raise ValueError(f"Custom source requires 'src_func' in 'plasmon_source_additional_parameters' attribute.")
@@ -219,9 +217,6 @@ class PARAMS:
                         walk_through_src_funcs(self.plasmon_source_additional_parameters['src_func'])
                     except ValueError as e:
                         raise ValueError(f"Error occurred while processing custom source function: {e}")
-                if self.plasmon_source_type == 'kick':
-                    # kick (delta/impulse) does not require frequency/wavelength; use peak_time, width etc in additional_parameters
-                    pass
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
 
@@ -368,13 +363,15 @@ class PARAMS:
                     raise ValueError(f"Fourier modifier 'max_ev' must be greater than 'min_ev'.")
                 if self.fourier_gamma < 0:
                     raise ValueError("Fourier modifier 'gamma' must be a non-negative value.")
-                if hasattr(self, 'fourier_field_p_damping_gamma'):
-                    self.fourier_damp = True
-                    logger.info("Damping modifier selected; preparing to apply damping to time-domain signals. See documentation for details.")
-                    if self.fourier_field_p_damping_gamma <= 0:
-                        raise ValueError("Damping 'gamma' must be a positive value.")
+                if hasattr(self, 'fourier_tau'):
+                    if self.fourier_tau < 0:
+                        raise ValueError("Fourier 'tau' must be a positive value.")
+                    elif self.fourier_tau == 0:
+                        logger.info("Tau modifier = 0 selected; no damping will be applied to time-domain signals.")
+                    else:
+                        logger.info(f"Tau modifier = {self.fourier_tau} selected; preparing to apply damping to time-domain signals. See documentation for details.")
                 else:
-                    self.fourier_damp = False
+                    self.fourier_tau = 0
 
             # Lopata CAP params
             if self.has_cap:

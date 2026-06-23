@@ -48,13 +48,6 @@ class MEEPSOURCE:
                 - width (float, optional): Temporal width. Default: 0 (but typically set >0).
                 - fwidth (float, optional): Frequency width (synonym for 1/width). Default: float('inf').
 
-            - For 'kick' (thin Gaussian delta-kick approximation for broadband plasmon excitation):
-                - peak_time (float, optional): Center time of the thin pulse. Default: 0.0.
-                - width (float, optional): Temporal width (extremely small for "thin"/delta-like). Default: 1e-5.
-                - cutoff (float, optional): Number of widths before cutoff. Default: 5.0.
-                - fwidth (float, optional): Frequency width (synonym for 1/width). Default: float('inf').
-                - frequency (float, optional): Carrier frequency (use 0 for non-oscillatory; non-zero may be needed to avoid NaN in some setups). Default: 0.0.
-
             - For <custom>:
                 - start_time (float, optional): Starting time. Default: -1e+20.
                 - end_time (float, optional): End time. Default: 1e+20.
@@ -109,25 +102,6 @@ class MEEPSOURCE:
                 cutoff=cutoff,
                 is_integrated=is_integrated
             )
-        elif self.source_type == 'kick':
-            start_time = kwargs.get('start_time', 1)
-            start_time_meep = start_time / constants.convertTimeMeep2fs
-            
-            end_time = kwargs.get('end_time', 1)
-            end_time_meep = end_time / constants.convertTimeMeep2fs
-
-            width  = kwargs.get('width', 0.1)  
-            width_meep = width / constants.convertTimeMeep2fs
-
-            def delta_kick_func(t):
-                return amplitude * np.exp(-((t - start_time_meep)**2) / (2 * width_meep**2))
-
-            src_time = mp.CustomSource(
-                src_func=delta_kick_func,
-                start_time=start_time_meep,
-                end_time=end_time_meep,
-                is_integrated=is_integrated
-            )
         else:
             src_func = walk_through_src_funcs(self.source_type)
             start_time = kwargs.get('start_time', -1e+20)
@@ -157,8 +131,11 @@ class MEEPSOURCE:
 # ------------------------------------------ #
 
 def walk_through_src_funcs(src_func):
+    src_func = src_func.upper()
     if src_func == "PAPER_PULSE_CHEN2010":
         src_func = paper_pulse_chen2010
+    elif src_func == "KICK":
+        src_func = kick
     else:
         raise ValueError(f"Invalid source function '{src_func}'; must be added to the list of supported functions within `sources.py`.")
     return src_func
@@ -194,14 +171,8 @@ def paper_pulse_chen2010(t):
 
     return np.exp(-((t - t0_meep) / sigma_meep)**2) * np.sin(omega_meep * t)
 
-# WIPs
-# def pulse(t):
-#     frequency_meep = (1 / wavelength if wavelength else frequency) * 2.99792458e8 * 1e6 * CONVERSION_FACTOR * 1e-15
-#     peak_time_meep = peakTime * (1 / CONVERSION_FACTOR)  # peakTime in fs
-#     width_meep = width * (CONVERSION_FACTOR ** 2)  # width in 1/fs**2
-#     return np.exp(1j * 2 * np.pi * frequency_meep * (t - peak_time_meep)) * np.exp(-width_meep * (t - peak_time_meep) ** 2)
-
-# def chirped(t):
-#     # Similar to above, but add chirp term:
-#     chirp_rate_meep = chirpRate * (CONVERSION_FACTOR ** 2)  # chirpRate in 1/fs**2
-#     return np.exp(1j * 2 * np.pi * frequency_meep * (t - peak_time_meep)) * np.exp(-width_meep * (t - peak_time_meep) ** 2 + 1j * chirp_rate_meep * (t - peak_time_meep) ** 2)
+def kick(t):
+    t = round(t * constants.convertTimeMeep2Atomic, 2)
+    value = -1 if np.isclose(t, 0.5, atol=1e-2) else 0.0
+    print(f"Kick pulse at time {t} meep units has value {value}.")
+    return value

@@ -8,7 +8,7 @@ from plasmol.drivers.custom_drivers.scatter_response_fxn import run as scatter_r
 from plasmol.drivers.custom_drivers.np_abs_cross_sec import run as run_np_abs_cross_sec
 from plasmol.drivers.custom_drivers.plasmol_abs_cross_sec import run as run_plasmol_abs_cross_sec
 from plasmol.drivers.custom_drivers.verify_source import run as run_verify_source
-from plasmol.drivers.tune import run as run_tune
+from plasmol.drivers.custom_drivers.tune import run as run_tune
 
 def get_driver(driver_str):
     if driver_str == 'classical':

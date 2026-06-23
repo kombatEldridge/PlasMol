@@ -42,26 +42,26 @@ def _run_quantum_with_prefix(params_copy):
         logging.getLogger("main").removeFilter(f)
         logging.getLogger().removeFilter(f)
 
-def apply_damping(mu_arrs, gamma):
+def apply_damping(mu_arrs, tau):
     """
     Apply damping to the polarizability array.
 
     Applies a damping factor to the polarizability values based on the provided parameters.
     The damping is applied as per the formula: mu_damped = mu * exp(-t/tau).
     Parameters:
-    mu_arr : list of float
-        The polarizability values to be damped.
+    mu_arrs : list of lists
+        The time + polarizability arrays from CSV.
     tau : float
         The damping time constant.
 
     Returns:
-    list of float
-        The damped polarizability values.
+    tuple of arrays
+        The damped polarizability values (x, y, z).
     """
     t = np.array(mu_arrs[0])
-    damped_mu_x = mu_arrs[1] * np.exp(-t / gamma)
-    damped_mu_y = mu_arrs[2] * np.exp(-t / gamma)
-    damped_mu_z = mu_arrs[3] * np.exp(-t / gamma)
+    damped_mu_x = mu_arrs[1] * np.exp(-t / tau)
+    damped_mu_y = mu_arrs[2] * np.exp(-t / tau)
+    damped_mu_z = mu_arrs[3] * np.exp(-t / tau)
     return damped_mu_x, damped_mu_y, damped_mu_z
 
 def fold(file_x, file_y, file_z):
@@ -188,12 +188,12 @@ def run(params):
 
         # Add damping to the polarizability fields if mu_damping is set
         for params_copy in params_copies:
-            if params.fourier_damp:
+            if not np.isclose(params.fourier_tau, 0):
                 mu_arrs = read_field_csv(params_copy.field_p_filepath)
-                mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_field_p_damping_gamma)
+                mu_x, mu_y, mu_z = apply_damping(mu_arrs, params.fourier_tau)
                 field_p_filepath = Path(params_copy.field_p_filepath).with_suffix('')
                 params_copy.field_p_filepath = f"{field_p_filepath}_damped.csv"
-                init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_field_p_damping_gamma}")
+                init_csv(params_copy.field_p_filepath, f"# Molecule\'s Polarizability Field intensity in atomic units but damped with mu_damped = mu * exp(-t/tau) where tau = {params.fourier_tau}")
                 for t, x, y, z in zip(mu_arrs[0], mu_x, mu_y, mu_z):
                     update_csv(params_copy.field_p_filepath, round(t, params.time_rounding_decimals), x, y, z)
                 logging.info(f"Damped polarizability field written to {params_copy.field_p_filepath}")

@@ -373,7 +373,7 @@ When present (and the molecule source is a delta kick), PlasMol automatically ru
     "max_ev": 5.0,
     "spectrum_filepath": "spectrum.png",
     "npz_filepath": null,
-    "field_p_damping_gamma": null
+    "tau": null
   }
 }
 ```
@@ -385,7 +385,7 @@ When present (and the molecule source is a delta kick), PlasMol automatically ru
 | `max_ev` | float | Upper energy limit of the plotted spectrum | 5.0 | eV |
 | `spectrum_filepath` | str | Output PNG file for the absorption spectrum | – | – |
 | `npz_filepath` | str | Optional `.npz` file containing raw Fourier data | – | – |
-| `field_p_damping_gamma` | float | Extra artificial damping applied to the time-domain polarization signal | – | a.u. |
+| `tau` | float | Extra artificial damping time constant tau (signal *= exp(-t/tau)) applied to time-domain polarization before FFT | – | a.u. |
 
 ### 5.2 "comparison" (MO energy diagrams)
 

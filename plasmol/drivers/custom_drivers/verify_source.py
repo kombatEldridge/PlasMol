@@ -30,7 +30,7 @@ def run(params):
 
     # Ensure we have a probe at the source center for field recording
     source_center = getattr(params, 'plasmon_source_center')
-    params.probe_points = [source_center]
+    params.probe_points = [[0,0,0]]
     logger.debug(f"Using source center {source_center} as default probe.")
 
     # Initialize and run the pure classical simulation
@@ -63,7 +63,7 @@ def _plot_verification_fields(sim, source_center):
         plt.plot(times, ez, label='Ez', alpha=0.8)
         plt.xlabel('Time (a.u.)')
         plt.ylabel('Electric Field (a.u.)')
-        plt.title(f'Electric Field Time Series at {point_key}\n(Source verification)')
+        plt.title(f'Electric Field Time Series at {point_key}')
         plt.legend()
         plt.grid(True, alpha=0.3)
 

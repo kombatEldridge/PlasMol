@@ -226,12 +226,12 @@ def test_invalid_molecule_geometry_units(tmp_path):
 
 
 def test_fourier_with_plasmon(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"].update({"modifiers": {"fourier": {}}}), ValueError, "Fourier modifier cannot be used with plasmon modifier")
+    _test_validation_error(tmp_path, lambda c: c.setdefault("additional_parameters", {}).update({"fourier": {}}), ValueError, "Fourier modifier cannot be used with plasmon modifier")
 
 
 def test_fourier_missing_spectrum_filepath(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"fourier": {}}})),
+        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {}})),
         ValueError, "Fourier modifier requires 'spectrum_filepath' attribute")
 
 
@@ -305,14 +305,14 @@ def test_checkpoint_negative_frequency(tmp_path):
 
 def test_fourier_gamma_non_positive(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"fourier": {"gamma": -0.01, "spectrum_filepath": "spec.png"}}})),
+        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": -0.01, "spectrum_filepath": "spec.png"}})),
         ValueError, "Fourier modifier 'gamma' must be a positive value")
 
 
-def test_fourier_field_p_damping_gamma_non_positive(tmp_path):
+def test_fourier_tau_non_positive(tmp_path):
     _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "damping_gamma": -0.1}}})),
-        ValueError, "Damping 'gamma' must be a positive value")
+        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "tau": -0.1}})),
+        ValueError, "Fourier 'tau' must be a positive value")
 
 
 def test_cap_missing_type(tmp_path):

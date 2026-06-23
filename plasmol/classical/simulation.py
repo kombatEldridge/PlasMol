@@ -164,7 +164,7 @@ class SIMULATION:
                 for i, point in enumerate(self.probe_points):
                     init_csv(f"{field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
 
-            self.simulation.run(*run_functions, until=self.t_end_meep)
+            self.simulation.run(*run_functions, until=(self.t_end_meep - self.dt_meep))
 
             logging.info("Simulation completed successfully!")
         except Exception as e:
