@@ -174,5 +174,4 @@ def paper_pulse_chen2010(t):
 def kick(t):
     t = round(t * constants.convertTimeMeep2Atomic, 2)
     value = -1 if np.isclose(t, 0.5, atol=1e-2) else 0.0
-    print(f"Kick pulse at time {t} meep units has value {value}.")
     return value

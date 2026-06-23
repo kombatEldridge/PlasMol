@@ -274,7 +274,7 @@ class PARAMS:
                     raise ValueError("Driver 'plasmol' requires a 'plasmon' section.")
             if self.has_comparison:
                 if hasattr(self, 'molecule_basis') or hasattr(self, 'molecule_xc'):
-                    logger.info("Comparison modifier selected; ignoring singular basis set and xc.")
+                    logger.info("Comparison modifier selected; ignoring basis set and xc. Using values given in additional_parameters.")
                 else:
                     # Setting singular basis and xc so it can pass the following checks. These will be ignored anyway.
                     self.molecule_basis = '6-31g'
@@ -614,10 +614,15 @@ class PARAMS:
             func_name = func_name.upper()
             if "{TUNE}" in func_name:
                 func_name = func_name.replace("{TUNE}", "0.4")
-            orig_omega, _, _ = libxc.rsh_coeff(func_name)
-            if omega is not None and orig_omega == 0:
+            derived_omega, _, _ = libxc.rsh_coeff(func_name)
+            if omega is not None and derived_omega == 0:
                 raise ValueError(f"Functional '{func_name}' is not a range-separated hybrid (RSH) so lrc_parameter will be ignored.")
-            return True
+            if omega is not None:
+                if not math.isclose(omega, derived_omega, rel_tol=1e-9):
+                    logger.warning(f"Functional '{func_name}' has a default lrc_parameter of {derived_omega}, but {omega} was provided. Using the given value will override the default.")
+            if omega is None and derived_omega > 0:
+                logger.debug(f"Functional '{func_name}' is a range-separated hybrid (RSH) with default lrc_parameter = {derived_omega}.")
+                self.molecule_lrc_parameter = derived_omega
         except Exception as e:
             raise ValueError(f"Error checking xc functional '{func_name}': {e}")
 

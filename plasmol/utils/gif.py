@@ -19,7 +19,6 @@ def clear_directory(directory_path):
         logging.info(f"{e}, creating.")
 
 def make_gif(frame_folder):
-    print(os.getcwd())
     frame_folder = os.path.basename(os.path.normpath(frame_folder))
     os.chdir(frame_folder)
     items = os.listdir()
