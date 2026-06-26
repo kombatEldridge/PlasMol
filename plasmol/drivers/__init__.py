@@ -6,7 +6,6 @@ from plasmol.drivers.custom_drivers.comparison import run as run_comparison
 from plasmol.drivers.custom_drivers.fourier import run as run_fourier
 from plasmol.drivers.custom_drivers.scatter_response_fxn import run as scatter_response_fxn
 from plasmol.drivers.custom_drivers.np_abs_cross_sec import run as run_np_abs_cross_sec
-from plasmol.drivers.custom_drivers.plasmol_abs_cross_sec import run as run_plasmol_abs_cross_sec
 from plasmol.drivers.custom_drivers.verify_source import run as run_verify_source
 from plasmol.drivers.custom_drivers.tune import run as run_tune
 
@@ -25,8 +24,6 @@ def get_driver(driver_str):
         return scatter_response_fxn
     elif driver_str == 'np_abs_cross_sec':
         return run_np_abs_cross_sec
-    elif driver_str == 'plasmol_abs_cross_sec':
-        return run_plasmol_abs_cross_sec
     elif driver_str == 'verify_source':
         return run_verify_source
     elif driver_str == 'tune':

@@ -47,6 +47,28 @@ def test_plasmon_only_parses_cleanly(plasmon_only_args):
     print("Plasmon-only config parsed and validated successfully!")
 
 
+def test_geometry_xyz_path_relative_to_input_json(tmp_path):
+    xyz_path = tmp_path / "Na.xyz"
+    xyz_path.write_text("Na\n1\nNa 0.0 0.0 0.0\n")
+    json_path = tmp_path / "tune.json"
+    json_path.write_text(json.dumps({
+        "settings": {"dt": 0.05, "t_end": 1.0, "driver": "tune"},
+        "molecule": {
+            "geometry": "Na.xyz",
+            "geometry_units": "bohr",
+            "charge": 0,
+            "spin": 1,
+            "basis": "sto3g",
+            "xc": "pbe0",
+        },
+    }))
+
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+
+    assert params.geometry_xyz_filepath == xyz_path.resolve()
+    assert params.molecule_atoms == ["Na"]
+
+
 def test_geometry_construction_angstrom_conversion(tmp_path):
     """Test _construct_geometry: Angstrom → Bohr conversion + correct coords string format."""
     json_content = {
@@ -225,8 +247,65 @@ def test_invalid_molecule_geometry_units(tmp_path):
     _test_validation_error(tmp_path, lambda c: c["molecule"].update({"geometry_units": "invalid"}), ValueError, "Invalid 'molecule_geometry_units'")
 
 
+def _fourier_plasmon_config():
+    return {
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "plasmon": {
+            "simulation": {"cell_length": 0.2, "pml_thickness": 0.05},
+            "source": {
+                "type": "gaussian",
+                "center": [-0.04, 0, 0],
+                "size": [0, 0.2, 0.2],
+                "component": "z",
+                "additional_parameters": {"frequency": 2.29, "fwidth": 2.08},
+            },
+            "nanoparticle": {"material": "Au_JC_visible", "radius": 0.025},
+            "molecule": {"position": [0.02645, 0, 0]},
+        },
+        "molecule": {
+            "geometry": [{"atom": "Na", "coord": [0.0, 0.0, 0.0]}],
+            "geometry_units": "bohr",
+            "basis": "sto3g",
+            "xc": "pbe0",
+        },
+        "files": {"spectra_e_vs_p_filepath": "spectrum.png"},
+    }
+
+
 def test_fourier_with_plasmon(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c.setdefault("additional_parameters", {}).update({"fourier": {}}), ValueError, "Fourier modifier cannot be used with plasmon modifier")
+    cfg = _fourier_plasmon_config()
+    cfg["additional_parameters"] = {"fourier": {"gamma": 0.01, "spectrum_filepath": "spectrum.png"}}
+    json_path = tmp_path / "fourier_plasmon.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.driver_str == "fourier"
+    assert params.has_plasmon is True
+    assert params.has_fourier is True
+    assert params.fourier_gamma == 0.01
+    assert params.fourier_spectrum_filepath == "spectrum.png"
+
+
+def test_fourier_driver_with_plasmon_parses(tmp_path):
+    json_path = tmp_path / "fourier_plasmon.json"
+    json_path.write_text(json.dumps(_fourier_plasmon_config()))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.driver_str == "fourier"
+    assert params.has_plasmon is True
+    assert params.has_fourier is False
+    assert params.fourier_gamma == 0
+    assert params.fourier_spectrum_filepath == "spectrum.png"
+
+
+def test_checkpoint_disabled_for_fourier_plasmon_run(tmp_path):
+    cfg = _fourier_plasmon_config()
+    cfg["files"]["checkpoint"] = {"filepath": "ck.npz", "frequency_steps": 10}
+    json_path = tmp_path / "fourier_plasmon_ckpt.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.driver_str == "fourier"
+    assert params.has_plasmon is True
+    assert getattr(params, "has_checkpoint", False) is False
+    assert not hasattr(params, "checkpoint_filepath")
 
 
 def test_fourier_missing_spectrum_filepath(tmp_path):

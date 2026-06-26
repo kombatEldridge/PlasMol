@@ -286,11 +286,12 @@ class PARAMS:
             lrc_parameters = [self.molecule_lrc_parameter] if hasattr(self, 'molecule_lrc_parameter') else []
             self._check_xc(self.molecule_xc, *lrc_parameters)
             if type(self.molecule_geometry) == str:
-                path = Path(self.molecule_geometry)
+                path = self._resolve_geometry_path(self.molecule_geometry)
                 if not path.exists():
                     raise ValueError(f"Geometry file not found: {path}")
                 if not path.suffix.lower() == '.xyz':
                     raise ValueError("String input must be a path to a .xyz file.")
+                self.molecule_geometry = str(path)
             else:
                 for loc in self.molecule_geometry:
                     if not isinstance(loc, dict):
@@ -351,18 +352,18 @@ class PARAMS:
             # Fourier params
             if self.has_fourier:
                 if self.has_plasmon:
-                    raise ValueError(f"Fourier modifier cannot be used with plasmon modifier.")
-                logger.info("Fourier modifier selected; running three simulations for Fourier analysis along each axis.")
+                    if not self.has_nanoparticle:
+                        raise ValueError("Fourier runs with plasmon require a nanoparticle in the plasmon section.")
                 if not hasattr(self, 'fourier_spectrum_filepath') or getattr(self, 'fourier_spectrum_filepath') in ['']:
-                    raise ValueError(f"Fourier modifier requires spectrum_filepath attribute.")
+                    raise ValueError("Fourier driver requires 'spectrum_filepath' in additional_parameters.fourier or files.spectra_e_vs_p_filepath.")
                 if self.fourier_min_ev < 0:
-                    raise ValueError(f"Fourier modifier 'min_ev' must be a non-negative value.")
+                    raise ValueError("Fourier 'min_ev' must be a non-negative value.")
                 if self.fourier_max_ev < 0:
-                    raise ValueError(f"Fourier modifier 'max_ev' must be a non-negative value.")
+                    raise ValueError("Fourier 'max_ev' must be a non-negative value.")
                 if self.fourier_max_ev <= self.fourier_min_ev:
-                    raise ValueError(f"Fourier modifier 'max_ev' must be greater than 'min_ev'.")
+                    raise ValueError("Fourier 'max_ev' must be greater than 'min_ev'.")
                 if self.fourier_gamma < 0:
-                    raise ValueError("Fourier modifier 'gamma' must be a non-negative value.")
+                    raise ValueError("Fourier 'gamma' must be a non-negative value.")
                 if hasattr(self, 'fourier_tau'):
                     if self.fourier_tau < 0:
                         raise ValueError("Fourier 'tau' must be a positive value.")
@@ -449,8 +450,7 @@ class PARAMS:
         # Checkpointing params
         if getattr(self, 'has_checkpoint', False):
             if self.has_plasmon:
-                reason = "a nanoparticle is present" if self.has_nanoparticle else "a plasmon section is present"
-                logger.warning(f"Checkpointing disabled because {reason} in the simulation input (checkpointing is only supported for pure quantum simulations).")
+                logger.warning(f"Checkpointing disabled because plasmon section is present in the simulation input (checkpointing is only supported for pure quantum simulations).")
                 self.has_checkpoint = False
                 for k in ('checkpoint_dict', 'checkpoint_filepath', 'checkpoint_frequency_steps', 'checkpoint_frequency_time'):
                     if hasattr(self, k):
@@ -615,6 +615,10 @@ class PARAMS:
             if "{TUNE}" in func_name:
                 func_name = func_name.replace("{TUNE}", "0.4")
             derived_omega, _, _ = libxc.rsh_coeff(func_name)
+            if omega == "tune":
+                if derived_omega == 0:
+                    raise ValueError(f"Functional '{func_name}' is not a range-separated hybrid (RSH); cannot tune lrc_parameter.")
+                return
             if omega is not None and derived_omega == 0:
                 raise ValueError(f"Functional '{func_name}' is not a range-separated hybrid (RSH) so lrc_parameter will be ignored.")
             if omega is not None:
@@ -625,6 +629,12 @@ class PARAMS:
                 self.molecule_lrc_parameter = derived_omega
         except Exception as e:
             raise ValueError(f"Error checking xc functional '{func_name}': {e}")
+
+    def _resolve_geometry_path(self, geometry: str) -> Path:
+        path = Path(geometry)
+        if not path.is_absolute():
+            path = (Path(self.input_file_path).resolve().parent / path).resolve()
+        return path
 
     def _construct_geometry(self, geometry, units):
         """
@@ -640,8 +650,8 @@ class PARAMS:
         coords_bohr = {}
 
         if isinstance(geometry, str):
-            path = Path(geometry)
-            
+            path = self._resolve_geometry_path(geometry)
+
             # Parse XYZ file
             with open(path) as f:
                 lines = [line.strip() for line in f if line.strip()]

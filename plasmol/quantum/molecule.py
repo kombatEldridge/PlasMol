@@ -137,12 +137,13 @@ class MOLECULE():
         if exc is not None:
             F_ao += self.calculate_potential(exc)
         if self.has_cap:
+            cap_kwargs = {k: v for k, v in self.cap_dict.items() if k != "type"}
             if not hasattr(self, 'Gamma_ao_0'):
-                self.Gamma_ao_0 = self.get_gamma_ao(**self.cap_dict)
+                self.Gamma_ao_0 = self.get_gamma_ao(**cap_kwargs)
             if self.cap_type == 'static':
                 F_ao -= 1j * self.Gamma_ao_0
             elif self.cap_type == 'dynamic':
-                F_ao -= 1j * self.get_gamma_ao(**self.cap_dict, D_ao=D_ao)
+                F_ao -= 1j * self.get_gamma_ao(**cap_kwargs, D_ao=D_ao)
         return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
 
     def rotate_coeff_to_orth(self, coeff_ao):
