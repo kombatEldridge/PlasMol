@@ -228,7 +228,7 @@ def _set_up_params_copy_molecule(params):
         if not params.resumed_from_checkpoint:
             os.makedirs(params_copy.dir_path, exist_ok=True)
         params_copies.append(params_copy)
-        return params_copies
+    return params_copies
 
 def run(params):
     if getattr(params, 'has_plasmon', False) and getattr(params, 'has_checkpoint', False):
