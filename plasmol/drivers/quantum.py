@@ -17,7 +17,6 @@ from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 
 def run(params):
     logger = logging.getLogger("main")
-    logger.info(" === RUNNING QUANTUM ONLY SIMULATION === ")
     if not params.resumed_from_checkpoint:
         # Only initialize CSV files for new runs (checkpoint runs already have them)
         init_csv(params.field_e_filepath, "Electric Field intensity in atomic units")

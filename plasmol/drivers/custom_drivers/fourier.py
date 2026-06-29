@@ -15,6 +15,7 @@ from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.classical.sources import MEEPSOURCE
 from plasmol.drivers import *
 from plasmol.drivers.plasmol import run as run_plasmol
+from plasmol.classical.meep_verbosity import meep_io_context
 
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 from plasmol.utils.logging import setup_logging
@@ -47,22 +48,23 @@ def _run_quantum_with_prefix(params_copy):
 
 def _build_plasmol_meep_objects(params):
     """Create Meep source/nanoparticle objects on params (not picklable across processes)."""
-    params.plasmon_source_object = MEEPSOURCE(
-        source_type=getattr(params, 'plasmon_source_type').lower().strip(),
-        source_center=getattr(params, 'plasmon_source_center'),
-        source_size=getattr(params, 'plasmon_source_size'),
-        component=getattr(params, 'plasmon_source_component'),
-        is_integrated=getattr(params, 'plasmon_source_is_integrated'),
-        **{k: v for k, v in getattr(params, 'plasmon_source_additional_parameters', {}).items()}
-    )
-    if getattr(params, 'has_nanoparticle', False):
-        mat_name = params.nanoparticle_dict["material"]
-        params.nanoparticle_material = params._load_meep_material(mat_name)
-        params.nanoparticle = mp.Sphere(
-            radius=getattr(params, 'nanoparticle_radius'),
-            center=mp.Vector3(*getattr(params, 'nanoparticle_center')),
-            material=params.nanoparticle_material
+    with meep_io_context(getattr(params, 'verbose', 1)):
+        params.plasmon_source_object = MEEPSOURCE(
+            source_type=getattr(params, 'plasmon_source_type').lower().strip(),
+            source_center=getattr(params, 'plasmon_source_center'),
+            source_size=getattr(params, 'plasmon_source_size'),
+            component=getattr(params, 'plasmon_source_component'),
+            is_integrated=getattr(params, 'plasmon_source_is_integrated'),
+            **{k: v for k, v in getattr(params, 'plasmon_source_additional_parameters', {}).items()}
         )
+        if getattr(params, 'has_nanoparticle', False):
+            mat_name = params.nanoparticle_dict["material"]
+            params.nanoparticle_material = params._load_meep_material(mat_name)
+            params.nanoparticle = mp.Sphere(
+                radius=getattr(params, 'nanoparticle_radius'),
+                center=mp.Vector3(*getattr(params, 'nanoparticle_center')),
+                material=params.nanoparticle_material
+            )
 
 def _run_plasmol_with_prefix(params_copy):
     setup_logging(
@@ -259,7 +261,6 @@ def run(params):
                 direction = future_to_dir[future]
                 try:
                     future.result()
-                    logger.info(f"{direction}-dir {simulation} run completed successfully")
                 except Exception as e:
                     logger.error(f"{direction}-dir {simulation} run failed: {e}")
     finally:

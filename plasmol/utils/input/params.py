@@ -353,7 +353,7 @@ class PARAMS:
             if self.has_fourier:
                 if self.has_plasmon:
                     if not self.has_nanoparticle:
-                        raise ValueError("Fourier runs with plasmon require a nanoparticle in the plasmon section.")
+                        logger.warning("Fourier runs with plasmon settings was not given a nanoparticle.")
                 if not hasattr(self, 'fourier_spectrum_filepath') or getattr(self, 'fourier_spectrum_filepath') in ['']:
                     raise ValueError("Fourier driver requires 'spectrum_filepath' in additional_parameters.fourier or files.spectra_e_vs_p_filepath.")
                 if self.fourier_min_ev < 0:
@@ -529,24 +529,27 @@ class PARAMS:
                     symmetries_list.append(mp.Mirror(dir_map[axis], phase=phase))
                 self.plasmon_symmetries = symmetries_list if symmetries_list else None
 
-            if self.has_plasmon_source:
-                self.plasmon_source_object = MEEPSOURCE(
-                    source_type=self.plasmon_source_type.lower().strip(),
-                    source_center=self.plasmon_source_center,
-                    source_size=self.plasmon_source_size,
-                    component=self.plasmon_source_component.lower().strip(),
-                    amplitude=self.plasmon_source_amplitude,
-                    is_integrated=self.plasmon_source_is_integrated,
-                    **{k: v for k, v in getattr(self, 'plasmon_source_additional_parameters', {}).items()}
-                )
+            from plasmol.classical.meep_verbosity import meep_io_context
 
-            if self.has_nanoparticle:
-                self.nanoparticle_material = self._load_meep_material(self.nanoparticle_material)
-                self.nanoparticle = mp.Sphere(
-                    radius=self.nanoparticle_radius,
-                    center=mp.Vector3(*self.nanoparticle_center),
-                    material=self.nanoparticle_material
-                )
+            with meep_io_context(self.verbose):
+                if self.has_plasmon_source:
+                    self.plasmon_source_object = MEEPSOURCE(
+                        source_type=self.plasmon_source_type.lower().strip(),
+                        source_center=self.plasmon_source_center,
+                        source_size=self.plasmon_source_size,
+                        component=self.plasmon_source_component.lower().strip(),
+                        amplitude=self.plasmon_source_amplitude,
+                        is_integrated=self.plasmon_source_is_integrated,
+                        **{k: v for k, v in getattr(self, 'plasmon_source_additional_parameters', {}).items()}
+                    )
+
+                if self.has_nanoparticle:
+                    self.nanoparticle_material = self._load_meep_material(self.nanoparticle_material)
+                    self.nanoparticle = mp.Sphere(
+                        radius=self.nanoparticle_radius,
+                        center=mp.Vector3(*self.nanoparticle_center),
+                        material=self.nanoparticle_material
+                    )
 
             if self.has_images:
                 self.images_args = ""

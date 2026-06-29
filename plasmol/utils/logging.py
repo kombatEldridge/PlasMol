@@ -2,24 +2,33 @@
 import logging
 import threading
 
+from plasmol.classical.meep_verbosity import MEEP_STDOUT_PATTERNS, silence_meep_exit_report
+
+
 class PRINTLOGGER:
     """
-    A custom logger to redirect stdout to the logging system.
+    Redirect stdout/stderr writes into the logging system.
     Includes a recursion guard to prevent the classic logging redirect loop.
     """
-    def __init__(self, logger, level=logging.INFO):
+    def __init__(self, logger, level=logging.INFO, prefix=None, suppress_meep_stdout=False):
         self.logger = logger
         self.level = level
+        self.prefix = prefix
+        self.suppress_meep_stdout = suppress_meep_stdout
         self._in_write = threading.local()  # per-thread flag
 
     def write(self, message):
         message = message.rstrip()
         if not message:
             return
+        if self.suppress_meep_stdout and any(p in message for p in MEEP_STDOUT_PATTERNS):
+            return
         if getattr(self._in_write, 'value', False):
             return  # prevent recursion
         self._in_write.value = True
         try:
+            if self.prefix:
+                message = f"{self.prefix}{message}"
             self.logger.log(self.level, message)
         finally:
             self._in_write.value = False
@@ -72,7 +81,10 @@ def setup_logging(verbose=1, log_file=None):
     logger.addHandler(handler)
     logger.propagate = False
 
-    sys.stdout = PRINTLOGGER(logger, logging.INFO)
+    suppress_meep = verbose < 2
+    sys.stdout = PRINTLOGGER(logger, logging.INFO, suppress_meep_stdout=suppress_meep)
+    if suppress_meep:
+        silence_meep_exit_report()
     logging.getLogger("h5py").setLevel(logging.INFO)
     logging.getLogger("matplotlib").setLevel(logging.INFO)
     logging.getLogger("PIL").setLevel(logging.INFO)

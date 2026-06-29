@@ -13,7 +13,6 @@ from plasmol.utils.checkpoint import init_checkpoint
 def run(params):
     try:
         logger = logging.getLogger("main")
-        logger.info(" === RUNNING PLASMOL SIMULATION === ")
         if not params.resumed_from_checkpoint:
             # Only initialize CSV files for new runs (checkpoint runs already have them)
             init_csv(params.field_e_filepath, "Electric Field intensity in atomic units")

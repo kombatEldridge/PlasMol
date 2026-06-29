@@ -221,8 +221,6 @@ def _tune_eps0(params):
 
 def run(params):
     """Regular (non-custom) tuning driver entry point."""
-    logger.info(" === RUNNING TUNE DRIVER === ")
-
     # Determine what needs to be tuned
     lrc = getattr(params, 'molecule_lrc_parameter', None)
     xc = getattr(params, 'molecule_xc', "")

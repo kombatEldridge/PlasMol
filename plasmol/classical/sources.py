@@ -3,6 +3,7 @@ import logging
 import meep as mp
 import numpy as np
 from plasmol.utils import constants
+from plasmol.classical.meep_verbosity import meep_io_context
 
 class MEEPSOURCE:
     def __init__(self,
@@ -59,70 +60,71 @@ class MEEPSOURCE:
         self.source_type = source_type
         logging.debug(f"Initializing MEEPSOURCE with type: {self.source_type}")
 
-        char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
-        self.component = char_to_field[component]
+        with meep_io_context():
+            char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
+            self.component = char_to_field[component]
 
-        self.sourceCenter = mp.Vector3(*source_center) if not isinstance(source_center, mp.Vector3) else source_center
-        self.sourceSize = mp.Vector3(*source_size) if not isinstance(source_size, mp.Vector3) else source_size
+            self.sourceCenter = mp.Vector3(*source_center) if not isinstance(source_center, mp.Vector3) else source_center
+            self.sourceSize = mp.Vector3(*source_size) if not isinstance(source_size, mp.Vector3) else source_size
 
-        # Compute frequency if wavelength is provided
-        wavelength = kwargs.get('wavelength', None)
-        frequency = kwargs.get('frequency', None)
-        if wavelength is not None and frequency is None:
-            frequency = 1 / wavelength
+            # Compute frequency if wavelength is provided
+            wavelength = kwargs.get('wavelength', None)
+            frequency = kwargs.get('frequency', None)
+            if wavelength is not None and frequency is None:
+                frequency = 1 / wavelength
 
-        # Type-specific source time creation
-        if self.source_type == 'continuous':
-            start_time = kwargs.get('start_time', 0)
-            end_time = kwargs.get('end_time', 1e+20)
-            width = kwargs.get('width', 0)
-            fwidth = kwargs.get('fwidth', float('inf'))
-            slowness = kwargs.get('slowness', 3.0)
-            if fwidth not in [None, float('inf')]:
-                width = max(width, 1 / fwidth)
-            src_time = mp.ContinuousSource(
-                frequency=frequency,
-                start_time=start_time,
-                end_time=end_time,
-                width=width,
-                slowness=slowness,
-                is_integrated=is_integrated
+            # Type-specific source time creation
+            if self.source_type == 'continuous':
+                start_time = kwargs.get('start_time', 0)
+                end_time = kwargs.get('end_time', 1e+20)
+                width = kwargs.get('width', 0)
+                fwidth = kwargs.get('fwidth', float('inf'))
+                slowness = kwargs.get('slowness', 3.0)
+                if fwidth not in [None, float('inf')]:
+                    width = max(width, 1 / fwidth)
+                src_time = mp.ContinuousSource(
+                    frequency=frequency,
+                    start_time=start_time,
+                    end_time=end_time,
+                    width=width,
+                    slowness=slowness,
+                    is_integrated=is_integrated
+                )
+            elif self.source_type == 'gaussian':
+                start_time = kwargs.get('start_time', 0)
+                cutoff = kwargs.get('cutoff', 5.0)
+                width = kwargs.get('width', 0)
+                fwidth = kwargs.get('fwidth', float('inf'))
+                if fwidth not in [None, float('inf')]:
+                    width = max(width, 1 / fwidth)
+                src_time = mp.GaussianSource(
+                    frequency=frequency,
+                    width=width,
+                    start_time=start_time,
+                    cutoff=cutoff,
+                    is_integrated=is_integrated
+                )
+            else:
+                src_func = walk_through_src_funcs(self.source_type)
+                start_time = kwargs.get('start_time', -1e+20)
+                end_time = kwargs.get('end_time', 1e+20)
+                fwidth = kwargs.get('fwidth', 0)
+                src_time = mp.CustomSource(
+                    src_func=src_func,
+                    start_time=start_time,
+                    end_time=end_time,
+                    is_integrated=is_integrated,
+                    fwidth=fwidth
+                )
+
+            # Create the final Meep Source object
+            self.source = mp.Source(
+                src=src_time,
+                center=self.sourceCenter,
+                size=self.sourceSize,
+                component=self.component,
+                amplitude=amplitude
             )
-        elif self.source_type == 'gaussian':
-            start_time = kwargs.get('start_time', 0)
-            cutoff = kwargs.get('cutoff', 5.0)
-            width = kwargs.get('width', 0)
-            fwidth = kwargs.get('fwidth', float('inf'))
-            if fwidth not in [None, float('inf')]:
-                width = max(width, 1 / fwidth)
-            src_time = mp.GaussianSource(
-                frequency=frequency,
-                width=width,
-                start_time=start_time,
-                cutoff=cutoff,
-                is_integrated=is_integrated
-            )
-        else:
-            src_func = walk_through_src_funcs(self.source_type)
-            start_time = kwargs.get('start_time', -1e+20)
-            end_time = kwargs.get('end_time', 1e+20)
-            fwidth = kwargs.get('fwidth', 0)
-            src_time = mp.CustomSource(
-                src_func=src_func,
-                start_time=start_time,
-                end_time=end_time,
-                is_integrated=is_integrated,
-                fwidth=fwidth
-            )
-
-        # Create the final Meep Source object
-        self.source = mp.Source(
-            src=src_time,
-            center=self.sourceCenter,
-            size=self.sourceSize,
-            component=self.component,
-            amplitude=amplitude
-        )
 
 # ------------------------------------------ #
 #             Additional custom              #

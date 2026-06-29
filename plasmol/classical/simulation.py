@@ -6,6 +6,7 @@ from pathlib import Path
 from plasmol.utils import constants
 from plasmol.utils.csv import update_csv, init_csv
 from plasmol.quantum.propagation import propagation
+from plasmol.classical.meep_verbosity import meep_io_context, meep_quiet_run
 
 
 class SIMULATION:
@@ -26,35 +27,36 @@ class SIMULATION:
         self.map_direction_to_digit = {'x': 0, 'y': 1, 'z': 2}
         self.char_to_field = {'x': mp.Ex, 'y': mp.Ey, 'z': mp.Ez}
 
-        self.sources_list = []
-        if self.has_molecule and self.plasmol_back_propagation:
-            for comp, field in zip(self.xyz, [mp.Ex, mp.Ey, mp.Ez]):
-                src_func = lambda t, c=comp: self._get_dipole_response(c, t)
-                self.sources_list.append(
-                    mp.Source(
-                        mp.CustomSource(src_func=src_func, is_integrated=True),
-                        center=self.plasmol_molecule_position,
-                        component=field
+        with meep_io_context(getattr(self, 'verbose', 1)):
+            self.sources_list = []
+            if self.has_molecule and self.plasmol_back_propagation:
+                for comp, field in zip(self.xyz, [mp.Ex, mp.Ey, mp.Ez]):
+                    src_func = lambda t, c=comp: self._get_dipole_response(c, t)
+                    self.sources_list.append(
+                        mp.Source(
+                            mp.CustomSource(src_func=src_func, is_integrated=True),
+                            center=self.plasmol_molecule_position,
+                            component=field
+                        )
                     )
-                )
-            logging.info("Emitter for the molecule added to simulation")
+                logging.debug("Emitter for the molecule added to simulation")
 
-        if self.has_plasmon_source:
-            self.sources_list.append(self.plasmon_source_object.source)
+            if self.has_plasmon_source:
+                self.sources_list.append(self.plasmon_source_object.source)
 
-        self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
-        self.nanoparticle = [self.nanoparticle] if getattr(self, 'nanoparticle', None) else []
-        self.default_material = mp.Medium(index=self.plasmon_surrounding_material_index)
+            self.pmlList = [mp.PML(thickness=self.plasmon_pml_thickness)]
+            self.nanoparticle = [self.nanoparticle] if getattr(self, 'nanoparticle', None) else []
+            self.default_material = mp.Medium(index=self.plasmon_surrounding_material_index)
 
-        self.simulation = mp.Simulation(
-            resolution=self.plasmon_resolution,
-            cell_size=self.cell_volume,
-            boundary_layers=self.pmlList,
-            sources=self.sources_list,
-            symmetries=self.plasmon_symmetries,
-            geometry=self.nanoparticle,
-            default_material=self.default_material
-        )
+            self.simulation = mp.Simulation(
+                resolution=self.plasmon_resolution,
+                cell_size=self.cell_volume,
+                boundary_layers=self.pmlList,
+                sources=self.sources_list,
+                symmetries=self.plasmon_symmetries,
+                geometry=self.nanoparticle,
+                default_material=self.default_material
+            )
 
     def _get_step(self, t_meep: float) -> int:
         """Convert Meep time (in Meep units) to nearest integer step index."""
@@ -98,6 +100,8 @@ class SIMULATION:
         current_t_meep = sim.meep_time()
         current_step = self._get_step(current_t_meep)
 
+        timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
+
         if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
             logging.debug(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)} au (step {current_step})")
 
@@ -119,12 +123,11 @@ class SIMULATION:
                 # Extra safety for any internal half-step queries
                 self.measured_dipole_response[comp][next_step + 1] = ind_dipole[digit]
 
-            # Write polarization (induced dipole) to CSV in atomic units
-            timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
             update_csv(self.field_p_filepath, timestamp_au, *ind_dipole)
+        else:
+            update_csv(self.field_p_filepath, timestamp_au, 0.0, 0.0, 0.0)
 
         # Always write electric field to CSV in atomic units
-        timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
         update_csv(self.field_e_filepath, timestamp_au, field_e['x'], field_e['y'], field_e['z'])
 
     def _record_probe_fields(self, sim):
@@ -135,6 +138,21 @@ class SIMULATION:
             field_e_filepath = Path(self.field_e_filepath).with_suffix('')
             update_csv(f"{field_e_filepath}_{i}.csv", timestamp_au, field_e_point['x'], field_e_point['y'], field_e_point['z'])
 
+    def _report_progress(self, sim):
+        current_step = self._get_step(sim.meep_time())
+        if current_step not in self._progress_report_indices:
+            return
+        if current_step in self._progress_reported:
+            return
+
+        self._progress_reported.add(current_step)
+        percent = min(100, int(round(current_step / self._progress_total_steps * 100)))
+        t_au = round(sim.meep_time() * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
+        logging.info(
+            f"Simulation progress: {percent}% done "
+            f"({current_step}/{self._progress_total_steps} steps || {t_au}/{self.t_end} au)"
+        )
+
     def run(self):
         """
         Runs the Meep simulation and generates a GIF of the electric field evolution if configured.
@@ -143,7 +161,16 @@ class SIMULATION:
         cwd = os.getcwd()
 
         try:
-            run_functions = []
+            self._progress_total_steps = max(1, round(self.t_end_meep / self.dt_meep))
+            self._progress_report_indices = {
+                int(round(p / 100 * self._progress_total_steps)) for p in range(0, 101, 10)
+            }
+            self._progress_reported = set()
+
+            run_functions = [
+                mp.at_every(self.dt_meep, self._report_progress),
+                mp.at_beginning(self._report_progress),
+            ]
             if self.has_images:
                 from plasmol.utils.gif import clear_directory
                 clear_directory(self.images_dir_name)
@@ -164,7 +191,8 @@ class SIMULATION:
                 for i, point in enumerate(self.probe_points):
                     init_csv(f"{field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
 
-            self.simulation.run(*run_functions, until=(self.t_end_meep - self.dt_meep))
+            with meep_quiet_run(getattr(self, 'verbose', 1)):
+                self.simulation.run(*run_functions, until=(self.t_end_meep - self.dt_meep))
 
             logging.info("Simulation completed successfully!")
         except Exception as e:
