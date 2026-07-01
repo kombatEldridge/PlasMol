@@ -47,6 +47,7 @@ param_defs = [
     ('plasmol_molecule_position', ['plasmon', 'molecule', 'position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
     ('plasmon_tolerance_field_e', ['plasmon', 'molecule', "tolerance_field_e"], False, 'has_molecule_position', 1e-20, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmol_back_propagation', ['plasmon', 'molecule', 'back_propagation'], False, "has_molecule_position", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
+    ('plasmol_back_propagation_sym_override', ['plasmon', 'molecule', 'back_propagation_sym_override'], False, "has_molecule_position", False, 'plasmon', bool, "Allow mirror symmetries with back-propagation when the molecule is on a coordinate axis (not recommended; the induced dipole may still violate symmetries)", None),
 
     # Molecule params
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),
