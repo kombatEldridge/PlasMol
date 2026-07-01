@@ -96,7 +96,6 @@ class PARAMS:
         self._attribute_checks()
         self._attribute_formation()
         self._test_symmetry()
-        sys.exit(0)
         logger.info("All parameters successfully parsed and validated.")
         delattr(self, 'preparams')
 
