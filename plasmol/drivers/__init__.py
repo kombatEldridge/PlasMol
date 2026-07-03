@@ -29,10 +29,10 @@ def get_driver(driver_str):
         logger.info(" === FOURIER SIMULATION CHOSEN === ")
         return run_fourier
     elif driver_str == 'scatter_response_fxn':
-        logger.info(" === SCATTERING RESPONSE CHOSEN FUNCTION SIMULATION === ")
+        logger.info(" === SCATTERING RESPONSE FUNCTION SIMULATION CHOSEN === ")
         return scatter_response_fxn
     elif driver_str == 'np_abs_cross_sec':
-        logger.info(" === NANOPARTICLE ABSORPTION CHOSEN CROSS-SECTION SIMULATION === ")
+        logger.info(" === NANOPARTICLE ABSORPTION SIMULATION CHOSEN === ")
         return run_np_abs_cross_sec
     elif driver_str == 'verify_source':
         logger.info(" === SOURCE VERIFICATION CHOSEN SIMULATION === ")

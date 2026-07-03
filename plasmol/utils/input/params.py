@@ -22,6 +22,8 @@ from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 
 logger = logging.getLogger("main")
 
+PLASMON_RUN_ADDITIONAL_PARAMETERS = frozenset({'decay_stop', 'decay_threshold'})
+
 class PARAMS:
     def __init__(self, args):
         self.preparams = self._parse_input_file(args)
@@ -71,7 +73,8 @@ class PARAMS:
 
             if path[0] == 'additional_parameters' and value is not None:
                 self.custom_parameters[attr] = value
-                self.has_custom = True
+                if attr not in PLASMON_RUN_ADDITIONAL_PARAMETERS:
+                    self.has_custom = True
 
             if is_section_dict:
                 has_section = value is not None
@@ -92,6 +95,13 @@ class PARAMS:
             logger.debug("The following variables are using default values because none were specified:")
             for attr, default_value in default_values_used:
                 logger.debug(f"    {attr}: {default_value}")
+
+        if getattr(self, 'driver_str', None) == 'np_abs_cross_sec':
+            self.has_np_abs_cross_sec = True
+            for attr, _, _, boolean_name, default_value, _, _, _, _ in param_defs:
+                if boolean_name == 'has_np_abs_cross_sec' and default_value is not None and not hasattr(self, attr):
+                    setattr(self, attr, default_value)
+                    default_values_used.append((attr, default_value))
 
         self._attribute_checks()
         self._attribute_formation()
@@ -223,6 +233,20 @@ class PARAMS:
                         raise ValueError(f"Error occurred while processing custom source function: {e}")
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
+
+            if self.has_plasmon_source and getattr(self, 'decay_threshold', 0) <= 0:
+                raise ValueError("additional_parameters 'decay_threshold' must be a positive value.")
+            if self.has_plasmon_source and getattr(self, 'decay_stop', False):
+                msap = getattr(self, 'plasmon_source_additional_parameters', {}) or {}
+                if 'frequency' not in msap and 'wavelength' not in msap:
+                    raise ValueError(
+                        "additional_parameters 'decay_stop' requires 'frequency' or 'wavelength' "
+                        "in plasmon source additional_parameters."
+                    )
+                logger.info(
+                    "Decay stop enabled; simulation will end when fields decay to "
+                    f"{self.decay_threshold} of their peak (or at t_end)."
+                )
 
             # Nanoparticle params
             if self.has_nanoparticle:
@@ -491,6 +515,13 @@ class PARAMS:
                 if not isinstance(value, str) or value in ['']:
                     raise ValueError(f"Filepath for '{file}' must be a non-empty string.")
                 
+        # np_abs_cross_sec driver params
+        if getattr(self, 'driver_str', None) == 'np_abs_cross_sec':
+            if getattr(self, 'n_flux_freqs', 0) <= 0:
+                raise ValueError("np_abs_cross_sec driver requires 'n_flux_freqs' to be a positive integer.")
+            if getattr(self, 'flux_padding', -1) < 0:
+                raise ValueError("np_abs_cross_sec driver requires 'flux_padding' to be a non-negative value.")
+
         # Misc/Add'l Parameters
         if self.has_custom:
             logger.debug(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
