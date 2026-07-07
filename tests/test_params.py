@@ -1,9 +1,11 @@
 # tests/test_params.py
 import copy
 import json
+import math
 import pytest
 import numpy as np
 from argparse import Namespace
+from plasmol.utils import constants
 from plasmol.utils.input.params import PARAMS
 from plasmol.quantum.sources import QUANTUMSOURCE
 
@@ -28,6 +30,36 @@ def test_minimal_params_has_required_attributes(minimal_params):
     assert hasattr(p, "molecule_source_field")
     assert len(p.times) > 0
     assert p.molecule_source_field.shape == (len(p.times), 3)
+
+
+def test_molecule_only_dt_is_not_conformed_to_meep(minimal_params):
+    assert minimal_params.has_plasmon is False
+    assert minimal_params.dt == 0.5
+
+
+def test_plasmon_dt_is_conformed_to_meep_timestep(tmp_path):
+    cfg = copy.deepcopy(BASE_CONFIG)
+    cfg["settings"]["dt"] = 0.1
+    cfg["settings"]["t_end"] = 5000.0
+    cfg["plasmon"]["source"] = {
+        "type": "gaussian",
+        "center": [0, 0, 0],
+        "size": [0.2, 0, 0],
+        "component": "z",
+        "additional_parameters": {"wavelength": 0.5},
+    }
+    params = PARAMS(make_bad_config(tmp_path, cfg, "plasmon_dt_conform.json"))
+
+    courant = params.plasmon_courant
+    expected_dt_meep = courant / params.plasmon_resolution
+    expected_dt = expected_dt_meep * constants.convertTimeMeep2Atomic
+
+    assert params.plasmon_resolution == 689
+    assert math.isclose(params.dt_meep, expected_dt_meep)
+    assert math.isclose(params.dt, expected_dt)
+    assert math.isclose(params.dt_meep, courant / params.plasmon_resolution)
+    assert round(params.t_end / params.dt) == 50000
+    assert math.isclose(params.t_end, 50000 * params.dt)
 
 
 def test_plasmon_only_parses_cleanly(plasmon_only_args):
