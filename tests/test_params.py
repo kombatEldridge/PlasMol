@@ -354,6 +354,27 @@ def test_field_filepath_not_string(tmp_path):
     _test_validation_error(tmp_path, lambda c: c["molecule"]["files"].update({"field_e_filepath": ""}), ValueError, "Filepath for 'field_e_filepath' must be a non-empty string")
 
 
+def test_plasmon_molecule_position_one_pixel_from_surface_passes(tmp_path):
+    cfg = copy.deepcopy(BASE_CONFIG)
+    cfg["settings"]["dt"] = 0.1
+    cfg["settings"]["t_end"] = 5000.0
+    cfg["plasmon"]["molecule_position"] = [0.026451, 0.0, 0.0]
+    cfg["plasmon"]["nanoparticle"] = {
+        "material": "Au_JC_visible",
+        "radius": 0.025,
+        "center": [0.0, 0.0, 0.0],
+    }
+    cfg["plasmon"]["source"] = {
+        "type": "gaussian",
+        "center": [0, 0, 0],
+        "size": [0.2, 0, 0],
+        "component": "z",
+        "additional_parameters": {"wavelength": 0.5},
+    }
+    params = PARAMS(make_bad_config(tmp_path, cfg, "molecule_one_pixel.json"))
+    assert params.plasmon_resolution == 689
+
+
 def test_plasmon_molecule_position_wrong_length(tmp_path):
     _test_validation_error(tmp_path, lambda c: c["plasmon"].update({"molecule_position": [0, 0]}), ValueError, "Molecule position must be an array of three numbers")
 

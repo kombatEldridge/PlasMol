@@ -288,10 +288,20 @@ class PARAMS:
                         raise ValueError("Point and center must be 3D coordinates (x, y, z)")
                     d = np.linalg.norm(p - c)
                     distance = abs(d - self.nanoparticle_radius)
-                    if self.plasmon_pixel_length_um > distance:
-                        raise ValueError(f"Molecule position is too close to nanoparticle surface (dist = {distance:.6f} μm). Minimum distance required: {self.plasmon_pixel_length_um:.6f} μm.")
-                    if self.nanoparticle_radius > d:
-                        raise ValueError(f"Molecule position is inside the nanoparticle (dist from NP center = {d:.6f} μm). Minimum distance required: {self.nanoparticle_radius + self.plasmon_pixel_length_um:.6f} μm.")
+                    min_surface_distance = self.plasmon_pixel_length_um
+                    grid_tol = max(1e-9, min_surface_distance * 1e-3)
+                    if distance + grid_tol < min_surface_distance:
+                        raise ValueError(
+                            f"Molecule position is too close to nanoparticle surface "
+                            f"(dist = {distance:.9f} μm). Minimum distance required: "
+                            f"{min_surface_distance:.9f} μm."
+                        )
+                    if self.nanoparticle_radius > d + grid_tol:
+                        raise ValueError(
+                            f"Molecule position is inside the nanoparticle "
+                            f"(dist from NP center = {d:.9f} μm). Minimum distance required: "
+                            f"{self.nanoparticle_radius + min_surface_distance:.9f} μm."
+                        )
 
         # Molecule params
         if self.has_molecule:
