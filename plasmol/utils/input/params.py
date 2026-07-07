@@ -165,6 +165,8 @@ class PARAMS:
             raise RuntimeError("'t_end' must be a positive value.")
         if self.dt > self.t_end:
             raise RuntimeError("'dt' cannot be larger than 't_end'.")
+        if self.has_plasmon:
+            self._conform_dt_to_meep()
         n_steps = round(self.t_end / self.dt)
         if abs(n_steps * self.dt - self.t_end) > 1e-9:
             raise RuntimeError("'t_end' must be a multiple of 'dt'")
@@ -174,8 +176,9 @@ class PARAMS:
             # Plasmon simulation params
             if not self.has_simulation:
                 raise ValueError("Invalid plasmon parameters. Please include \"simulation\" parameters.")
-            
-            self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
+
+            if not hasattr(self, 'plasmon_resolution'):
+                self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
             self.plasmon_pixel_length_um = 1/self.plasmon_resolution
             if self.has_molecule:
                 if self.plasmon_tolerance_field_e <= 0:
@@ -525,6 +528,37 @@ class PARAMS:
         # Misc/Add'l Parameters
         if self.has_custom:
             logger.debug(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
+
+    def _conform_dt_to_meep(self):
+        """
+        Adjust dt (and t_end) so they match Meep's actual timestep.
+
+        Meep chooses dt = courant / resolution, where resolution must be an
+        integer. PlasMol targets the user-requested dt by rounding resolution,
+        which generally yields a slightly different timestep than requested.
+        """
+        courant = getattr(self, 'plasmon_courant', 0.5)
+        n_steps = round(self.t_end / self.dt)
+        dt_meep_requested = self.dt / constants.convertTimeMeep2Atomic
+        self.plasmon_resolution = round(courant / dt_meep_requested)
+        self.dt_meep = courant / self.plasmon_resolution
+        dt_actual = self.dt_meep * constants.convertTimeMeep2Atomic
+
+        original_dt = self.dt
+        original_t_end = self.t_end
+        if math.isclose(original_dt, dt_actual, rel_tol=0, abs_tol=1e-15):
+            return
+
+        self.dt = dt_actual
+        self.t_end = n_steps * self.dt
+        logger.info(
+            f"Adjusted dt from {original_dt} to {self.dt} au to match Meep's actual timestep "
+            f"(resolution={self.plasmon_resolution} pixels/μm, courant={courant})."
+        )
+        if not math.isclose(original_t_end, self.t_end, rel_tol=0, abs_tol=1e-12):
+            logger.info(
+                f"Adjusted t_end from {original_t_end} to {self.t_end} au to preserve {n_steps} timesteps."
+            )
 
     def _attribute_formation(self):
         """
