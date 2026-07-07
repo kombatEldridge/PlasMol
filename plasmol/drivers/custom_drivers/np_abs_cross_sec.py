@@ -46,11 +46,12 @@ def _run_one_case(params, case: str, incident_flux_data=None):
 
     logger.info(f"Starting {label} simulation...")
     
-    nfrq = 50
+    nfrq = getattr(params, 'n_flux_freqs')
+    flux_padding = getattr(params, 'flux_padding')
     p = copy.deepcopy(params)
 
     # Recreate plasmon NP
-    r = getattr(p, 'nanoparticle_radius') + 0.005 # adding padding just in case
+    r = getattr(p, 'nanoparticle_radius') + flux_padding
     if not case == "empty":
         mat_name = p.nanoparticle_dict["material"]
         p.nanoparticle_material = p._load_meep_material(mat_name)
@@ -96,13 +97,11 @@ def _run_one_case(params, case: str, incident_flux_data=None):
         flux0 = mp.get_fluxes(boxes["x1"])
         for name, flux_region in boxes.items():
             incident_flux_data[name] = sim.simulation.get_flux_data(flux_region)
-        logger.info("Empty run finished")
         return {"incident_flux_data": incident_flux_data, "freqs": freqs, "flux0": flux0}
     elif case == "scatt":
         for k, b in boxes.items():
             sim.simulation.load_minus_flux_data(b, incident_flux_data[k])
         sim.run()
-        logger.info("Scattering simulation completed.")
         scatt_fluxes = {}
         for name, _ in boxes.items():
             scatt_fluxes[name] = mp.get_fluxes(boxes[name])
@@ -114,11 +113,9 @@ def _run_one_case(params, case: str, incident_flux_data=None):
             + np.asarray(scatt_fluxes["z1"])
             - np.asarray(scatt_fluxes["z2"])
         )
-        logger.info("Scattering run finished")
         return scatt_flux
     elif case == "abs":
         sim.run()
-        logger.info("Absorption simulation completed.")
         abs_fluxes = {}
         for name, _ in boxes.items():
             abs_fluxes[name] = mp.get_fluxes(boxes[name])
@@ -130,17 +127,15 @@ def _run_one_case(params, case: str, incident_flux_data=None):
             + np.asarray(abs_fluxes["z1"])
             - np.asarray(abs_fluxes["z2"])
         )
-        logger.info("Absorption run finished")
         return abs_flux
 
 
 def run(params):
-    logger.info("=== Starting Cross-Section Driver ===")
+    logger.info("===== Starting NP Absorption Driver =====")
 
     results = {}
 
     # 1. Run empty simulation
-    logger.info("→ Running EMPTY simulation (incident flux)...")
     empty_result = _run_one_case(params, "empty")
     incident_flux_data = empty_result["incident_flux_data"]
 
@@ -185,7 +180,10 @@ def run(params):
     plt.close()
 
     logger.info(f"Arrays saved to {output_filename}")
-    logger.info("Absorption cross section driver finished.")
+
+    if not getattr(params, 'line_fit', True):
+        logger.info("Absorption cross section driver finished.")
+        return
 
     # 'Abs', 'Scatt', or 'Ext'
     fit_quantity = 'Abs'
@@ -279,3 +277,6 @@ def run(params):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig('plasmon_multi_peak_fit.png', dpi=400)
+    plt.close()
+
+    logger.info("Absorption cross section driver finished.")

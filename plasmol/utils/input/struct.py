@@ -47,6 +47,7 @@ param_defs = [
     ('plasmol_molecule_position', ['plasmon', 'molecule', 'position'], True, "has_molecule_position", None, 'plasmon', list, "Position of the quantum molecule inside the Meep cell", "μm"),
     ('plasmon_tolerance_field_e', ['plasmon', 'molecule', "tolerance_field_e"], False, 'has_molecule_position', 1e-20, 'plasmon', (int, float), "Minimum |E| before quantum propagation is triggered", "a.u."),
     ('plasmol_back_propagation', ['plasmon', 'molecule', 'back_propagation'], False, "has_molecule_position", True, 'plasmon', bool, "Whether to include back-propagation of the molecule", None),
+    ('plasmol_back_propagation_sym_override', ['plasmon', 'molecule', 'back_propagation_sym_override'], False, "has_molecule_position", False, 'plasmon', bool, "Allow mirror symmetries with back-propagation when the molecule is on a coordinate axis (not recommended; the induced dipole may still violate symmetries)", None),
 
     # Molecule params
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),
@@ -116,4 +117,11 @@ param_defs = [
     
     ## Driver: scatter_response_fxn.py
     ('probe_points', ['additional_parameters', 'probe_points'], False, 'has_scatter_response_fxn', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
+
+    ## Driver: np_abs_cross_sec.py
+    ('n_flux_freqs', ['additional_parameters', 'n_flux_freqs'], False, 'has_np_abs_cross_sec', 50, 'plasmon', int, "Number of frequency points for flux monitors", None),
+    ('flux_padding', ['additional_parameters', 'flux_padding'], False, 'has_np_abs_cross_sec', 0.005, 'plasmon', (int, float), "Padding added to nanoparticle radius for flux box placement", "μm"),
+    ('line_fit', ['additional_parameters', 'line_fit'], False, 'has_np_abs_cross_sec', False, 'plasmon', bool, "Whether to perform Lorentzian peak fitting on the cross-section spectrum", None),
+    ('decay_stop', ['additional_parameters', 'decay_stop'], False, 'has_plasmon', False, 'plasmon', bool, "Stop the simulation after the source field has decayed to a predetermined fraction of its peak", None),
+    ('decay_threshold', ['additional_parameters', 'decay_threshold'], False, 'has_plasmon', 1e-5, 'plasmon', (int, float), "Field amplitude fraction at which to stop the simulation when decay_stop is true", None),
 ]

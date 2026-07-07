@@ -50,7 +50,8 @@
     "molecule": {
       "position": [0, 0, 0],
       "tolerance_field_e": 1e-20,
-      "back_propagation": true
+      "back_propagation": true,
+      "back_propagation_sym_override": true
     }
   },
   "molecule": {

@@ -8,6 +8,7 @@ from plasmol.utils.csv import update_csv, init_csv
 from plasmol.quantum.propagation import propagation
 from plasmol.classical.meep_verbosity import meep_io_context, meep_quiet_run
 
+FIELD_COMPONENT_MAP = {"x": mp.Ex, "y": mp.Ey, "z": mp.Ez}
 
 class SIMULATION:
     def __init__(self, params):
@@ -166,6 +167,34 @@ class SIMULATION:
                 int(round(p / 100 * self._progress_total_steps)) for p in range(0, 101, 10)
             }
             self._progress_reported = set()
+            
+            max_time = self.t_end_meep - self.dt_meep
+            decay_stop = max_time
+            stop_reason = None
+
+            if getattr(self, 'decay_stop', False):
+                msap = getattr(self, 'plasmon_source_additional_parameters', {}) or {}
+                frequency = msap.get("frequency")
+                if frequency is None and msap.get("wavelength") is not None:
+                    frequency = 1 / msap["wavelength"]
+                decay_dt = max(self.dt_meep, 1.0 / frequency)
+                decay_component = FIELD_COMPONENT_MAP[self.plasmon_source_component.lower().strip()]
+
+                def track_decay(decay_fn):
+                    def wrapped(sim):
+                        nonlocal stop_reason
+                        if decay_fn(sim):
+                            stop_reason = "decay"
+                            return True
+                        return False
+                    return wrapped
+
+                decay_stop = track_decay(mp.stop_when_fields_decayed(
+                    dt=decay_dt,
+                    c=decay_component,
+                    pt=mp.Vector3(*self.plasmon_source_center),
+                    decay_by=self.decay_threshold,
+                ))
 
             run_functions = [
                 mp.at_every(self.dt_meep, self._report_progress),
@@ -192,12 +221,16 @@ class SIMULATION:
                     init_csv(f"{field_e_filepath}_{i}.csv", f"Electric Field intensity in atomic units for the probe point: {point}")
 
             with meep_quiet_run(getattr(self, 'verbose', 1)):
-                self.simulation.run(*run_functions, until=(self.t_end_meep - self.dt_meep))
+                self.simulation.run(*run_functions, until=[decay_stop, max_time])
 
-            logging.info("Simulation completed successfully!")
+            if stop_reason == "decay":
+                logging.info("Simulation completed successfully due to field decay.")
+            else:
+                logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
         finally:
+
             if self.has_images and getattr(self, 'images_make_gif', True):
                 from plasmol.utils.gif import make_gif
                 make_gif(self.images_dir_name)

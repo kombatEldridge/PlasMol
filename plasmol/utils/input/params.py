@@ -22,6 +22,8 @@ from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 
 logger = logging.getLogger("main")
 
+PLASMON_RUN_ADDITIONAL_PARAMETERS = frozenset({'decay_stop', 'decay_threshold'})
+
 class PARAMS:
     def __init__(self, args):
         self.preparams = self._parse_input_file(args)
@@ -71,7 +73,8 @@ class PARAMS:
 
             if path[0] == 'additional_parameters' and value is not None:
                 self.custom_parameters[attr] = value
-                self.has_custom = True
+                if attr not in PLASMON_RUN_ADDITIONAL_PARAMETERS:
+                    self.has_custom = True
 
             if is_section_dict:
                 has_section = value is not None
@@ -93,8 +96,16 @@ class PARAMS:
             for attr, default_value in default_values_used:
                 logger.debug(f"    {attr}: {default_value}")
 
+        if getattr(self, 'driver_str', None) == 'np_abs_cross_sec':
+            self.has_np_abs_cross_sec = True
+            for attr, _, _, boolean_name, default_value, _, _, _, _ in param_defs:
+                if boolean_name == 'has_np_abs_cross_sec' and default_value is not None and not hasattr(self, attr):
+                    setattr(self, attr, default_value)
+                    default_values_used.append((attr, default_value))
+
         self._attribute_checks()
         self._attribute_formation()
+        self._test_symmetry()
         logger.info("All parameters successfully parsed and validated.")
         delattr(self, 'preparams')
 
@@ -154,8 +165,6 @@ class PARAMS:
             raise RuntimeError("'t_end' must be a positive value.")
         if self.dt > self.t_end:
             raise RuntimeError("'dt' cannot be larger than 't_end'.")
-        if self.has_plasmon:
-            self._conform_dt_to_meep()
         n_steps = round(self.t_end / self.dt)
         if abs(n_steps * self.dt - self.t_end) > 1e-9:
             raise RuntimeError("'t_end' must be a multiple of 'dt'")
@@ -163,35 +172,38 @@ class PARAMS:
         # Plasmon params
         if self.has_plasmon:
             # Plasmon simulation params
-            if self.has_simulation:
-                if self.has_molecule:
-                    if self.plasmon_tolerance_field_e <= 0:
-                        raise ValueError("'plasmon_tolerance_field_e' must be a positive value.")
-                if hasattr(self, 'plasmon_cell_volume') and hasattr(self, 'plasmon_cell_length'):
-                    logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
-                elif hasattr(self, 'plasmon_cell_length') and self.plasmon_cell_length <= 0:
-                    raise ValueError("'plasmon_cell_length' must be a positive value.")
-                if self.plasmon_pml_thickness <= 0:
-                    raise ValueError("'plasmon_pml_thickness' must be a positive value.")
-                if not hasattr(self, 'plasmon_symmetries'):
-                    logger.warning("No 'symmetries' specified for plasmon simulation; operating without symmetries will cause longer simulation times.")
-                    self.plasmon_symmetries = []
-                else:
-                    if len(self.plasmon_symmetries) % 2 != 0:
-                        raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; list length must be even (pairs of axis and value)")
-                    for i, sym in enumerate(self.plasmon_symmetries):
-                        if i % 2 == 0:
-                            if not (isinstance(sym, str) and sym.lower() in self.xyz):
-                                raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; even indices must be 'x', 'y', or 'z' (case-insensitive)")
-                        else:
-                            if not (isinstance(sym, int) and sym in [1, -1]):
-                                raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; odd indices must be 1 or -1 (integers)")
-                if self.plasmon_surrounding_material_index < 1.0:
-                    raise ValueError("'surrounding_material_index' must be >= 1.0 (vacuum).")
-                elif self.plasmon_surrounding_material_index == 1.0:
-                    logger.debug("For 'surrounding_material_index' value of 1.0 (vacuum) is being used.")
-                elif self.plasmon_surrounding_material_index > 5.0:
-                    logger.warning("'surrounding_material_index' is unusually high; please verify this value.")
+            if not self.has_simulation:
+                raise ValueError("Invalid plasmon parameters. Please include \"simulation\" parameters.")
+            
+            self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
+            self.plasmon_pixel_length_um = 1/self.plasmon_resolution
+            if self.has_molecule:
+                if self.plasmon_tolerance_field_e <= 0:
+                    raise ValueError("'plasmon_tolerance_field_e' must be a positive value.")
+            if hasattr(self, 'plasmon_cell_volume') and hasattr(self, 'plasmon_cell_length'):
+                logger.debug("'cell_volume' is specified; overriding 'cell_length'.")
+            elif hasattr(self, 'plasmon_cell_length') and self.plasmon_cell_length <= 0:
+                raise ValueError("'plasmon_cell_length' must be a positive value.")
+            if self.plasmon_pml_thickness <= 0:
+                raise ValueError("'plasmon_pml_thickness' must be a positive value.")
+            if not hasattr(self, 'plasmon_symmetries'):
+                self.plasmon_symmetries = []
+            else:
+                if len(self.plasmon_symmetries) % 2 != 0:
+                    raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; list length must be even (pairs of axis and value)")
+                for i, sym in enumerate(self.plasmon_symmetries):
+                    if i % 2 == 0:
+                        if not (isinstance(sym, str) and sym.lower() in self.xyz):
+                            raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; even indices must be 'x', 'y', or 'z' (case-insensitive)")
+                    else:
+                        if not (isinstance(sym, int) and sym in [1, -1]):
+                            raise ValueError(f"Invalid plasmon symmetry '{self.plasmon_symmetries}'; odd indices must be 1 or -1 (integers)")
+            if self.plasmon_surrounding_material_index < 1.0:
+                raise ValueError("'surrounding_material_index' must be >= 1.0 (vacuum).")
+            elif self.plasmon_surrounding_material_index == 1.0:
+                logger.debug("For 'surrounding_material_index' value of 1.0 (vacuum) is being used.")
+            elif self.plasmon_surrounding_material_index > 5.0:
+                logger.warning("'surrounding_material_index' is unusually high; please verify this value.")
 
             # Plasmon source params
             if self.has_plasmon_source:
@@ -222,6 +234,20 @@ class PARAMS:
             else:
                 logger.info('No source chosen for simulation. Continuing without it.')
 
+            if self.has_plasmon_source and getattr(self, 'decay_threshold', 0) <= 0:
+                raise ValueError("additional_parameters 'decay_threshold' must be a positive value.")
+            if self.has_plasmon_source and getattr(self, 'decay_stop', False):
+                msap = getattr(self, 'plasmon_source_additional_parameters', {}) or {}
+                if 'frequency' not in msap and 'wavelength' not in msap:
+                    raise ValueError(
+                        "additional_parameters 'decay_stop' requires 'frequency' or 'wavelength' "
+                        "in plasmon source additional_parameters."
+                    )
+                logger.info(
+                    "Decay stop enabled; simulation will end when fields decay to "
+                    f"{self.decay_threshold} of their peak (or at t_end)."
+                )
+
             # Nanoparticle params
             if self.has_nanoparticle:
                 for attr in ['nanoparticle_material', 'nanoparticle_radius', 'nanoparticle_center']:
@@ -241,7 +267,7 @@ class PARAMS:
                 if not hasattr(self, 'images_timesteps_between'):
                     raise ValueError("Images requires 'timesteps_between' attribute.")
             else:
-                logger.info('No picture output chosen for simulation. Continuing without it.')
+                logger.debug('No picture output chosen for simulation. Continuing without it.')
 
             # Molecule position param
             if self.has_molecule_position:
@@ -253,19 +279,16 @@ class PARAMS:
                 if len(self.plasmol_molecule_position) != 3:
                     raise ValueError("Molecule position must be an array of three numbers [x, y, z].")
                 if self.has_nanoparticle:
-                    if not hasattr(self, 'plasmon_resolution'):
-                        self.plasmon_resolution = round(self.plasmon_courant / (self.dt / constants.convertTimeMeep2Atomic))
-                    self.plasmon_pixel_length = 1/self.plasmon_resolution
                     p = np.asarray(self.plasmol_molecule_position, dtype=float)
                     c = np.asarray(self.nanoparticle_center, dtype=float)
                     if p.shape != (3,) or c.shape != (3,):
                         raise ValueError("Point and center must be 3D coordinates (x, y, z)")
                     d = np.linalg.norm(p - c)
                     distance = abs(d - self.nanoparticle_radius)
-                    if self.plasmon_pixel_length > distance:
-                        raise ValueError(f"Molecule position is too close to nanoparticle surface (dist = {distance:.6f} μm). Minimum distance required: {self.plasmon_pixel_length:.6f} μm.")
+                    if self.plasmon_pixel_length_um > distance:
+                        raise ValueError(f"Molecule position is too close to nanoparticle surface (dist = {distance:.6f} μm). Minimum distance required: {self.plasmon_pixel_length_um:.6f} μm.")
                     if self.nanoparticle_radius > d:
-                        raise ValueError(f"Molecule position is inside the nanoparticle (dist from NP center = {d:.6f} μm). Minimum distance required: {self.nanoparticle_radius + self.plasmon_pixel_length:.6f} μm.")
+                        raise ValueError(f"Molecule position is inside the nanoparticle (dist from NP center = {d:.6f} μm). Minimum distance required: {self.nanoparticle_radius + self.plasmon_pixel_length_um:.6f} μm.")
 
         # Molecule params
         if self.has_molecule:
@@ -379,7 +402,7 @@ class PARAMS:
 
             # Lopata CAP params
             if self.has_cap:
-                logger.info("CAP modifier selected; applying Lopata CAP to spectra.")
+                logger.debug("CAP modifier selected; applying Lopata CAP to spectra.")
                 if self.cap_type.lower() not in ['static', 'dynamic']:
                     raise ValueError("CAP 'type' must be 'static' or 'dynamic'.")
                 if self.cap_gam0 <= 0:
@@ -492,40 +515,16 @@ class PARAMS:
                 if not isinstance(value, str) or value in ['']:
                     raise ValueError(f"Filepath for '{file}' must be a non-empty string.")
                 
+        # np_abs_cross_sec driver params
+        if getattr(self, 'driver_str', None) == 'np_abs_cross_sec':
+            if getattr(self, 'n_flux_freqs', 0) <= 0:
+                raise ValueError("np_abs_cross_sec driver requires 'n_flux_freqs' to be a positive integer.")
+            if getattr(self, 'flux_padding', -1) < 0:
+                raise ValueError("np_abs_cross_sec driver requires 'flux_padding' to be a non-negative value.")
+
         # Misc/Add'l Parameters
         if self.has_custom:
             logger.debug(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
-
-    def _conform_dt_to_meep(self):
-        """
-        Adjust dt (and t_end) so they match Meep's actual timestep.
-
-        Meep chooses dt = courant / resolution, where resolution must be an
-        integer. PlasMol targets the user-requested dt by rounding resolution,
-        which generally yields a slightly different timestep than requested.
-        """
-        courant = getattr(self, 'plasmon_courant', 0.5)
-        n_steps = round(self.t_end / self.dt)
-        dt_meep_requested = self.dt / constants.convertTimeMeep2Atomic
-        self.plasmon_resolution = round(courant / dt_meep_requested)
-        self.dt_meep = courant / self.plasmon_resolution
-        dt_actual = self.dt_meep * constants.convertTimeMeep2Atomic
-
-        original_dt = self.dt
-        original_t_end = self.t_end
-        if math.isclose(original_dt, dt_actual, rel_tol=0, abs_tol=1e-15):
-            return
-
-        self.dt = dt_actual
-        self.t_end = n_steps * self.dt
-        logger.info(
-            f"Adjusted dt from {original_dt} to {self.dt} au to match Meep's actual timestep "
-            f"(resolution={self.plasmon_resolution} pixels/μm, courant={courant})."
-        )
-        if not math.isclose(original_t_end, self.t_end, rel_tol=0, abs_tol=1e-12):
-            logger.info(
-                f"Adjusted t_end from {original_t_end} to {self.t_end} au to preserve {n_steps} timesteps."
-            )
 
     def _attribute_formation(self):
         """
@@ -556,6 +555,7 @@ class PARAMS:
                 self.cell_volume = mp.Vector3(self.plasmon_cell_length, self.plasmon_cell_length, self.plasmon_cell_length)
             if hasattr(self, 'plasmon_symmetries'):
                 symmetries_list = []
+                self.plasmon_symmetries_text = self.plasmon_symmetries
                 dir_map = {'X': mp.X, 'Y': mp.Y, 'Z': mp.Z}
                 for i in range(0, len(self.plasmon_symmetries), 2):
                     axis = self.plasmon_symmetries[i].upper()
@@ -625,6 +625,193 @@ class PARAMS:
                     value = f"{dir}_dir/{self.spectra_e_vs_p_filepath}"
                     setattr(self, attr, value)
             
+    def _test_symmetry(self):
+        """Validate declared MEEP mirror symmetries and suggest compatible ones when omitted."""
+        if not self.has_plasmon:
+            return
+        
+        component_parity = {
+            ('x', 'x'): -1, ('x', 'y'): 1, ('x', 'z'): 1,
+            ('y', 'x'): 1, ('y', 'y'): -1, ('y', 'z'): 1,
+            ('z', 'x'): 1, ('z', 'y'): 1, ('z', 'z'): -1,
+        }
+
+        def as_xyz(coord):
+            if hasattr(coord, 'x'):
+                return [coord.x, coord.y, coord.z]
+            return list(coord)
+
+        def axis_index(axis):
+            return self.xyz.index(axis.lower())
+
+        tol = max(1e-9, self.plasmon_pixel_length_um / 2)
+        source_center = as_xyz(self.plasmon_source_object.sourceCenter) if self.has_plasmon_source else None
+        nanoparticle_center = as_xyz(self.nanoparticle.center) if self.has_nanoparticle else None
+        molecule_position = as_xyz(self.plasmol_molecule_position) if self.has_molecule_position else None
+
+        def is_on_plane(coord, axis):
+            return abs(coord[axis_index(axis)]) <= tol
+
+        def required_phase(axis, component):
+            parity = component_parity[(axis.lower(), component.lower())]
+            if self.has_plasmon_source:
+                amplitude = getattr(self, 'plasmon_source_amplitude', 1)
+                if isinstance(amplitude, (int, float)) and amplitude < 0:
+                    parity *= -1
+                elif isinstance(amplitude, complex) and amplitude.real < 0:
+                    parity *= -1
+            return parity
+
+        def format_suggestion(pairs):
+            parts = []
+            for axis, phase in pairs:
+                parts.extend([axis.upper(), phase])
+            return json.dumps(parts)
+
+        def on_coordinate_axis(coord):
+            """True if position is at the origin or on exactly one Cartesian axis line."""
+            nonzero = sum(1 for c in coord if abs(c) > tol)
+            return nonzero <= 1
+
+        def spatial_compatible(axis):
+            if source_center is not None and not is_on_plane(source_center, axis):
+                return False
+            if nanoparticle_center is not None and not is_on_plane(nanoparticle_center, axis):
+                return False
+            if molecule_position is not None and not is_on_plane(molecule_position, axis):
+                return False
+            return True
+
+        compatible = []
+        if self.has_plasmon_source:
+            component = self.plasmon_source_component.lower()
+            for axis in self.xyz:
+                if spatial_compatible(axis):
+                    compatible.append((axis, required_phase(axis, component)))
+
+        declared = self.preparams.get("plasmon", {}).get("simulation", {}).get("symmetries")
+        if declared is None:
+            declared = []
+
+        declared_pairs = {}
+        for i in range(0, len(declared), 2):
+            declared_pairs[declared[i].lower()] = int(declared[i + 1])
+
+        if declared:
+            if self.has_molecule_position and getattr(self, 'plasmol_back_propagation', False):
+                if molecule_position is not None and not on_coordinate_axis(molecule_position):
+                    x, y, z = molecule_position
+                    raise ValueError(
+                        "Mirror symmetries cannot be used with back_propagation enabled when the molecule "
+                        f"position ({x}, {y}, {z}) is not on a coordinate axis (the origin or a line along "
+                        "x, y, or z). Back-propagation places induced-dipole sources at the probe position, "
+                        "which breaks every mirror plane unless the position has at most one nonzero coordinate. "
+                        "Move the molecule onto a coordinate axis, remove 'symmetries', or set "
+                        "'back_propagation' to false."
+                    )
+                if not getattr(self, 'plasmol_back_propagation_sym_override', False):
+                    raise ValueError(
+                        "Mirror symmetries cannot be used with back_propagation enabled. "
+                        "Back-propagation injects the molecule's induced dipole into the FDTD grid at each "
+                        "timestep, and the molecular response to the surrounding E-field may not respect the "
+                        "declared mirror symmetries. Remove 'symmetries' from the simulation section, set "
+                        "'back_propagation' to false, or set 'back_propagation_sym_override' to true to "
+                        "acknowledge this risk and proceed with a warning."
+                    )
+
+            seen_axes = set()
+            for i in range(0, len(declared), 2):
+                axis = declared[i].lower()
+                phase = int(declared[i + 1])
+                axis_label = axis.upper()
+                if axis in seen_axes:
+                    raise ValueError(
+                        f"Invalid plasmon symmetry '{declared}'; duplicate axis '{axis_label}'."
+                    )
+                seen_axes.add(axis)
+
+                if self.has_plasmon_source:
+                    component = self.plasmon_source_component.lower()
+                    expected = required_phase(axis, component)
+                    if phase != expected:
+                        raise ValueError(
+                            f"Declared {axis_label} mirror symmetry has phase={phase:+d} but plasmon source "
+                            f"component '{component}' requires phase={expected:+d}. "
+                            f"Use {format_suggestion([(axis, expected)])} instead."
+                        )
+                    if self.plasmon_source_type == 'custom':
+                        logger.warning(
+                            f"Custom plasmon source spatial symmetry under {axis_label} mirror cannot be "
+                            "verified statically; ensure the source distribution is compatible."
+                        )
+                    elif not is_on_plane(source_center, axis):
+                        coord = source_center[axis_index(axis)]
+                        raise ValueError(
+                            f"Declared {axis_label} mirror symmetry (phase={phase:+d}) is incompatible with "
+                            f"plasmon source: center {axis}={coord} is not on the symmetry plane ({axis}=0)."
+                        )
+
+                if nanoparticle_center is not None and not is_on_plane(nanoparticle_center, axis):
+                    coord = nanoparticle_center[axis_index(axis)]
+                    raise ValueError(
+                        f"Declared {axis_label} mirror symmetry (phase={phase:+d}) is incompatible with "
+                        f"nanoparticle: center {axis}={coord} is not on the symmetry plane ({axis}=0)."
+                    )
+
+                if molecule_position is not None and not is_on_plane(molecule_position, axis):
+                    coord = molecule_position[axis_index(axis)]
+                    raise ValueError(
+                        f"Declared {axis_label} mirror symmetry (phase={phase:+d}) is incompatible with "
+                        f"molecule position: position {axis}={coord} is not on the symmetry plane ({axis}=0)."
+                    )
+
+            if (self.has_molecule_position
+                    and getattr(self, 'plasmol_back_propagation', False)
+                    and getattr(self, 'plasmol_back_propagation_sym_override', False)):
+                logger.warning(
+                    "Back-propagation is enabled with mirror symmetries (back_propagation_sym_override=true); "
+                    "induced dipole sources at the molecule probe position must remain symmetry-consistent "
+                    "during the simulation, but the molecular response to the surrounding E-field may not "
+                    "respect the declared symmetries."
+                )
+
+        backprop_blocks_symmetry_suggestions = (
+            self.has_molecule_position and getattr(self, 'plasmol_back_propagation', False)
+        )
+        if compatible and not backprop_blocks_symmetry_suggestions:
+            missing = [(axis, phase) for axis, phase in compatible if axis not in declared_pairs]
+            if missing:
+                if not declared_pairs:
+                    logger.warning(
+                        "No symmetries specified; compatible mirror symmetries detected for this system: "
+                        f"{format_suggestion(compatible)}. "
+                        "Adding these can significantly reduce simulation time."
+                    )
+                else:
+                    for axis, phase in missing:
+                        logger.warning(
+                            f"Detected compatible {axis.upper()} mirror symmetry (phase={phase:+d}) "
+                            "not in your symmetries list; consider adding it to reduce simulation time."
+                        )
+                    logger.warning(
+                        "Recommended complete symmetries list for this system: "
+                        f"{format_suggestion(compatible)}."
+                    )
+        elif not declared_pairs:
+            if backprop_blocks_symmetry_suggestions:
+                logger.debug(
+                    "No symmetries specified, but since back_propagation is enabled, "
+                    "symmetries should not be applicable."
+                )
+            else:
+                logger.warning(
+                    "No symmetries specified for plasmon simulation; operating without symmetries "
+                    "will cause longer simulation times."
+                )
+
+        if declared_pairs and hasattr(self, 'plasmon_symmetries_text'):
+            logger.debug(f"Chosen symmetries {self.plasmon_symmetries_text} have been validated.")
+
     def _get_nested_value(self, d, path):
         """Helper to get nested dict value safely."""
         cur = d

@@ -374,6 +374,137 @@ def test_plasmon_symmetries_invalid_phase(tmp_path):
     _test_validation_error(tmp_path, lambda c: c["plasmon"]["simulation"].update({"symmetries": ["Y", 2, "Z", -1]}), ValueError, "Invalid plasmon symmetry")
 
 
+def _plasmon_symmetry_base():
+    return {
+        "settings": {"dt": 0.5, "t_end": 10.0},
+        "plasmon": {
+            "simulation": {
+                "cell_length": 0.2,
+                "pml_thickness": 0.02,
+                "surrounding_material_index": 1.0,
+                "symmetries": ["Y", 1, "Z", -1],
+            },
+            "source": {
+                "type": "gaussian",
+                "center": [0, 0, 0],
+                "size": [0.2, 0, 0],
+                "component": "z",
+                "amplitude": 1.0,
+                "is_integrated": True,
+                "additional_parameters": {"wavelength": 0.5},
+            },
+        },
+    }
+
+
+def test_plasmon_symmetry_wrong_component_phase(tmp_path):
+    bad = _plasmon_symmetry_base()
+    bad["plasmon"]["simulation"]["symmetries"] = ["Z", 1]
+    args = make_bad_config(tmp_path, bad, "bad_sym_phase.json")
+    with pytest.raises(ValueError, match="requires phase=-1"):
+        PARAMS(args)
+
+
+def test_plasmon_symmetry_source_off_plane(tmp_path):
+    bad = _plasmon_symmetry_base()
+    bad["plasmon"]["source"]["center"] = [0, 0.01, 0]
+    args = make_bad_config(tmp_path, bad, "bad_sym_source.json")
+    with pytest.raises(ValueError, match="incompatible with plasmon source"):
+        PARAMS(args)
+
+
+def test_plasmon_symmetry_nanoparticle_off_plane(tmp_path):
+    bad = _plasmon_symmetry_base()
+    bad["plasmon"]["simulation"]["symmetries"] = ["X", -1]
+    bad["plasmon"]["nanoparticle"] = {
+        "material": "Au_JC_visible",
+        "radius": 0.03,
+        "center": [0.01, 0, 0],
+    }
+    args = make_bad_config(tmp_path, bad, "bad_sym_np.json")
+    with pytest.raises(ValueError, match="incompatible with nanoparticle"):
+        PARAMS(args)
+
+
+def test_plasmon_symmetry_duplicate_axis(tmp_path):
+    bad = _plasmon_symmetry_base()
+    bad["plasmon"]["simulation"]["symmetries"] = ["Y", 1, "Y", -1]
+    args = make_bad_config(tmp_path, bad, "bad_sym_dup.json")
+    with pytest.raises(ValueError, match="duplicate axis"):
+        PARAMS(args)
+
+
+def test_plasmon_symmetry_suggestion_when_omitted(tmp_path, caplog):
+    cfg = _plasmon_symmetry_base()
+    cfg["plasmon"]["simulation"].pop("symmetries")
+    json_path = tmp_path / "suggest_sym.json"
+    json_path.write_text(json.dumps(cfg))
+    import logging
+    with caplog.at_level(logging.WARNING):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert "compatible mirror symmetries detected" in caplog.text
+    assert '"Y", 1, "Z", -1' in caplog.text
+
+
+def test_plasmon_symmetry_warns_missing_plane(tmp_path, caplog):
+    cfg = _plasmon_symmetry_base()
+    cfg["plasmon"]["simulation"]["symmetries"] = ["Y", 1]
+    json_path = tmp_path / "partial_sym.json"
+    json_path.write_text(json.dumps(cfg))
+    import logging
+    with caplog.at_level(logging.WARNING):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert "Detected compatible Z mirror symmetry" in caplog.text
+    assert "Recommended complete symmetries list" in caplog.text
+    assert '"Y", 1, "Z", -1' in caplog.text
+
+
+def _plasmon_backprop_symmetry_base():
+    cfg = _plasmon_symmetry_base()
+    cfg["molecule"] = {
+        "geometry": [{"atom": "Na", "coord": [0.0, 0.0, 0.0]}],
+        "geometry_units": "bohr",
+        "charge": 0,
+        "spin": 0,
+        "basis": "sto3g",
+        "xc": "pbe",
+        "propagator": {"type": "rk4"},
+    }
+    cfg["plasmon"]["molecule"] = {
+        "position": [0, 0, 0],
+        "tolerance_field_e": 1e-12,
+        "back_propagation": True,
+    }
+    return cfg
+
+
+def test_backpropagation_with_symmetries_raises(tmp_path):
+    bad = _plasmon_backprop_symmetry_base()
+    args = make_bad_config(tmp_path, bad, "backprop_sym.json")
+    with pytest.raises(ValueError, match="Mirror symmetries cannot be used with back_propagation"):
+        PARAMS(args)
+
+
+def test_backpropagation_sym_override_warns(tmp_path, caplog):
+    cfg = _plasmon_backprop_symmetry_base()
+    cfg["plasmon"]["molecule"]["back_propagation_sym_override"] = True
+    json_path = tmp_path / "backprop_sym_override.json"
+    json_path.write_text(json.dumps(cfg))
+    import logging
+    with caplog.at_level(logging.WARNING):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert "for debugging purposes only" in caplog.text
+
+
+def test_backpropagation_off_axis_symmetries_raises_even_with_override(tmp_path):
+    bad = _plasmon_backprop_symmetry_base()
+    bad["plasmon"]["molecule"]["position"] = [0.01, 0.02, 0.0]
+    bad["plasmon"]["molecule"]["back_propagation_sym_override"] = True
+    args = make_bad_config(tmp_path, bad, "backprop_off_axis.json")
+    with pytest.raises(ValueError, match="not on a coordinate axis"):
+        PARAMS(args)
+
+
 def test_plasmon_source_invalid_center(tmp_path):
     _test_validation_error(tmp_path,
         lambda c: c["plasmon"].update({"source": {"type": "gaussian", "center": [0, 0, "nan"], "size": [1, 1, 0], "component": "z", "additional_parameters": {"wavelength": 0.5}}}),
