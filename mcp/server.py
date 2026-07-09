@@ -14,7 +14,7 @@ for path in (BASE_DIR, MCP_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from plasmol.utils.input.params import PARAMS
+from plasmol.utils.params import PARAMS
 
 from utils import (
     CONDA_ENV,

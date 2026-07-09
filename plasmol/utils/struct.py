@@ -1,4 +1,4 @@
-# utils/input/struct.py
+# utils/struct.py
 
 # Each entry is a tuple:
 # (attribute_name, path_as_list, is_section_dict, boolean_name, default_value, section_condition, data_type, description, units)

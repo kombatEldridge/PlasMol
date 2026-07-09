@@ -1,7 +1,7 @@
 # tests/conftest.py
 import pytest
 from argparse import Namespace
-from plasmol.utils.input.params import PARAMS
+from plasmol.utils.params import PARAMS
 
 MINIMAL_MOLECULE_JSON = """
 {

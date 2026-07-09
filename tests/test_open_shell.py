@@ -7,7 +7,7 @@ import numpy as np
 from argparse import Namespace
 from pyscf import dft
 
-from plasmol.utils.input.params import PARAMS
+from plasmol.utils.params import PARAMS
 from plasmol.quantum.molecule import MOLECULE
 from plasmol.quantum.propagation import propagation
 from plasmol.quantum.propagators.rk4 import propagate as propagate_rk4

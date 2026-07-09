@@ -16,7 +16,7 @@ from rich.console import Console
 from plasmol.utils import constants
 from plasmol.drivers import *
 from plasmol.quantum.propagators import *
-from plasmol.utils.input.struct import param_defs
+from plasmol.utils.struct import param_defs
 from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 

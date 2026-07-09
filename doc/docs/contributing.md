@@ -23,7 +23,7 @@ Thank you for your interest in PlasMol! Contributions of all kinds are welcome â
 
 ### 1. New JSON Parameter
 
-- Add a row to `plasmol/utils/input/struct.py:param_defs`.
+- Add a row to `plasmol/utils/struct.py:param_defs`.
 - Add validation logic in `PARAMS._validate_all()`.
 - Handle the attribute in `PARAMS._attribute_formation()` if it needs special processing.
 - Document it in `usage.md`.

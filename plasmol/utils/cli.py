@@ -1,4 +1,4 @@
-# utils/input/cli.py
+# utils/cli.py
 import argparse
 
 def parse_arguments():

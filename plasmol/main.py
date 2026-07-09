@@ -15,8 +15,8 @@ import numpy as np
 from plasmol.utils import constants
 from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
-from plasmol.utils.input.cli import parse_arguments
-from plasmol.utils.input.params import PARAMS
+from plasmol.utils.cli import parse_arguments
+from plasmol.utils.params import PARAMS
 from plasmol.utils.checkpoint import init_checkpoint, cleanup_checkpoint
 
 if __name__ == "__main__":
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         os.chdir(Path(args.input).resolve().parent)
 
     if getattr(args, 'describe', False):
-        from plasmol.utils.input.params import PARAMS   # adjust import path as needed
+        from plasmol.utils.params import PARAMS
         PARAMS.describe_parameters()
         sys.exit(0)
         

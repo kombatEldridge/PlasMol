@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from argparse import Namespace
 from plasmol.utils import constants
-from plasmol.utils.input.params import PARAMS
+from plasmol.utils.params import PARAMS
 from plasmol.quantum.sources import QUANTUMSOURCE
 
 def test_minimal_json_parses_cleanly(minimal_params):
