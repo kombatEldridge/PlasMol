@@ -46,7 +46,7 @@ class MOLECULE():
                     charge=self.molecule_charge,
                     spin=self.molecule_spin)
         self.mol.verbose = 0
-        self.is_open_shell = (self.molecule_spin != 0) # or getattr(self, 'force_open_shell', False)
+        self.is_open_shell = (self.molecule_spin != 0) or getattr(self, 'force_open_shell', False)
         if self.is_open_shell:
             logger.debug("Initializing open-shell calculation.")
             self.mf = dft.UKS(self.mol)
@@ -60,8 +60,8 @@ class MOLECULE():
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
-        # if self.has_dch:
-        #     self.remove_core_electrons(self.mo_index_list)
+        if self.has_dch:
+            self.remove_core_electrons(self.mo_index_list)
 
         if self.is_open_shell:
             occ_a, occ_b = self.mf.mo_occ
