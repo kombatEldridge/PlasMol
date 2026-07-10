@@ -1,4 +1,0 @@
-[mcp_servers.plasmol]
-command = "/Users/brinton/miniconda/envs/meep/bin/python"
-args = ["/Users/brinton/Downloads/repos/PlasMol/mcp/server.py"]
-enabled = true
