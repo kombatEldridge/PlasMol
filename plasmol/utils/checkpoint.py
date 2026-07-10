@@ -100,7 +100,8 @@ REQUIRED_CHECKPOINT_KEYS = {
 OPTIONAL_KEYS = {
     "checkpoint_time",
     "C_orth_ndt", "F_orth_n12dt", 
-    "field_e_content", "field_p_content", 
+    "field_e_content", "field_p_content",
+    "dch_mo_occ_content",
     "D_ao_0", "mo_coeff", 
     # Fourier-specific (3 directions × 2 fields)
     "field_e_x_content", "field_p_x_content",
@@ -113,6 +114,27 @@ OPTIONAL_KEYS = {
     "checkpoint_time_x", "checkpoint_time_y", "checkpoint_time_z",
     'is_open_shell'
 }
+
+
+def _embed_dch_mo_occ_content(save_dict, params, required=False):
+    """Embed dch_mo_occ CSV bytes into save_dict when the DCH driver is active."""
+    if not params.has_dch:
+        return
+    filepath = params.dch_mo_occ_filepath
+    if filepath and os.path.exists(filepath):
+        try:
+            with open(filepath, "rb") as f:
+                save_dict["dch_mo_occ_content"] = f.read()
+        except Exception as e:
+            logger.error(f"Failed to read dch_mo_occ file '{filepath}' for checkpoint: {e}")
+            if required:
+                raise RuntimeError(f"Cannot update checkpoint - unable to read dch_mo_occ file '{filepath}'") from e
+    else:
+        msg = f"dch_mo_occ file ('{filepath}') not found - keeping existing content"
+        if required:
+            logger.warning(msg)
+        else:
+            logger.debug(msg)
 
 
 @contextmanager
@@ -251,6 +273,72 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
         np.savez(checkpoint_path, allow_pickle=True, **save_dict)
 
 
+def add_dch_mo_occ_checkpoint(params, dch_mo_occ_filepath, final_checkpoint_filepath=None):
+    """
+    Add the DCH MO-occupation CSV content to the checkpoint.
+
+    No-ops if the file does not exist yet (e.g. fresh run before the first
+    occupation write). Mirrors add_field_e_checkpoint for non-Fourier runs;
+    for Fourier per-direction files the content is embedded into the current
+    direction's hidden checkpoint.
+    """
+    if not dch_mo_occ_filepath or not os.path.exists(dch_mo_occ_filepath):
+        logger.debug(
+            f"Skipping dch_mo_occ checkpoint embed; file not present yet "
+            f"('{dch_mo_occ_filepath}')"
+        )
+        return
+
+    if final_checkpoint_filepath:
+        checkpoint_path = final_checkpoint_filepath
+    else:
+        checkpoint_path = params.checkpoint_filepath
+
+    is_fourier = getattr(params, 'has_fourier', False) or bool(getattr(params, 'molecule_source_component', None))
+    dir_component = getattr(params, 'molecule_source_component', None) if is_fourier else None
+
+    if dir_component:
+        if final_checkpoint_filepath:
+            per_path = _get_per_dir_checkpoint(final_checkpoint_filepath, dir_component)
+            kind = "final"
+        else:
+            per_path = _get_per_dir_checkpoint(params.checkpoint_filepath, dir_component)
+            kind = "regular"
+
+        if os.path.exists(per_path):
+            loaded = np.load(per_path, allow_pickle=True)
+            save_dict = {key: loaded[key] for key in loaded.files}
+            loaded.close()
+        else:
+            save_dict = _build_checkpoint_base(params, for_direction=dir_component)
+
+        with open(dch_mo_occ_filepath, "rb") as f:
+            save_dict["dch_mo_occ_content"] = f.read()
+        save_dict.pop('allow_pickle', None)
+        np.savez(per_path, allow_pickle=True, **save_dict)
+        logger.debug(
+            f"Wrote dch_mo_occ {kind} checkpoint content for {dir_component}: {per_path}"
+        )
+        return
+
+    checkpoint_path = "".join([".", checkpoint_path])
+
+    with _checkpoint_lock(checkpoint_path):
+        if os.path.exists(checkpoint_path):
+            loaded = np.load(checkpoint_path, allow_pickle=True)
+            save_dict = {key: loaded[key] for key in loaded.files}
+            loaded.close()
+        else:
+            raise FileNotFoundError("Checkpoint file not found during dch_mo_occ update")
+
+        with open(dch_mo_occ_filepath, "rb") as f:
+            save_dict["dch_mo_occ_content"] = f.read()
+
+        save_dict.pop('allow_pickle', None)
+        np.savez(checkpoint_path, allow_pickle=True, **save_dict)
+    logger.debug(f"Embedded dch_mo_occ content from {dch_mo_occ_filepath}")
+
+
 def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepath=None):
     """
     Update only the dynamic/simulation-state values for the current direction.
@@ -327,6 +415,8 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
             else:
                 logger.warning(f"{name} file for {dir_component or 'non-fourier'} ('{filepath}') not found - keeping existing content")
 
+        _embed_dch_mo_occ_content(save_dict, params)
+
         # === Update molecule / propagator state for the current direction ===
         suffix = f"_{dir_component}" if is_fourier and dir_component else ""
 
@@ -393,6 +483,8 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
                     raise RuntimeError(f"Cannot update checkpoint - unable to read {name} file") from e
             else:
                 logger.warning(f"{name} file for {dir_component or 'non-fourier'} ('{filepath}') not found - keeping existing content")
+
+        _embed_dch_mo_occ_content(save_dict, params)
 
         # === Update molecule / propagator state for the current direction ===
         suffix = f"_{dir_component}" if is_fourier and dir_component else ""
@@ -514,6 +606,26 @@ def resume_from_checkpoint(args):
                     raise
         else:
             logger.debug(f"No {name}_content in checkpoint (old checkpoint)")
+
+    # === Restore DCH MO-occupation CSV (optional; absent in older checkpoints) ===
+    if "dch_mo_occ_content" in data and data["dch_mo_occ_content"] is not None:
+        content = data["dch_mo_occ_content"]
+        # np.savez may wrap None/bytes as 0-d arrays
+        if isinstance(content, np.ndarray):
+            content = content.item() if content.shape == () else content
+        if content is not None:
+            original_filepath = getattr(params, "dch_mo_occ_filepath", None)
+            if original_filepath:
+                restored_filepath = _get_restored_filepath(original_filepath, restored_text="")
+                try:
+                    os.makedirs(os.path.dirname(restored_filepath) or ".", exist_ok=True)
+                    with open(restored_filepath, "wb") as f:
+                        f.write(content)
+                    params.dch_mo_occ_filepath = restored_filepath
+                    logger.info(f"Restored dch_mo_occ CSV from checkpoint → {restored_filepath}")
+                except Exception as e:
+                    logger.error(f"Failed to write restored dch_mo_occ CSV: {e}")
+                    raise
 
     params.values_from_checkpoint = {}
     method = getattr(params, "propagator", getattr(params, "molecule_propagator_str", "")).lower()

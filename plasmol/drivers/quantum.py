@@ -10,9 +10,15 @@ from plasmol.quantum.molecule import MOLECULE
 
 from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
-from plasmol.utils.checkpoint import add_field_e_checkpoint, update_checkpoint, init_checkpoint, cleanup_checkpoint
+from plasmol.utils.checkpoint import (
+    add_field_e_checkpoint,
+    add_dch_mo_occ_checkpoint,
+    update_checkpoint,
+    init_checkpoint,
+    cleanup_checkpoint,
+)
 
-from plasmol.utils.plotting import plot_fields
+from plasmol.utils.plotting import plot_e_p_fields
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 
 def run(params):
@@ -47,7 +53,7 @@ def run(params):
     report_indices = {int(round(p / 100 * total_steps)) for p in range(0, 101, 10)}
     try:
         for index, current_time in enumerate(params.times):
-            params.current_time = current_time
+            params.molecule_propagator_params['current_time'] = current_time
             if params.resumed_from_checkpoint:
                 dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
                 suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
@@ -69,6 +75,7 @@ def run(params):
             else:
                 mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
                 source_has_been_zero = False
+            
             logging.debug(f"At {np.round(params.times[index+1], params.time_rounding_decimals)} au, the induced dipole is {mu_arr} in au")
             update_csv(params.field_p_filepath, round(params.times[index+1], params.time_rounding_decimals), *mu_arr)
             time = current_time
@@ -83,9 +90,15 @@ def run(params):
     finally:
         if getattr(params, 'has_checkpoint', False):
             add_field_e_checkpoint(params, params.field_e_filepath, getattr(params, 'final_checkpoint_filepath', None))
+            if getattr(params, 'has_dch', False):
+                add_dch_mo_occ_checkpoint(
+                    params,
+                    getattr(params, 'dch_mo_occ_filepath', None),
+                    getattr(params, 'final_checkpoint_filepath', None),
+                )
             update_checkpoint(params, molecule, time, getattr(params, 'final_checkpoint_filepath', None))
             params.final_checkpoint_written_after_init = True
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
-        plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+        plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
 
 

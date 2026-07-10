@@ -1,5 +1,6 @@
 # utils/plotting.py
 import logging
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -99,7 +100,7 @@ def _plot_e_vs_p_by_component(fields, output_image_path=None):
     plt.close(fig)
 
 
-def _plot_fields_combined(fields, output_image_path=None):
+def _plot_e_p_fields_combined(fields, output_image_path=None):
     """Plot each field with x, y, and z components on a single subplot."""
     data_list = []
     timestamp_col = None
@@ -141,7 +142,7 @@ def _plot_fields_combined(fields, output_image_path=None):
     plt.close(fig)
 
 
-def plot_fields(fields, output_image_path=None, component_layout=None):
+def plot_e_p_fields(fields, output_image_path=None, component_layout=None):
     """
     Plot one or more vector fields (X, Y, Z components) from CSV files.
 
@@ -172,4 +173,135 @@ def plot_fields(fields, output_image_path=None, component_layout=None):
     if component_layout and len(fields) == 2:
         _plot_e_vs_p_by_component(fields, output_image_path)
     else:
-        _plot_fields_combined(fields, output_image_path)
+        _plot_e_p_fields_combined(fields, output_image_path)
+
+
+# Palette inspired by the multi-MO occupation traces (gold / teal / purple / …)
+_MO_COLORS = (
+    '#E0A800',  # gold
+    '#2A9D8F',  # teal
+    '#9B59B6',  # purple
+    '#E76F51',  # coral
+    '#264653',  # dark slate
+    '#F4A261',  # sand
+    '#1D3557',  # navy
+    '#E63946',  # red
+)
+
+
+def plot_dch_mo_occupations(dch_mo_occ_filepath, output_image_path=None):
+    """
+    Plot time-dependent MO occupations from a DCH occupation CSV.
+
+    Expects a file written by the DCH driver / ``molecule.get_mo_occupations``:
+    comment lines starting with ``#``, a header row with a timestamp column and
+    one column per watched MO (e.g. ``MO index 0``), then numeric data rows.
+
+    Each MO series is overlaid on a single axes (same layout as typical
+    core-hole occupation figures). Legend entries are the bare MO indices
+    (e.g. ``0``, ``23``), laid out left-to-right and wrapping to the next
+    line only when needed.
+
+    Parameters:
+    dch_mo_occ_filepath : str
+        Path to the MO occupation CSV (``dch_mo_occ_filepath``).
+    output_image_path : str, optional
+        Base filename for the saved plot (saved as ``{output_image_path}.png``).
+        If None, the figure is shown interactively.
+
+    Returns:
+    None
+    """
+    logging.getLogger('matplotlib').setLevel(logging.INFO)
+    logger.debug(f"Reading DCH MO occupation CSV: {dch_mo_occ_filepath}")
+
+    df = pd.read_csv(dch_mo_occ_filepath, comment='#')
+    ts_cols = [col for col in df.columns if str(col).startswith("Timestamps")]
+    if not ts_cols:
+        raise ValueError(
+            f"No timestamp column found in {dch_mo_occ_filepath}. "
+            "Expected a column whose name starts with 'Timestamps'."
+        )
+    ts_col = ts_cols[0]
+    mo_cols = [col for col in df.columns if col != ts_col]
+    if not mo_cols:
+        raise ValueError(
+            f"No MO occupation columns found in {dch_mo_occ_filepath} "
+            f"(only timestamp column '{ts_col}')."
+        )
+
+    df = df.sort_values(by=ts_col, ascending=True)
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    handles = []
+    labels = []
+    for i, col in enumerate(mo_cols):
+        color = _MO_COLORS[i % len(_MO_COLORS)]
+        line, = ax.plot(
+            df[ts_col],
+            df[col],
+            color=color,
+            linewidth=1.2,
+        )
+        handles.append(line)
+        labels.append(_mo_index_label(col))
+
+    n_mo = len(labels)
+    # Prefer one horizontal row; wrap after this many entries if many MOs are watched
+    ncol = min(n_mo, 8)
+    handles, labels = _legend_row_major(handles, labels, ncol)
+
+    ax.set_xlabel(ts_col)
+    ax.set_ylabel('MO occupation')
+    ax.legend(
+        handles,
+        labels,
+        loc='lower center',
+        bbox_to_anchor=(0.5, 1.02),
+        ncol=ncol,
+        frameon=True,
+        fancybox=False,
+        edgecolor='black',
+        columnspacing=1.2,
+        handlelength=1.5,
+    )
+    ax.axhline(0.0, color='0.7', linewidth=0.6, zorder=0)
+    if len(df) > 0:
+        ax.set_xlim(df[ts_col].iloc[0], df[ts_col].iloc[-1])
+
+    plt.tight_layout()
+    _save_or_show(fig, output_image_path)
+    plt.close(fig)
+
+
+def _mo_index_label(col):
+    """Turn a CSV header like 'MO index 23' into the bare index string '23'."""
+    match = re.search(r'(\d+)\s*$', str(col))
+    if match:
+        return match.group(1)
+    return str(col).split()[-1]
+
+
+def _legend_row_major(handles, labels, ncol):
+    """
+    Reorder (and pad) legend entries so matplotlib's column-major fill
+    appears left-to-right, wrapping to the next line when ``ncol`` is full.
+    """
+    from matplotlib.lines import Line2D
+
+    n = len(handles)
+    if n == 0 or ncol <= 1:
+        return handles, labels
+
+    nrow = (n + ncol - 1) // ncol
+    size = nrow * ncol
+    # Invisible placeholders keep empty cells so a short last row stays left-aligned
+    empty = Line2D([], [], linestyle='None', marker='None', label='')
+    h_grid = [empty] * size
+    l_grid = [''] * size
+    for j in range(n):
+        r, c = divmod(j, ncol)   # desired row-major position
+        k = c * nrow + r         # matplotlib column-major slot
+        h_grid[k] = handles[j]
+        l_grid[k] = labels[j]
+    return h_grid, l_grid

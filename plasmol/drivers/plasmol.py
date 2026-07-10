@@ -6,7 +6,7 @@ import logging
 
 from plasmol.classical.simulation import SIMULATION
 from plasmol.quantum.molecule import MOLECULE
-from plasmol.utils.plotting import plot_fields
+from plasmol.utils.plotting import plot_e_p_fields
 from plasmol.utils.csv import init_csv
 from plasmol.utils.checkpoint import init_checkpoint
 
@@ -32,7 +32,7 @@ def run(params):
         plasmon.run()
         
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
-        plot_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+        plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
         logging.info("Simulation completed successfully.")
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)

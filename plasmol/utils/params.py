@@ -688,8 +688,7 @@ class PARAMS:
             sig = inspect.signature(self.molecule_propagator)
             exclude_args = {'molecule', 'exc'}
             self.molecule_propagator_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
-            if self.has_dch:
-                self.molecule_propagator_params['has_dch'] = True
+            self.molecule_propagator_params['has_dch'] = True if self.has_dch else False
 
             if not self.has_plasmon:
                 time_values = np.arange(0, self.t_end + self.dt, self.dt)

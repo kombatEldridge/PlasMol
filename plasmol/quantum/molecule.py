@@ -12,6 +12,7 @@ from pyscf.dft import libxc
 from scipy.linalg import inv
 
 from plasmol.utils import constants
+from plasmol.utils.csv import init_csv, update_csv
 
 logger = logging.getLogger("main")
 
@@ -45,10 +46,12 @@ class MOLECULE():
                     charge=self.molecule_charge,
                     spin=self.molecule_spin)
         self.mol.verbose = 0
-        self.is_open_shell = (self.molecule_spin != 0) or getattr(self, 'force_open_shell', False)
+        self.is_open_shell = (self.molecule_spin != 0) # or getattr(self, 'force_open_shell', False)
         if self.is_open_shell:
+            logger.debug("Initializing open-shell calculation.")
             self.mf = dft.UKS(self.mol)
         else:
+            logger.debug("Initializing closed-shell calculation.")
             self.mf = dft.RKS(self.mol)
         if hasattr(self, 'molecule_lrc_parameter'):
             if isinstance(self.molecule_lrc_parameter, (int, float)):
@@ -57,8 +60,8 @@ class MOLECULE():
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
-        if self.has_dch:
-            self.remove_core_electrons(self.mo_index_list)
+        # if self.has_dch:
+        #     self.remove_core_electrons(self.mo_index_list)
 
         if self.is_open_shell:
             occ_a, occ_b = self.mf.mo_occ
@@ -120,6 +123,7 @@ class MOLECULE():
             raise ValueError("Initial density matrix in AO is not Hermitian")
         
         self.volume = self.get_volume(self.molecule_atoms)
+
 
     def get_F_orth(self, D_ao, exc=None):
         """
@@ -338,12 +342,32 @@ class MOLECULE():
                 f"{self.mf.mo_energy[1][i]:12.5f} | "
                 f"{self.mf.mo_occ[1][i]:5.1f}")
 
-    def _get_mo_occupations(self, D_ao):
+    def get_mo_occupations(self, current_time):
         """
         Compute n_k(t) = [C† S D_ao S C]_{kk} for selected indices
         """
-        D_mo = (self.C.conj().T @ self.S) @ D_ao @ (self.S @ self.C)
+        def _get_mo_occupations(D_ao, alpha):
+            if alpha is None:
+                C = self.C
+            elif alpha is True:
+                D_ao = D_ao[0]
+                C = self.C[0]
+            elif alpha is False:
+                D_ao = D_ao[1]
+                C = self.C[1]
 
-        return D_mo.diagonal().real[self.dch_watch_indices]
-    
+            D_mo = (C.conj().T @ self.S) @ D_ao @ (self.S @ C)
+            n = D_mo.diagonal().real[self.dch_watch_indices]
+            return n
+        
+        filepath = self.dch_mo_occ_filepath
+
+        if self.is_open_shell:
+            n_alpha = _get_mo_occupations(self.D_ao, True)
+            n_beta  = _get_mo_occupations(self.D_ao, False)
+            n_k_total = n_alpha + n_beta
+        else:
+            n_k_total = _get_mo_occupations(self.D_ao, None)
+        
+        update_csv(filepath, current_time, None, None, None, *n_k_total)
 

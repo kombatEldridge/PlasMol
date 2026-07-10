@@ -30,7 +30,7 @@ def init_csv(filename, comment,
         writer = csv.writer(file)
         writer.writerow(header)
 
-def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None, other=None):
+def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None, *other):
     """
     Append a row of data to an existing CSV file.
 
@@ -55,12 +55,13 @@ def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None, ot
     None
     """
     file_exists = os.path.exists(filename)
-    if other is None:
-        row = [timestamp, x_value if x_value is not None else 0,
+    if not other:
+        row = [timestamp, 
+            x_value if x_value is not None else 0,
             y_value if y_value is not None else 0,
             z_value if z_value is not None else 0]
     else:
-        row = [timestamp, other]
+        row = [timestamp, *other]
 
     if not file_exists:
         raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'init_csv' before calling 'update_csv'.")
