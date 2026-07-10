@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     # Step 2: Fill in PARAMS dataclass
     params = PARAMS(args)
-    logger.debug(f"PARAMS successfully created: saved to `run_parameters`")
+    logger.debug(f"PARAMS successfully created: saved to 'run_parameters'.")
     if args.verbose >= 2:
         with open("run_parameters", "w") as f:
             f.write("=== Run Parameters ===\n\n")

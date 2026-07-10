@@ -4,7 +4,8 @@ import csv
 import numpy as np
 import logging
 
-def init_csv(filename, comment):
+def init_csv(filename, comment, 
+             header=['Timestamps (au)', 'X Values', 'Y Values', 'Z Values']):
     """
     Initialize a CSV file with a header and comment lines.
 
@@ -27,10 +28,9 @@ def init_csv(filename, comment):
             file.write(f"# {line}\n")
         file.write("\n")
         writer = csv.writer(file)
-        header = ['Timestamps (au)', 'X Values', 'Y Values', 'Z Values']
         writer.writerow(header)
 
-def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None):
+def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None, other=None):
     """
     Append a row of data to an existing CSV file.
 
@@ -48,15 +48,20 @@ def update_csv(filename, timestamp, x_value=None, y_value=None, z_value=None):
         Value for the y component, defaults to 0 if None.
     z_value : float, optional
         Value for the z component, defaults to 0 if None.
+    other : float, optional
+        Value for non-xyz csv file.
 
     Returns:
     None
     """
     file_exists = os.path.exists(filename)
-    row = [timestamp, x_value if x_value is not None else 0,
-           y_value if y_value is not None else 0,
-           z_value if z_value is not None else 0]
-    
+    if other is None:
+        row = [timestamp, x_value if x_value is not None else 0,
+            y_value if y_value is not None else 0,
+            z_value if z_value is not None else 0]
+    else:
+        row = [timestamp, other]
+
     if not file_exists:
         raise RuntimeError(f"{filename} hasn't been initialized yet. Call 'init_csv' before calling 'update_csv'.")
     

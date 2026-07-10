@@ -45,7 +45,7 @@ class MOLECULE():
                     charge=self.molecule_charge,
                     spin=self.molecule_spin)
         self.mol.verbose = 0
-        self.is_open_shell = (self.molecule_spin != 0)
+        self.is_open_shell = (self.molecule_spin != 0) or getattr(self, 'force_open_shell', False)
         if self.is_open_shell:
             self.mf = dft.UKS(self.mol)
         else:
@@ -56,6 +56,9 @@ class MOLECULE():
         self.mf.xc = self.molecule_xc
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
+
+        if self.has_dch:
+            self.remove_core_electrons(self.mo_index_list)
 
         if self.is_open_shell:
             occ_a, occ_b = self.mf.mo_occ
@@ -79,6 +82,7 @@ class MOLECULE():
         self.mf.mol.set_common_orig_(nuc_charge_center)
 
         # Initialize matrices and wavefunction
+        self.C = self.mf.mo_coeff
         self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
 
@@ -120,59 +124,46 @@ class MOLECULE():
     def get_F_orth(self, D_ao, exc=None):
         """
         Compute the Fock matrix in the orthogonal basis.
-
-        Includes the effect of an external field if provided.
-
-        Parameters:
-        D_ao : np.ndarray
-            Density matrix in atomic orbital basis.
-        exc : np.ndarray, optional
-            External electric field components [x, y, z].
-
-        Returns:
-        np.ndarray
-            Fock matrix in orthogonal basis.
+        Fully supports RKS and UKS.
         """
         F_ao = self.mf.get_fock(dm=D_ao).astype(np.complex128)
         if exc is not None:
-            F_ao += self.calculate_potential(exc)
+            F_ao = F_ao + self.calculate_potential(exc)
         if self.has_cap:
             cap_kwargs = {k: v for k, v in self.cap_dict.items() if k != "type"}
             if not hasattr(self, 'Gamma_ao_0'):
                 self.Gamma_ao_0 = self.get_gamma_ao(**cap_kwargs)
             if self.cap_type == 'static':
-                F_ao -= 1j * self.Gamma_ao_0
+                F_ao = F_ao - 1j * self.Gamma_ao_0
             elif self.cap_type == 'dynamic':
-                F_ao -= 1j * self.get_gamma_ao(**cap_kwargs, D_ao=D_ao)
-        return np.matmul(self.X.conj().T, np.matmul(F_ao, self.X))
+                F_ao = F_ao - 1j * self.get_gamma_ao(**cap_kwargs, D_ao=D_ao)
 
+        if self.is_open_shell:
+            return np.stack([self.X.conj().T @ F_ao[s] @ self.X for s in range(2)])
+        else:
+            return self.X.conj().T @ F_ao @ self.X
+    
     def rotate_coeff_to_orth(self, coeff_ao):
         """
-        Transform molecular orbital coefficients to the orthogonal basis.
-
-        Parameters:
-        coeff_ao : np.ndarray
-            Coefficients in atomic orbital basis.
-
-        Returns:
-        np.ndarray
-            Coefficients in orthogonal basis.
+        Transform MO coefficients from AO → orthogonal basis.
+        Supports both RKS (2-D) and UKS (3-D / list).
         """
-        return np.matmul(np.linalg.inv(self.X), coeff_ao)
+        Xinv = np.linalg.inv(self.X)
+        if self.is_open_shell:
+            # coeff_ao is (2, nao, nmo) or list of two arrays
+            return np.stack([Xinv @ coeff_ao[s] for s in range(2)])
+        else:
+            return Xinv @ coeff_ao
 
     def rotate_coeff_away_from_orth(self, coeff_orth):
         """
-        Transform molecular orbital coefficients from orthogonal to atomic orbital basis.
-
-        Parameters:
-        coeff_orth : np.ndarray
-            Coefficients in orthogonal basis.
-
-        Returns:
-        np.ndarray
-            Coefficients in atomic orbital basis.
+        Transform MO coefficients from orthogonal → AO basis.
+        Supports both RKS and UKS.
         """
-        return np.matmul(self.X, coeff_orth)
+        if self.is_open_shell:
+            return np.stack([self.X @ coeff_orth[s] for s in range(2)])
+        else:
+            return self.X @ coeff_orth
     
     def is_hermitian(self, A, tol):
         """
@@ -203,6 +194,56 @@ class MOLECULE():
             
         # Dividing by 0.14818471 Å³ will set the volume to atomic units.
         return volume / constants.V_AU_AA3
+    
+    def remove_core_electrons(self, mo_index_list):
+        """
+        Remove core electrons from a molecular orbital (DCH driver).
+
+        Parameters:
+        mo_index : int
+            0-based MO index from which to remove electrons.
+
+        Returns:
+        None
+        """
+        mo_gs = self.mf.mo_coeff.copy()
+        mf_gs = self.mf.copy()
+        
+        nmo = mo_gs.shape[1]
+        for mo_idx in self.mo_index_list:
+            if mo_idx >= nmo:
+                raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
+
+        logger.debug("Before removing core electrons:")
+        self.print_occ(5)
+
+        original_charge = self.mf.mol.charge
+        original_spin   = self.mf.mol.spin
+        
+        self.mf.mol.charge = original_charge + 2 
+
+        if len(mo_index_list) == 1:
+            self.mf.mol.spin = original_spin
+        else:
+            self.mf.mol.spin = original_spin + 2
+        
+        self.mf.mol.build(False, False)
+
+        setocc = [self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy()]
+        if len(mo_index_list) == 1:
+            setocc[0][mo_index_list[0]] = 0
+            setocc[1][mo_index_list[0]] = 0
+        else:
+            setocc[0][mo_index_list[0]] = 0
+            setocc[0][mo_index_list[1]] = 0
+
+        self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
+        dm_sudden = mf_gs.make_rdm1(mo_gs, setocc)
+        self.mf.kernel(dm0=dm_sudden)
+
+        logger.debug("After removing core electrons:")
+        self.print_occ(5)
+        return
     
     # ------------------------------------ #
     #              Additional              #
@@ -242,8 +283,13 @@ class MOLECULE():
             Potential matrix in atomic orbital basis.
         """
         mu = self.calculate_mu()
-        return -1 * np.einsum('xij,x->ij', mu, exc)
+    
+        pot = -1.0 * np.einsum('xij,x->ij', mu, exc)
 
+        if self.is_open_shell:
+            return np.stack([pot, pot])
+        return pot
+    
     def get_gamma_ao(self, gam0, xi, eps0, clamp, D_ao=None):
         """
         Construct a diagonal damping matrix (Gamma(t) in the AO basis)
@@ -282,4 +328,22 @@ class MOLECULE():
             return np.stack([_gamma_one_spin(F_orth[s]) for s in range(F_orth.shape[0])])
         return _gamma_one_spin(F_orth)
 
+    def print_occ(self, n_print=30):
+        logger.debug(f"{'MO':>4} | {'Eα (Ha)':>12} | {'occα':>5} | {'Eβ (Ha)':>12} | {'occβ':>5}")
+        logger.debug("-" * 55)
+
+        for i in range(min(n_print, len(self.mf.mo_energy[0]))):
+            logger.debug(f"{i+1:4d} | {self.mf.mo_energy[0][i]:12.5f} | "
+                f"{self.mf.mo_occ[0][i]:5.1f} | "
+                f"{self.mf.mo_energy[1][i]:12.5f} | "
+                f"{self.mf.mo_occ[1][i]:5.1f}")
+
+    def _get_mo_occupations(self, D_ao):
+        """
+        Compute n_k(t) = [C† S D_ao S C]_{kk} for selected indices
+        """
+        D_mo = (self.C.conj().T @ self.S) @ D_ao @ (self.S @ self.C)
+
+        return D_mo.diagonal().real[self.dch_watch_indices]
+    
 

@@ -8,6 +8,7 @@ from plasmol.drivers.custom_drivers.scatter_response_fxn import run as scatter_r
 from plasmol.drivers.custom_drivers.np_abs_cross_sec import run as run_np_abs_cross_sec
 from plasmol.drivers.custom_drivers.verify_source import run as run_verify_source
 from plasmol.drivers.custom_drivers.tune import run as run_tune
+from plasmol.drivers.custom_drivers.DCH import run as run_dch
 
 import logging
 logger = logging.getLogger("main")
@@ -40,6 +41,9 @@ def get_driver(driver_str):
     elif driver_str == 'tune':
         logger.info(" === TUNING SIMULATION CHOSEN === ")
         return run_tune
+    elif driver_str == 'dch':
+        logger.info(" === DCH SIMULATION CHOSEN === ")
+        return run_dch
     else:
         raise ValueError(f"Unknown driver: {driver_str}. Please add your custom driver to the drivers/__init__.py file.")
 

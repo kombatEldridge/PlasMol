@@ -32,7 +32,7 @@ class PARAMS:
         self.input_file_path = self.preparams["args"]["input"]
         self.simulation_types = self.preparams["simulation_types"]
         self.xyz = ['x', 'y', 'z']
-        self.custom_parameters = {}
+        self.additional_parameters = {}
 
         def _type_name(t):
             names = {
@@ -72,7 +72,7 @@ class PARAMS:
                     raise ValueError(f"Invalid type for {attr}: expected {_type_name(data_type)}, got {_type_name(type(value))}.") 
 
             if path[0] == 'additional_parameters' and value is not None:
-                self.custom_parameters[attr] = value
+                self.additional_parameters[attr] = value
                 if attr not in PLASMON_RUN_ADDITIONAL_PARAMETERS:
                     self.has_custom = True
 
@@ -103,6 +103,13 @@ class PARAMS:
                     setattr(self, attr, default_value)
                     default_values_used.append((attr, default_value))
 
+        if getattr(self, 'driver_str', None) == 'dch':
+            self.has_dch = True
+            for attr, _, _, boolean_name, default_value, _, _, _, _ in param_defs:
+                if boolean_name == 'has_dch' and default_value is not None and not hasattr(self, attr):
+                    setattr(self, attr, default_value)
+                    default_values_used.append((attr, default_value))
+
         self._attribute_checks()
         self._attribute_formation()
         self._test_symmetry()
@@ -116,7 +123,7 @@ class PARAMS:
                 params = resume_from_checkpoint(args)
                 # establish a list of keys that are allowed to be altered after resuming a checkpoint run
                 QUIET_CHANGABLE_KEYS = {
-                    'checkpoint_dict', 'custom_parameters', 'fourier_dict', 'molecule_dict', 
+                    'checkpoint_dict', 'additional_parameters', 'fourier_dict', 'molecule_dict', 
                     'times', 'log', 'field_e_filepath', 'field_p_filepath', 'spectra_e_vs_p_filepath'
                 }
                 CHANGABLE_KEYS = {
@@ -535,9 +542,40 @@ class PARAMS:
             if getattr(self, 'flux_padding', -1) < 0:
                 raise ValueError("np_abs_cross_sec driver requires 'flux_padding' to be a non-negative value.")
 
-        # Misc/Add'l Parameters
-        if self.has_custom:
-            logger.debug(f"Additional parameters specified: {list(self.custom_parameters.keys())}.")
+        # DCH driver params
+        if getattr(self, 'driver_str', None) == 'dch' or getattr(self, 'has_dch', False):
+            self.force_open_shell = True
+            logger.debug("DCH driver forcing open-shell calculation.")
+
+            check_contrib = getattr(self, 'check_mo_contrib_by_atom', False)
+            mo_list = getattr(self, 'mo_index_list', None)
+            if mo_list is None:
+                raise ValueError("DCH driver requires 'mo_index_list' under additional_parameters (list of 0-based MO indices).")
+            if not isinstance(mo_list, list) or len(mo_list) == 0:
+                raise ValueError("DCH 'mo_index_list' must be a non-empty list of integers.")
+            for i, idx in enumerate(mo_list):
+                if type(idx) is not int:
+                    raise ValueError(f"DCH 'mo_index_list' entry {i} must be an integer (0-based MO index), got {type(idx).__name__}.")
+                if idx < 0:
+                    raise ValueError(f"DCH 'mo_index_list' entry {i} must be a non-negative 0-based MO index, got {idx}.")
+            if check_contrib:
+                logger.info(f"DCH MO contribution survey mode: will report atom contributions for MOs {mo_list}.")
+            else:
+                if len(mo_list) not in (1, 2):
+                    raise ValueError(
+                        "DCH 'mo_index_list' must contain one or two integers when "
+                        "check_mo_contrib_by_atom is false "
+                        "(one MO → remove two electrons; two MOs → remove one electron from each)."
+                    )
+                if len(mo_list) == 2 and mo_list[0] == mo_list[1]:
+                    raise ValueError(
+                        "DCH 'mo_index_list' has two identical indices; use a single index to remove "
+                        "both electrons from that MO."
+                    )
+                logger.debug(
+                    f"DCH core-hole mode: mo_index_list={mo_list} "
+                    f"({'double hole on one MO' if len(mo_list) == 1 else 'single hole on each of two MOs'})."
+                )
 
     def _conform_dt_to_meep(self):
         """
@@ -650,7 +688,9 @@ class PARAMS:
             sig = inspect.signature(self.molecule_propagator)
             exclude_args = {'molecule', 'exc'}
             self.molecule_propagator_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
-            
+            if self.has_dch:
+                self.molecule_propagator_params['has_dch'] = True
+
             if not self.has_plasmon:
                 time_values = np.arange(0, self.t_end + self.dt, self.dt)
                 self.times = np.round(np.linspace(0, time_values[-1], int(len(time_values))), decimals=self.time_rounding_decimals)

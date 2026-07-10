@@ -42,12 +42,12 @@ def run(params):
     molecule = MOLECULE(params)
 
     total_steps = len(params.times)-1
-    report_interval = max(1, total_steps // 10)
     time = 0.0 
     source_has_been_zero = True
     report_indices = {int(round(p / 100 * total_steps)) for p in range(0, 101, 10)}
     try:
         for index, current_time in enumerate(params.times):
+            params.current_time = current_time
             if params.resumed_from_checkpoint:
                 dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
                 suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
@@ -62,7 +62,7 @@ def run(params):
             if index in report_indices:
                 percent = int(round(index / total_steps * 100))
                 logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time}/{params.times[-1]} au)")
-            if (params.molecule_source_field[index] == 0).all() and source_has_been_zero:
+            if (params.molecule_source_field[index] == 0).all() and source_has_been_zero and not params.has_dch:
                 mu_arr = np.zeros(3)
             elif current_time == params.times[-1]:
                 break

@@ -10,6 +10,12 @@ def _expm(F):
         return np.stack([expm(F[s]) for s in range(F.shape[0])])
     return expm(F)
 
+def _norm_diff(A, B):
+    """Frobenius norm of the difference, works for both 2-D and 3-D arrays."""
+    if A.ndim == 3:
+        return sum(np.linalg.norm(A[s] - B[s]) for s in range(A.shape[0]))
+    return np.linalg.norm(A - B)
+
 def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc):
     """
     Propagate molecular orbitals using the Magnus2 method.
@@ -44,7 +50,7 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, ex
 
         # 1) predictor
         U = _expm(-1j * dt * F_orth_p12dt)
-        C_orth_pdt = np.matmul(U, C_orth)
+        C_orth_pdt = U @ C_orth
         C_pdt = molecule.rotate_coeff_away_from_orth(C_orth_pdt)
         
         # 2) compute new Fock
@@ -52,16 +58,21 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, ex
         F_orth_pdt = molecule.get_F_orth(D_ao_pdt, exc)
         
         # 3) only check convergence if we have a previous value
-        if C_ao_pdt_old is not None and np.linalg.norm(C_pdt - C_ao_pdt_old) < molecule_pc_convergence:
-            molecule.mf.mo_coeff = C_pdt
-            molecule.D_ao = D_ao_pdt
-            molecule.F_orth = F_orth_pdt
-            molecule.F_orth_n12dt = F_orth_p12dt
-            logger.debug(f'Magnus2 converged in {iteration} iterations.')
-            break
+        if C_ao_pdt_old is not None:
+            diff = _norm_diff(C_pdt, C_ao_pdt_old)
+            if diff < molecule_pc_convergence:
+                # Accept the step
+                molecule.mf.mo_coeff = C_pdt
+                molecule.D_ao = D_ao_pdt
+                molecule.F_orth = F_orth_pdt
+                molecule.F_orth_n12dt = F_orth_p12dt
+                logger.debug(f'Magnus2 converged in {iteration} iterations.')
+                break
 
         # 4) update history for next iteration
         F_orth_p12dt = 0.5 * (molecule.F_orth + F_orth_pdt)
-        C_ao_pdt_old = C_pdt
+        C_ao_pdt_old = C_pdt.copy() if not molecule.is_open_shell else [c.copy() for c in C_pdt]
+
+        # 5) Keep the latest coefficients / density for the next iteration
         molecule.mf.mo_coeff = C_pdt
         molecule.D_ao = D_ao_pdt

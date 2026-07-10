@@ -1,7 +1,9 @@
 # quantum/propagation.py
+import os 
 import logging 
 import numpy as np 
 
+from plasmol.utils.csv import init_csv, update_csv
 logger = logging.getLogger("main")
 
 def propagation(params, molecule, exc, propagator):
@@ -24,6 +26,7 @@ def propagation(params, molecule, exc, propagator):
     None
     """
     mu_arr = np.zeros(3)
+    has_dch = params.pop('has_dch', False)
     propagator(**params, molecule=molecule, exc=exc)
     mu = molecule.calculate_mu()
 
@@ -42,5 +45,25 @@ def propagation(params, molecule, exc, propagator):
     #           can be added here          #
     #  similar to molecule.calculate_mu()  #
     # ------------------------------------ #
+    if has_dch:
+        filepath = params.dch_mo_occ_filepath
+        if molecule.is_open_shell:
+            n_alpha = molecule._get_mo_occupations(molecule.D_ao[0])
+            n_beta  = molecule._get_mo_occupations(molecule.D_ao[1])
+            n_k_total = n_alpha + n_beta
+        else:
+            n_k_total = molecule._get_mo_occupations(molecule.D_ao)
+        
+        if not os.path.exists(filepath):
+            header = ['Timestamps (au)']
+            for inx in params.dch_watch_indices:
+                header.append(f'MO index {inx}')
+            init_csv(filepath, 
+                    f"Time dependent MO occupations for the following MO indices: {params.dch_watch_indices}", 
+                    header=header)
+
+        update_csv(filepath, params.current_time, *n_k_total)
 
     return mu_arr
+
+

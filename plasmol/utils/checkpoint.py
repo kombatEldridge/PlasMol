@@ -23,12 +23,6 @@ def _get_per_dir_checkpoint(base_checkpoint_filepath: str, direction: str) -> st
     stem, ext = os.path.splitext(base)
     return f".{stem}_{direction}{ext}"
 
-
-def _get_per_dir_final_checkpoint(final_checkpoint_filepath: str, direction: str) -> str:
-    """Return hidden per-direction final checkpoint path (thin wrapper)."""
-    return _get_per_dir_checkpoint(final_checkpoint_filepath, direction)
-
-
 def _build_checkpoint_base(params, for_direction: str = None) -> dict:
     """Build the invariant + pre-populated optional keys for a checkpoint dict.
     Does not write anything. Used by init and by per-direction final writers.
