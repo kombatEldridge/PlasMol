@@ -126,8 +126,8 @@ param_defs = [
     ('decay_threshold', ['additional_parameters', 'decay_threshold'], False, 'has_plasmon', 1e-5, 'plasmon', (int, float), "Field amplitude fraction at which to stop the simulation when decay_stop is true", None),
 
     ## Driver: DCH.py
-    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_index_list via mo_atom_contribution() and exit before propagation", None),
-    ('mo_index_list', ['additional_parameters', 'mo_index_list'], False, 'has_dch', None, 'molecule', list, "0-based MO indices. If check_mo_contrib_by_atom: MOs to survey. Else: 1–2 MOs for core-hole creation (one index → remove two electrons; two indices → remove one electron from each)", None),
+    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_list via mo_atom_contribution() and exit before propagation", None),
+    ('mo_removal_index_list', ['additional_parameters', 'mo_removal_index_list'], False, 'has_dch', None, 'molecule', list, "0-based MO indices. If check_mo_contrib_by_atom: MOs to survey. Else: 1–2 MOs for core-hole creation (one index → remove two electrons; two indices → remove one electron from each)", None),
     ('dch_watch_indices', ['additional_parameters', 'dch_watch_indices'], False, 'has_dch', None, 'molecule', list, "List of MO indices to watch for DCH calculations", None),
     ('dch_mo_occ_filepath', ['additional_parameters', 'dch_mo_occ_filepath'], False, 'has_dch', None, 'molecule', str, "Path to file containing time dependent MO occupations for DCH calculations", None)
 ]

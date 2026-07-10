@@ -61,7 +61,7 @@ class MOLECULE():
         self.nmat = 2 if self.is_open_shell else 1
 
         if self.has_dch:
-            self.remove_core_electrons(self.mo_index_list)
+            self.remove_core_electrons(self.mo_removal_index_list)
 
         if self.is_open_shell:
             occ_a, occ_b = self.mf.mo_occ
@@ -199,7 +199,7 @@ class MOLECULE():
         # Dividing by 0.14818471 Å³ will set the volume to atomic units.
         return volume / constants.V_AU_AA3
     
-    def remove_core_electrons(self, mo_index_list):
+    def remove_core_electrons(self, mo_removal_index_list):
         """
         Remove core electrons from a molecular orbital (DCH driver).
 
@@ -214,7 +214,7 @@ class MOLECULE():
         mf_gs = self.mf.copy()
         
         nmo = mo_gs.shape[1]
-        for mo_idx in self.mo_index_list:
+        for mo_idx in self.mo_removal_index_list:
             if mo_idx >= nmo:
                 raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
 
@@ -226,7 +226,7 @@ class MOLECULE():
         
         self.mf.mol.charge = original_charge + 2 
 
-        if len(mo_index_list) == 1:
+        if len(mo_removal_index_list) == 1:
             self.mf.mol.spin = original_spin
         else:
             self.mf.mol.spin = original_spin + 2
@@ -234,12 +234,12 @@ class MOLECULE():
         self.mf.mol.build(False, False)
 
         setocc = [self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy()]
-        if len(mo_index_list) == 1:
-            setocc[0][mo_index_list[0]] = 0
-            setocc[1][mo_index_list[0]] = 0
+        if len(mo_removal_index_list) == 1:
+            setocc[0][mo_removal_index_list[0]] = 0
+            setocc[1][mo_removal_index_list[0]] = 0
         else:
-            setocc[0][mo_index_list[0]] = 0
-            setocc[0][mo_index_list[1]] = 0
+            setocc[0][mo_removal_index_list[0]] = 0
+            setocc[0][mo_removal_index_list[1]] = 0
 
         self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
         dm_sudden = mf_gs.make_rdm1(mo_gs, setocc)

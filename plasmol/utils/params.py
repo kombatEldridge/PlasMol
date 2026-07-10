@@ -548,32 +548,32 @@ class PARAMS:
             logger.debug("DCH driver forcing open-shell calculation.")
 
             check_contrib = getattr(self, 'check_mo_contrib_by_atom', False)
-            mo_list = getattr(self, 'mo_index_list', None)
+            mo_list = getattr(self, 'mo_removal_index_list', None)
             if mo_list is None:
-                raise ValueError("DCH driver requires 'mo_index_list' under additional_parameters (list of 0-based MO indices).")
+                raise ValueError("DCH driver requires 'mo_removal_index_list' under additional_parameters (list of 0-based MO indices).")
             if not isinstance(mo_list, list) or len(mo_list) == 0:
-                raise ValueError("DCH 'mo_index_list' must be a non-empty list of integers.")
+                raise ValueError("DCH 'mo_removal_index_list' must be a non-empty list of integers.")
             for i, idx in enumerate(mo_list):
                 if type(idx) is not int:
-                    raise ValueError(f"DCH 'mo_index_list' entry {i} must be an integer (0-based MO index), got {type(idx).__name__}.")
+                    raise ValueError(f"DCH 'mo_removal_index_list' entry {i} must be an integer (0-based MO index), got {type(idx).__name__}.")
                 if idx < 0:
-                    raise ValueError(f"DCH 'mo_index_list' entry {i} must be a non-negative 0-based MO index, got {idx}.")
+                    raise ValueError(f"DCH 'mo_removal_index_list' entry {i} must be a non-negative 0-based MO index, got {idx}.")
             if check_contrib:
                 logger.info(f"DCH MO contribution survey mode: will report atom contributions for MOs {mo_list}.")
             else:
                 if len(mo_list) not in (1, 2):
                     raise ValueError(
-                        "DCH 'mo_index_list' must contain one or two integers when "
+                        "DCH 'mo_removal_index_list' must contain one or two integers when "
                         "check_mo_contrib_by_atom is false "
                         "(one MO → remove two electrons; two MOs → remove one electron from each)."
                     )
                 if len(mo_list) == 2 and mo_list[0] == mo_list[1]:
                     raise ValueError(
-                        "DCH 'mo_index_list' has two identical indices; use a single index to remove "
+                        "DCH 'mo_removal_index_list' has two identical indices; use a single index to remove "
                         "both electrons from that MO."
                     )
                 logger.debug(
-                    f"DCH core-hole mode: mo_index_list={mo_list} "
+                    f"DCH core-hole mode: mo_removal_index_list={mo_list} "
                     f"({'double hole on one MO' if len(mo_list) == 1 else 'single hole on each of two MOs'})."
                 )
 

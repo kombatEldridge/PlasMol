@@ -15,7 +15,7 @@ def run(params):
     if params.check_mo_contrib_by_atom:
         params.has_dch = False
         molecule = MOLECULE(params)
-        for mo_idx in params.mo_index_list:
+        for mo_idx in params.mo_removal_index_list:
             nmo = molecule.mf.mo_coeff.shape[1]
             if mo_idx >= nmo:
                 raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
