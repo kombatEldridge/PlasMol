@@ -189,7 +189,14 @@ _MO_COLORS = (
 )
 
 
-def plot_dch_mo_occupations(dch_mo_occ_filepath, output_image_path=None):
+def plot_dch_mo_occupations(
+    dch_mo_occ_filepath,
+    output_image_path=None,
+    indices=None,
+    time_window=None,
+    filter_by_amplitude=False,
+    amplitude_threshold=0.6,
+):
     """
     Plot time-dependent MO occupations from a DCH occupation CSV.
 
@@ -208,6 +215,22 @@ def plot_dch_mo_occupations(dch_mo_occ_filepath, output_image_path=None):
     output_image_path : str, optional
         Base filename for the saved plot (saved as ``{output_image_path}.png``).
         If None, the figure is shown interactively.
+    indices : list of int, optional
+        0-based MO indices to include in the plot (matching the numbers in
+        column headers such as ``MO index 23``). If None or empty, all MO
+        columns in the file are plotted. Order of ``indices`` is preserved
+        in the legend.
+    time_window : tuple of float, optional
+        ``(start, end)`` time window (same units as the CSV timestamp column).
+        Data outside the window are dropped before amplitude filtering and plotting.
+        If None, the full time range is used.
+    filter_by_amplitude : bool, optional
+        If True, keep only MOs whose peak-to-peak amplitude
+        (``max - min`` over the plotted window) is strictly greater than
+        ``amplitude_threshold``. Centering/mean of the series is ignored
+        (matches Fig. 8 “> 0.2 e” style selection).
+    amplitude_threshold : float, optional
+        Amplitude cutoff used when ``filter_by_amplitude`` is True. Default 0.2.
 
     Returns:
     None
@@ -230,7 +253,75 @@ def plot_dch_mo_occupations(dch_mo_occ_filepath, output_image_path=None):
             f"(only timestamp column '{ts_col}')."
         )
 
+    if indices:
+        # Map bare MO index (int) → CSV column name
+        col_by_index = {}
+        for col in mo_cols:
+            try:
+                col_by_index[int(_mo_index_label(col))] = col
+            except (TypeError, ValueError):
+                continue
+
+        selected = []
+        missing = []
+        for idx in indices:
+            try:
+                key = int(idx)
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    f"Invalid MO index {idx!r}; expected an integer."
+                ) from e
+            if key in col_by_index:
+                selected.append(col_by_index[key])
+            else:
+                missing.append(key)
+
+        if missing:
+            available = sorted(col_by_index.keys())
+            raise ValueError(
+                f"MO index(es) {missing} not found in {dch_mo_occ_filepath}. "
+                f"Available indices: {available}."
+            )
+        mo_cols = selected
+        logger.debug(f"Candidate MO indices: {list(indices)}")
+    else:
+        logger.debug(f"Candidate MO columns: all {len(mo_cols)}")
+
     df = df.sort_values(by=ts_col, ascending=True)
+    if time_window is not None:
+        t0, t1 = time_window
+        df = df[(df[ts_col] >= t0) & (df[ts_col] <= t1)]
+        if df.empty:
+            raise ValueError(
+                f"No data in time_window={time_window} for {dch_mo_occ_filepath}."
+            )
+
+    if filter_by_amplitude:
+        kept = []
+        for col in mo_cols:
+            amp = float(df[col].max() - df[col].min())
+            if amp > amplitude_threshold:
+                kept.append(col)
+                logger.debug(
+                    f"Keeping MO {_mo_index_label(col)}: amplitude={amp:.4f} "
+                    f"> {amplitude_threshold}"
+                )
+            else:
+                logger.debug(
+                    f"Dropping MO {_mo_index_label(col)}: amplitude={amp:.4f} "
+                    f"<= {amplitude_threshold}"
+                )
+        if not kept:
+            raise ValueError(
+                f"No MO series with peak-to-peak amplitude > {amplitude_threshold} "
+                f"in {dch_mo_occ_filepath}"
+                + (f" within time_window={time_window}." if time_window else ".")
+            )
+        mo_cols = kept
+        logger.info(
+            f"Amplitude filter (>{amplitude_threshold}): plotting "
+            f"{[_mo_index_label(c) for c in mo_cols]}"
+        )
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     handles = []
@@ -250,9 +341,8 @@ def plot_dch_mo_occupations(dch_mo_occ_filepath, output_image_path=None):
     # Prefer one horizontal row; wrap after this many entries if many MOs are watched
     ncol = min(n_mo, 8)
     handles, labels = _legend_row_major(handles, labels, ncol)
-
     ax.set_xlabel(ts_col)
-    ax.set_ylabel('MO occupation')
+    ax.set_ylabel('hole occupation number')
     ax.legend(
         handles,
         labels,

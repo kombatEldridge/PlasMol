@@ -1,6 +1,7 @@
 # drivers/custom_drivers/DCH.py
 import os
 import logging
+import numpy as np
 from plasmol.quantum.molecule import MOLECULE
 from plasmol.drivers.quantum import run as run_quantum
 from plasmol.utils.checkpoint import add_dch_mo_occ_checkpoint
@@ -15,8 +16,8 @@ def run(params):
     if params.check_mo_contrib_by_atom:
         params.has_dch = False
         molecule = MOLECULE(params)
-        for mo_idx in params.mo_removal_index_list:
-            nmo = molecule.mf.mo_coeff.shape[1]
+        for mo_idx in params.mo_removal_index_dict.keys():
+            nmo = np.asarray(molecule.mf.mo_coeff).shape[-1]
             if mo_idx >= nmo:
                 raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
             _mo_atom_contribution(molecule, mo_idx)
@@ -29,7 +30,7 @@ def run(params):
             header.append(f'MO index {inx}')
         init_csv(
             params.dch_mo_occ_filepath,
-            f"Time dependent MO occupations for the following MO indices: {params.dch_watch_indices}",
+            f"Time-dependent hole occupations (neutral MO basis) for MO indices: {params.dch_watch_indices}",
             header=header,
         )
         logger.debug(f"DCH MO occupation file initialized: {params.dch_mo_occ_filepath}")
@@ -42,7 +43,7 @@ def run(params):
                 header.append(f'MO index {inx}')
             init_csv(
                 params.dch_mo_occ_filepath,
-                f"Time dependent MO occupations for the following MO indices: {params.dch_watch_indices}",
+                f"Time-dependent hole occupations (neutral MO basis) for MO indices: {params.dch_watch_indices}",
                 header=header,
             )
             logger.warning("Resumed DCH run but no mo_occ CSV was restored from the checkpoint; started a fresh occupation file at current time.")
@@ -57,13 +58,22 @@ def run(params):
         raise
     finally:
         base, _ = os.path.splitext(params.dch_mo_occ_filepath)
-        plot_dch_mo_occupations(params.dch_mo_occ_filepath, output_image_path=base)
+        plot_dch_mo_occupations(
+            params.dch_mo_occ_filepath,
+            output_image_path=base,
+            filter_by_amplitude=getattr(params, 'dch_filter_by_amplitude', False),
+            amplitude_threshold=getattr(params, 'dch_amplitude_threshold', 0.2),
+        )
 
 
 
 def _mo_atom_contribution(molecule, mo_idx, threshold=0.01):
     """Print which atoms contribute most to a specific MO"""
-    c = molecule.mf.mo_coeff[:, mo_idx]
+    C = molecule.mf.mo_coeff
+    if getattr(molecule, 'is_open_shell', False) and np.asarray(C).ndim == 3:
+        c = C[0][:, mo_idx]
+    else:
+        c = C[:, mo_idx]
     pop_ao = c * (molecule.S @ c)
     logger = logging.getLogger("main")
     logger.info(f"=== MO {mo_idx+1} (index {mo_idx}) contributions ===")

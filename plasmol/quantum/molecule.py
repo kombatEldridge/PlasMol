@@ -60,8 +60,20 @@ class MOLECULE():
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
+        # Neutral MOs / occupations (fixed projection basis for DCH hole dynamics)
+        self.C = self.mf.mo_coeff.copy()
+        if not self.is_open_shell:
+            self.occ_neutral = self.mf.get_occ().copy()
+            self.mo_energy = self.mf.mo_energy.copy()
+        else:
+            self.occ_neutral = (self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy())
+            self.mo_energy = (self.mf.mo_energy[0].copy(), self.mf.mo_energy[1].copy())
+
         if self.has_dch:
-            self.remove_core_electrons(self.mo_removal_index_list)
+            self.remove_core_electrons(self.mo_removal_index_dict)
+            self.occ = self.mf.mo_occ
+        else:
+            self.occ = self.mf.get_occ()
 
         if self.is_open_shell:
             occ_a, occ_b = self.mf.mo_occ
@@ -85,15 +97,12 @@ class MOLECULE():
         self.mf.mol.set_common_orig_(nuc_charge_center)
 
         # Initialize matrices and wavefunction
-        self.C = self.mf.mo_coeff
         self.S = self.mf.get_ovlp()
         self.X = addons.canonical_orth_(self.S)
 
         if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=self.molecule_hermiticity_tolerance):
             logger.warning("Orthogonalization matrix X may not be unitary")
-        
-        self.occ = self.mf.get_occ()
-        
+                
         skip_checkpoint = False
         if self.resumed_from_checkpoint:
             dir_component = getattr(params, 'molecule_source_component') if self.has_fourier else None
@@ -111,8 +120,13 @@ class MOLECULE():
             elif self.molecule_propagator_str == 'step':
                 self.C_orth_ndt = self.values_from_checkpoint[f"C_orth_ndt{suffix}"]
         else:
-            self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
-            self.D_ao = self.D_ao_0
+            if self.has_dch and getattr(self, '_dch_dm0', None) is not None:
+                self.D_ao_0 = np.asarray(self._dch_dm0, dtype=np.complex128)
+                self.D_ao = self.D_ao_0.copy()
+            else:
+                self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
+                self.D_ao = self.D_ao_0
+            
             self.F_orth = self.get_F_orth(self.D_ao)
             if self.molecule_propagator_str == 'magnus2':
                 self.F_orth_n12dt = self.F_orth
@@ -199,55 +213,61 @@ class MOLECULE():
         # Dividing by 0.14818471 Å³ will set the volume to atomic units.
         return volume / constants.V_AU_AA3
     
-    def remove_core_electrons(self, mo_removal_index_list):
+    def remove_core_electrons(self, mo_removal_index_dict):
         """
-        Remove core electrons from a molecular orbital (DCH driver).
+        Sudden single/double core-hole: remove electrons from selected MOs without
+        re-optimizing the SCF. Density is non-stationary; analysis uses neutral MOs.
 
-        Parameters:
-        mo_index : int
-            0-based MO index from which to remove electrons.
-
-        Returns:
-        None
+        Parameters
+        ----------
+        mo_removal_index_dict : dict
+            Map of 0-based MO index → number of electrons to remove (1 or 2).
         """
         mo_gs = self.mf.mo_coeff.copy()
         mf_gs = self.mf.copy()
-        
-        nmo = mo_gs.shape[1]
-        for mo_idx in self.mo_removal_index_list:
+
+        nmo = mo_gs.shape[-1]
+        for mo_idx in mo_removal_index_dict:
             if mo_idx >= nmo:
-                raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
+                raise ValueError(
+                    f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based)."
+                )
 
         logger.debug("Before removing core electrons:")
         self.print_occ(5)
 
         original_charge = self.mf.mol.charge
-        original_spin   = self.mf.mol.spin
-        
-        self.mf.mol.charge = original_charge + 2 
+        original_spin = self.mf.mol.spin
 
-        if len(mo_removal_index_list) == 1:
-            self.mf.mol.spin = original_spin
+        n_holes = sum(mo_removal_index_dict.values())
+        if n_holes < 1:
+            raise ValueError("mo_removal_index_dict must remove at least one electron.")
+
+        self.mf.mol.charge = original_charge + n_holes
+        if n_holes == 2:
+            if len(mo_removal_index_dict) == 1:
+                self.mf.mol.spin = original_spin  # closed-shell double hole
+            else:
+                self.mf.mol.spin = original_spin + 2  # one hole on each of two MOs (α,α)
         else:
-            self.mf.mol.spin = original_spin + 2
-        
+            self.mf.mol.spin = original_spin + 1
+
         self.mf.mol.build(False, False)
 
         setocc = [self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy()]
-        if len(mo_removal_index_list) == 1:
-            setocc[0][mo_removal_index_list[0]] = 0
-            setocc[1][mo_removal_index_list[0]] = 0
-        else:
-            setocc[0][mo_removal_index_list[0]] = 0
-            setocc[0][mo_removal_index_list[1]] = 0
+        for mo, n_remove in mo_removal_index_dict.items():
+            for spin_idx in range(n_remove):
+                setocc[spin_idx][mo] = 0
 
-        self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
         dm_sudden = mf_gs.make_rdm1(mo_gs, setocc)
-        self.mf.kernel(dm0=dm_sudden)
+        self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
+        self.mf.mo_coeff = mo_gs
+        self.mf.mo_occ = setocc
+        self._dch_dm0 = dm_sudden
 
-        logger.debug("After removing core electrons:")
+        logger.debug("After sudden core-hole creation (no SCF re-optimization):")
         self.print_occ(5)
-        return
+
     
     # ------------------------------------ #
     #              Additional              #
@@ -344,30 +364,22 @@ class MOLECULE():
 
     def get_mo_occupations(self, current_time):
         """
-        Compute n_k(t) = [C† S D_ao S C]_{kk} for selected indices
+        Hole occupations on the neutral MO basis (Fig. 8 convention).
+        DCH always runs open-shell (UKS).
+
+            n_k^e(t) = [C_n† S D_AO(t) S C_n]_{kk}
+            h_k(t)   = n_k^neutral - n_k^e(t)
+
+        Positive h_k is loss of electronic density; negative is gain.
         """
-        def _get_mo_occupations(D_ao, alpha):
-            if alpha is None:
-                C = self.C
-            elif alpha is True:
-                D_ao = D_ao[0]
-                C = self.C[0]
-            elif alpha is False:
-                D_ao = D_ao[1]
-                C = self.C[1]
+        S = self.S
+        C_a, C_b = self.C[0], self.C[1]
 
-            D_mo = (C.conj().T @ self.S) @ D_ao @ (self.S @ C)
-            n = D_mo.diagonal().real[self.dch_watch_indices]
-            return n
-        
-        filepath = self.dch_mo_occ_filepath
+        def _electron_occ(D_ao, C):
+            D_mo = (C.conj().T @ S) @ D_ao @ (S @ C)
+            return D_mo.diagonal().real
 
-        if self.is_open_shell:
-            n_alpha = _get_mo_occupations(self.D_ao, True)
-            n_beta  = _get_mo_occupations(self.D_ao, False)
-            n_k_total = n_alpha + n_beta
-        else:
-            n_k_total = _get_mo_occupations(self.D_ao, None)
-        
-        update_csv(filepath, current_time, None, None, None, *n_k_total)
-
+        n_e = _electron_occ(self.D_ao[0], C_a) + _electron_occ(self.D_ao[1], C_b)
+        n0 = np.asarray(self.occ_neutral[0]) + np.asarray(self.occ_neutral[1])
+        values = (n0 - n_e)[self.dch_watch_indices]
+        update_csv(self.dch_mo_occ_filepath, current_time, None, None, None, *values)

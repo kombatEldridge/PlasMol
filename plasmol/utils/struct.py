@@ -126,8 +126,10 @@ param_defs = [
     ('decay_threshold', ['additional_parameters', 'decay_threshold'], False, 'has_plasmon', 1e-5, 'plasmon', (int, float), "Field amplitude fraction at which to stop the simulation when decay_stop is true", None),
 
     ## Driver: DCH.py
-    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_list via mo_atom_contribution() and exit before propagation", None),
-    ('mo_removal_index_list', ['additional_parameters', 'mo_removal_index_list'], False, 'has_dch', None, 'molecule', list, "0-based MO indices. If check_mo_contrib_by_atom: MOs to survey. Else: 1–2 MOs for core-hole creation (one index → remove two electrons; two indices → remove one electron from each)", None),
+    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_dict via mo_atom_contribution() and exit before propagation", None),
+    ('mo_removal_index_dict', ['additional_parameters', 'mo_removal_index_dict'], False, 'has_dch', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove. If check_mo_contrib_by_atom: MOs to survey and e count ignored.", None),
     ('dch_watch_indices', ['additional_parameters', 'dch_watch_indices'], False, 'has_dch', None, 'molecule', list, "List of MO indices to watch for DCH calculations", None),
-    ('dch_mo_occ_filepath', ['additional_parameters', 'dch_mo_occ_filepath'], False, 'has_dch', None, 'molecule', str, "Path to file containing time dependent MO occupations for DCH calculations", None)
+    ('dch_mo_occ_filepath', ['additional_parameters', 'dch_mo_occ_filepath'], False, 'has_dch', None, 'molecule', str, "Path to file containing time dependent MO occupations for DCH calculations", None),
+    ('dch_filter_by_amplitude', ['additional_parameters', 'dch_filter_by_amplitude'], False, 'has_dch', False, 'molecule', bool, "If true, plot_dch_mo_occupations keeps only MOs with peak-to-peak amplitude > dch_amplitude_threshold", None),
+    ('dch_amplitude_threshold', ['additional_parameters', 'dch_amplitude_threshold'], False, 'has_dch', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when dch_filter_by_amplitude is true", None),
 ]
