@@ -217,9 +217,10 @@ def plot_dch_mo_occupations(
         If None, the figure is shown interactively.
     indices : list of int, optional
         0-based MO indices to include in the plot (matching the numbers in
-        column headers such as ``MO index 23``). If None or empty, all MO
-        columns in the file are plotted. Order of ``indices`` is preserved
-        in the legend.
+        column headers such as ``MO index 23``). Corresponds to the input
+        ``dch_watch_indices``; the CSV itself logs all MOs through neutral
+        LUMO+1. If None or empty, all MO columns in the file are plotted.
+        Order of ``indices`` is preserved in the legend.
     time_window : tuple of float, optional
         ``(start, end)`` time window (same units as the CSV timestamp column).
         Data outside the window are dropped before amplitude filtering and plotting.

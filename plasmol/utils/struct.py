@@ -92,6 +92,9 @@ param_defs = [
     ('spectra_e_vs_p_filepath', ['files', 'spectra_e_vs_p_filepath'], False, None, f"field_e_vs_p.png", None, str, "File path for electric vs polarization field plot", None),
 
     # Additional Parameters
+
+    ## Checkpoint / resume
+    ('checkpoint_filename_used', ['additional_parameters', 'checkpoint_filename_used'], False, None, None, None, str, "Path to the checkpoint .npz used for this resume run (injected into the restored input when restoring files with -c)", None),
     
     ## Driver: fourier.py
     ('fourier_dict', ['additional_parameters', 'fourier'], True, "has_fourier", None, 'molecule', dict, None, None),
@@ -128,7 +131,7 @@ param_defs = [
     ## Driver: DCH.py
     ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_dict via mo_atom_contribution() and exit before propagation", None),
     ('mo_removal_index_dict', ['additional_parameters', 'mo_removal_index_dict'], False, 'has_dch', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove. If check_mo_contrib_by_atom: MOs to survey and e count ignored.", None),
-    ('dch_watch_indices', ['additional_parameters', 'dch_watch_indices'], False, 'has_dch', None, 'molecule', list, "List of MO indices to watch for DCH calculations", None),
+    ('dch_watch_indices', ['additional_parameters', 'dch_watch_indices'], False, 'has_dch', None, 'molecule', list, "List of 0-based MO indices to include in the final hole-occupation plot. Logging always covers MOs 0 through neutral LUMO+1; omit or null to plot all logged MOs.", None),
     ('dch_mo_occ_filepath', ['additional_parameters', 'dch_mo_occ_filepath'], False, 'has_dch', None, 'molecule', str, "Path to file containing time dependent MO occupations for DCH calculations", None),
     ('dch_filter_by_amplitude', ['additional_parameters', 'dch_filter_by_amplitude'], False, 'has_dch', False, 'molecule', bool, "If true, plot_dch_mo_occupations keeps only MOs with peak-to-peak amplitude > dch_amplitude_threshold", None),
     ('dch_amplitude_threshold', ['additional_parameters', 'dch_amplitude_threshold'], False, 'has_dch', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when dch_filter_by_amplitude is true", None),

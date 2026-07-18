@@ -5,7 +5,6 @@ import numpy as np
 from plasmol.quantum.molecule import MOLECULE
 from plasmol.drivers.quantum import run as run_quantum
 from plasmol.utils.checkpoint import add_dch_mo_occ_checkpoint
-from plasmol.utils.csv import init_csv
 from plasmol.utils.plotting import plot_dch_mo_occupations
 
 
@@ -24,29 +23,9 @@ def run(params):
         logger.info("DCH MO contribution survey complete; exiting before propagation.")
         return
 
-    if not params.resumed_from_checkpoint:
-        header = ['Timestamps (au)']
-        for inx in params.dch_watch_indices:
-            header.append(f'MO index {inx}')
-        init_csv(
-            params.dch_mo_occ_filepath,
-            f"Time-dependent hole occupations (neutral MO basis) for MO indices: {params.dch_watch_indices}",
-            header=header,
-        )
-        logger.debug(f"DCH MO occupation file initialized: {params.dch_mo_occ_filepath}")
-    else:
-        if params.dch_mo_occ_filepath and os.path.exists(params.dch_mo_occ_filepath):
-            logger.debug(f"Resuming DCH MO occupation tracking from existing {params.dch_mo_occ_filepath}")
-        else:
-            header = ['Timestamps (au)']
-            for inx in params.dch_watch_indices:
-                header.append(f'MO index {inx}')
-            init_csv(
-                params.dch_mo_occ_filepath,
-                f"Time-dependent hole occupations (neutral MO basis) for MO indices: {params.dch_watch_indices}",
-                header=header,
-            )
-            logger.warning("Resumed DCH run but no mo_occ CSV was restored from the checkpoint; started a fresh occupation file at current time.")
+    # MO occupation CSV is initialized in MOLECULE after neutral SCF once
+    # dch_log_indices (0 .. LUMO+1) are known. dch_watch_indices only selects
+    # which logged series appear in the final plot.
 
     if getattr(params, 'has_checkpoint', False):
         add_dch_mo_occ_checkpoint(params, params.dch_mo_occ_filepath)
@@ -58,9 +37,15 @@ def run(params):
         raise
     finally:
         base, _ = os.path.splitext(params.dch_mo_occ_filepath)
+        plot_indices = getattr(params, 'dch_watch_indices', None)
+        if plot_indices is not None:
+            logger.debug(f"Plotting DCH hole occupations for MO indices: {plot_indices}")
+        else:
+            logger.info("Plotting DCH hole occupations for all logged MO indices.")
         plot_dch_mo_occupations(
             params.dch_mo_occ_filepath,
             output_image_path=base,
+            indices=plot_indices,
             filter_by_amplitude=getattr(params, 'dch_filter_by_amplitude', False),
             amplitude_threshold=getattr(params, 'dch_amplitude_threshold', 0.2),
         )

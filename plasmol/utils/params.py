@@ -22,10 +22,20 @@ from plasmol.classical.sources import MEEPSOURCE, walk_through_src_funcs
 
 logger = logging.getLogger("main")
 
-PLASMON_RUN_ADDITIONAL_PARAMETERS = frozenset({'decay_stop', 'decay_threshold'})
+# additional_parameters keys that must not mark the run as a custom-driver job
+PLASMON_RUN_ADDITIONAL_PARAMETERS = frozenset({
+    'decay_stop',
+    'decay_threshold',
+    'checkpoint_filename_used',
+})
 
 class PARAMS:
     def __init__(self, args):
+        # Phase 1: CLI only provides -c / --checkpoint → restore files and exit.
+        if args.input is None:
+            self._restore_checkpoint_files(args)
+            sys.exit(0)
+
         self.preparams = self._parse_input_file(args)
         self.verbose = getattr(args, 'verbose', 1)
         self.log = getattr(args, 'log', None)
@@ -102,6 +112,8 @@ class PARAMS:
                 if boolean_name == 'has_np_abs_cross_sec' and default_value is not None and not hasattr(self, attr):
                     setattr(self, attr, default_value)
                     default_values_used.append((attr, default_value))
+        else:
+            self.has_np_abs_cross_sec = False
 
         if getattr(self, 'driver_str', None) == 'dch':
             self.has_dch = True
@@ -109,55 +121,15 @@ class PARAMS:
                 if boolean_name == 'has_dch' and default_value is not None and not hasattr(self, attr):
                     setattr(self, attr, default_value)
                     default_values_used.append((attr, default_value))
-
+        else:
+            self.has_dch = False
+            
         self._attribute_checks()
         self._attribute_formation()
         self._test_symmetry()
+        self._checkpoint_check(args)
         logger.info("All parameters successfully parsed and validated.")
         delattr(self, 'preparams')
-
-        if hasattr(args, 'checkpoint') and args.checkpoint is not None:
-            if os.path.exists(args.checkpoint):
-                from plasmol.utils.checkpoint import resume_from_checkpoint
-                logger.info(f"Checkpoint file {args.checkpoint} found.")
-                params = resume_from_checkpoint(args)
-                # establish a list of keys that are allowed to be altered after resuming a checkpoint run
-                QUIET_CHANGABLE_KEYS = {
-                    'checkpoint_dict', 'additional_parameters', 'fourier_dict', 'molecule_dict', 
-                    'times', 'log', 'field_e_filepath', 'field_p_filepath', 'spectra_e_vs_p_filepath'
-                }
-                CHANGABLE_KEYS = {
-                    'dt', 't_end', 
-                    'checkpoint_frequency_time', 
-                    'checkpoint_frequency_steps', 'checkpoint_filepath',
-                    'fourier_max_ev',
-                    'fourier_min_ev', 'fourier_gamma', 'fourier_npz_filepath',
-                    'fourier_spectrum_filepath', 'geometry_xyz_filepath', 'input_file_path',
-                    'spectra_e_vs_p_filepath', 'verbose',
-                    }
-                CHANGABLE_KEYS.update(QUIET_CHANGABLE_KEYS)
-                
-                for attr, value in params.__dict__.items():
-                    try:
-                        is_different = (value != getattr(self, attr, value)).any() if isinstance(value, np.ndarray) else (value != getattr(self, attr, value))
-                    except:
-                        is_different = True
-
-                    if attr not in CHANGABLE_KEYS:
-                        if is_different:
-                            raise ValueError(f"Parameter '{attr}' differs between checkpoint ({attr} = {value}) and current settings ({attr} = {getattr(self, attr)}).")
-                        else:
-                            setattr(self, attr, value)
-                    else:
-                        if is_different:
-                            if attr not in QUIET_CHANGABLE_KEYS:
-                                logger.warning(f"Parameter '{attr}' differs between checkpoint ({attr} = {value}) and current settings ({attr} = {getattr(self, attr)}).")
-                                logger.warning(f"This simulation will use the value from the current settings: {attr} = {getattr(self, attr)}.")
-                logger.info("===== Directory is now setup to resume from checkpoint =====")
-            else:
-                raise ValueError(f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given.")
-        else:
-            self.resumed_from_checkpoint = False
 
     def _attribute_checks(self):
         """Perform checks and instantiations based on attributes."""
@@ -623,6 +595,39 @@ class PARAMS:
                     mode = "single hole on each of two MOs"
                 logger.debug(f"DCH core-hole mode: mo_removal_index_dict={coerced} ({mode}).")
 
+            # Optional final-plot MO selection (logging is always 0 .. LUMO+1)
+            watch = getattr(self, 'dch_watch_indices', None)
+            if watch is not None:
+                if not isinstance(watch, list) or len(watch) == 0:
+                    raise ValueError(
+                        "DCH 'dch_watch_indices' must be a non-empty list of 0-based MO "
+                        "indices to plot, or omitted to plot all logged MOs."
+                    )
+                coerced_watch = []
+                for raw in watch:
+                    try:
+                        idx = int(raw)
+                    except (TypeError, ValueError) as e:
+                        raise ValueError(
+                            f"DCH 'dch_watch_indices' entry {raw!r} must be an integer "
+                            f"0-based MO index."
+                        ) from e
+                    if idx < 0:
+                        raise ValueError(
+                            f"DCH 'dch_watch_indices' entry {idx} must be a non-negative "
+                            f"0-based MO index."
+                        )
+                    coerced_watch.append(idx)
+                self.dch_watch_indices = coerced_watch
+                logger.debug(
+                    f"DCH plot MO indices (dch_watch_indices): {coerced_watch}"
+                )
+
+            if not getattr(self, 'dch_mo_occ_filepath', None):
+                raise ValueError(
+                    "DCH driver requires 'dch_mo_occ_filepath' under additional_parameters."
+                )
+
     def _conform_dt_to_meep(self):
         """
         Adjust dt (and t_end) so they match Meep's actual timestep.
@@ -734,7 +739,7 @@ class PARAMS:
             sig = inspect.signature(self.molecule_propagator)
             exclude_args = {'molecule', 'exc'}
             self.molecule_propagator_params = {name: getattr(self, name) for name in sig.parameters if name not in exclude_args}
-            self.molecule_propagator_params['has_dch'] = True if self.has_dch else False
+            self.molecule_propagator_params['has_dch'] = True if getattr(self, 'has_dch', False) else False
 
             if not self.has_plasmon:
                 time_values = np.arange(0, self.t_end + self.dt, self.dt)
@@ -753,6 +758,56 @@ class PARAMS:
                     attr = f"spectra_e_{dir}_vs_p_{dir}_filepath"
                     value = f"{dir}_dir/{self.spectra_e_vs_p_filepath}"
                     setattr(self, attr, value)
+
+    def _restore_checkpoint_files(self, args):
+        """Phase 1: restore CSVs / input JSON / xyz from a CLI checkpoint path, then exit."""
+        if not getattr(args, 'checkpoint', None):
+            raise ValueError("No input file and no --checkpoint given.")
+        if not os.path.exists(args.checkpoint):
+            raise ValueError(
+                f"Checkpoint file {args.checkpoint} not found, but resume from checkpoint flag ('-c') given."
+            )
+        from plasmol.utils.checkpoint import restore_files_from_checkpoint
+        logger.info(f"Checkpoint file {args.checkpoint} found; restoring files only.")
+        result = restore_files_from_checkpoint(args.checkpoint)
+        logger.info("Simulation exiting so you can inspect / edit the restored input file.")
+        logger.info(
+            f"To continue, re-run with the restored input ('{result['restored_input_filepath']}')"
+        )
+        logger.info(
+            "Parameters safe to edit before resuming include: dt, t_end, "
+            "checkpoint_frequency_time/steps, checkpoint_filepath, "
+            "fourier_max_ev/min_ev/gamma/npz_filepath/spectrum_filepath, "
+            "spectra_e_vs_p_filepath, verbose."
+        )
+        logger.info("===== Directory is now setup to resume from checkpoint =====")
+
+    def _checkpoint_check(self, args):
+        """
+        Phase 2: if the input declares checkpoint_filename_used, load non-file
+        propagator state from that checkpoint. Otherwise mark a fresh run.
+        """
+        if getattr(args, 'checkpoint', None) and not getattr(self, 'checkpoint_filename_used', None):
+            logger.warning(
+                "CLI --checkpoint is ignored when an input file is provided without "
+                "additional_parameters.checkpoint_filename_used. "
+                "Run with only -c / --checkpoint first to restore files."
+            )
+
+        ckpt = getattr(self, 'checkpoint_filename_used', None)
+        if ckpt:
+            from plasmol.utils.checkpoint import load_state_from_checkpoint
+            load_state_from_checkpoint(self, ckpt)
+            # Ensure the runtime resume flag is set for drivers / molecule.
+            self.resumed_from_checkpoint = True
+            if not isinstance(getattr(self, 'additional_parameters', None), dict):
+                self.additional_parameters = {}
+            self.additional_parameters['checkpoint_filename_used'] = ckpt
+            logger.info(
+                f"===== Resuming simulation from checkpoint '{ckpt}' ====="
+            )
+        else:
+            self.resumed_from_checkpoint = False
             
     def _test_symmetry(self):
         """Validate declared MEEP mirror symmetries and suggest compatible ones when omitted."""
@@ -965,6 +1020,8 @@ class PARAMS:
     def _check_xc(self, func_name: str, omega: float = None):
         try:
             func_name = func_name.upper()
+            # Incase user is using something like "RSH(...)" in the tuning process, 
+            # we still want it to pass the small check.
             if "{TUNE}" in func_name:
                 func_name = func_name.replace("{TUNE}", "0.4")
             derived_omega, _, _ = libxc.rsh_coeff(func_name)

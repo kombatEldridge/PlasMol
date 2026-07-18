@@ -9,7 +9,6 @@ if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, parent_dir)
     __package__ = os.path.basename(current_dir)
 
-import logging
 import numpy as np
 
 from plasmol.utils import constants
@@ -65,8 +64,8 @@ if __name__ == "__main__":
     logger.info(f"The simulation will propagate until {params.t_end} au (roughly {np.round(params.t_end / constants.T_AU_FS, decimals=5)} fs).")
     
     if getattr(params, 'has_checkpoint', False):
-        if getattr(params, 'has_nanoparticle', False):
-            # Safety: ensure no checkpointing occurs if nanoparticle present (should have been disabled during param parsing)
+        if getattr(params, 'has_plasmon', False):
+            # Safety: ensure no checkpointing occurs if has_plasmon present (should have been disabled during param parsing)
             params.has_checkpoint = False
         else:
             if params.resumed_from_checkpoint:
