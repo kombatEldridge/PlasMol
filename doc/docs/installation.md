@@ -56,3 +56,22 @@ python -m plasmol.main --describe | head -30
 ```
 
 You should see the CLI help and a beautiful parameter table.
+
+### 5. Documentation site (optional)
+
+The docs use [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) (`theme.name: material` in `doc/mkdocs.yml`). That package is listed in `requirements-dev.txt`:
+
+```bash
+pip install -r requirements-dev.txt
+# or only the docs stack:
+pip install "mkdocs-material>=9.0"
+```
+
+Then from the `doc/` directory:
+
+```bash
+cd doc
+mkdocs serve
+```
+
+Open the URL printed in the terminal (usually http://127.0.0.1:8000). If you see `Unrecognised theme name: 'material'`, Material is not installed in the active environment — run the `pip install` line above in that same env.
