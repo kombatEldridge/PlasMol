@@ -1,7 +1,35 @@
 # tests/conftest.py
+import shutil
+from pathlib import Path
+
 import pytest
 from argparse import Namespace
 from plasmol.utils.params import PARAMS
+
+# Repo root (parent of tests/) and tests/ dir — where a stray "private/" may appear
+_TESTS_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _TESTS_DIR.parent
+
+
+def _remove_private_dirs():
+    """Remove pytest-generated ``private/`` trees under the repo root and tests/."""
+    for base in (_REPO_ROOT, _TESTS_DIR):
+        private = base / "private"
+        if private.is_dir():
+            shutil.rmtree(private, ignore_errors=True)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _cleanup_private_dir():
+    """Ensure any ``private/`` dir created during the suite is removed at the end."""
+    yield
+    _remove_private_dirs()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # Belt-and-suspenders: also clean after the session even if fixtures tear down early.
+    _remove_private_dirs()
+
 
 MINIMAL_MOLECULE_JSON = """
 {
