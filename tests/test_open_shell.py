@@ -250,7 +250,7 @@ def test_propagation_returns_length_3_array(h_atom_molecule):
     """propagation() should return shape (3,) regardless of spin."""
     m = h_atom_molecule
     mu_arr = propagation(
-        params={"dt": m.dt},
+        params={"dt": m.dt, "has_core_hole": False, "current_time": 0.0},
         molecule=m,
         exc=_zero_field(),
         propagator=propagate_rk4,

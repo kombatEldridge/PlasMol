@@ -1,6 +1,6 @@
 # Usage
 
-PlasMol is run from the command line and is controlled almost entirely by a single **JSON input file**. 
+PlasMol is run from the command line and is controlled almost entirely by a single **JSON input file**.
 
 ## Command-Line Interface (CLI)
 
@@ -17,6 +17,7 @@ python -m plasmol.main -f input.json [options]
 - `--help` : Show CLI help.
 
 Example:
+
 ```bash
 python -m plasmol.main --describe
 ```
@@ -54,7 +55,7 @@ This section is required.
 ```
 
 | Key | Type | Default | Description | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `dt` | float | – | Time step | a.u. |
 | `t_end` | float | – | Simulation end time | a.u. |
 | `driver` | str or null | null | Force a specific driver name | – |
@@ -71,6 +72,7 @@ Driver is inferred automatically if not specified:
 Contains everything needed for Meep FDTD simulations of nanoparticles (and the classical part of hybrid runs).
 
 ### 2.1 "simulation"
+
 These are the general paramters necessary to run a MEEP simulation. More information on these parameters can be found in the [MEEP documentation](https://meep.readthedocs.io/).
 
 ```json
@@ -87,14 +89,13 @@ These are the general paramters necessary to run a MEEP simulation. More informa
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
-| `cell_length`                 | int or float | Simulation cubic box length | 0.1 | μm |
-| `cell_volume`                 | list of int or float | Simulation box size; `cell_volume` overrides `cell_length` if both are given | – | μm |
-| `pml_thickness`               | int or float | Perfectly matched layer thickness; recommended ≈ λ_max / 2 | 0.01 | μm |
-| `symmetries`                  | list of str, int pairs | Pairs of `axis, phase`, e.g. `["Y", 1, "Z", -1]`; Axes = X/Y/Z, phase = ±1 | – | – |
-| `surrounding_material_index`  | int or float | Refractive index of background medium | 1.33 | – |
-| `courant`                     | int or float | Courant number for stability | 0.5 | – |
-
+| ----- | ------ | --------- | ------------- | ------- |
+| `cell_length` | int or float | Simulation cubic box length | 0.1 | μm |
+| `cell_volume` | list of int or float | Simulation box size; `cell_volume` overrides `cell_length` if both are given | – | μm |
+| `pml_thickness` | int or float | Perfectly matched layer thickness; recommended ≈ λ_max / 2 | 0.01 | μm |
+| `symmetries` | list of str, int pairs | Pairs of `axis, phase`, e.g. `["Y", 1, "Z", -1]`; Axes = X/Y/Z, phase = ±1 | – | – |
+| `surrounding_material_index` | int or float | Refractive index of background medium | 1.33 | – |
+| `courant` | int or float | Courant number for stability | 0.5 | – |
 
 ### 2.2 "source"
 
@@ -127,7 +128,7 @@ Defines the incident electromagnetic source within the FDTD simulation. Again, i
 **Common fields**:
 
 | Key | Type | Source Type | Description | Default | Units |
-|-----|------|---------|----|-------------|-------|
+| ----- | ------ | --------- | ---- | ------------- | ------- |
 | `type` | str | All | Type of preset electric field to add ("continuous", "gaussian", or <custom\>) | – | – |
 | `center` | list of 3 floats | All | Center coordinates of the source | – | μm |
 | `size` | list of 3 floats | All | Size of the source volume; for 2D/3D sources, set the propagation dimension size to 0 | – | μm |
@@ -138,14 +139,14 @@ Defines the incident electromagnetic source within the FDTD simulation. Again, i
 | `additional_parameters.wavelength` | int or float | `continuous` + `gaussian` | Frequency of the source; gets converted to frequency if given instead | – | μm |
 | `additional_parameters.start_time` | int or float | All | The starting time for the source | 0 | t_meep |
 | `additional_parameters.end_time` | int or float | All | The end time for the source | 1e20 | t_meep |
-| `additional_parameters.width` | int or float | `continuous` + `gaussian`| Roughly, the temporal width of the smoothing | 0 | – |
-| `additional_parameters.fwidth` | int or float | All |  frequency width is proportional to the inverse of the temporal width; equal to 1/width | inf | – |
+| `additional_parameters.width` | int or float | `continuous` + `gaussian` | Roughly, the temporal width of the smoothing | 0 | – |
+| `additional_parameters.fwidth` | int or float | All | frequency width is proportional to the inverse of the temporal width; equal to 1/width | inf | – |
 | `additional_parameters.slowness` | int or float | `continuous` | Controls how far into the exponential tail of the tanh function the source turns on | 3.0 | – |
-| `additional_parameters.cutoff` | int or float | `gaussian` | How many widths the current decays for before it is cut off and set to zero  | 5.0 | – |
+| `additional_parameters.cutoff` | int or float | `gaussian` | How many widths the current decays for before it is cut off and set to zero | 5.0 | – |
 
-If you want to provide a custom source, you'll need to go into `classical/sources.py` and inject the source function (`src_func`). Additionally the `"type"` must be the name of the function. 
+If you want to provide a custom source, you'll need to go into `classical/sources.py` and inject the source function (`src_func`). Additionally the `"type"` must be the name of the function.
 
-Note: At v1.1.0, all other variables for your custom source function not stated above as supported (such as wavelength and frequency) must be hard coded into the `src_func` within `classical/sources.py`.
+Note: At v1.2.0, all other variables for your custom source function not stated above as supported (such as wavelength and frequency) must be hard coded into the `src_func` within `classical/sources.py`.
 
 ### 2.3 "nanoparticle"
 
@@ -162,12 +163,12 @@ This section specifies details about the singular NP in your simulation.
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `material` | str | Name from `meep.materials` (e.g. `Au_JC_visible`, `Ag_JC_visible`) | – | – |
-| `radius`   | int or float | Radius of Spherical NP | – | μm |
-| `center`   | list of int or float | Center position of Spherical NP | [0, 0, 0] | μm |
+| `radius` | int or float | Radius of Spherical NP | – | μm |
+| `center` | list of int or float | Center position of Spherical NP | [0, 0, 0] | μm |
 
-Note: At v1.1.0, only **spherical** NPs are supported.
+Note: At v1.2.0, only **spherical** NPs are supported.
 
 ### 2.4 "images"
 
@@ -185,12 +186,11 @@ Generate PNG frames and optional GIF of |E| evolution.
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `timesteps_between` | int | Number of Meep timesteps between PNG frames | – | – |
 | `additional_parameters` | list | Additional arguments passed to Meep's output_png (from h5topng) | ['-Zc dkbluered', '-S 10'] | – |
 | `dir_name` | str | Directory name where PNG frames will be saved | plasmol-images | – |
 | `make_gif` | bool | Automatically create animated GIF from the PNG frames after simulation | True | – |
-
 
 ### 2.5 "molecule"
 
@@ -207,7 +207,7 @@ This set is necessary to specify details about how the molecule will be treated 
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `position` | list of int or float | Location of the quantum molecule inside the Meep cell | – | μm |
 | `tolerance_field_e` | int or float | Minimum E at molecule position before triggering quantum propagation (hybrid only) | 1e-20 | a.u. |
 | `back_propagation` | bool | Whether to inject the molecular induced dipole back into Meep as a CustomSource | True | – |
@@ -235,7 +235,7 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `geometry` | list of dicts or str | List of `{"atom": "...", "coord": [x,y,z]}` or path to a `.xyz` file | – | – |
 | `geometry_units` | str | Units of the geometry coordinates ("bohr" or "angstrom") | – | – |
 | `charge` | int | Total molecular charge | 0 | – |
@@ -246,10 +246,9 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 
 For `geometry` entries given as `.xyz` files, they must follow this format:
 
- - First line: total number of atoms (optional)
- - Second line: molecule name or comment (optional)
- - All other lines: element symbol or atomic number, x, y, and z coordinates, separated by spaces or tabs
-
+- First line: total number of atoms (optional)
+- Second line: molecule name or comment (optional)
+- All other lines: element symbol or atomic number, x, y, and z coordinates, separated by spaces or tabs
 
 ### 3.2 Propagator
 
@@ -265,7 +264,7 @@ For `geometry` entries given as `.xyz` files, they must follow this format:
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `propagator.type` | str | Time-propagation algorithm ("magnus2", "rk4", or "step") | `"magnus2"` | – |
 | `propagator.pc_convergence` | float | Predictor-corrector convergence threshold (Magnus2 only) | 1e-12 | a.u. |
 | `propagator.max_iterations` | int | Maximum predictor-corrector iterations (Magnus2 only) | 200 | – |
@@ -292,7 +291,7 @@ When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must
 ```
 
 | Key | Type | Source Type | Description | Default | Units |
-|-----|------|---------|----|-------------|-------|
+| ----- | ------ | --------- | ---- | ------------- | ------- |
 | `type` | str | All | Shape of the external field ("pulse" or "kick") | – | – |
 | `intensity` | float | All | Peak electric-field strength | – | a.u. |
 | `peak_time` | float | All | Time at which the pulse/kick reaches maximum | – | a.u. |
@@ -320,7 +319,7 @@ Optional energy-dependent imaginary potential added to the Fock matrix for lifet
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `type` | str | `"static"` or `"dynamic"` CAP | `"static"` | – |
 | `gam0` | float | Base CAP strength | 1.0 | a.u. |
 | `xi` | float | Exponent controlling energy dependence of CAP | 0.5 | – |
@@ -347,7 +346,7 @@ Controls output file names and checkpointing behavior.
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `checkpoint.frequency_steps` | int | Number of time steps between checkpoint saves | – | – |
 | `checkpoint.frequency_time` | float | Amount of simulation time between checkpoint saves (alternative to frequency_steps) | – | a.u. |
 | `checkpoint.filepath` | str | Path to the `.npz` checkpoint file | – | – |
@@ -379,13 +378,18 @@ When present (and the molecule source is a delta kick), PlasMol automatically ru
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `gamma` | float | Broadening (damping) factor applied before FFT | – | a.u. |
 | `min_ev` | float | Lower energy limit of the plotted spectrum | 1.5 | eV |
 | `max_ev` | float | Upper energy limit of the plotted spectrum | 5.0 | eV |
 | `spectrum_filepath` | str | Output PNG file for the absorption spectrum | – | – |
 | `npz_filepath` | str | Optional `.npz` file containing raw Fourier data | – | – |
 | `tau` | float | Extra artificial damping time constant tau (signal *= exp(-t/tau)) applied to time-domain polarization before FFT | – | a.u. |
+| `polarization` | str | `full` (x+y+z), `parallel` (E along NP–mol axis), or `perpendicular` | `full` | – |
+| `perp_component` | str | Optional `x`/`y`/`z` for perpendicular mode | auto | – |
+| `field_e_ref_filepath` | str | Vacuum \(E_{inc}\) CSV (`time,xx,yy,zz`) | `field_e_ref.csv` | – |
+| `use_existing_e_field_ref` | bool | Skip vacuum Meep runs when reference file exists | auto | – |
+| `reference_only` | bool | Only build vacuum references and exit (`full` only) | false | – |
 
 ### 5.2 "comparison" (MO energy diagrams)
 
@@ -409,7 +413,7 @@ Runs a series of ground-state SCF calculations for different basis sets / XC fun
 ```
 
 | Key | Type | Description | Default | Units |
-|-----|------|---------|-------------|-------|
+| ----- | ------ | --------- | ------------- | ------- |
 | `bases` | list of str | List of basis sets to compare | – | – |
 | `xcs` | list of str | List of exchange-correlation functionals to compare | – | – |
 | `lrc_parameters` | dict | Mapping of XC name → μ value for range-separated hybrids | – | – |
@@ -434,6 +438,21 @@ List of spatial locations (in μm) at which the electric field time series will 
 
 Each entry is a list of three floats `[x, y, z]`.
 
+### 5.5 "core_hole" driver (SCH / DCH)
+
+Set `"driver": "core_hole"` under `settings`. Parameters live under `additional_parameters`:
+
+| Key | Type | Description | Default |
+| ----- | ------ | ------------- | --------- |
+| `mo_removal_index_dict` | dict | 0-based MO index → electrons to remove (1 or 2). `{i:1}` SCH; `{i:2}` DCH; `{i:1,j:1}` two SCH | required |
+| `core_hole_mo_occ_filepath` | str | CSV path for time-dependent hole occupations | required |
+| `core_hole_watch_indices` | list | MO indices to plot (logging is 0…LUMO+1) | all logged |
+| `core_hole_filter_by_amplitude` | bool | Filter plot by peak-to-peak amplitude | false |
+| `core_hole_amplitude_threshold` | float | Amplitude cutoff when filtering | 0.2 |
+| `check_mo_contrib_by_atom` | bool | Survey atom contributions and exit | false |
+
+See [Core-Hole Dynamics](methodology/core_hole.md).
+
 ### 5.4 Using a Custom Driver
 
 To run a completely custom workflow, set the driver name in `settings` and (optionally) supply extra parameters under `additional_parameters`.
@@ -453,4 +472,4 @@ To run a completely custom workflow, set the driver name in `settings` and (opti
 
 ---
 
-*This document reflects PlasMol v1.1.0 JSON input format.*
+*This document reflects PlasMol v1.2.0 JSON input format.*

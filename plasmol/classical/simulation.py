@@ -104,10 +104,17 @@ class SIMULATION:
         timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
 
         if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
-            logging.debug(f"Calling propagator at time {round(current_t_meep * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)} au (step {current_step})")
+            current_time_au = round(
+                current_t_meep * constants.convertTimeMeep2Atomic,
+                self.time_rounding_decimals,
+            )
+            logging.debug(f"Calling propagator at time {current_time_au} au (step {current_step})")
 
             eArr = [field_e[c] for c in self.xyz]
             logging.debug(f'Electric field given to propagator: {eArr} in au')
+
+            # Required by quantum.propagation (same as drivers/quantum.py each step).
+            self.molecule_propagator_params['current_time'] = current_time_au
 
             ind_dipole = propagation(
                 params=self.molecule_propagator_params,
@@ -129,6 +136,21 @@ class SIMULATION:
             update_csv(self.field_p_filepath, timestamp_au, 0.0, 0.0, 0.0)
 
         # Always write electric field to CSV in atomic units
+        update_csv(self.field_e_filepath, timestamp_au, field_e['x'], field_e['y'], field_e['z'])
+
+    def _record_field_only(self, sim):
+        """
+        Record E at the molecule position without quantum propagation.
+
+        Used by Fourier vacuum-reference runs (no NP, no molecule) to collect
+        the incident field E_inc for μ(ω)/E_inc(ω) deconvolution.
+        """
+        field_e = self._get_electric_field(sim, self.plasmol_molecule_position)
+        current_t_meep = sim.meep_time()
+        timestamp_au = round(
+            (current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic,
+            self.time_rounding_decimals,
+        )
         update_csv(self.field_e_filepath, timestamp_au, field_e['x'], field_e['y'], field_e['z'])
 
     def _record_probe_fields(self, sim):
@@ -211,6 +233,14 @@ class SIMULATION:
             if self.has_molecule:
                 run_functions.append(mp.at_every(self.dt_meep, self._call_propagation))
                 run_functions.append(mp.at_beginning(self._call_propagation))
+            elif getattr(self, 'record_field_only', False):
+                if not hasattr(self, 'plasmol_molecule_position') or self.plasmol_molecule_position is None:
+                    raise ValueError(
+                        "record_field_only requires plasmol_molecule_position "
+                        "(sample location for the vacuum reference field)."
+                    )
+                run_functions.append(mp.at_every(self.dt_meep, self._record_field_only))
+                run_functions.append(mp.at_beginning(self._record_field_only))
 
             if getattr(self, 'probe_points', None):
                 self.field_data = {str(p): [] for p in self.probe_points}
@@ -229,6 +259,7 @@ class SIMULATION:
                 logging.info("Simulation completed successfully!")
         except Exception as e:
             logging.error(f"Simulation failed with error: {e}", exc_info=True)
+            raise
         finally:
 
             if self.has_images and getattr(self, 'images_make_gif', True):

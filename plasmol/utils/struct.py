@@ -104,6 +104,11 @@ param_defs = [
     ('fourier_npz_filepath', ['additional_parameters', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
     ('fourier_spectrum_filepath', ['additional_parameters', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
     ('fourier_tau', ['additional_parameters', 'fourier', 'tau'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping time constant tau; applied as exp(-t/tau) to polarization field before FFT", "a.u."),
+    ('fourier_use_existing_e_field_ref', ['additional_parameters', 'fourier', 'use_existing_e_field_ref'], False, 'has_fourier', False, 'molecule', bool, "Whether to use an existing vacuum E_inc field reference", None),
+    ('fourier_field_e_ref_filepath', ['additional_parameters', 'fourier', 'field_e_ref_filepath'], False, 'has_fourier', 'field_e_ref.csv', 'molecule', str, "Vacuum E_inc CSV (time,xx,yy,zz). If the file exists it is used and vacuum reference sims are skipped; otherwise Meep Fourier runs write the merged reference here (default field_e_ref.csv)", None),
+    ('fourier_reference_only', ['additional_parameters', 'fourier', 'reference_only'], False, 'has_fourier', False, 'molecule', bool, "If true, only run vacuum reference E_inc simulations (no molecule/NP production runs, no spectrum); write merged field_e_ref_filepath and exit", None),
+    ('fourier_polarization', ['additional_parameters', 'fourier', 'polarization'], False, 'has_fourier', 'full', 'molecule', str, "Fourier polarization mode: 'full' (x+y+z), 'parallel' (E along NP–molecule axis, one run), or 'perpendicular' (E perp. to that axis, one run)", None),
+    ('fourier_perp_component', ['additional_parameters', 'fourier', 'perp_component'], False, 'has_fourier', None, 'molecule', str, "Optional Cartesian component ('x','y','z') for perpendicular mode; if omitted, chosen as the axis most orthogonal to the NP–molecule vector", None),
 
     ## Driver: comparison.py
     ('comparison_dict', ['additional_parameters', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),
@@ -128,11 +133,11 @@ param_defs = [
     ('decay_stop', ['additional_parameters', 'decay_stop'], False, 'has_plasmon', False, 'plasmon', bool, "Stop the simulation after the source field has decayed to a predetermined fraction of its peak", None),
     ('decay_threshold', ['additional_parameters', 'decay_threshold'], False, 'has_plasmon', 1e-5, 'plasmon', (int, float), "Field amplitude fraction at which to stop the simulation when decay_stop is true", None),
 
-    ## Driver: DCH.py
-    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_dch', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_dict via mo_atom_contribution() and exit before propagation", None),
-    ('mo_removal_index_dict', ['additional_parameters', 'mo_removal_index_dict'], False, 'has_dch', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove. If check_mo_contrib_by_atom: MOs to survey and e count ignored.", None),
-    ('dch_watch_indices', ['additional_parameters', 'dch_watch_indices'], False, 'has_dch', None, 'molecule', list, "List of 0-based MO indices to include in the final hole-occupation plot. Logging always covers MOs 0 through neutral LUMO+1; omit or null to plot all logged MOs.", None),
-    ('dch_mo_occ_filepath', ['additional_parameters', 'dch_mo_occ_filepath'], False, 'has_dch', None, 'molecule', str, "Path to file containing time dependent MO occupations for DCH calculations", None),
-    ('dch_filter_by_amplitude', ['additional_parameters', 'dch_filter_by_amplitude'], False, 'has_dch', False, 'molecule', bool, "If true, plot_dch_mo_occupations keeps only MOs with peak-to-peak amplitude > dch_amplitude_threshold", None),
-    ('dch_amplitude_threshold', ['additional_parameters', 'dch_amplitude_threshold'], False, 'has_dch', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when dch_filter_by_amplitude is true", None),
+    ## Driver: core_hole.py
+    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_core_hole', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_dict via mo_atom_contribution() and exit before propagation", None),
+    ('mo_removal_index_dict', ['additional_parameters', 'mo_removal_index_dict'], False, 'has_core_hole', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove. If check_mo_contrib_by_atom: MOs to survey and e count ignored.", None),
+    ('core_hole_watch_indices', ['additional_parameters', 'core_hole_watch_indices'], False, 'has_core_hole', None, 'molecule', list, "List of 0-based MO indices to include in the final hole-occupation plot. Logging always covers MOs 0 through neutral LUMO+1; omit or null to plot all logged MOs.", None),
+    ('core_hole_mo_occ_filepath', ['additional_parameters', 'core_hole_mo_occ_filepath'], False, 'has_core_hole', None, 'molecule', str, "Path to file containing time dependent MO occupations for core-hole calculations", None),
+    ('core_hole_filter_by_amplitude', ['additional_parameters', 'core_hole_filter_by_amplitude'], False, 'has_core_hole', False, 'molecule', bool, "If true, plot_core_hole_mo_occupations keeps only MOs with peak-to-peak amplitude > core_hole_amplitude_threshold", None),
+    ('core_hole_amplitude_threshold', ['additional_parameters', 'core_hole_amplitude_threshold'], False, 'has_core_hole', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when core_hole_filter_by_amplitude is true", None),
 ]

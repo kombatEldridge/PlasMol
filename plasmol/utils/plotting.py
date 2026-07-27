@@ -189,8 +189,8 @@ _MO_COLORS = (
 )
 
 
-def plot_dch_mo_occupations(
-    dch_mo_occ_filepath,
+def plot_core_hole_mo_occupations(
+    core_hole_mo_occ_filepath,
     output_image_path=None,
     indices=None,
     time_window=None,
@@ -198,9 +198,9 @@ def plot_dch_mo_occupations(
     amplitude_threshold=0.6,
 ):
     """
-    Plot time-dependent MO occupations from a DCH occupation CSV.
+    Plot time-dependent MO occupations from a core-hole occupation CSV.
 
-    Expects a file written by the DCH driver / ``molecule.get_mo_occupations``:
+    Expects a file written by the core-hole driver / ``molecule.get_mo_occupations``:
     comment lines starting with ``#``, a header row with a timestamp column and
     one column per watched MO (e.g. ``MO index 0``), then numeric data rows.
 
@@ -210,15 +210,15 @@ def plot_dch_mo_occupations(
     line only when needed.
 
     Parameters:
-    dch_mo_occ_filepath : str
-        Path to the MO occupation CSV (``dch_mo_occ_filepath``).
+    core_hole_mo_occ_filepath : str
+        Path to the MO occupation CSV (``core_hole_mo_occ_filepath``).
     output_image_path : str, optional
         Base filename for the saved plot (saved as ``{output_image_path}.png``).
         If None, the figure is shown interactively.
     indices : list of int, optional
         0-based MO indices to include in the plot (matching the numbers in
         column headers such as ``MO index 23``). Corresponds to the input
-        ``dch_watch_indices``; the CSV itself logs all MOs through neutral
+        ``core_hole_watch_indices``; the CSV itself logs all MOs through neutral
         LUMO+1. If None or empty, all MO columns in the file are plotted.
         Order of ``indices`` is preserved in the legend.
     time_window : tuple of float, optional
@@ -237,20 +237,20 @@ def plot_dch_mo_occupations(
     None
     """
     logging.getLogger('matplotlib').setLevel(logging.INFO)
-    logger.debug(f"Reading DCH MO occupation CSV: {dch_mo_occ_filepath}")
+    logger.debug(f"Reading Core-hole MO occupation CSV: {core_hole_mo_occ_filepath}")
 
-    df = pd.read_csv(dch_mo_occ_filepath, comment='#')
+    df = pd.read_csv(core_hole_mo_occ_filepath, comment='#')
     ts_cols = [col for col in df.columns if str(col).startswith("Timestamps")]
     if not ts_cols:
         raise ValueError(
-            f"No timestamp column found in {dch_mo_occ_filepath}. "
+            f"No timestamp column found in {core_hole_mo_occ_filepath}. "
             "Expected a column whose name starts with 'Timestamps'."
         )
     ts_col = ts_cols[0]
     mo_cols = [col for col in df.columns if col != ts_col]
     if not mo_cols:
         raise ValueError(
-            f"No MO occupation columns found in {dch_mo_occ_filepath} "
+            f"No MO occupation columns found in {core_hole_mo_occ_filepath} "
             f"(only timestamp column '{ts_col}')."
         )
 
@@ -280,7 +280,7 @@ def plot_dch_mo_occupations(
         if missing:
             available = sorted(col_by_index.keys())
             raise ValueError(
-                f"MO index(es) {missing} not found in {dch_mo_occ_filepath}. "
+                f"MO index(es) {missing} not found in {core_hole_mo_occ_filepath}. "
                 f"Available indices: {available}."
             )
         mo_cols = selected
@@ -294,7 +294,7 @@ def plot_dch_mo_occupations(
         df = df[(df[ts_col] >= t0) & (df[ts_col] <= t1)]
         if df.empty:
             raise ValueError(
-                f"No data in time_window={time_window} for {dch_mo_occ_filepath}."
+                f"No data in time_window={time_window} for {core_hole_mo_occ_filepath}."
             )
 
     if filter_by_amplitude:
@@ -315,7 +315,7 @@ def plot_dch_mo_occupations(
         if not kept:
             raise ValueError(
                 f"No MO series with peak-to-peak amplitude > {amplitude_threshold} "
-                f"in {dch_mo_occ_filepath}"
+                f"in {core_hole_mo_occ_filepath}"
                 + (f" within time_window={time_window}." if time_window else ".")
             )
         mo_cols = kept

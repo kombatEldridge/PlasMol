@@ -1,9 +1,7 @@
 # Tutorials
 
 !!! danger "this page is a WIP"
-    I still need to go through these tutorials and add data and check the template files. 
-
-
+    I still need to go through these tutorials and add data and check the template files.
 
 ## Tutorial 1: Classical Nanoparticle Simulation (FDTD Only)
 
@@ -51,6 +49,7 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
 ```
 
 **Run**:
+
 ```bash
 python -m plasmol.main -f classical.json -vv -l classical.log
 ```
@@ -112,6 +111,7 @@ Compute the time-dependent induced dipole of a water molecule under a pulsed ele
 ```
 
 **Run**:
+
 ```bash
 python -m plasmol.main -f quantum_pulse.json -vv -l quantum.log
 ```
@@ -167,6 +167,7 @@ Compute the absorption spectrum of water using three directional delta-kick simu
 ```
 
 **Run**:
+
 ```bash
 python -m plasmol.main -f absorption_spectrum.json -vv -l spectrum.log
 ```
@@ -241,6 +242,7 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
 ```
 
 **Run**:
+
 ```bash
 python -m plasmol.main -f hybrid.json -vv -l hybrid.log
 ```
@@ -291,6 +293,7 @@ Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and fu
 ```
 
 **Run**:
+
 ```bash
 python -m plasmol.main -f mo_comparison.json -vv
 ```
@@ -332,7 +335,7 @@ Add to your JSON:
 
 Then run with that driver. The script produces `output_arrays.txt`, efficiency plots, and a multi-peak Lorentzian fit of the plasmon resonance.
 
-Similar workflow exists for the full `plasmol_abs_cross_sec` driver (hybrid NP + molecule cross-sections).
+For hybrid NP+molecule *spectra*, prefer the `fourier` driver with a plasmon section (see [Fourier Spectra](methodology/fourier.md)).
 
 ---
 
@@ -346,3 +349,57 @@ Similar workflow exists for the full `plasmol_abs_cross_sec` driver (hybrid NP +
 All extension points are documented with comments in the source code.
 
 These tutorials cover the vast majority of use cases. For the complete parameter reference, see [Usage](usage.md) or run `--describe`. Happy simulating!
+
+---
+
+## Tutorial 7: Core-Hole (SCH / DCH) MO Tracking
+
+Create a sudden double core-hole on MO 0 and track hole occupations:
+
+```json
+{
+  "settings": { "dt": 0.05, "t_end": 100, "driver": "core_hole" },
+  "molecule": {
+    "geometry": "mol.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-31g*",
+    "xc": "pbe0",
+    "propagator": { "type": "magnus2" }
+  },
+  "additional_parameters": {
+    "mo_removal_index_dict": {"0": 2},
+    "core_hole_mo_occ_filepath": "mo_occ.csv",
+    "core_hole_watch_indices": [0, 1, 2, 3]
+  }
+}
+```
+
+- `{ "0": 1 }` → SCH; `{ "0": 2 }` → DCH; `{ "0": 1, "1": 1 }` → two single holes.
+- Use `"check_mo_contrib_by_atom": true` first to survey which atoms dominate candidate MOs.
+- Full theory: [Core-Hole Dynamics](methodology/core_hole.md).
+
+---
+
+## Tutorial 8: Hybrid Fourier Parallel vs Perpendicular
+
+For a molecule on the +x side of an Au sphere, compute orientation-resolved hybrid spectra:
+
+```json
+"settings": { "driver": "fourier", ... },
+"plasmon": {
+  "nanoparticle": { "material": "Au_JC_visible", "radius": 0.025, "center": [0,0,0] },
+  "molecule": { "position": [0.02645, 0, 0] },
+  "source": { "type": "gaussian", ... }
+},
+"additional_parameters": {
+  "fourier": {
+    "polarization": "parallel",
+    "spectrum_filepath": "spectrum_parallel.png",
+    "field_e_ref_filepath": "field_e_ref_par.csv"
+  }
+}
+```
+
+Switch `"polarization": "perpendicular"` (optionally `"perp_component": "y"`) for the tangential spectrum. Details: [Fourier Spectra](methodology/fourier.md) § Parallel and perpendicular.

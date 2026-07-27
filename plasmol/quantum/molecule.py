@@ -60,7 +60,7 @@ class MOLECULE():
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
-        # Neutral MOs / occupations (fixed projection basis for DCH hole dynamics)
+        # Neutral MOs / occupations (fixed projection basis for core-hole dynamics)
         self.C = self.mf.mo_coeff.copy()
         if not self.is_open_shell:
             self.occ_neutral = self.mf.get_occ().copy()
@@ -69,8 +69,8 @@ class MOLECULE():
             self.occ_neutral = (self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy())
             self.mo_energy = (self.mf.mo_energy[0].copy(), self.mf.mo_energy[1].copy())
 
-        if self.has_dch:
-            self._setup_dch_mo_logging()
+        if self.has_core_hole:
+            self._setup_core_hole_mo_logging()
             self.remove_core_electrons(self.mo_removal_index_dict)
             self.occ = self.mf.mo_occ
         else:
@@ -121,8 +121,8 @@ class MOLECULE():
             elif self.molecule_propagator_str == 'step':
                 self.C_orth_ndt = self.values_from_checkpoint[f"C_orth_ndt{suffix}"]
         else:
-            if self.has_dch and getattr(self, '_dch_dm0', None) is not None:
-                self.D_ao_0 = np.asarray(self._dch_dm0, dtype=np.complex128)
+            if self.has_core_hole and getattr(self, '_core_hole_dm0', None) is not None:
+                self.D_ao_0 = np.asarray(self._core_hole_dm0, dtype=np.complex128)
                 self.D_ao = self.D_ao_0.copy()
             else:
                 self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
@@ -264,7 +264,7 @@ class MOLECULE():
         self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
         self.mf.mo_coeff = mo_gs
         self.mf.mo_occ = setocc
-        self._dch_dm0 = dm_sudden
+        self._core_hole_dm0 = dm_sudden
 
         logger.debug("After sudden core-hole creation (no SCF re-optimization):")
         self.print_occ(5)
@@ -389,55 +389,55 @@ class MOLECULE():
             return len(occ) - 1
         return int(virt[0])
 
-    def _setup_dch_mo_logging(self):
+    def _setup_core_hole_mo_logging(self):
         """
         Log hole occupations for neutral MOs 0 .. LUMO+1 (inclusive).
 
-        Plot selection is separate (``dch_watch_indices`` in the input file).
+        Plot selection is separate (``core_hole_watch_indices`` in the input file).
         """
         nmo = int(np.asarray(self.C).shape[-1])
         lumo = self._neutral_lumo_index()
         max_log = min(lumo + 1, nmo - 1)  # one above LUMO, clipped to last MO
-        self.dch_log_indices = list(range(0, max_log + 1))
+        self.core_hole_log_indices = list(range(0, max_log + 1))
         logger.debug(f"Neutral LUMO index={lumo}, logging MO indices 0..{max_log} (inclusive), nmo={nmo}.")
 
-        filepath = getattr(self, 'dch_mo_occ_filepath', None)
+        filepath = getattr(self, 'core_hole_mo_occ_filepath', None)
         if not filepath:
             raise ValueError(
-                "DCH driver requires 'dch_mo_occ_filepath' under additional_parameters."
+                "Core-hole driver requires 'core_hole_mo_occ_filepath' under additional_parameters."
             )
 
         if self.resumed_from_checkpoint and os.path.exists(filepath):
-            logger.debug(f"Resuming DCH MO occupation tracking from existing {filepath}")
+            logger.debug(f"Resuming core-hole MO occupation tracking from existing {filepath}")
             return
 
-        header = ['Timestamps (au)'] + [f'MO index {i}' for i in self.dch_log_indices]
+        header = ['Timestamps (au)'] + [f'MO index {i}' for i in self.core_hole_log_indices]
         init_csv(
             filepath,
             f"Time-dependent hole occupations (neutral MO basis) for MO indices: "
-            f"{self.dch_log_indices}",
+            f"{self.core_hole_log_indices}",
             header=header,
         )
         if self.resumed_from_checkpoint:
             logger.warning(
-                "Resumed DCH run but no mo_occ CSV was restored from the checkpoint; "
+                "Resumed core-hole run but no mo_occ CSV was restored from the checkpoint; "
                 "started a fresh occupation file at current time."
             )
         else:
-            logger.debug(f"DCH MO occupation file initialized: {filepath}")
+            logger.debug(f"Core-hole MO occupation file initialized: {filepath}")
 
     def get_mo_occupations(self, current_time):
         """
         Hole occupations on the neutral MO basis (Fig. 8 convention).
-        DCH always runs open-shell (UKS).
+        Core-hole always runs open-shell (UKS).
 
             n_k^e(t) = [C_n† S D_AO(t) S C_n]_{kk}
             h_k(t)   = n_k^neutral - n_k^e(t)
 
         Positive h_k is loss of electronic density; negative is gain.
 
-        All MOs in ``dch_log_indices`` (0 through neutral LUMO+1) are written;
-        ``dch_watch_indices`` only selects which series are plotted at the end.
+        All MOs in ``core_hole_log_indices`` (0 through neutral LUMO+1) are written;
+        ``core_hole_watch_indices`` only selects which series are plotted at the end.
         """
         S = self.S
         C_a, C_b = self.C[0], self.C[1]
@@ -448,5 +448,5 @@ class MOLECULE():
 
         n_e = _electron_occ(self.D_ao[0], C_a) + _electron_occ(self.D_ao[1], C_b)
         n0 = np.asarray(self.occ_neutral[0]) + np.asarray(self.occ_neutral[1])
-        values = (n0 - n_e)[self.dch_log_indices]
-        update_csv(self.dch_mo_occ_filepath, current_time, None, None, None, *values)
+        values = (n0 - n_e)[self.core_hole_log_indices]
+        update_csv(self.core_hole_mo_occ_filepath, current_time, None, None, None, *values)

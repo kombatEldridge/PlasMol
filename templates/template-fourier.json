@@ -1,0 +1,40 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 400,
+    "driver": "fourier"
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
+    "basis": "sto3g",
+    "xc": "pbe0",
+    "propagator": {
+      "type": "magnus2"
+    },
+    "source": {
+      "type": "kick"
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "gamma": 0.01,
+      "min_ev": 1.5,
+      "max_ev": 15.0,
+      "spectrum_filepath": "spectrum.png",
+      "npz_filepath": "fourier.npz",
+      "polarization": "full"
+    }
+  }
+}

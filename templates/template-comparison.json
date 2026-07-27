@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 1.0,
+    "driver": "comparison"
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
+    "basis": "sto3g",
+    "xc": "pbe0"
+  },
+  "additional_parameters": {
+    "comparison": {
+      "bases": ["sto3g", "6-31g"],
+      "xcs": ["pbe", "pbe0"],
+      "num_occupied": 5,
+      "num_virtual": 8,
+      "dir_name": "mo_comparison"
+    }
+  }
+}

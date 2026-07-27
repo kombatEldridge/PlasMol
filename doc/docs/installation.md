@@ -18,6 +18,7 @@ conda install -c conda-forge pymeep
 ```
 
 Verify:
+
 ```bash
 python -c "import meep as mp; print(mp.__version__)"
 ```
@@ -36,11 +37,13 @@ pip install -e .
 ```
 
 This installs:
+
 - pyscf, numpy, scipy, pandas, matplotlib
 - rich (for `--describe` table)
 - All other runtime requirements
 
 For development (linting, testing, docs):
+
 ```bash
 pip install -r requirements-dev.txt
 ```

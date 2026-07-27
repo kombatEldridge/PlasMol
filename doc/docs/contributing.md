@@ -10,7 +10,7 @@ Thank you for your interest in PlasMol! Contributions of all kinds are welcome â
 4. **Test** your changes (run existing tutorials + any new tests).
 5. **Submit a Pull Request** with a clear description of what was changed and why.
 
-## Most Needed Contributions (as of v1.1.0)
+## Most Needed Contributions (as of v1.2.0)
 
 - **Test suite** â€” Currently the biggest gap. Even simple regression tests for the quantum propagators, JSON validation, and end-to-end hybrid runs would be extremely valuable.
 - **More nanoparticle shapes** â€” Support for rods, shells, dimers, etc. in the classical module.
@@ -25,7 +25,7 @@ Thank you for your interest in PlasMol! Contributions of all kinds are welcome â
 
 - Add a row to `plasmol/utils/struct.py:param_defs`.
 - Add validation logic in `PARAMS._validate_all()`.
-- Handle the attribute in `PARAMS._attribute_formation()` if it needs special processing.
+- Handle the attribute in the matching `params_helpers/has_<gate>.py` module (`check` / `form`) if it needs special processing.
 - Document it in `usage.md`.
 
 ### 2. New Propagator
@@ -33,7 +33,7 @@ Thank you for your interest in PlasMol! Contributions of all kinds are welcome â
 - Implement `propagate_xxx(**params, molecule, exc)` in `quantum/propagators/`.
 - Add it to the `propagator_map` in `params.py`.
 - Update validation and `--describe` table.
-- Add a short description in `api-reference.md` and `methodology.md`.
+- Add a short description in `usage.md` and `methodology.md`.
 
 ### 3. New Custom Driver
 
@@ -64,6 +64,6 @@ Thank you for your interest in PlasMol! Contributions of all kinds are welcome â
 
 ## Questions?
 
-Open an issue on GitHub or email the maintainer (bldrdge1@memphis.edu). We are happy to discuss design decisions before you invest a lot of time.
+Open an issue on GitHub or email the maintainer (<bldrdge1@memphis.edu>). We are happy to discuss design decisions before you invest a lot of time.
 
 **Thank you for helping make PlasMol better for the plasmonics and quantum chemistry communities!**

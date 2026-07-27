@@ -12,7 +12,7 @@ from plasmol.quantum.propagators import *
 from plasmol.quantum.propagation import propagation
 from plasmol.utils.checkpoint import (
     add_field_e_checkpoint,
-    add_dch_mo_occ_checkpoint,
+    add_core_hole_mo_occ_checkpoint,
     update_checkpoint,
     init_checkpoint,
     cleanup_checkpoint,
@@ -68,7 +68,7 @@ def run(params):
             if index in report_indices:
                 percent = int(round(index / total_steps * 100))
                 logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time+params.dt}/{params.times[-1]} au)")
-            if (params.molecule_source_field[index] == 0).all() and source_has_been_zero and not params.has_dch:
+            if (params.molecule_source_field[index] == 0).all() and source_has_been_zero and not params.has_core_hole:
                 mu_arr = np.zeros(3)
             elif current_time == params.times[-1]:
                 break
@@ -90,10 +90,10 @@ def run(params):
     finally:
         if getattr(params, 'has_checkpoint', False):
             add_field_e_checkpoint(params, params.field_e_filepath, getattr(params, 'final_checkpoint_filepath', None))
-            if getattr(params, 'has_dch', False):
-                add_dch_mo_occ_checkpoint(
+            if getattr(params, 'has_core_hole', False):
+                add_core_hole_mo_occ_checkpoint(
                     params,
-                    getattr(params, 'dch_mo_occ_filepath', None),
+                    getattr(params, 'core_hole_mo_occ_filepath', None),
                     getattr(params, 'final_checkpoint_filepath', None),
                 )
             update_checkpoint(params, molecule, time, getattr(params, 'final_checkpoint_filepath', None))

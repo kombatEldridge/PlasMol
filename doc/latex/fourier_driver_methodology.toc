@@ -1,0 +1,25 @@
+\contentsline {section}{\numberline {1}Purpose and scope}{2}{section.1}%
+\contentsline {section}{\numberline {2}Physical overview}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Induced dipole from RT-TDDFT}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}From time series to absorption}{2}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Common post-processing pipeline}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Folding diagonal response components}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Optional exponential damping}{3}{subsection.3.2}%
+\contentsline {paragraph}{$\gamma $ window.}{3}{section*.2}%
+\contentsline {paragraph}{$\tau $ damping.}{3}{section*.3}%
+\contentsline {subsection}{\numberline {3.3}Discrete Fourier transform}{3}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Outputs}{3}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Quantum-only Fourier path (delta kicks)}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Setup}{3}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Typical JSON fragment}{4}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Hybrid Meep Fourier path}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Motivation}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Production runs (molecule + NP)}{5}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Unit and time-grid notes}{5}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Spectral deconvolution}{5}{subsection.5.4}%
+\contentsline {subsubsection}{\numberline {5.4.1}Consistent deconvolution}{6}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.2}Complex division, phase cancellation, and the amplitude floor}{7}{subsubsection.5.4.2}%
+\contentsline {subsubsection}{\numberline {5.4.3}From $\alpha _i$ to the reported absorption}{8}{subsubsection.5.4.3}%
+\contentsline {subsubsection}{\numberline {5.4.4}Compact algorithm (as implemented)}{8}{subsubsection.5.4.4}%
+\contentsline {paragraph}{Summary of interpretation.}{8}{section*.4}%
+\contentsline {subsection}{\numberline {5.5}Example hybrid JSON (Fourier + Au NP)}{8}{subsection.5.5}%

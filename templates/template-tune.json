@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 1.0,
+    "driver": "tune"
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "Na", "coord": [0.0, 0.0, 0.0]}
+    ],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 1,
+    "basis": "sto3g",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": "tune",
+    "cap": {
+      "type": "static",
+      "gam0": 1.0,
+      "xi": 0.5,
+      "eps0": "tune",
+      "clamp": 100
+    }
+  }
+}

@@ -27,7 +27,7 @@ def propagation(params, molecule, exc, propagator):
     mu_arr = np.zeros(3)
     
     prop_params = params.copy()
-    has_dch = prop_params.pop('has_dch')
+    has_core_hole = prop_params.pop('has_core_hole')
     current_time = prop_params.pop('current_time')
 
     propagator(**prop_params, molecule=molecule, exc=exc)
@@ -48,7 +48,7 @@ def propagation(params, molecule, exc, propagator):
     #           can be added here          #
     #  similar to molecule.calculate_mu()  #
     # ------------------------------------ #
-    if has_dch:
+    if has_core_hole:
         molecule.get_mo_occupations(current_time)
 
     return mu_arr

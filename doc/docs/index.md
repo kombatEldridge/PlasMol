@@ -3,7 +3,7 @@
 ![PlasMol Logo](PlasMol.png)
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/Python-3.8%2B-brightgreen.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/downloads/)
 
 **PlasMol** is an open-source Python package for simulating plasmon-molecule interactions. It tightly couples classical Finite-Difference Time-Domain (FDTD) electromagnetics (via [Meep](https://meep.readthedocs.io/)) with quantum Real-Time Time-Dependent Density Functional Theory (RT-TDDFT) (via custom code and [PySCF](https://pyscf.org/) molecule construction).
 
@@ -29,6 +29,7 @@ pip install -e .
 ```
 
 Run with a JSON input file:
+
 ```bash
 python -m plasmol.main -f input.json -vv -l plasmol.log
 ```
@@ -60,7 +61,7 @@ If you use PlasMol in your work, please cite the GitHub repository:
   author = {Brinton King Eldridge},
   title = {PlasMol: Simulating Plasmon-Molecule Interactions},
   url = {https://github.com/kombatEldridge/PlasMol},
-  version = {1.1.0},
+  version = {1.2.0},
   year = {2026}
 }
 ```
@@ -73,4 +74,4 @@ GPL-3.0 License. Built on Meep, PySCF, NumPy, SciPy, Matplotlib, Pandas, and Ric
 - **Advisors**: Dr. Daniel Nascimento [[Google Scholar](https://scholar.google.com/citations?hl=en&user=VVPFNW8AAAAJ)], Dr. Yongmei Wang [[Google Scholar](https://scholar.google.com/citations?hl=en&user=TLvIKj0AAAAJ)]
 - **Association**: University of Memphis
 
-For questions or collaboration: bldrdge1@memphis.edu or open an issue on GitHub.
+For questions or collaboration: <bldrdge1@memphis.edu> or open an issue on GitHub.

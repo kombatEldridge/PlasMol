@@ -1,0 +1,691 @@
+\documentclass[11pt,a4paper]{article}
+
+% -----------------------------------------------------------------------------
+% Packages
+% -----------------------------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+  keywordstyle=\color{blue!60!black}\bfseries,
+  stringstyle=\color{teal!70!black},
+  commentstyle=\color{gray},
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{Methodology of the PlasMol Fourier Driver\\
+\large Including Meep Vacuum Field References for Hybrid Spectra}
+\author{PlasMol Development Notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Purpose and scope}
+% =============================================================================
+
+The \textbf{Fourier driver} is the recommended workflow for computing linear
+absorption spectra.  Given a short, broadband excitation, the code:
+\begin{enumerate}
+  \item runs three independent polarizations ($x$, $y$, $z$) in parallel;
+  \item records the induced molecular dipole $\boldsymbol{\mu}(t)$;
+  \item optionally damps the time-domain signals to artificially increase the likelihood of convergence;
+  \item Fourier-transforms the response;
+  \item assembles a normalized absorption spectrum over a user-chosen energy
+        window.
+\end{enumerate}
+
+% =============================================================================
+\section{Physical overview}
+% =============================================================================
+
+\subsection{Induced dipole from RT-TDDFT}
+
+At each quantum step the molecule is propagated under the instantaneous
+electric field $\mathbf{E}(t)$ (either an analytic kick/pulse or the local
+Meep field).  The induced dipole is
+\begin{equation}
+  \mu_i(t)
+  =
+  \operatorname{Tr}\!\big[
+    \hat{\mu}_i \big(\mathbf{D}(t) - \mathbf{D}_0\big)
+  \big],
+  \qquad i \in \{x,y,z\},
+  \label{eq:mu}
+\end{equation}
+where $\mathbf{D}(t)$ is the time-dependent density matrix in the AO basis, $\mathbf{D}_0$ is
+the ground-state density, and $\hat{\mu}_i$ are dipole integrals
+(\texttt{molecule.calculate\_mu()}).  Open-shell runs sum $\alpha$ and $\beta$
+blocks before the trace.
+
+\subsection{From time series to absorption}
+
+PlasMol builds a scalar absorption-like quantity from the imaginary part of that response
+along all three Cartesian directions and a prefactor proportional to frequency:
+\begin{equation}
+  A(\omega)
+  =
+  -\frac{4\pi\omega}{3c}
+  \sum_{i\in\{x,y,z\}}
+  \operatorname{Im}\!\big[\mathcal{R}_i(\omega)\big],
+  \label{eq:abs}
+\end{equation}
+where $c$ is the speed of light in atomic units
+(\texttt{constants.C\_AU}) and $\mathcal{R}_i(\omega)$ is either the
+Fourier-transformed dipole or the deconvolved ratio
+$\mu_i(\omega)/E_{\mathrm{inc},ii}(\omega)$ depending on the source kick; see
+Sections~\ref{sec:qm}--\ref{sec:deconv}.  The published curve is
+peak-normalized:
+\begin{equation}
+  A_{\mathrm{norm}}(\omega)
+  =
+  \frac{A(\omega)}{\max_\omega |A(\omega)|}.
+\end{equation}
+
+\noindent Frequencies are obtained from the real FFT frequency grid,
+\begin{equation}
+  \omega_k = 2\pi\, f_k,
+  \qquad
+  f_k = \mathrm{fftfreq}(N,\Delta t),
+\end{equation}
+converted to eV via $E[\mathrm{eV}] = \omega[\mathrm{a.u.}] \times 27.211386$,
+and restricted to the user window
+$[\texttt{min\_ev},\,\texttt{max\_ev}]$.
+
+% =============================================================================
+\section{Common post-processing pipeline}
+\label{sec:common}
+% =============================================================================
+
+Regardless of how the directional runs are obtained (Quantum only or Full Plasmol), the post-processing
+stage is shared.
+
+\subsection{Folding diagonal response components}
+
+Each directional run writes a full Cartesian field CSV.  Only the component
+parallel to the drive is retained and stacked into a $(3\times N)$ array:
+\begin{align}
+  \boldsymbol{\mu}_{\mathrm{diag}}(t)
+  &=
+  \big(
+    \mu_x^{(x)}(t),
+    \mu_y^{(y)}(t),
+    \mu_z^{(z)}(t)
+  \big)^\top
+  \qquad\text{(function \texttt{fold})}.
+\end{align}
+Here the superscript denotes the polarization of the incident source.  Time
+grids are required to share a common $\Delta t$; series are trimmed to the
+shortest length if they differ slightly.
+
+\subsection{Optional exponential damping}
+
+Two related damping mechanisms may be applied before the FFT.
+
+\paragraph{$\gamma$ window.}
+Inside \texttt{fourier()}, every time series is multiplied by
+\begin{equation}
+  w_\gamma(t) = e^{-\gamma t},
+\end{equation}
+with $\gamma = \texttt{fourier.gamma}$ (a.u.; default = 0). This broadens spectral
+features artificially.
+
+\paragraph{$\tau$ damping.}
+If $\texttt{fourier.tau} > 0$, an additional factor
+\begin{equation}
+  w_\tau(t) = e^{-t/\tau}
+\end{equation}
+is applied to the polarizability CSVs on disk (written as
+\texttt{*\_damped.csv}) and, for the Meep path, to the reference
+$\mathbf{E}_{\mathrm{inc}}$ in memory only so that the reusable
+reference file remains undamped.
+
+\subsection{Discrete Fourier transform}
+
+For each Cartesian axis $i$,
+\begin{equation}
+  S_{\mu,i}(\omega)
+  =
+  \Delta t \sum_{n=0}^{N-1}
+  \mu_i(t_n)\, w(t_n)\, e^{-i\omega t_n},
+  \label{eq:fft}
+\end{equation}
+implemented as \texttt{np.fft.fft(...) * dt}.  The same window $w$ multiplies
+$\mathbf{E}_{\mathrm{inc}}$ when deconvolution is active.
+
+\subsection{Outputs}
+
+\begin{itemize}
+  \item \texttt{spectrum\_filepath} --- PNG of $A_{\mathrm{norm}}(E)$;
+  \item sibling \texttt{.csv} with columns \texttt{Frequency}, \texttt{Absorption};
+  \item optional \texttt{npz\_filepath} storing
+        \texttt{abs\_imag}, \texttt{abs\_real}, \texttt{freqs}, and a
+        \texttt{deconvolved} flag;
+  \item per-direction working directories \texttt{x\_dir/}, \texttt{y\_dir/},
+        \texttt{z\_dir/} with raw \texttt{field\_e.csv} /
+        \texttt{field\_p.csv} (and vacuum reference CSVs when applicable).
+\end{itemize}
+
+% =============================================================================
+\section{Quantum-only Fourier path (delta kicks)}
+\label{sec:qm}
+% =============================================================================
+
+\subsection{Setup}
+
+When the input has a \texttt{molecule} section but no \texttt{plasmon}
+section, the Fourier driver schedules three pure RT-TDDFT jobs.
+For each direction $i\in\{x,y,z\}$:
+\begin{itemize}
+  \item \texttt{molecule.source.component} is forced to $i$;
+  \item \texttt{QUANTUMSOURCE} builds an analytic field
+        $\mathbf{E}^{(i)}(t)$ on the global time grid
+        $t_n = n\,\Delta t$;
+  \item for \texttt{type:"kick"}, the active component is a one-step
+        $\delta$-like impulse of strength
+        \texttt{intensity} at \texttt{peak\_time}.
+\end{itemize}
+
+\noindent A true $\delta$-kick has a flat spectrum, so the polarizability is
+proportional to the Fourier transform of the induced dipole itself.  The
+driver therefore calls
+\begin{equation}
+  \mathcal{R}_i(\omega) = S_{\mu,i}(\omega)
+  \qquad\text{(\texttt{field\_e = None} branch of \texttt{fourier()})},
+\end{equation}
+i.e.\ $\operatorname{Im}[\mu_i(\omega)]$ enters Eq.~\eqref{eq:abs} directly.
+
+\subsection{Typical JSON fragment}
+
+\begin{lstlisting}[language={}]
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 4000,
+    "driver": "fourier"
+  },
+  "molecule": {
+    "geometry": [
+        {"atom": "O", "coord": [ 0.000, 0.000, -0.130]},
+        {"atom": "H", "coord": [ 1.489, 0.000,  1.033]},
+        {"atom": "H", "coord": [-1.489, 0.000,  1.033]}
+    ],
+    "geometry_units": "bohr",
+    "basis": "631g*",
+    "xc": "pbe0",
+    "source": {
+      "type": "kick",
+      "intensity": 5e-5,
+      "peak_time": 0.05,
+      "width_steps": 3
+    }
+  },
+  "files": {
+    "checkpoint": {
+      "filepath": "checkpoint.npz",
+      "frequency_steps": 1000
+    },
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "min_ev": 1,
+      "max_ev": 35,
+      "npz_filepath": "fourier.npz",
+      "spectrum_filepath": "spectrum.png"
+    }
+  }
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Hybrid Meep Fourier path}
+\label{sec:hybrid}
+% =============================================================================
+
+\subsection{Motivation}
+
+When a nanoparticle (or any classical structure) is present, the molecule no
+longer sits in a free-space $\delta$-kick.  Instead Meep propagates a broadband
+source (typically a \texttt{gaussian} pulse) through the FDTD grid; the local
+field at \texttt{plasmon.molecule.position} drives RT-TDDFT, and the induced
+dipole may be fed back into Meep as a point \texttt{CustomSource}
+(\texttt{back\_propagation}).  Two complications follow:
+\begin{enumerate}
+  \item the incident pulse has a non-flat spectrum and a non-trivial phase;
+  \item the local field at the molecule includes scattering from the
+        nanoparticle, which is precisely the physics one often wants to
+        keep in $\boldsymbol{\mu}(t)$.
+\end{enumerate}
+Dividing $\mu(\omega)$ by the \emph{total} local field would remove
+plasmon-enhanced response.  Dividing by a pure \emph{vacuum incident} field
+$\mathbf{E}_{\mathrm{inc}}$ removes only the source envelope, leaving
+nanoparticle / local-field physics inside $\boldsymbol{\mu}$.
+
+\subsection{Production runs (molecule + NP)}
+
+For each polarization $i$, the driver sets \texttt{plasmon.source.component = i}, 
+and writes outputs under \texttt{x\_dir/}, \texttt{y\_dir/}, or \texttt{z\_dir/}.  
+
+\noindent At every Meep timestep (and at $t=0$):
+\begin{enumerate}
+  \item sample $\mathbf{E}$ at the molecule site
+        (\texttt{\_get\_electric\_field}), converting Meep units to atomic
+        units via \texttt{convertFieldMeep2Atomic};
+  \item if $|\mathbf{E}|$ exceeds \texttt{tolerance\_field\_e}, call
+        RT-TDDFT (\texttt{propagation}) to obtain $\boldsymbol{\mu}$;
+  \item store $\boldsymbol{\mu}$ for the next Meep source query (if
+        back-coupling is on) and append both $\mathbf{E}$ and
+        $\boldsymbol{\mu}$ to CSV.
+\end{enumerate}
+
+\noindent Additionally, an identical simulation begins but without the NP nor the molecule 
+to calculate the reference E field spectra.
+\begin{enumerate}
+  \item evaluates $\mathbf{E}(\mathbf{r}_{\mathrm{mol}}, t)$ in atomic units;
+  \item appends $(t, E_x, E_y, E_z)$ to the configured CSV.
+  \item once all three runs are done, the diagonal elements are merged into \( \mathbf{E}_{\text{diag}}(t) \).
+\end{enumerate}
+
+\subsection{Unit and time-grid notes}
+
+Hybrid timesteps are conformed to Meep's Courant-limited $\Delta t$:
+\begin{equation}
+  \Delta t_{\mathrm{Meep}} = \frac{\mathrm{Courant}}{\mathrm{resolution}},
+  \qquad
+  \Delta t_{\mathrm{a.u.}}
+  =
+  \Delta t_{\mathrm{Meep}}
+  \times
+  \texttt{convertTimeMeep2Atomic}.
+\end{equation}
+
+\subsection{Spectral deconvolution}
+\label{sec:deconv}
+
+This subsection develops the hybrid Fourier formula from linear response,
+states precisely what is divided by what, and connects the continuous
+theory to the discrete operations in \texttt{fourier()}.
+
+Solving for the polarizability is therefore a complex division,
+\begin{equation}
+  \alpha_i(\omega)
+  =
+  \frac{\mu_i(\omega)}{E_i^{\mathrm{drive}}(\omega)},
+  \label{eq:alpha-def}
+\end{equation}
+whenever the denominator is non-vanishing.  The absorption spectrum is
+built from $\operatorname{Im}\alpha_i(\omega)$ (Section~\ref{sec:common}
+and Eq.~\eqref{eq:abs}), not from $\operatorname{Im}\mu_i(\omega)$ alone:
+the latter still carries the spectral envelope of the Meep source.
+
+If $E_i^{\mathrm{drive}}(t) = \kappa\,\delta(t)$, then
+$E_i^{\mathrm{drive}}(\omega) = \kappa$ (flat in frequency), so
+\begin{equation}
+  \alpha_i(\omega)
+  =
+  \frac{\mu_i(\omega)}{\kappa}
+  \propto
+  \mu_i(\omega).
+\end{equation}
+Hence the pure quantum path may take
+$\mathcal{R}_i(\omega) = S_{\mu,i}(\omega)$ up to a global scale that
+disappears after peak normalization.  A Meep Gaussian (or other finite
+pulse) has $E_i^{\mathrm{drive}}(\omega)$ that is neither flat nor
+real; omitting the division imprints the pulse spectrum and phase onto
+$A(\omega)$.
+
+Write the electric field at the molecule site in the Full Plasmol run as
+\begin{equation}
+  \mathbf{E}_{\mathrm{loc}}(\mathbf{r}_{\mathrm{mol}}, t)
+  =
+  \mathbf{E}_{\mathrm{inc}}(t)
+  +
+  \mathbf{E}_{\mathrm{scat}}(t),
+  \label{eq:E-split}
+\end{equation}
+where $\mathbf{E}_{\mathrm{inc}}$ is the free-space incident field of the
+Meep source (same cell, source, and sample point, but no nanoparticle and
+no quantum molecule) and $\mathbf{E}_{\mathrm{scat}}$ collects everything
+scattered by the nanoparticle (and, if back-coupling is on, radiation
+from the molecular dipole itself in later times).\\
+
+\noindent Two natural choices for $E_i^{\mathrm{drive}}$ in Eq.~\eqref{eq:alpha-def}
+have very different meanings:
+
+\begin{center}
+\begin{tabular}{@{}lp{8.6cm}@{}}
+\toprule
+Denominator & What $\alpha_i$ measures \\
+\midrule
+$E_{\mathrm{loc},i}(\omega)$
+  & Response relative to the \emph{total} local field.  Plasmonic
+    near-field enhancement largely cancels between numerator and
+    denominator; peaks track bare molecular resonances. \\
+$E_{\mathrm{inc},ii}(\omega)$
+  & Response relative to the \emph{vacuum incident} field.  Enhancement
+    and scattering remain inside $\mu_i(\omega)$; $A(\omega)$ reports
+    the molecule as driven by the same free-space pulse that would be
+    present without the NP. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent PlasMol uses the second choice.  Operationally, three vacuum Meep runs
+record $\mathbf{E}_{\mathrm{inc}}^{(i)}(t)$ for $i\in\{x,y,z\}$; only the
+co-polarized diagonal is retained:
+\begin{equation}
+  \mathbf{E}_{\mathrm{diag}}(t)
+  =
+  \begin{pmatrix}
+    E_x^{(x)}(t) \\
+    E_y^{(y)}(t) \\
+    E_z^{(z)}(t)
+  \end{pmatrix}
+  \equiv
+  \begin{pmatrix}
+    E_{\mathrm{inc},xx}(t) \\
+    E_{\mathrm{inc},yy}(t) \\
+    E_{\mathrm{inc},zz}(t)
+  \end{pmatrix}.
+  \label{eq:E-diag}
+\end{equation}
+The production runs contribute the analogous diagonal dipole
+$\boldsymbol{\mu}_{\mathrm{diag}}(t)$ from \texttt{fold}.
+
+\subsubsection{Consistent deconvolution}
+
+Define the discrete Fourier transforms used in code
+($t_n = t_0 + n\Delta t$, $n=0,\ldots,N-1$):
+\begin{align}
+  S_{\mu,i}(\omega_k)
+  &=
+  \Delta t
+  \sum_{n=0}^{N-1}
+  \mu_i(t_n)\, w(t_n)\,
+  e^{-2\pi i\, kn/N},
+  \label{eq:Smu} \\
+  S_{E,i}(\omega_k)
+  &=
+  \Delta t
+  \sum_{n=0}^{N-1}
+  E_{\mathrm{inc},ii}(t_n)\, w(t_n)\,
+  e^{-2\pi i\, kn/N},
+  \label{eq:SE}
+\end{align}
+where $\omega_k = 2\pi\, \mathrm{fftfreq}(N,\Delta t)_k$ in atomic units.
+Because the \emph{same} window multiplies both time series, it factors in
+a manner compatible with Eq.~\eqref{eq:alpha-def}: if
+$\mu = \chi * E_{\mathrm{inc}}$ and one multiplies both signals by $w$
+before transforming, the ratio
+\begin{equation}
+  \hat\alpha_i(\omega_k)
+  :=
+  \frac{S_{\mu,i}(\omega_k)}{S_{E,i}(\omega_k)}
+  \label{eq:alpha-hat}
+\end{equation}
+still estimates $\alpha_i(\omega_k)$ up to the usual finite-record and
+window-bias errors of a truncated FFT---it does \emph{not} introduce an
+extra $w(\omega)$ factor in the numerator alone.  (If only $\mu$ were
+windowed, the ratio would mix the polarizability with the Fourier
+transform of the window.)
+
+\subsubsection{Complex division, phase cancellation, and the amplitude floor}
+
+Write the complex spectra in polar form,
+\begin{equation}
+  S_{\mu,i}(\omega)
+  =
+  \big|S_{\mu,i}\big|\, e^{i\phi_{\mu,i}},
+  \qquad
+  S_{E,i}(\omega)
+  =
+  \big|S_{E,i}\big|\, e^{i\phi_{E,i}}.
+\end{equation}
+Then
+\begin{equation}
+  \hat\alpha_i(\omega)
+  =
+  \frac{\big|S_{\mu,i}\big|}{\big|S_{E,i}\big|}
+  \,
+  e^{i(\phi_{\mu,i}-\phi_{E,i})}.
+  \label{eq:polar}
+\end{equation}
+Two useful consequences follow immediately:
+\begin{enumerate}
+  \item \textbf{Amplitude flattening.}
+        Division by $|S_{E,i}|$ removes the Meep source envelope
+        (e.g.\ the Gaussian spectrum set by \texttt{frequency} /
+        \texttt{fwidth}).  Residual structure in
+        $|\hat\alpha_i|$ is molecular and/or plasmon-mediated.
+  \item \textbf{Phase cancellation.}
+        The relative phase $\phi_{\mu,i}-\phi_{E,i}$ is the phase lag of
+        the induced dipole relative to the vacuum incident field.
+        Propagation delay from the Meep source plane to
+        $\mathbf{r}_{\mathrm{mol}}$, and the overall complex scale of the
+        source, largely cancel.  Absorption depends on
+        $\operatorname{Im}\hat\alpha_i$, which is the component of the
+        response in phase quadrature with $E_{\mathrm{inc}}$.
+\end{enumerate}
+
+In components,
+\begin{align}
+  \operatorname{Re}\hat\alpha_i
+  &=
+  \frac{
+    \operatorname{Re}S_{\mu,i}\,\operatorname{Re}S_{E,i}
+    +
+    \operatorname{Im}S_{\mu,i}\,\operatorname{Im}S_{E,i}
+  }{
+    |S_{E,i}|^2
+  },
+  \label{eq:re-alpha} \\[0.4em]
+  \operatorname{Im}\hat\alpha_i
+  &=
+  \frac{
+    \operatorname{Im}S_{\mu,i}\,\operatorname{Re}S_{E,i}
+    -
+    \operatorname{Re}S_{\mu,i}\,\operatorname{Im}S_{E,i}
+  }{
+    |S_{E,i}|^2
+  }.
+  \label{eq:im-alpha}
+\end{align}
+Equation~\eqref{eq:im-alpha} is the quantity summed into $A(\omega)$.
+The code stores both real and imaginary parts (\texttt{abs\_real},
+\texttt{abs\_imag} in the optional NPZ); only the imaginary part enters
+\texttt{absorption()}.
+
+Near frequencies where the vacuum pulse has little power,
+$|S_{E,i}|\to 0$ and Eq.~\eqref{eq:alpha-hat} is ill-conditioned.
+PlasMol therefore applies a relative amplitude floor on the spectral
+window of interest only.  Let
+\begin{equation}
+  \mathcal{W}
+  =
+  \big\{\, k :\;
+    \texttt{min\_ev}
+    \le
+    \hbar\omega_k
+    \le
+    \texttt{max\_ev}
+  \,\big\}
+\end{equation}
+(with $\hbar\omega$ converted to eV as in Section~\ref{sec:common}), and
+\begin{equation}
+  E_{\max,i}
+  =
+  \max_{k\in\mathcal{W}}
+  \big|S_{E,i}(\omega_k)\big|,
+  \qquad
+  \varepsilon
+  =
+  \varepsilon_{\mathrm{rel}}\, E_{\max,i},
+  \qquad
+  \varepsilon_{\mathrm{rel}} = 10^{-8}
+  \;\;(\texttt{e\_floor\_rel}).
+\end{equation}
+The regularized estimator is
+\begin{equation}
+  \alpha_i(\omega_k)
+  =
+  \begin{cases}
+    \displaystyle
+    \dfrac{S_{\mu,i}(\omega_k)}{S_{E,i}(\omega_k)}
+      & \text{if } k\in\mathcal{W}
+           \text{ and }
+           |S_{E,i}(\omega_k)| > \varepsilon, \\[0.8em]
+    0
+      & \text{otherwise}.
+  \end{cases}
+  \label{eq:alpha}
+\end{equation}
+If no bin in $\mathcal{W}$ exceeds the floor for a given polarization,
+that direction contributes nothing and a warning is logged.  In practice
+this means: either widen the Meep source bandwidth so that
+$|E_{\mathrm{inc}}(\omega)|$ covers $[\texttt{min\_ev},\texttt{max\_ev}]$,
+or shrink the plot window to the support of the pulse.
+
+\subsubsection{From \texorpdfstring{$\alpha_i$}{alpha} to the reported absorption}
+
+With $\mathcal{R}_i(\omega) := \alpha_i(\omega)$ in the hybrid path,
+Eq.~\eqref{eq:abs} becomes
+\begin{equation}
+  A(\omega)
+  =
+  -\frac{4\pi\omega}{3c}
+  \sum_{i\in\{x,y,z\}}
+  \operatorname{Im}\alpha_i(\omega).
+  \label{eq:abs-hybrid}
+\end{equation}
+For an isotropic molecule in free space one recovers the familiar
+orientational average of the dipole polarizability,
+$\tfrac13\sum_i\operatorname{Im}\alpha_{ii}$.  With a nanoparticle the
+same algebraic form is retained, but each $\alpha_i$ is an
+\emph{effective} polarizability of the molecule as driven by the vacuum
+incident field in that geometry---not the bare gas-phase $\alpha$.
+
+Finally the curve is peak-normalized for shape comparison,
+\begin{equation}
+  A_{\mathrm{norm}}(\omega)
+  =
+  \frac{A(\omega)}{\max_{\omega\in\mathcal{W}} |A(\omega)|},
+\end{equation}
+so overall scales (kick strength, Meep amplitude, unit conventions
+shared by $\mu$ and $E_{\mathrm{inc}}$) drop out, provided they are
+consistent between numerator and denominator.
+
+\subsubsection{Compact algorithm (as implemented)}
+
+\begin{enumerate}
+  \item Align $\boldsymbol{\mu}_{\mathrm{diag}}(t)$ and
+        $\mathbf{E}_{\mathrm{diag}}(t)$ on a common length and $\Delta t$
+        (\texttt{\_align\_series}).
+  \item Form $w(t)$ from $\gamma$ (and $\tau$ if set).
+  \item For each $i\in\{x,y,z\}$:
+        compute $S_{\mu,i}$ and $S_{E,i}$ by Eqs.~\eqref{eq:Smu}--\eqref{eq:SE};
+        restrict to $\mathcal{W}$; apply Eq.~\eqref{eq:alpha}.
+  \item Assemble $A(\omega)$ from Eq.~\eqref{eq:abs-hybrid}; normalize;
+        write PNG/CSV and optional NPZ (\texttt{deconvolved=True}).
+\end{enumerate}
+
+\paragraph{Summary of interpretation.}
+\begin{itemize}
+  \item Division by vacuum $E_{\mathrm{inc}}(\omega)$ flattens the Meep
+        source spectrum and cancels its phase
+        (Eqs.~\eqref{eq:polar}--\eqref{eq:im-alpha}).
+  \item Nanoparticle-induced local fields remain inside $\mu(\omega)$, so
+        plasmon-enhanced features are retained
+        (Eq.~\eqref{eq:E-split} and the table above).
+  \item Bins with negligible $|E_{\mathrm{inc}}|$ are zeroed rather than
+        producing numerical blow-ups (Eq.~\eqref{eq:alpha}).
+\end{itemize}
+
+\subsection{Example hybrid JSON (Fourier + Au NP)}
+
+\begin{lstlisting}[language={}]
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 10000,
+    "driver": "fourier"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.291666667,
+        "fwidth": 2.083333335
+      }
+    },
+    "nanoparticle": {
+      "material": "Au",
+      "radius": 0.025
+    },
+    "molecule": {
+      "position": [0, 0, 0.026451]
+    }
+  },
+  "molecule": {
+    "geometry": "Na.xyz",
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 1,
+    "basis": "631g*",
+    "xc": "pbe0",
+    "hermiticity_tolerance": 1e-12,
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "spectrum_filepath": "spectrum.png",
+      "min_ev": 1.5,
+      "max_ev": 5.0,
+      "field_e_ref_filepath": "field_e_ref.csv"
+    }
+  }
+}
+\end{lstlisting}
+
+\end{document}

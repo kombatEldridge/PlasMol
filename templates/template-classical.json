@@ -1,0 +1,38 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 500,
+    "driver": "classical"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "surrounding_material_index": 1.0,
+      "symmetries": ["Y", 1, "Z", -1],
+      "courant": 0.5
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.05, 0.0, 0.0],
+      "size": [0.0, 0.2, 0.2],
+      "component": "z",
+      "amplitude": 1.0,
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.29,
+        "fwidth": 2.08
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.025,
+      "center": [0.0, 0.0, 0.0]
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  }
+}

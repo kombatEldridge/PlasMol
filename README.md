@@ -7,7 +7,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg)](https://github.com/kombatEldridge/PlasMol/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social)](https://github.com/kombatEldridge/PlasMol/stargazers)
 
-**Current version: v1.1.0** (June 2026)
+**Current version: v1.2.0 (July 2026)
 
 Read the full documentation: [https://kombateldridge.github.io/PlasMol/](https://kombateldridge.github.io/PlasMol/)
 
@@ -23,8 +23,10 @@ PlasMol supports three primary modes (additional workflows are available through
 
 The driver is inferred from your JSON input (`molecule` only → quantum, `plasmon` only → classical, both → plasmol), or you can set `"driver"` explicitly in `settings`.
 
-## Key Features (v1.1.0)
+## Key Features (v1.2.0)
 
+- **Core-hole dynamics** (`driver: "core_hole"`) for sudden SCH and DCH initial conditions with MO occupation tracking.
+- **Fourier polarization modes** (`full` / `parallel` / `perpendicular`) for orientation-resolved hybrid spectra with vacuum \(E_{inc}\) deconvolution.
 - **JSON input format** with validation and the `--describe` CLI flag for exploring every supported parameter.
 - **Custom drivers** for Fourier absorption spectra, MO comparison, NP/plasmon cross-sections, and user-defined workflows.
 - **Lopata CAP broadening** (static and dynamic) with automatic tuning of LRC parameters and vacuum level.
@@ -144,6 +146,7 @@ For step-by-step walkthroughs (classical, quantum, absorption spectra, hybrid, M
 |-------|-------------|
 | [Installation](doc/docs/installation.md) | Environment setup and verification |
 | [Usage](doc/docs/usage.md) | JSON schema, all parameters, validation rules |
+| [Simulations](doc/docs/simulations/index.md) | Per-driver guides and templates |
 | [Tutorials](doc/docs/tutorials.md) | Hands-on examples for every major workflow |
 | [Theory & Methodology](doc/docs/methodology.md) | Hybrid FDTD–RT-TDDFT coupling loop |
 | [Custom Drivers](doc/docs/custom_drivers.md) | Building and registering custom workflows |
@@ -163,7 +166,7 @@ There is no formal journal publication yet. If you use PlasMol in your work, ple
   author = {Brinton King Eldridge},
   title = {PlasMol: Simulating Plasmon-Molecule Interactions},
   url = {https://github.com/kombatEldridge/PlasMol},
-  version = {1.1.0},
+  version = {1.2.0},
   year = {2026}
 }
 ```

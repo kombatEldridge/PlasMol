@@ -16,7 +16,7 @@ def test_minimal_json_parses_cleanly(minimal_params):
     assert p.t_end == 5.0
     assert p.has_molecule is True
     assert p.has_plasmon is False
-    assert p.run_molecule_simulation_only is True
+    assert p.has_molecule_source is True
     assert p.molecule_propagator_str == "rk4"
     assert p.molecule_source_type == "kick"
     assert p.molecule_source_component == "z"
@@ -39,8 +39,10 @@ def test_molecule_only_dt_is_not_conformed_to_meep(minimal_params):
 
 def test_plasmon_dt_is_conformed_to_meep_timestep(tmp_path):
     cfg = copy.deepcopy(BASE_CONFIG)
+    cfg.pop("molecule", None)
     cfg["settings"]["dt"] = 0.1
     cfg["settings"]["t_end"] = 5000.0
+    cfg["plasmon"].pop("molecule", None)
     cfg["plasmon"]["source"] = {
         "type": "gaussian",
         "center": [0, 0, 0],
@@ -66,9 +68,8 @@ def test_plasmon_only_parses_cleanly(plasmon_only_args):
     """Test that PARAMS correctly handles a plasmon-only simulation (no molecule)."""
     p = PARAMS(plasmon_only_args)
     assert p.has_plasmon is True
-    assert p.run_plasmon_simulation_only is True
-    assert p.run_molecule_simulation_only is False
     assert p.has_molecule is False
+    assert p.has_plasmon_source is True
     assert p.plasmon_cell_length == 0.2
     assert p.plasmon_pml_thickness == 0.02
     assert p.plasmon_surrounding_material_index == 1.0
@@ -139,6 +140,7 @@ def test_QUANTUMSOURCE_pulse_and_kick():
     # Pulse
     params_pulse = Namespace(
         times=times, dt=0.1, molecule_source_type="pulse",
+        has_molecule_source=True,
         molecule_source_intensity=0.01, molecule_source_peak_time=10.0,
         molecule_source_width_steps=50, molecule_source_component="z",
         molecule_source_additional_parameters={"wavelength": 0.8}
@@ -150,6 +152,7 @@ def test_QUANTUMSOURCE_pulse_and_kick():
     # Kick
     params_kick = Namespace(
         times=times, dt=0.1, molecule_source_type="kick",
+        has_molecule_source=True,
         molecule_source_intensity=0.05, molecule_source_peak_time=5.0,
         molecule_source_width_steps=1, molecule_source_component="x"
     )
@@ -179,21 +182,23 @@ BASE_CONFIG = {
             "width_steps": 1,
             "component": "z"
         },
-        "files": {
-            "field_e_filepath": "e.csv",
-            "field_p_filepath": "p.csv",
-            "spectra_e_vs_p_filepath": "spec.png"
-        }
     },
     "plasmon": {
         "simulation": {
-            "tolerance_field_e": 1e-12,
             "cell_length": 0.2,
             "pml_thickness": 0.02,
             "surrounding_material_index": 1.0
         },
-        "molecule_position": [0,0,0]
-    }
+        "molecule": {
+            "position": [0, 0, 0],
+            "tolerance_field_e": 1e-12,
+        },
+    },
+    "files": {
+        "field_e_filepath": "e.csv",
+        "field_p_filepath": "p.csv",
+        "spectra_e_vs_p_filepath": "spec.png"
+    },
 }
 
 def make_bad_config(tmp_path, config_dict, filename="bad_config.json"):
@@ -236,11 +241,16 @@ def test_dt_greater_than_t_end_raises(tmp_path):
 
 
 def test_t_end_not_multiple_of_dt_raises(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["settings"].update({"dt": 0.3}), RuntimeError, "'t_end' must be a multiple of 'dt'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["settings"].update({"dt": 0.3})
+    _test_validation_error(tmp_path, _mod, RuntimeError, "'t_end' must be a multiple of 'dt'")
 
 
 def test_plasmon_tolerance_non_positive(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["plasmon"]["simulation"].update({"tolerance_field_e": -1e-12}), ValueError, "tolerance_field_e' must be a positive value")
+    def _mod(c):
+        c["plasmon"]["molecule"]["tolerance_field_e"] = -1e-12
+    _test_validation_error(tmp_path, _mod, ValueError, "plasmon_tolerance_field_e' must be a positive value")
 
 
 def test_plasmon_cell_length_non_positive(tmp_path):
@@ -315,15 +325,122 @@ def test_fourier_with_plasmon(tmp_path):
     assert params.has_fourier is True
     assert params.fourier_gamma == 0.01
     assert params.fourier_spectrum_filepath == "spectrum.png"
+    assert params.fourier_polarization == "full"
+
+
+def test_fourier_parallel_polarization_parses(tmp_path):
+    cfg = _fourier_plasmon_config()
+    cfg["additional_parameters"] = {
+        "fourier": {
+            "gamma": 0.01,
+            "spectrum_filepath": "spectrum_par.png",
+            "polarization": "parallel",
+        }
+    }
+    json_path = tmp_path / "fourier_par.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.fourier_polarization == "parallel"
+    assert params.has_fourier is True
+
+
+def test_fourier_perpendicular_polarization_parses(tmp_path):
+    cfg = _fourier_plasmon_config()
+    cfg["additional_parameters"] = {
+        "fourier": {
+            "gamma": 0.01,
+            "spectrum_filepath": "spectrum_perp.png",
+            "polarization": "perpendicular",
+            "perp_component": "z",
+        }
+    }
+    json_path = tmp_path / "fourier_perp.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.fourier_polarization == "perpendicular"
+    assert params.fourier_perp_component == "z"
+
+
+def test_fourier_parallel_requires_plasmon(tmp_path):
+    cfg = {
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "molecule": {
+            "geometry": [{"atom": "H", "coord": [0.0, 0.0, 0.0]}],
+            "geometry_units": "bohr",
+            "basis": "sto3g",
+            "xc": "pbe0",
+            "source": {"type": "kick", "intensity": 1e-4, "peak_time": 0.05, "width_steps": 1, "component": "z"},
+        },
+        "files": {"spectra_e_vs_p_filepath": "spectrum.png"},
+        "additional_parameters": {
+            "fourier": {
+                "spectrum_filepath": "spectrum.png",
+                "polarization": "parallel",
+            }
+        },
+    }
+    json_path = tmp_path / "fourier_par_no_plasmon.json"
+    json_path.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="requires a plasmon section"):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+
+
+def test_fourier_kick_source_defaults_when_only_type_given(tmp_path):
+    """Fourier allows molecule.source as just {\"type\": \"kick\"}; other fields default."""
+    cfg = {
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "molecule": {
+            "geometry": [{"atom": "H", "coord": [0.0, 0.0, 0.0]}],
+            "geometry_units": "bohr",
+            "basis": "sto3g",
+            "xc": "pbe0",
+            "source": {"type": "kick"},
+        },
+        "files": {"spectra_e_vs_p_filepath": "spectrum.png"},
+        "additional_parameters": {
+            "fourier": {"spectrum_filepath": "spectrum.png"},
+        },
+    }
+    json_path = tmp_path / "fourier_kick_defaults.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.molecule_source_type == "kick"
+    assert params.molecule_source_intensity == 0.001
+    assert params.molecule_source_peak_time == 0.0
+    assert params.molecule_source_width_steps == 1
+    assert params.molecule_source_component == "z"
+
+
+def test_non_fourier_kick_still_requires_intensity(tmp_path):
+    """Without Fourier, minimal {\"type\": \"kick\"} is still invalid."""
+    cfg = {
+        "settings": {"dt": 0.5, "t_end": 5.0},
+        "molecule": {
+            "geometry": [{"atom": "H", "coord": [0.0, 0.0, 0.0]}],
+            "geometry_units": "bohr",
+            "basis": "sto3g",
+            "xc": "pbe",
+            "source": {"type": "kick"},
+        },
+    }
+    json_path = tmp_path / "non_fourier_minimal_kick.json"
+    json_path.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="Molecule source requires 'intensity'"):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
 def test_fourier_driver_with_plasmon_parses(tmp_path):
+    """driver: fourier without a fourier{} block still selects the driver; spectrum path falls back to files."""
+    cfg = _fourier_plasmon_config()
+    cfg["additional_parameters"] = {
+        "fourier": {"spectrum_filepath": "spectrum.png"}
+    }
     json_path = tmp_path / "fourier_plasmon.json"
-    json_path.write_text(json.dumps(_fourier_plasmon_config()))
+    json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
     assert params.driver_str == "fourier"
     assert params.has_plasmon is True
-    assert params.has_fourier is False
+    assert params.has_fourier is True
     assert params.fourier_gamma == 0
     assert params.fourier_spectrum_filepath == "spectrum.png"
 
@@ -341,24 +458,37 @@ def test_checkpoint_disabled_for_fourier_plasmon_run(tmp_path):
 
 
 def test_fourier_missing_spectrum_filepath(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {}})),
-        ValueError, "Fourier modifier requires 'spectrum_filepath' attribute")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["files"] = {"field_e_filepath": "e.csv", "field_p_filepath": "p.csv"}
+        c.setdefault("additional_parameters", {}).update({"fourier": {}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Fourier driver requires 'spectrum_filepath'")
 
 
 def test_checkpoint_missing_filepath(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"].update({"files": {"checkpoint": {"frequency": 100}}}), ValueError, "Checkpointing requires 'filepath'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("files", {})["checkpoint"] = {"frequency_steps": 100}
+    _test_validation_error(tmp_path, _mod, ValueError, "Checkpointing requires 'filepath'")
 
 
 def test_field_filepath_not_string(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"]["files"].update({"field_e_filepath": ""}), ValueError, "Filepath for 'field_e_filepath' must be a non-empty string")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("files", {})["field_e_filepath"] = ""
+    _test_validation_error(tmp_path, _mod, ValueError, "Filepath for 'field_e_filepath' must be a non-empty string")
 
 
 def test_plasmon_molecule_position_one_pixel_from_surface_passes(tmp_path):
     cfg = copy.deepcopy(BASE_CONFIG)
+    # Hybrid run: field comes from Meep, not a molecular source.
+    cfg["molecule"].pop("source", None)
     cfg["settings"]["dt"] = 0.1
     cfg["settings"]["t_end"] = 5000.0
-    cfg["plasmon"]["molecule_position"] = [0.026451, 0.0, 0.0]
+    cfg["plasmon"]["molecule"] = {
+        "position": [0.026451, 0.0, 0.0],
+        "tolerance_field_e": 1e-12,
+    }
     cfg["plasmon"]["nanoparticle"] = {
         "material": "Au_JC_visible",
         "radius": 0.025,
@@ -376,11 +506,15 @@ def test_plasmon_molecule_position_one_pixel_from_surface_passes(tmp_path):
 
 
 def test_plasmon_molecule_position_wrong_length(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["plasmon"].update({"molecule_position": [0, 0]}), ValueError, "Molecule position must be an array of three numbers")
+    def _mod(c):
+        c["plasmon"]["molecule"]["position"] = [0, 0]
+    _test_validation_error(tmp_path, _mod, ValueError, "Molecule position must be an array of three numbers")
 
 
 def test_plasmon_molecule_position_non_numeric(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["plasmon"].update({"molecule_position": [0, 0, "nan"]}), ValueError, "Invalid molecule position")
+    def _mod(c):
+        c["plasmon"]["molecule"]["position"] = [0, 0, "nan"]
+    _test_validation_error(tmp_path, _mod, ValueError, "Invalid molecule position")
 
 
 def test_plasmon_molecule_position_without_molecule(tmp_path):
@@ -436,7 +570,8 @@ def test_plasmon_symmetry_source_off_plane(tmp_path):
 
 def test_plasmon_symmetry_nanoparticle_off_plane(tmp_path):
     bad = _plasmon_symmetry_base()
-    bad["plasmon"]["simulation"]["symmetries"] = ["X", -1]
+    # X phase must match source component z (phase +1); offset NP off the X=0 plane.
+    bad["plasmon"]["simulation"]["symmetries"] = ["X", 1]
     bad["plasmon"]["nanoparticle"] = {
         "material": "Au_JC_visible",
         "radius": 0.03,
@@ -514,7 +649,7 @@ def test_backpropagation_sym_override_warns(tmp_path, caplog):
     import logging
     with caplog.at_level(logging.WARNING):
         PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert "for debugging purposes only" in caplog.text
+    assert "Back-propagation is enabled with mirror symmetries" in caplog.text
 
 
 def test_backpropagation_off_axis_symmetries_raises_even_with_override(tmp_path):
@@ -539,79 +674,104 @@ def test_molecule_and_plasmon_source_conflict(tmp_path):
 
 
 def test_molecule_source_missing_intensity(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: c["molecule"].update({"source": {"type": "kick", "peak_time": 0, "width_steps": 1, "component": "z"}}),
-        ValueError, "Molecule source requires 'intensity'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"].update({"source": {"type": "kick", "peak_time": 0, "width_steps": 1, "component": "z"}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Molecule source requires 'intensity'")
 
 
 def test_molecule_source_negative_peak_time(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"]["source"].update({"peak_time": -1}), ValueError, "peak_time must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["source"].update({"peak_time": -1})
+    _test_validation_error(tmp_path, _mod, ValueError, "peak_time must be a positive value")
 
 
 def test_molecule_source_invalid_type(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"]["source"].update({"type": "sine"}), ValueError, "Molecule source must be of type 'pulse' or 'kick'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["source"].update({"type": "sine"})
+    _test_validation_error(tmp_path, _mod, ValueError, "Molecule source must be of type 'pulse', 'kick', or 'custom_shape'")
 
 
 def test_molecule_source_pulse_missing_frequency(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: c["molecule"].update({"source": {"type": "pulse", "intensity": 0.01, "peak_time": 0, "width_steps": 50, "component": "z", "additional_parameters": {}}}),
-        ValueError, "Molecule source of type 'pulse' requires 'wavelength' or 'frequency'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"].update({"source": {"type": "pulse", "intensity": 0.01, "peak_time": 0, "width_steps": 50, "component": "z", "additional_parameters": {}}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Molecule source of type 'pulse' requires 'wavelength' or 'frequency'")
 
 
 def test_checkpoint_missing_frequency(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"].update({"files": {"checkpoint": {"filepath": "cp.npz"}}}), ValueError, "Checkpointing requires 'frequency'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("files", {})["checkpoint"] = {"filepath": "cp.npz"}
+    _test_validation_error(tmp_path, _mod, ValueError, "Checkpointing requires 'frequency_steps' or 'frequency_time'")
 
 
 def test_checkpoint_negative_frequency(tmp_path):
-    _test_validation_error(tmp_path, lambda c: c["molecule"].update({"files": {"checkpoint": {"filepath": "cp.npz", "frequency": -10}}}), ValueError, "Checkpointing 'frequency' must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("files", {})["checkpoint"] = {"filepath": "cp.npz", "frequency_steps": -10}
+    _test_validation_error(tmp_path, _mod, ValueError, "Checkpointing 'frequency_steps' must be a positive value")
 
 
 def test_fourier_gamma_non_positive(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": -0.01, "spectrum_filepath": "spec.png"}})),
-        ValueError, "Fourier modifier 'gamma' must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": -0.01, "spectrum_filepath": "spec.png"}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Fourier 'gamma' must be a non-negative value")
 
 
 def test_fourier_tau_non_positive(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "tau": -0.1}})),
-        ValueError, "Fourier 'tau' must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "tau": -0.1}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Fourier 'tau' must be a positive value")
 
 
-def test_cap_missing_type(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"gam0": 1.0}}})),
-        ValueError, "CAP modifier requires 'type' attribute")
+def test_cap_missing_type_defaults_to_static(tmp_path):
+    """cap_type defaults to 'static' when the cap block is present without type."""
+    cfg = copy.deepcopy(BASE_CONFIG)
+    cfg.pop("plasmon", None)
+    cfg["molecule"]["cap"] = {"gam0": 1.0}
+    params = PARAMS(make_bad_config(tmp_path, cfg, "cap_default_type.json"))
+    assert params.has_cap is True
+    assert params.cap_type == "static"
 
 
 def test_cap_invalid_type(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "invalid"}}})),
-        ValueError, "CAP 'type' must be 'static' or 'dynamic'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["cap"] = {"type": "invalid"}
+    _test_validation_error(tmp_path, _mod, ValueError, "CAP 'type' must be 'static' or 'dynamic'")
 
 
 def test_cap_gam0_non_positive(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "static", "gam0": -1.0}}})),
-        ValueError, "CAP 'gam0' must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["cap"] = {"type": "static", "gam0": -1.0}
+    _test_validation_error(tmp_path, _mod, ValueError, "CAP 'gam0' must be a positive value")
 
 
 def test_cap_xi_negative(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "dynamic", "xi": -0.1}}})),
-        ValueError, "CAP 'xi' must be a non-negative value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["cap"] = {"type": "dynamic", "xi": -0.1}
+    _test_validation_error(tmp_path, _mod, ValueError, "CAP 'xi' must be a non-negative value")
 
 
 def test_cap_eps0_negative(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "dynamic", "eps0": -0.01}}})),
-        ValueError, "CAP 'eps0' must be a non-negative value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["cap"] = {"type": "dynamic", "eps0": -0.01}
+    _test_validation_error(tmp_path, _mod, ValueError, "CAP 'eps0' must be a non-negative value")
 
 
 def test_cap_clamp_non_positive(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"cap": {"type": "static", "clamp": -10}}})),
-        ValueError, "CAP 'clamp' must be a positive value")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["molecule"]["cap"] = {"type": "static", "clamp": -10}
+    _test_validation_error(tmp_path, _mod, ValueError, "CAP 'clamp' must be a positive value")
 
 
 def test_nanoparticle_missing_required_fields(tmp_path):
@@ -629,9 +789,11 @@ def test_images_missing_timesteps_between(tmp_path):
 
 
 def test_comparison_missing_bases_or_xcs(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"comparison": {"bases": ["sto3g"]}}})),
-        ValueError, "Comparison mode requires both 'bases' and 'xcs'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["settings"]["driver"] = "comparison"
+        c.setdefault("additional_parameters", {})["comparison"] = {"bases": ["sto3g"]}
+    _test_validation_error(tmp_path, _mod, ValueError, "Comparison mode requires both 'bases' and 'xcs'")
 
 
 def test_invalid_xc_functional(tmp_path):
@@ -645,29 +807,40 @@ def test_molecule_geometry_bad_format(tmp_path):
 
 
 def test_comparison_missing_bases(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({"modifiers": {"comparison": {"xcs": ["pbe"]}}})),
-        ValueError, "Comparison mode requires both 'bases' and 'xcs'")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["settings"]["driver"] = "comparison"
+        c.setdefault("additional_parameters", {})["comparison"] = {"xcs": ["pbe"]}
+    _test_validation_error(tmp_path, _mod, ValueError, "Comparison mode requires both 'bases' and 'xcs'")
 
 
 def test_comparison_invalid_lrc_parameter(tmp_path):
-    _test_validation_error(tmp_path,
-        lambda c: (c.pop("plasmon", None), c["molecule"].update({
-            "modifiers": {
-                "comparison": {
-                    "bases": ["sto3g"],
-                    "xcs": ["pbe0"],
-                    "lrc_parameters": {"pbe0": -0.5}
-                }
-            }
-        })),
-        ValueError, "Error checking xc functional")
+    def _mod(c):
+        c.pop("plasmon", None)
+        c["settings"]["driver"] = "comparison"
+        c.setdefault("additional_parameters", {})["comparison"] = {
+            "bases": ["sto3g"],
+            "xcs": ["pbe0"],
+            "lrc_parameters": {"pbe0": "not-a-number"},
+        }
+    _test_validation_error(
+        tmp_path, _mod, ValueError, "Invalid comparison 'lrc_parameters'"
+    )
 
 
 def test_checkpoint_disabled_when_nanoparticle_present(tmp_path):
     """If nanoparticle present, has_checkpoint must be forced off so no checkpointing occurs."""
     cfg = copy.deepcopy(BASE_CONFIG)
+    cfg["molecule"].pop("source", None)
+    cfg["plasmon"]["molecule"]["position"] = [0.08, 0.0, 0.0]
     cfg["plasmon"]["nanoparticle"] = {"material": "Au_JC_visible", "radius": 0.05, "center": [0, 0, 0]}
+    cfg["plasmon"]["source"] = {
+        "type": "gaussian",
+        "center": [0, 0, 0],
+        "size": [0.2, 0, 0],
+        "component": "z",
+        "additional_parameters": {"wavelength": 0.5},
+    }
     cfg["files"] = {"checkpoint": {"filepath": "ck.npz", "frequency_steps": 10}}
     json_path = tmp_path / "nano_ckpt.json"
     with open(json_path, "w") as f:
