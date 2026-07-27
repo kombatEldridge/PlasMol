@@ -1,6 +1,6 @@
 # PlasMol: Plasmon-Molecule Interactions
 
-![PlasMol Logo](PlasMol.png)
+![PlasMol Logo](assets/PlasMol_Full.png)
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/downloads/)
