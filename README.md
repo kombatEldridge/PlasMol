@@ -1,13 +1,13 @@
 # PlasMol: Simulating Plasmon-Molecule Interactions
 
-![PlasMol Logo](doc/docs/PlasMol.png)
+![PlasMol Logo](doc/docs/assets/PlasMol.png)
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/kombatEldridge/PlasMol/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)](https://www.python.org/downloads/)
 [![GitHub Issues](https://img.shields.io/github/issues/kombatEldridge/PlasMol.svg)](https://github.com/kombatEldridge/PlasMol/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/kombatEldridge/PlasMol.svg?style=social)](https://github.com/kombatEldridge/PlasMol/stargazers)
 
-**Current version: v1.2.0 (July 2026)
+**Current version: v1.2.0 (July 2026)**
 
 Read the full documentation: [https://kombateldridge.github.io/PlasMol/](https://kombateldridge.github.io/PlasMol/)
 
