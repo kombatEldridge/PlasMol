@@ -38,7 +38,13 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
     "images": {
       "timesteps_between": 2,
       "dir_name": "classical_frames",
-      "make_gif": true
+      "make_gif": true,
+      "additional_parameters": [
+        "-m -1",
+        "-M 1",
+        "-Zc dkbluered",
+        "-S 3"
+      ]
     }
   },
   "files": {
@@ -46,6 +52,8 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
   }
 }
 ```
+
+The `images.additional_parameters` list is passed to Meep’s `output_png` / `h5topng`. Fixed color bounds (`-m` minimum, `-M` maximum) keep the blue–white–red scale consistent across frames so the GIF is readable; `-Zc dkbluered` sets the palette and `-S` scales the image size.
 
 **Run**:
 
@@ -56,10 +64,13 @@ python -m plasmol.main -f classical.json -vv -l classical.log
 **Outputs**:
 
 - `field_e.csv` — Electric field time series at origin (or probe points if added).
-- `classical_frames/` + `classical_frames.gif` — 2D slices of |Ez|.
+- `classical_frames/` + `classical_frames.gif` — 2D slices of $E_z$.
 
-***Results**:
+**Results**:
 
+![Ez field animation near Au sphere (Tutorial 1)](assets/tutorials/tutorial1_classical.gif)
+
+Animated $E_z$ around the gold nanoparticle under continuous-wave drive (`-m -1`, `-M 1`, `dkbluered` palette). Red/blue show opposite field polarity; white is near zero.
 
 ---
 
@@ -118,7 +129,7 @@ python -m plasmol.main -f quantum_pulse.json -vv -l quantum.log
 - `field_e.csv` + `field_p.csv` — Incident field and induced dipole (polarization) vs time.
 - `field_vs_polarization.png` — Side-by-side plot (generated automatically).
 
-***Results**:
+**Results**:
 
 ![Induced dipole vs applied kick field (Tutorial 2)](assets/tutorials/tutorial2_field_vs_polarization.png)
 
@@ -187,6 +198,9 @@ PlasMol automatically runs **three parallel simulations** (x/y/z kicks), applies
 
 **Results**:
 
+![Water absorption spectrum from Fourier workflow (Tutorial 3)](assets/tutorials/tutorial3_water_absorption.png)
+
+Peak-normalized absorption from three directional $\delta$-kicks + FFT (with damping). Features above $\sim 12\,\mathrm{eV}$ reflect the molecular response on the chosen basis / functional; longer $t_{\mathrm{end}}$ and larger bases improve frequency resolution and line shapes.
 
 ---
 
@@ -233,7 +247,13 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
     "images": {
       "timesteps_between": 5,
       "dir_name": "hybrid_frames",
-      "make_gif": true
+      "make_gif": true,
+      "additional_parameters": [
+        "-m -5e-5",
+        "-M 5e-5",
+        "-Zc dkbluered",
+        "-S 3"
+      ]
     }
   },
   "molecule": {
@@ -257,6 +277,8 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
 }
 ```
 
+As in Tutorial 1, `images.additional_parameters` sets a fixed h5topng color scale (`-m` / `-M`) so the hybrid field GIF has consistent, readable contrast. Bounds are in **Meep field units** (not atomic units); for this short Gaussian drive the local $|E_z|$ is $\sim 10^{-5}$, so a tighter window than Tutorial 1 is used.
+
 **Run**:
 
 ```bash
@@ -270,13 +292,20 @@ python -m plasmol.main -f hybrid.json -vv -l hybrid.log
 3. Induced dipole is stored and injected back into Meep as a CustomSource (point dipole).
 4. Both `field_e.csv` (local field felt by molecule) and `field_p.csv` (molecular response) are written.
 
-This is the core capability of PlasMol for studying plasmon-enhanced phenomena (SERS, energy transfer, etc.). However, with just the 
-default `plasmol` driver, it only gives the measured induced dipole of the molecule. 
+This is the core capability of PlasMol for studying plasmon-enhanced phenomena (SERS, energy transfer, etc.). However, with just the
+default `plasmol` driver, it only gives the measured induced dipole of the molecule.
 
 **Results**:
 
----
+![Local field at molecule and induced dipole (Tutorial 4)](assets/tutorials/tutorial4_hybrid_response.png)
 
+Time series of the local electric field sampled at the molecular site (left) and the molecule’s induced dipole response (right) during the hybrid Au NP + water run. The $z$ channel carries the driven pulse; weaker transverse components appear through scattering and coupling.
+
+![Ez field animation with NP and molecule (Tutorial 4)](assets/tutorials/tutorial4_hybrid.gif)
+
+Animated $E_z$ in the hybrid cell (`-m -5e-5`, `-M 5e-5`, `dkbluered`). The nanoparticle-perturbed pulse and near-field structure evolve through the Gaussian drive window.
+
+---
 
 ## Tutorial 5: Nanoparticle Absorption & Scattering Cross-Sections
 
@@ -323,7 +352,7 @@ For hybrid NP+molecule *spectra*, prefer the `fourier` driver with a plasmon sec
 
 **Results**:
 
-![Scattering and Abs of Au NP](assets/tutorials/tutorial4_np_scat.png)
+![Scattering and Abs of Au NP](assets/tutorials/tutorial5_np_scat.png)
 
 ---
 
@@ -393,7 +422,7 @@ python -m plasmol.main -f mo_comparison.json -vv
 
 The comparison driver only performs ground-state SCF calculations — no time propagation is needed.
 
-***Results**:
+**Results**:
 
 ![MO energy grid for water (Tutorial 6)](assets/tutorials/tutorial6_all_mo_energies.png)
 
