@@ -5,7 +5,7 @@ PlasMol is run from the command line and is controlled almost entirely by a sing
 ## Command-Line Interface (CLI)
 
 ```bash
-python -m plasmol.main -f input.json [options]
+python -m plasmol.main input.json [options]
 ```
 
 **Options**:
@@ -28,13 +28,68 @@ The input file has five top-level keys (all optional except `settings`):
 
 ```json
 {
-  "settings": { ... },
-  "plasmon": { ... },               // classical FDTD / nanoparticle
-  "molecule": { ... },              // RT-TDDFT molecule
-  "files": { ... },                 // output paths
-  "additional_parameters": { ... }  // fourier, comparison, probe_points, custom drivers
+  "settings": {
+    "dt": 0.1,
+    "t_end": 400,
+    "driver": "plasmol"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.1,
+      "pml_thickness": 0.01,
+      "surrounding_material_index": 1.33,
+      "symmetries": ["Y", 1, "Z", -1],
+      "courant": 0.5
+    },
+    "source": {
+      "type": "continuous",
+      "center": [-0.04, 0.0, 0.0],
+      "size": [0.0, 0.1, 0.1],
+      "component": "z",
+      "amplitude": 1.0,
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 5.0
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.03,
+      "center": [0.0, 0.0, 0.0]
+    },
+    "molecule": {
+      "position": [0.035, 0.0, 0.0],
+      "tolerance_field_e": 1e-12,
+      "back_propagation": true
+    }
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-31g",
+    "xc": "pbe0",
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {}
 }
 ```
+
+The top-level keys are `settings`, `plasmon`, `molecule`, `files`, and `additional_parameters`. Only `settings` is always required; which other sections appear depends on the driver (see [Simulations](simulations/index.md)).
 
 Comments are supported in JSON using `#`, `--`, `%`, or `//` (they are stripped before parsing).
 
@@ -83,7 +138,7 @@ These are the general paramters necessary to run a MEEP simulation. More informa
     "pml_thickness": 0.01,
     "symmetries": ["Y", 1, "Z", -1],
     "surrounding_material_index": 1.33,
-    "courant": 0.5,
+    "courant": 0.5
   }
 }
 ```
@@ -462,10 +517,26 @@ To run a completely custom workflow, set the driver name in `settings` and (opti
   "settings": {
     "dt": 0.1,
     "t_end": 100,
-    "driver": "my_awesome_driver"
+    "driver": "verify_source"
   },
-  "additional_parameters": {
-    "my_custom_setting": 42
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "surrounding_material_index": 1.0
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [0.0, 0.0, 0.0],
+      "size": [0.0, 0.2, 0.2],
+      "component": "z",
+      "amplitude": 1.0,
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.29,
+        "fwidth": 2.08
+      }
+    }
   }
 }
 ```

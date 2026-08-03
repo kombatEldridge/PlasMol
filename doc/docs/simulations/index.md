@@ -29,9 +29,19 @@ If `settings.driver` is omitted:
 
 Custom / specialized workflows always set `"driver": "<name>"` explicitly.
 
-## Related docs
+## Documentation on Drivers
 
-- [Usage](../usage.md) — full JSON schema
-- [Tutorials](../tutorials.md) — walkthroughs
-- [Custom Drivers](../custom_drivers.md) — registering new drivers
-- [Theory & Methodology](../methodology.md)
+```{toctree}
+:maxdepth: 1
+
+classical
+quantum
+plasmol
+fourier
+core_hole
+comparison
+tune
+np_abs_cross_sec
+scatter_response_fxn
+verify_source
+```

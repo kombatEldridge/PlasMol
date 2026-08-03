@@ -29,7 +29,7 @@ Do **not** set both `plasmon.source` and `molecule.source`.
 ## Theory
 
 - [Theory & Methodology](../methodology.md)
-- [Effective polarizability](../methodology/effective_polarizability.md)
+- [Quasistatic model](../methodology/quasistatic_model.md)
 
 ## Template
 

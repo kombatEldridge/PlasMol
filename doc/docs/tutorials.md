@@ -1,8 +1,5 @@
 # Tutorials
 
-!!! danger "this page is a WIP"
-    I still need to go through these tutorials and add data and check the template files.
-
 ## Tutorial 1: Classical Nanoparticle Simulation (FDTD Only)
 
 Simulate a gold sphere in water interacting with a continuous-wave source. Produces field CSVs and optional PNG/GIF frames.
@@ -27,6 +24,8 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
       "center": [-0.04, 0, 0],
       "size": [0, 0.1, 0.1],
       "component": "z",
+      "amplitude": 1.0,
+      "is_integrated": true,
       "additional_parameters": {
         "frequency": 5.0
       }
@@ -34,7 +33,7 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
     "nanoparticle": {
       "material": "Au_JC_visible",
       "radius": 0.03,
-      "center": [0, 0, 0]
+      "center": [0.0, 0.0, 0.0]
     },
     "images": {
       "timesteps_between": 2,
@@ -59,7 +58,8 @@ python -m plasmol.main -f classical.json -vv -l classical.log
 - `field_e.csv` — Electric field time series at origin (or probe points if added).
 - `classical_frames/` + `classical_frames.gif` — 2D slices of |Ez|.
 
-You can add `probe_points` under `additional_parameters` and use the `scatter_response_fxn` driver for more advanced post-processing (see custom drivers).
+***Results**:
+
 
 ---
 
@@ -72,8 +72,8 @@ Compute the time-dependent induced dipole of a water molecule under a pulsed ele
 ```json
 {
   "settings": {
-    "dt": 0.05,
-    "t_end": 1000
+    "dt": 0.1,
+    "t_end": 40
   },
   "molecule": {
     "geometry": [
@@ -82,24 +82,21 @@ Compute the time-dependent induced dipole of a water molecule under a pulsed ele
       {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
     ],
     "geometry_units": "bohr",
-    "basis": "6-31g",
+    "basis": "sto3g",
     "xc": "pbe0",
     "charge": 0,
     "spin": 0,
     "propagator": {
       "type": "magnus2",
-      "pc_convergence": 1e-12,
-      "max_iterations": 200
+      "pc_convergence": 1e-10,
+      "max_iterations": 50
     },
     "source": {
-      "type": "pulse",
-      "intensity": 5e-5,
-      "peak_time": 200,
-      "width_steps": 1000,
-      "component": "z",
-      "additional_parameters": {
-        "wavelength": 0.4
-      }
+      "type": "kick",
+      "intensity": 0.001,
+      "peak_time": 0.0,
+      "width_steps": 1,
+      "component": "z"
     }
   },
   "files": {
@@ -121,6 +118,12 @@ python -m plasmol.main -f quantum_pulse.json -vv -l quantum.log
 - `field_e.csv` + `field_p.csv` — Incident field and induced dipole (polarization) vs time.
 - `field_vs_polarization.png` — Side-by-side plot (generated automatically).
 
+***Results**:
+
+![Induced dipole vs applied kick field (Tutorial 2)](assets/tutorials/tutorial2_field_vs_polarization.png)
+
+The left panel is the δ-kick electric field; the right panel is the induced molecular dipole response along the drive axis.
+
 ---
 
 ## Tutorial 3: Molecular Absorption Spectrum (Fourier Workflow)
@@ -133,20 +136,23 @@ Compute the absorption spectrum of water using three directional delta-kick simu
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 4000
+    "t_end": 4000,
+    "driver": "fourier"
   },
   "molecule": {
-    "geometry": [ ... same water geometry ... ],
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
     "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
     "propagator": {"type": "magnus2"},
     "source": {
-      "type": "kick",
-      "intensity": 5e-5,
-      "peak_time": 0.1,
-      "width_steps": 5,
-      "component": "z"
+      "type": "kick"
     }
   },
   "files": {
@@ -178,7 +184,9 @@ PlasMol automatically runs **three parallel simulations** (x/y/z kicks), applies
 
 - `x_dir/`, `y_dir/`, `z_dir/` subdirectories with per-direction CSVs.
 - `water_absorption_spectrum.png` — Final absorption spectrum (eV vs. intensity).
-- Optional `.npz` file with raw Fourier data.
+
+**Results**:
+
 
 ---
 
@@ -192,32 +200,34 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 2000
+    "t_end": 50,
+    "driver": "plasmol"
   },
   "plasmon": {
     "simulation": {
       "cell_length": 0.12,
       "pml_thickness": 0.015,
-      "tolerance_field_e": 1e-12,
       "surrounding_material_index": 1.33
     },
     "source": {
       "type": "gaussian",
-      "center": [-0.05, 0, 0],
-      "size": [0, 0.08, 0.08],
+      "center": [-0.05, 0.0, 0.0],
+      "size": [0.0, 0.08, 0.08],
       "component": "z",
+      "is_integrated": true,
       "additional_parameters": {
         "frequency": 2.5,
-        "width": 0.8
+        "fwidth": 0.8
       }
     },
     "nanoparticle": {
       "material": "Au_JC_visible",
       "radius": 0.025,
-      "center": [0, 0, 0]
+      "center": [0.0, 0.0, 0.0]
     },
     "molecule": {
-      "position": [0.035, 0, 0],
+      "position": [0.035, 0.0, 0.0],
+      "tolerance_field_e": 1e-12,
       "back_propagation": true
     },
     "images": {
@@ -227,8 +237,14 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
     }
   },
   "molecule": {
-    "geometry": [ ... water ... ],
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
     "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
     "propagator": {"type": "magnus2"}
@@ -254,11 +270,76 @@ python -m plasmol.main -f hybrid.json -vv -l hybrid.log
 3. Induced dipole is stored and injected back into Meep as a CustomSource (point dipole).
 4. Both `field_e.csv` (local field felt by molecule) and `field_p.csv` (molecular response) are written.
 
-This is the core capability of PlasMol for studying plasmon-enhanced phenomena (SERS, energy transfer, etc.).
+This is the core capability of PlasMol for studying plasmon-enhanced phenomena (SERS, energy transfer, etc.). However, with just the 
+default `plasmol` driver, it only gives the measured induced dipole of the molecule. 
+
+**Results**:
 
 ---
 
-## Tutorial 5: Molecular Orbital Energy Comparison
+
+## Tutorial 5: Nanoparticle Absorption & Scattering Cross-Sections
+
+Use the dedicated `np_abs_cross_sec` driver to compute absorption, scattering, and extinction efficiencies of a nanoparticle (Mie-type calculation with flux boxes).
+
+Add to your JSON:
+
+```json
+{
+  "settings": {
+    "dt": 0.07,
+    "t_end": 14500.01,
+    "driver": "np_abs_cross_sec"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "symmetries": ["Y", 1, "Z", -1]
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.05, 0, 0],
+      "size": [0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.291666667,
+        "fwidth": 2.083333335
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.025,
+      "center": [0, 0, 0]
+    }
+  }
+}
+```
+
+Then run with that driver. The script produces `output_arrays.txt`, efficiency plots, and a multi-peak Lorentzian fit of the plasmon resonance.
+
+For hybrid NP+molecule *spectra*, prefer the `fourier` driver with a plasmon section (see [Fourier Spectra](methodology/fourier.md)).
+
+**Results**:
+
+![Scattering and Abs of Au NP](assets/tutorials/tutorial4_np_scat.png)
+
+---
+
+## Advanced / Custom Workflows
+
+- **Adding custom observables**: In `quantum/molecule.py` add a new method (e.g. `calculate_sers_enhancement()`), then call it inside `quantum/propagation.py` after each step. The result can be written to CSV.
+- **New electric field shapes**: Add to `classical/sources.py` (MEEPSOURCE) or `quantum/sources.py` (QUANTUMSOURCE) and register in the JSON schema via `params.py`.
+- **New propagators**: Implement in `quantum/propagators/`, add to the map in `params.py`, and update validation.
+
+All extension points are documented with comments in the source code.
+
+The tutorials above cover the vast majority of use cases. The following tutorials, however, are meant to give examples of the custom drivers written 
+
+---
+
+## Tutorial 6: Molecular Orbital Energy Comparison
 
 Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and functionals (very useful for method benchmarking).
 
@@ -268,12 +349,19 @@ Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and fu
 {
   "settings": {
     "dt": 0.1,
-    "t_end": 10
+    "t_end": 10,
+    "driver": "comparison"
   },
   "molecule": {
-    "geometry": [ ... water or any molecule ... ],
+    "geometry": [
+      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
+      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
+      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
+    ],
     "geometry_units": "bohr",
-    "basis": "6-31g",   // will be overridden by comparison
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-31g",
     "xc": "pbe0",
     "propagator": {"type": "magnus2"}
   },
@@ -305,50 +393,13 @@ python -m plasmol.main -f mo_comparison.json -vv
 
 The comparison driver only performs ground-state SCF calculations — no time propagation is needed.
 
----
+***Results**:
 
-## Tutorial 6: Nanoparticle Absorption & Scattering Cross-Sections
+![MO energy grid for water (Tutorial 6)](assets/tutorials/tutorial6_all_mo_energies.png)
 
-Use the dedicated `np_abs_cross_sec` driver to compute absorption, scattering, and extinction efficiencies of a nanoparticle (Mie-type calculation with flux boxes).
+Single panel example (sto3g + PBE0):
 
-Add to your JSON:
-
-```json
-{
-  "settings": {
-    "driver": "np_abs_cross_sec",
-    ...
-  },
-  "plasmon": {
-    "nanoparticle": { ... },
-    "source": {
-      "type": "gaussian",
-      "additional_parameters": {
-        "frequency": 2.0,
-        "fwidth": 1.5
-      }
-    },
-    ...
-  }
-}
-```
-
-Then run with that driver. The script produces `output_arrays.txt`, efficiency plots, and a multi-peak Lorentzian fit of the plasmon resonance.
-
-For hybrid NP+molecule *spectra*, prefer the `fourier` driver with a plasmon section (see [Fourier Spectra](methodology/fourier.md)).
-
----
-
-## Advanced / Custom Workflows
-
-- **Chen 2010 replication** (`driver: "scatter_response_fxn"`): Runs four parallel FDTD simulations (X/Y pol × NP/VAC) and saves probe-point field data for post-processing of λ-dependent response.
-- **Adding custom observables**: In `quantum/molecule.py` add a new method (e.g. `calculate_sers_enhancement()`), then call it inside `quantum/propagation.py` after each step. The result can be written to CSV.
-- **New electric field shapes**: Add to `classical/sources.py` (MEEPSOURCE) or `quantum/sources.py` (QUANTUMSOURCE) and register in the JSON schema via `params.py`.
-- **New propagators**: Implement in `quantum/propagators/`, add to the map in `params.py`, and update validation.
-
-All extension points are documented with comments in the source code.
-
-These tutorials cover the vast majority of use cases. For the complete parameter reference, see [Usage](usage.md) or run `--describe`. Happy simulating!
+![sto-3g / PBE0 MO levels (Tutorial 6)](assets/tutorials/tutorial6_sto3g_pbe0.png)
 
 ---
 
@@ -358,27 +409,70 @@ Create a sudden double core-hole on MO 0 and track hole occupations:
 
 ```json
 {
-  "settings": { "dt": 0.05, "t_end": 100, "driver": "core_hole" },
+  "settings": {
+    "dt": 0.05,
+    "t_end": 200,
+    "driver": "dch"
+  },
   "molecule": {
-    "geometry": "mol.xyz",
+    "geometry": "3p.xyz",
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
-    "basis": "6-31g*",
-    "xc": "pbe0",
-    "propagator": { "type": "magnus2" }
+    "basis": "6-311G*",
+    "xc": "PBE0",
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-8,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
     "mo_removal_index_dict": {"0": 2},
-    "core_hole_mo_occ_filepath": "mo_occ.csv",
-    "core_hole_watch_indices": [0, 1, 2, 3]
+    "dch_watch_indices": [21, 23, 24],
+    "dch_mo_occ_filepath": "mo_occ.csv"
   }
 }
 ```
 
-- `{ "0": 1 }` → SCH; `{ "0": 2 }` → DCH; `{ "0": 1, "1": 1 }` → two single holes.
+3p.xyz:
+```xyz
+16
+3-Pentanone (NWChem optimized conformation 6-311G*/PBE0)
+C    -0.02585501    -2.53946034    -0.50367261
+C    -0.44363264    -1.37313018     0.37206036
+C    -0.15091510    -0.01857470    -0.24303723
+O     0.47542696     0.09277836    -1.26870597
+C    -0.68887019     1.18842474     0.50043570
+C    -0.21762616     2.51221721    -0.07166649
+H     1.03999621    -2.49248776    -0.73476088
+H    -0.56010095    -2.52751457    -1.45645780
+H    -0.22977069    -3.49303368    -0.01017758
+H    -1.51177601    -1.41921394     0.62079454
+H     0.07043999    -1.40846680     1.34260507
+H    -0.42389703     1.09144241     1.56120751
+H    -1.78548325     1.12119501     0.47976102
+H    -0.65541451     3.35273246     0.47266842
+H    -0.49243996     2.60284823    -1.12425761
+H     0.86990233     2.60003036    -0.01678504
+```
+
 - Use `"check_mo_contrib_by_atom": true` first to survey which atoms dominate candidate MOs.
 - Full theory: [Core-Hole Dynamics](methodology/core_hole.md).
+
+**Results**:
+
+3-pentanone double core-hole on MO 0 (`{"0": 2}`):
+
+![E-field vs induced dipole (Tutorial 7)](assets/tutorials/tutorial7_output.png)
+
+![Hole occupation vs time on neutral MOs (Tutorial 7)](assets/tutorials/tutorial7_mo_occ.png)
 
 ---
 
@@ -387,19 +481,88 @@ Create a sudden double core-hole on MO 0 and track hole occupations:
 For a molecule on the +x side of an Au sphere, compute orientation-resolved hybrid spectra:
 
 ```json
-"settings": { "driver": "fourier", ... },
-"plasmon": {
-  "nanoparticle": { "material": "Au_JC_visible", "radius": 0.025, "center": [0,0,0] },
-  "molecule": { "position": [0.02645, 0, 0] },
-  "source": { "type": "gaussian", ... }
-},
-"additional_parameters": {
-  "fourier": {
-    "polarization": "parallel",
-    "spectrum_filepath": "spectrum_parallel.png",
-    "field_e_ref_filepath": "field_e_ref_par.csv"
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 10000,
+    "driver": "fourier"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.291666667,
+        "fwidth": 2.083333335
+      }
+    },
+    "nanoparticle": {
+      "material": "Au",
+      "radius": 0.025,
+      "center": [0, 0, 0]
+    },
+    "molecule": {
+      "position": [0.026451, 0, 0]
+    }
+  },
+  "molecule": {
+    "geometry": "Na.xyz",
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 1,
+    "basis": "631g*",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": 0.339181,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "cap": {
+      "type": "static",
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": 0.023007,
+      "clamp": 100
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "fourier": {
+      "polarization": "parallel",
+      "spectrum_filepath": "spectrum_parallel.png",
+      "npz_filepath": "fourier_parallel.npz",
+      "min_ev": 1.5,
+      "max_ev": 5.0,
+      "field_e_ref_filepath": "field_e_ref_parallel.csv"
+    }
   }
 }
 ```
 
-Switch `"polarization": "perpendicular"` (optionally `"perp_component": "y"`) for the tangential spectrum. Details: [Fourier Spectra](methodology/fourier.md) § Parallel and perpendicular.
+Na.xyz:
+```xyz
+Na
+1
+
+Na    0.00000000    0.00000000    0.00000000
+```
+
+Switch `"polarization": "perpendicular"` for the tangential spectrum. Details: [Fourier Spectra](methodology/fourier.md) § Parallel and perpendicular.
+
+**Results**:
+
+The result gives the absorption spectrum of the molecule (here it is a single Na atom) under the influence of the NP's electric field:
+![Spectrum of Na under influence of NP](assets/tutorials/tutorial8_spectrum_parallel.png)

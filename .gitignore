@@ -12,3 +12,4 @@ mcp_runs/
 plasmol.egg-info
 .grok/
 **/private/
+doc/_build/

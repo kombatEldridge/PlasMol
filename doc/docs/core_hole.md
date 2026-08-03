@@ -36,7 +36,10 @@ Core-hole runs **always force open-shell (UKS)** so α/β channels can describe 
     "driver": "core_hole"
   },
   "molecule": {
-    "geometry": "3p.xyz",
+    "geometry": [
+      {"atom": "C", "coord": [0.0, 0.0, 0.0]},
+      {"atom": "O", "coord": [0.0, 0.0, 1.13]}
+    ],
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
@@ -85,10 +88,34 @@ The final PNG is written next to `core_hole_mo_occ_filepath` (same basename).
 Before a production run it is often useful to inspect which atoms dominate a candidate MO:
 
 ```json
-"additional_parameters": {
-  "check_mo_contrib_by_atom": true,
-  "mo_removal_index_dict": {"0": 2, "1": 2, "2": 2},
-  "core_hole_mo_occ_filepath": "mo_occ.csv"
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 1.0,
+    "driver": "core_hole"
+  },
+  "molecule": {
+    "geometry": [
+      {"atom": "C", "coord": [0.0, 0.0, 0.0]},
+      {"atom": "O", "coord": [0.0, 0.0, 1.13]}
+    ],
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "sto3g",
+    "xc": "pbe0",
+    "propagator": { "type": "magnus2" }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "check_mo_contrib_by_atom": true,
+    "mo_removal_index_dict": {"0": 2, "1": 2, "2": 2},
+    "core_hole_mo_occ_filepath": "mo_occ.csv"
+  }
 }
 ```
 

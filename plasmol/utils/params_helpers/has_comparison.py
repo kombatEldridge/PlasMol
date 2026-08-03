@@ -40,8 +40,9 @@ def check(params):
                     raise ValueError(f"Invalid comparison 'lrc_parameters' for '{loc}'; must be a number.")
                 if loc not in self.comparison_xcs:
                     raise ValueError(f"Comparison 'lrc_parameters' for '{loc}' is not in the list of xcs.")
+        lrc = getattr(self, 'comparison_lrc_parameters', None) or {}
         for xc in self.comparison_xcs:
-            omega = self.comparison_lrc_parameters.get(xc, None)
+            omega = lrc.get(xc, None) if isinstance(lrc, dict) else None
             check_xc(self, xc, omega)
         for loc in ['comparison_num_virtual', 'comparison_num_occupied', 'comparison_index_min', 'comparison_index_max']:
             if hasattr(self, loc):
