@@ -9,7 +9,7 @@
 ## When to use
 
 - Plasmon–molecule coupling, SERS-style geometries, hybrid time series
-- Not the preferred path for absorption *spectra* (use [fourier](fourier.md) with a plasmon section)
+- Not the preferred path for absorption *spectra* (use [absorption](absorption.md) with a plasmon section)
 
 ## Required JSON
 

@@ -9,9 +9,11 @@ from plasmol.utils.checkpoint import (
     load_state_from_checkpoint,
     resume_from_checkpoint,
 )
+from plasmol.utils.npz import save_npz, describe_npz
 
 __all__ = [
     'init_csv', 'update_csv', 'read_field_csv', 'PRINTLOGGER', 'setup_logging',
     'plot_e_p_fields', 'make_gif', 'clear_directory', 'update_checkpoint',
     'restore_files_from_checkpoint', 'load_state_from_checkpoint', 'resume_from_checkpoint',
+    'save_npz', 'describe_npz',
 ]

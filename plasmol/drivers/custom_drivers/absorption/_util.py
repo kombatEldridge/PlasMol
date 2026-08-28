@@ -1,4 +1,4 @@
-# Shared small utilities for the Fourier driver package.
+# Shared small utilities for the absorption driver package.
 import numpy as np
 
 

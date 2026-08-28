@@ -1,0 +1,32 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 40,
+    "driver": "quantum"
+  },
+  "molecule": {
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
+    "geometry_units": "bohr",
+    "basis": "sto3g",
+    "xc": "pbe0",
+    "charge": 0,
+    "spin": 0,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-10,
+      "max_iterations": 50
+    },
+    "source": {
+      "type": "kick",
+      "intensity": 0.001,
+      "peak_time": 0.0,
+      "width_steps": 1,
+      "component": "z"
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "field_vs_polarization.png"
+  }
+}

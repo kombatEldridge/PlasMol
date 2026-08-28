@@ -3,8 +3,8 @@ import logging
 
 import numpy as np
 
-from plasmol.drivers.custom_drivers.fourier._util import as_xyz_array
-from plasmol.drivers.custom_drivers.fourier.setup import (
+from plasmol.drivers.custom_drivers.absorption._util import as_xyz_array
+from plasmol.drivers.custom_drivers.absorption.setup import (
     make_plasmol_direction_copy,
     make_reference_direction_copy,
 )
@@ -59,15 +59,15 @@ def resolve_perpendicular_component(params):
     """
     Cartesian Meep source component perpendicular to the NP→molecule axis.
 
-    Preference: explicit fourier_perp_component, else most orthogonal Cartesian.
+    Preference: explicit absorption_perp_component, else most orthogonal Cartesian.
     """
     axis, norm = np_mol_axis_vector(params)
     unit = axis / norm
-    user = getattr(params, 'fourier_perp_component', None)
+    user = getattr(params, 'absorption_perp_component', None)
     if user:
         user = user.lower().strip()
         if user not in params.xyz:
-            raise ValueError(f"Invalid fourier_perp_component '{user}'.")
+            raise ValueError(f"Invalid absorption_perp_component '{user}'.")
         uidx = params.xyz.index(user)
         if abs(unit[uidx]) > 0.5:
             raise ValueError(
@@ -100,11 +100,11 @@ def build_parallel_abs_spec_runs(params):
     Returns (params_copies, ref_copies, component).
     """
     component = resolve_parallel_component(params)
-    params.fourier_active_component = component
-    params_copies = [make_plasmol_direction_copy(params, component)]
+    params.absorption_active_component = component
+    params_copies = [make_plasmol_direction_copy(params, component, flat=True)]
     ref_copies = []
-    if not getattr(params, 'fourier_use_existing_e_field_ref', False):
-        ref_copies = [make_reference_direction_copy(params, component)]
+    if not getattr(params, 'absorption_use_existing_e_field_ref', False):
+        ref_copies = [make_reference_direction_copy(params, component, flat=True)]
     logger.info(
         f"Parallel abs spectrum: 1 production run + {len(ref_copies)} vacuum "
         f"reference run(s) with E || '{component}'."
@@ -119,11 +119,11 @@ def build_perpendicular_abs_spec_runs(params):
     Returns (params_copies, ref_copies, component).
     """
     component = resolve_perpendicular_component(params)
-    params.fourier_active_component = component
-    params_copies = [make_plasmol_direction_copy(params, component)]
+    params.absorption_active_component = component
+    params_copies = [make_plasmol_direction_copy(params, component, flat=True)]
     ref_copies = []
-    if not getattr(params, 'fourier_use_existing_e_field_ref', False):
-        ref_copies = [make_reference_direction_copy(params, component)]
+    if not getattr(params, 'absorption_use_existing_e_field_ref', False):
+        ref_copies = [make_reference_direction_copy(params, component, flat=True)]
     logger.info(
         f"Perpendicular abs spectrum: 1 production run + {len(ref_copies)} vacuum "
         f"reference run(s) with E || '{component}' (⊥ NP–mol axis)."

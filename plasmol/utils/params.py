@@ -175,7 +175,7 @@ class PARAMS:
         logger.info(
             "Parameters safe to edit before resuming include: dt, t_end, "
             "checkpoint_frequency_time/steps, checkpoint_filepath, "
-            "fourier_max_ev/min_ev/gamma/npz_filepath/spectrum_filepath/field_e_ref_filepath/reference_only, "
+            "absorption_max_ev/min_ev/gamma/npz_filepath/spectrum_filepath/field_e_ref_filepath/reference_only, "
             "spectra_e_vs_p_filepath, verbose."
         )
         logger.info("===== Directory is now setup to resume from checkpoint =====")

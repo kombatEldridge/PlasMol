@@ -1,5 +1,5 @@
 """
-Fourier absorption-spectrum driver package.
+Absorption-spectrum driver package.
 
 Public entry point: ``run(params)``.
 
@@ -15,10 +15,10 @@ Submodules
 - ``postprocess``   – post-run spectrum assembly
 """
 
-from plasmol.drivers.custom_drivers.fourier.driver import run
+from plasmol.drivers.custom_drivers.absorption.driver import run
 
 # Re-export helpers used by tests and external callers.
-from plasmol.drivers.custom_drivers.fourier.io_fields import (
+from plasmol.drivers.custom_drivers.absorption.io_fields import (
     apply_damping,
     fold,
     fold_single,
@@ -28,26 +28,26 @@ from plasmol.drivers.custom_drivers.fourier.io_fields import (
     validate_reference_times,
     write_single_reference_e_field,
 )
-from plasmol.drivers.custom_drivers.fourier.polarization import (
+from plasmol.drivers.custom_drivers.absorption.polarization import (
     build_parallel_abs_spec_runs,
     build_perpendicular_abs_spec_runs,
     np_mol_axis_vector,
     resolve_parallel_component,
     resolve_perpendicular_component,
 )
-from plasmol.drivers.custom_drivers.fourier.source_face import (
+from plasmol.drivers.custom_drivers.absorption.source_face import (
     ensure_transverse_plane_wave_source,
     source_face_normal_index,
 )
-from plasmol.drivers.custom_drivers.fourier.spectrum import (
+from plasmol.drivers.custom_drivers.absorption.spectrum import (
     absorption,
     absorption_single,
     fourier,
     orient_spectrum_sign,
 )
-from plasmol.drivers.custom_drivers.fourier.postprocess import (
-    fourier_post_process,
-    fourier_post_process_single,
+from plasmol.drivers.custom_drivers.absorption.postprocess import (
+    absorption_post_process,
+    absorption_post_process_single,
 )
 
 __all__ = [
@@ -71,6 +71,6 @@ __all__ = [
     "build_perpendicular_abs_spec_runs",
     "ensure_transverse_plane_wave_source",
     "source_face_normal_index",
-    "fourier_post_process",
-    "fourier_post_process_single",
+    "absorption_post_process",
+    "absorption_post_process_single",
 ]

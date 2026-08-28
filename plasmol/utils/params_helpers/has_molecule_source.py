@@ -6,9 +6,9 @@ import logging
 logger = logging.getLogger("main")
 
 
-# Defaults applied only for Fourier kick sources when the user omits fields.
-# (Fourier overwrites polarization per direction; component is a placeholder.)
-_FOURIER_KICK_DEFAULTS = {
+# Defaults applied only for Absorption kick sources when the user omits fields.
+# (The absorption driver overwrites polarization per direction; component is a placeholder.)
+_ABSORPTION_KICK_DEFAULTS = {
     'molecule_source_intensity': 0.001,
     'molecule_source_peak_time': 0.0,
     'molecule_source_width_steps': 1,
@@ -16,10 +16,10 @@ _FOURIER_KICK_DEFAULTS = {
 }
 
 
-def _is_fourier_run(params):
+def _is_absorption_run(params):
     return (
-        getattr(params, 'has_fourier', False)
-        or getattr(params, 'driver_str', None) == 'fourier'
+        getattr(params, 'has_absorption', False)
+        or getattr(params, 'driver_str', None) == 'absorption'
     )
 
 
@@ -37,29 +37,29 @@ def check(params):
     if self.has_plasmon_source and self.has_molecule_source:
         raise ValueError("Source found in both plasmon and molecule sections. Please specify only one.")
     elif self.has_molecule_source:
-        is_fourier = _is_fourier_run(self)
+        is_absorption = _is_absorption_run(self)
 
-        # Fourier runs only need type: "kick"; fill omitted kick fields with defaults.
-        if is_fourier:
+        # Absorption runs only need type: "kick"; fill omitted kick fields with defaults.
+        if is_absorption:
             src_type = getattr(self, 'molecule_source_type', None)
             if src_type is None:
                 self.molecule_source_type = 'kick'
             elif str(src_type).lower().strip() != 'kick':
                 logger.warning(
                     f"Non-'kick' source type '{src_type}' being ignored because "
-                    f"Fourier driver/workflow is enabled."
+                    f"absorption driver/workflow is enabled."
                 )
                 self.molecule_source_type = 'kick'
-            for attr, default in _FOURIER_KICK_DEFAULTS.items():
+            for attr, default in _ABSORPTION_KICK_DEFAULTS.items():
                 if not hasattr(self, attr) or getattr(self, attr) is None:
                     setattr(self, attr, default)
                     pretty = attr.removeprefix("molecule_source_")
                     logger.debug(
-                        f"Fourier kick source: defaulting '{pretty}' to {default!r}."
+                        f"Absorption kick source: defaulting '{pretty}' to {default!r}."
                     )
-            # Component is chosen per direction by the Fourier driver.
+            # Component is chosen per direction by the absorption driver.
             logger.debug(
-                "Fourier workflow ignores molecule source 'component'; "
+                "Absorption workflow ignores molecule source 'component'; "
                 "polarization is set per directional run."
             )
         else:

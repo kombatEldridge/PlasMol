@@ -39,12 +39,7 @@ Simulate a gold sphere in water interacting with a continuous-wave source. Produ
       "timesteps_between": 2,
       "dir_name": "classical_frames",
       "make_gif": true,
-      "additional_parameters": [
-        "-m -1",
-        "-M 1",
-        "-Zc dkbluered",
-        "-S 3"
-      ]
+      "additional_parameters": ["-m -1", "-M 1", "-Zc dkbluered", "-S 3"]
     }
   },
   "files": {
@@ -87,11 +82,7 @@ Compute the time-dependent induced dipole of a water molecule under a pulsed ele
     "t_end": 40
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "basis": "sto3g",
     "xc": "pbe0",
@@ -137,7 +128,7 @@ The left panel is the δ-kick electric field; the right panel is the induced mol
 
 ---
 
-## Tutorial 3: Molecular Absorption Spectrum (Fourier Workflow)
+## Tutorial 3: Molecular Absorption Spectrum
 
 Compute the absorption spectrum of water using three directional delta-kick simulations + Fourier transform. This is the recommended way to obtain spectra.
 
@@ -148,20 +139,18 @@ Compute the absorption spectrum of water using three directional delta-kick simu
   "settings": {
     "dt": 0.1,
     "t_end": 4000,
-    "driver": "fourier"
+    "driver": "absorption"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
-    "propagator": {"type": "magnus2"},
+    "propagator": {
+      "type": "magnus2"
+    },
     "source": {
       "type": "kick"
     }
@@ -172,7 +161,7 @@ Compute the absorption spectrum of water using three directional delta-kick simu
     "spectra_e_vs_p_filepath": "raw_response.png"
   },
   "additional_parameters": {
-    "fourier": {
+    "absorption": {
       "gamma": 0.005,
       "min_ev": 1.5,
       "max_ev": 12.0,
@@ -198,7 +187,7 @@ PlasMol automatically runs **three parallel simulations** (x/y/z kicks), applies
 
 **Results**:
 
-![Water absorption spectrum from Fourier workflow (Tutorial 3)](assets/tutorials/tutorial3_water_absorption.png)
+![Water absorption spectrum from Absorption workflow (Tutorial 3)](assets/tutorials/tutorial3_water_absorption.png)
 
 Peak-normalized absorption from three directional $\delta$-kicks + FFT (with damping). Features above $\sim 12\,\mathrm{eV}$ reflect the molecular response on the chosen basis / functional; longer $t_{\mathrm{end}}$ and larger bases improve frequency resolution and line shapes.
 
@@ -248,26 +237,19 @@ Gold nanoparticle + water molecule inside the FDTD grid. The molecule feels the 
       "timesteps_between": 5,
       "dir_name": "hybrid_frames",
       "make_gif": true,
-      "additional_parameters": [
-        "-m -5e-5",
-        "-M 5e-5",
-        "-Zc dkbluered",
-        "-S 3"
-      ]
+      "additional_parameters": ["-m -5e-5", "-M 5e-5", "-Zc dkbluered", "-S 3"]
     }
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
-    "propagator": {"type": "magnus2"}
+    "propagator": {
+      "type": "magnus2"
+    }
   },
   "files": {
     "field_e_filepath": "field_e.csv",
@@ -348,7 +330,7 @@ Add to your JSON:
 
 Then run with that driver. The script produces `output_arrays.txt`, efficiency plots, and a multi-peak Lorentzian fit of the plasmon resonance.
 
-For hybrid NP+molecule *spectra*, prefer the `fourier` driver with a plasmon section (see [Fourier Spectra](methodology/fourier.md)).
+For hybrid NP+molecule *spectra*, prefer the `absorption` driver with a plasmon section (see [Fourier Spectra](methodology/fourier.md)).
 
 **Results**:
 
@@ -382,23 +364,23 @@ Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and fu
     "driver": "comparison"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,
     "basis": "6-31g",
     "xc": "pbe0",
-    "propagator": {"type": "magnus2"}
+    "propagator": {
+      "type": "magnus2"
+    }
   },
   "additional_parameters": {
     "comparison": {
       "bases": ["6-31g", "6-31g*", "def2-svp", "aug-cc-pvdz"],
       "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
-      "lrc_parameters": {"cam-b3lyp": 0.33},
+      "lrc_parameters": {
+        "cam-b3lyp": 0.33
+      },
       "num_occupied": 5,
       "num_virtual": 8,
       "y_min": -0.8,
@@ -452,7 +434,7 @@ Create a sudden double core-hole on MO 0 and track hole occupations:
     "xc": "PBE0",
     "propagator": {
       "type": "magnus2",
-      "pc_convergence": 1e-8,
+      "pc_convergence": 1e-08,
       "max_iterations": 200
     },
     "hermiticity_tolerance": 1e-12
@@ -463,7 +445,9 @@ Create a sudden double core-hole on MO 0 and track hole occupations:
     "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
-    "mo_removal_index_dict": {"0": 2},
+    "mo_removal_index_dict": {
+      "0": 2
+    },
     "dch_watch_indices": [21, 23, 24],
     "dch_mo_occ_filepath": "mo_occ.csv"
   }
@@ -505,7 +489,7 @@ H     0.86990233     2.60003036    -0.01678504
 
 ---
 
-## Tutorial 8: Hybrid Fourier Parallel vs Perpendicular
+## Tutorial 8: Hybrid Absorption Parallel vs Perpendicular
 
 For a molecule on the +x side of an Au sphere, compute orientation-resolved hybrid spectra:
 
@@ -514,7 +498,7 @@ For a molecule on the +x side of an Au sphere, compute orientation-resolved hybr
   "settings": {
     "dt": 0.1,
     "t_end": 10000,
-    "driver": "fourier"
+    "driver": "absorption"
   },
   "plasmon": {
     "simulation": {
@@ -569,10 +553,10 @@ For a molecule on the +x side of an Au sphere, compute orientation-resolved hybr
     "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
-    "fourier": {
+    "absorption": {
       "polarization": "parallel",
       "spectrum_filepath": "spectrum_parallel.png",
-      "npz_filepath": "fourier_parallel.npz",
+      "npz_filepath": "absorption_parallel.npz",
       "min_ev": 1.5,
       "max_ev": 5.0,
       "field_e_ref_filepath": "field_e_ref_parallel.csv"

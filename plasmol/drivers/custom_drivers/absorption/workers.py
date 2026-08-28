@@ -1,10 +1,14 @@
 # Parallel worker entry points for quantum / plasmol / vacuum-reference jobs.
 import logging
+from contextlib import contextmanager
 
 import meep as mp
 
 from plasmol.classical.sources import MEEPSOURCE
 from plasmol.classical.meep_verbosity import meep_io_context
+from plasmol.drivers.custom_drivers.absorption.source_face import (
+    ensure_transverse_plane_wave_source,
+)
 from plasmol.drivers.plasmol import run as run_plasmol
 from plasmol.drivers.quantum import run as run_quantum
 from plasmol.utils.csv import init_csv
@@ -23,14 +27,35 @@ class PrefixFilter(logging.Filter):
         return True
 
 
+@contextmanager
+def direction_log_prefix(direction):
+    """Tag ``main`` / root log records with ``[direction-dir]`` for this block."""
+    filt = PrefixFilter(direction)
+    logging.getLogger("main").addFilter(filt)
+    logging.getLogger().addFilter(filt)
+    try:
+        yield
+    finally:
+        logging.getLogger("main").removeFilter(filt)
+        logging.getLogger().removeFilter(filt)
+
+
 def build_meep_source(params):
-    """Create the Meep incident-source object on params (not picklable across processes)."""
+    """Create the Meep incident-source object on params (not picklable across processes).
+
+    Rearranges a longitudinal plane-wave face so k ⊥ E before constructing the
+    Meep source. Callers must install ``direction_log_prefix`` first so the
+    rearrange warning/info lines carry the worker tag.
+    """
+    component = getattr(params, 'plasmon_source_component', None)
+    if component is not None:
+        ensure_transverse_plane_wave_source(params, component=component)
     with meep_io_context(getattr(params, 'verbose', 1)):
         params.plasmon_source_object = MEEPSOURCE(
             source_type=getattr(params, 'plasmon_source_type').lower().strip(),
             source_center=getattr(params, 'plasmon_source_center'),
             source_size=getattr(params, 'plasmon_source_size'),
-            component=getattr(params, 'plasmon_source_component'),
+            component=component,
             is_integrated=getattr(params, 'plasmon_source_is_integrated'),
             **{k: v for k, v in getattr(params, 'plasmon_source_additional_parameters', {}).items()}
         )
@@ -55,14 +80,8 @@ def run_quantum_with_prefix(params_copy):
         getattr(params_copy, 'verbose', 1),
         getattr(params_copy, 'log', None)
     )
-    f = PrefixFilter(params_copy.molecule_source_component)
-    logging.getLogger("main").addFilter(f)
-    logging.getLogger().addFilter(f)
-    try:
+    with direction_log_prefix(params_copy.molecule_source_component):
         run_quantum(params_copy)
-    finally:
-        logging.getLogger("main").removeFilter(f)
-        logging.getLogger().removeFilter(f)
 
 
 def run_plasmol_with_prefix(params_copy):
@@ -70,15 +89,9 @@ def run_plasmol_with_prefix(params_copy):
         getattr(params_copy, 'verbose', 1),
         getattr(params_copy, 'log', None)
     )
-    build_plasmol_meep_objects(params_copy)
-    f = PrefixFilter(params_copy.plasmon_source_component)
-    logging.getLogger("main").addFilter(f)
-    logging.getLogger().addFilter(f)
-    try:
+    with direction_log_prefix(params_copy.plasmon_source_component):
+        build_plasmol_meep_objects(params_copy)
         run_plasmol(params_copy)
-    finally:
-        logging.getLogger("main").removeFilter(f)
-        logging.getLogger().removeFilter(f)
 
 
 def run_reference_with_prefix(params_copy):
@@ -89,11 +102,8 @@ def run_reference_with_prefix(params_copy):
         getattr(params_copy, 'verbose', 1),
         getattr(params_copy, 'log', None)
     )
-    build_meep_source(params_copy)
-    f = PrefixFilter(f"ref-{params_copy.plasmon_source_component}")
-    logging.getLogger("main").addFilter(f)
-    logging.getLogger().addFilter(f)
-    try:
+    with direction_log_prefix(f"ref-{params_copy.plasmon_source_component}"):
+        build_meep_source(params_copy)
         init_csv(
             params_copy.field_e_filepath,
             "Reference (vacuum, no NP/molecule) electric field intensity in atomic units",
@@ -102,6 +112,3 @@ def run_reference_with_prefix(params_copy):
         logging.info(
             f"Vacuum reference E-field written to {params_copy.field_e_filepath}"
         )
-    finally:
-        logging.getLogger("main").removeFilter(f)
-        logging.getLogger().removeFilter(f)

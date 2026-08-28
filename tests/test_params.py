@@ -289,9 +289,9 @@ def test_invalid_molecule_geometry_units(tmp_path):
     _test_validation_error(tmp_path, lambda c: c["molecule"].update({"geometry_units": "invalid"}), ValueError, "Invalid 'molecule_geometry_units'")
 
 
-def _fourier_plasmon_config():
+def _absorption_plasmon_config():
     return {
-        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "absorption"},
         "plasmon": {
             "simulation": {"cell_length": 0.2, "pml_thickness": 0.05},
             "source": {
@@ -314,56 +314,56 @@ def _fourier_plasmon_config():
     }
 
 
-def test_fourier_with_plasmon(tmp_path):
-    cfg = _fourier_plasmon_config()
-    cfg["additional_parameters"] = {"fourier": {"gamma": 0.01, "spectrum_filepath": "spectrum.png"}}
-    json_path = tmp_path / "fourier_plasmon.json"
+def test_absorption_with_plasmon(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["additional_parameters"] = {"absorption": {"gamma": 0.01, "spectrum_filepath": "spectrum.png"}}
+    json_path = tmp_path / "absorption_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert params.driver_str == "fourier"
+    assert params.driver_str == "absorption"
     assert params.has_plasmon is True
-    assert params.has_fourier is True
-    assert params.fourier_gamma == 0.01
-    assert params.fourier_spectrum_filepath == "spectrum.png"
-    assert params.fourier_polarization == "full"
+    assert params.has_absorption is True
+    assert params.absorption_gamma == 0.01
+    assert params.absorption_spectrum_filepath == "spectrum.png"
+    assert params.absorption_polarization == "full"
 
 
-def test_fourier_parallel_polarization_parses(tmp_path):
-    cfg = _fourier_plasmon_config()
+def test_absorption_parallel_polarization_parses(tmp_path):
+    cfg = _absorption_plasmon_config()
     cfg["additional_parameters"] = {
-        "fourier": {
+        "absorption": {
             "gamma": 0.01,
             "spectrum_filepath": "spectrum_par.png",
             "polarization": "parallel",
         }
     }
-    json_path = tmp_path / "fourier_par.json"
+    json_path = tmp_path / "absorption_par.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert params.fourier_polarization == "parallel"
-    assert params.has_fourier is True
+    assert params.absorption_polarization == "parallel"
+    assert params.has_absorption is True
 
 
-def test_fourier_perpendicular_polarization_parses(tmp_path):
-    cfg = _fourier_plasmon_config()
+def test_absorption_perpendicular_polarization_parses(tmp_path):
+    cfg = _absorption_plasmon_config()
     cfg["additional_parameters"] = {
-        "fourier": {
+        "absorption": {
             "gamma": 0.01,
             "spectrum_filepath": "spectrum_perp.png",
             "polarization": "perpendicular",
             "perp_component": "z",
         }
     }
-    json_path = tmp_path / "fourier_perp.json"
+    json_path = tmp_path / "absorption_perp.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert params.fourier_polarization == "perpendicular"
-    assert params.fourier_perp_component == "z"
+    assert params.absorption_polarization == "perpendicular"
+    assert params.absorption_perp_component == "z"
 
 
-def test_fourier_parallel_requires_plasmon(tmp_path):
+def test_absorption_parallel_requires_plasmon(tmp_path):
     cfg = {
-        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "absorption"},
         "molecule": {
             "geometry": [{"atom": "H", "coord": [0.0, 0.0, 0.0]}],
             "geometry_units": "bohr",
@@ -373,22 +373,22 @@ def test_fourier_parallel_requires_plasmon(tmp_path):
         },
         "files": {"spectra_e_vs_p_filepath": "spectrum.png"},
         "additional_parameters": {
-            "fourier": {
+            "absorption": {
                 "spectrum_filepath": "spectrum.png",
                 "polarization": "parallel",
             }
         },
     }
-    json_path = tmp_path / "fourier_par_no_plasmon.json"
+    json_path = tmp_path / "absorption_par_no_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     with pytest.raises(ValueError, match="requires a plasmon section"):
         PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
-def test_fourier_kick_source_defaults_when_only_type_given(tmp_path):
-    """Fourier allows molecule.source as just {\"type\": \"kick\"}; other fields default."""
+def test_absorption_kick_source_defaults_when_only_type_given(tmp_path):
+    """Absorption allows molecule.source as just {\"type\": \"kick\"}; other fields default."""
     cfg = {
-        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "fourier"},
+        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "absorption"},
         "molecule": {
             "geometry": [{"atom": "H", "coord": [0.0, 0.0, 0.0]}],
             "geometry_units": "bohr",
@@ -398,10 +398,10 @@ def test_fourier_kick_source_defaults_when_only_type_given(tmp_path):
         },
         "files": {"spectra_e_vs_p_filepath": "spectrum.png"},
         "additional_parameters": {
-            "fourier": {"spectrum_filepath": "spectrum.png"},
+            "absorption": {"spectrum_filepath": "spectrum.png"},
         },
     }
-    json_path = tmp_path / "fourier_kick_defaults.json"
+    json_path = tmp_path / "absorption_kick_defaults.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
     assert params.molecule_source_type == "kick"
@@ -411,8 +411,8 @@ def test_fourier_kick_source_defaults_when_only_type_given(tmp_path):
     assert params.molecule_source_component == "z"
 
 
-def test_non_fourier_kick_still_requires_intensity(tmp_path):
-    """Without Fourier, minimal {\"type\": \"kick\"} is still invalid."""
+def test_non_absorption_kick_still_requires_intensity(tmp_path):
+    """Without the absorption driver, minimal {\"type\": \"kick\"} is still invalid."""
     cfg = {
         "settings": {"dt": 0.5, "t_end": 5.0},
         "molecule": {
@@ -423,46 +423,46 @@ def test_non_fourier_kick_still_requires_intensity(tmp_path):
             "source": {"type": "kick"},
         },
     }
-    json_path = tmp_path / "non_fourier_minimal_kick.json"
+    json_path = tmp_path / "non_absorption_minimal_kick.json"
     json_path.write_text(json.dumps(cfg))
     with pytest.raises(ValueError, match="Molecule source requires 'intensity'"):
         PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
-def test_fourier_driver_with_plasmon_parses(tmp_path):
-    """driver: fourier without a fourier{} block still selects the driver; spectrum path falls back to files."""
-    cfg = _fourier_plasmon_config()
+def test_absorption_driver_with_plasmon_parses(tmp_path):
+    """driver: absorption without an absorption{} block still selects the driver; spectrum path falls back to files."""
+    cfg = _absorption_plasmon_config()
     cfg["additional_parameters"] = {
-        "fourier": {"spectrum_filepath": "spectrum.png"}
+        "absorption": {"spectrum_filepath": "spectrum.png"}
     }
-    json_path = tmp_path / "fourier_plasmon.json"
+    json_path = tmp_path / "absorption_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert params.driver_str == "fourier"
+    assert params.driver_str == "absorption"
     assert params.has_plasmon is True
-    assert params.has_fourier is True
-    assert params.fourier_gamma == 0
-    assert params.fourier_spectrum_filepath == "spectrum.png"
+    assert params.has_absorption is True
+    assert params.absorption_gamma == 0
+    assert params.absorption_spectrum_filepath == "spectrum.png"
 
 
-def test_checkpoint_disabled_for_fourier_plasmon_run(tmp_path):
-    cfg = _fourier_plasmon_config()
+def test_checkpoint_disabled_for_absorption_plasmon_run(tmp_path):
+    cfg = _absorption_plasmon_config()
     cfg["files"]["checkpoint"] = {"filepath": "ck.npz", "frequency_steps": 10}
-    json_path = tmp_path / "fourier_plasmon_ckpt.json"
+    json_path = tmp_path / "absorption_plasmon_ckpt.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
-    assert params.driver_str == "fourier"
+    assert params.driver_str == "absorption"
     assert params.has_plasmon is True
     assert getattr(params, "has_checkpoint", False) is False
     assert not hasattr(params, "checkpoint_filepath")
 
 
-def test_fourier_missing_spectrum_filepath(tmp_path):
+def test_absorption_missing_spectrum_filepath(tmp_path):
     def _mod(c):
         c.pop("plasmon", None)
         c["files"] = {"field_e_filepath": "e.csv", "field_p_filepath": "p.csv"}
-        c.setdefault("additional_parameters", {}).update({"fourier": {}})
-    _test_validation_error(tmp_path, _mod, ValueError, "Fourier driver requires 'spectrum_filepath'")
+        c.setdefault("additional_parameters", {}).update({"absorption": {}})
+    _test_validation_error(tmp_path, _mod, ValueError, "absorption driver requires 'spectrum_filepath'")
 
 
 def test_checkpoint_missing_filepath(tmp_path):
@@ -715,18 +715,18 @@ def test_checkpoint_negative_frequency(tmp_path):
     _test_validation_error(tmp_path, _mod, ValueError, "Checkpointing 'frequency_steps' must be a positive value")
 
 
-def test_fourier_gamma_non_positive(tmp_path):
+def test_absorption_gamma_non_positive(tmp_path):
     def _mod(c):
         c.pop("plasmon", None)
-        c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": -0.01, "spectrum_filepath": "spec.png"}})
-    _test_validation_error(tmp_path, _mod, ValueError, "Fourier 'gamma' must be a non-negative value")
+        c.setdefault("additional_parameters", {}).update({"absorption": {"gamma": -0.01, "spectrum_filepath": "spec.png"}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Absorption 'gamma' must be a non-negative value")
 
 
-def test_fourier_tau_non_positive(tmp_path):
+def test_absorption_tau_non_positive(tmp_path):
     def _mod(c):
         c.pop("plasmon", None)
-        c.setdefault("additional_parameters", {}).update({"fourier": {"gamma": 0.01, "spectrum_filepath": "spec.png", "tau": -0.1}})
-    _test_validation_error(tmp_path, _mod, ValueError, "Fourier 'tau' must be a positive value")
+        c.setdefault("additional_parameters", {}).update({"absorption": {"gamma": 0.01, "spectrum_filepath": "spec.png", "tau": -0.1}})
+    _test_validation_error(tmp_path, _mod, ValueError, "Absorption 'tau' must be a positive value")
 
 
 def test_cap_missing_type_defaults_to_static(tmp_path):

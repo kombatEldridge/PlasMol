@@ -1,0 +1,25 @@
+INFO: Only 'plasmon' parameters given. Running MEEP simulation only.
+INFO: Adjusted dt from 0.1 to 0.10007255400844287 au to match Meep's actual timestep (resolution=689 pixels/μm, courant=0.5).
+INFO: Adjusted t_end from 50 to 50.03627700422143 au to preserve 500 timesteps.
+INFO:  === CLASSICAL SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.10007255400844287 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 50.03627700422143 au (roughly 1.21032 fs).
+INFO: Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: Meep simulation started.
+INFO: [Errno 2] No such file or directory: 'classical_frames', creating.
+WARNING: Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+WARNING: RuntimeWarning: Note: your sources include frequencies outside the range of validity of the material models. This is fine as long as you eventually only look at outputs (fluxes, resonant modes, etc.) at valid frequencies.
+INFO: Simulation progress: 0% done (0/500 steps || 0.0/50.03627700422143 au)
+INFO: Simulation progress: 10% done (50/500 steps || 5.0036277/50.03627700422143 au)
+INFO: Simulation progress: 20% done (100/500 steps || 10.007255401/50.03627700422143 au)
+INFO: Simulation progress: 30% done (150/500 steps || 15.010883101/50.03627700422143 au)
+INFO: Simulation progress: 40% done (200/500 steps || 20.014510802/50.03627700422143 au)
+INFO: Simulation progress: 50% done (250/500 steps || 25.018138502/50.03627700422143 au)
+INFO: Simulation progress: 60% done (300/500 steps || 30.021766203/50.03627700422143 au)
+INFO: Simulation progress: 70% done (350/500 steps || 35.025393903/50.03627700422143 au)
+INFO: Simulation progress: 80% done (400/500 steps || 40.029021603/50.03627700422143 au)
+INFO: Simulation progress: 90% done (450/500 steps || 45.032649304/50.03627700422143 au)
+INFO: Simulation completed successfully!
+INFO: File Saved: classical_frames.gif
+INFO: Simulation completed successfully.

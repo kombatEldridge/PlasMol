@@ -35,11 +35,7 @@
     }
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,

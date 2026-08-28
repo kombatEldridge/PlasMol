@@ -1,0 +1,17 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO: Comparison modifier selected; ignoring basis set and xc. Using values given in additional_parameters.
+INFO: Comparison modifier selected; preparing to run additional simulations for comparison to molecule results.
+INFO:  === COMPARISON SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.1 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 10 au (roughly 0.24189 fs).
+INFO: Comparing for basis: sto3g, XC: pbe
+INFO: MO diagram saved: mo_comparison/individuals/sto3g_pbe_mo_energies.png
+INFO: Comparing for basis: sto3g, XC: pbe0
+INFO: MO diagram saved: mo_comparison/individuals/sto3g_pbe0_mo_energies.png
+INFO: Comparing for basis: 6-31g, XC: pbe
+INFO: MO diagram saved: mo_comparison/individuals/6-31g_pbe_mo_energies.png
+INFO: Comparing for basis: 6-31g, XC: pbe0
+INFO: MO diagram saved: mo_comparison/individuals/6-31g_pbe0_mo_energies.png
+INFO: Combined MO energies plot saved to: mo_comparison/all_mo_energies.png

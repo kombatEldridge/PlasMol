@@ -33,6 +33,6 @@
     "flux_padding": 0.005,
     "line_fit": true,
     "decay_stop": false,
-    "decay_threshold": 1e-5
+    "decay_threshold": 1e-05
   }
 }

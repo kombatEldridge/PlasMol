@@ -21,8 +21,8 @@ def check(params):
         logger.info("Comparison modifier selected; preparing to run additional simulations for comparison to molecule results.")
         if self.has_plasmon:
             raise ValueError("Comparison mode is not supported with plasmon simulations. Please run with only molecule simulations.")
-        if self.has_fourier:
-            raise ValueError("Comparison mode is not supported with fourier simulations. Please run with only molecule simulations.")
+        if self.has_absorption:
+            raise ValueError("Comparison mode is not supported with absorption simulations. Please run with only molecule simulations.")
         if not hasattr(self, 'comparison_bases') or not hasattr(self, 'comparison_xcs'):
             raise ValueError("Comparison mode requires both 'bases' and 'xcs' lists. See documentation for details.")
         for loc in self.comparison_bases:

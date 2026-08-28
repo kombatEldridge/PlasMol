@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 50
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.1,
+      "pml_thickness": 0.01,
+      "surrounding_material_index": 1.33,
+      "symmetries": ["Y", 1, "Z", -1]
+    },
+    "source": {
+      "type": "continuous",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.1, 0.1],
+      "component": "z",
+      "amplitude": 1.0,
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 5.0
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.03,
+      "center": [0.0, 0.0, 0.0]
+    },
+    "images": {
+      "timesteps_between": 2,
+      "dir_name": "classical_frames",
+      "make_gif": true,
+      "additional_parameters": ["-m -1", "-M 1", "-Zc dkbluered", "-S 3"]
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv"
+  }
+}

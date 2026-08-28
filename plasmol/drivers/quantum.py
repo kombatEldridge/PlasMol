@@ -34,8 +34,8 @@ def run(params):
         logger.debug(f"Electric field initialized in {params.field_e_filepath}.")
     else:
         # find index within params.times for checkpoint_time
-        dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
-        suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
+        dir_component = getattr(params, 'molecule_source_component') if params.has_absorption else None
+        suffix = f"_{dir_component}" if params.has_absorption and dir_component else ""
         checkpoint_time = params.values_from_checkpoint[f"checkpoint_time{suffix}"]
         index = next(i for i, t in enumerate(params.times) if t >= checkpoint_time) + 1
         rows = [(round(t, params.time_rounding_decimals), i0, i1, i2) for t, (i0, i1, i2) in zip(params.times[index:], params.molecule_source_field[index:])]
@@ -50,13 +50,19 @@ def run(params):
     total_steps = len(params.times)-1
     time = 0.0 
     source_has_been_zero = True
+    dir_component = getattr(params, 'molecule_source_component') if params.has_absorption else None
+    suffix = f"_{dir_component}" if params.has_absorption and dir_component else ""
+    if params.resumed_from_checkpoint:
+        # Mid-run resume: the kick (or other drive) may already have fired.
+        # Do not skip free evolution just because E(t) is now zero.
+        ckpt_time = params.values_from_checkpoint[f"checkpoint_time{suffix}"]
+        if ckpt_time > 0:
+            source_has_been_zero = False
     report_indices = {int(round(p / 100 * total_steps)) for p in range(0, 101, 10)}
     try:
         for index, current_time in enumerate(params.times):
             params.molecule_propagator_params['current_time'] = current_time
             if params.resumed_from_checkpoint:
-                dir_component = getattr(params, 'molecule_source_component') if params.has_fourier else None
-                suffix = f"_{dir_component}" if params.has_fourier and dir_component else ""
                 if params.times[-1] < params.values_from_checkpoint[f'checkpoint_time{suffix}']:
                     raise ValueError(f"The latest checkpoint time {params.values_from_checkpoint[f'checkpoint_time{suffix}']} is past the t_end. Please adjust your input file to continue past this point.")
                 if params.times[-1] == params.values_from_checkpoint[f'checkpoint_time{suffix}']:
@@ -68,10 +74,10 @@ def run(params):
             if index in report_indices:
                 percent = int(round(index / total_steps * 100))
                 logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time+params.dt}/{params.times[-1]} au)")
+            if current_time == params.times[-1]:
+                break
             if (params.molecule_source_field[index] == 0).all() and source_has_been_zero and not params.has_core_hole:
                 mu_arr = np.zeros(3)
-            elif current_time == params.times[-1]:
-                break
             else:
                 mu_arr = propagation(params.molecule_propagator_params, molecule, params.molecule_source_field[index], params.molecule_propagator)
                 source_has_been_zero = False

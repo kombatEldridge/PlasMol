@@ -10,7 +10,7 @@ from plasmol.utils.params_helpers import (
     has_molecule_position,
     has_molecule,
     has_molecule_source,
-    has_fourier,
+    has_absorption,
     has_cap,
     has_comparison,
     has_checkpoint,
@@ -32,7 +32,7 @@ CHECK_PIPELINE = [
     has_molecule_position.check,
     has_molecule.check,
     has_molecule_source.check,
-    has_fourier.check,
+    has_absorption.check,
     has_cap.check,
     has_comparison.check,
     has_checkpoint.check,
@@ -42,7 +42,7 @@ CHECK_PIPELINE = [
     has_scatter_response_fxn.check,
 ]
 
-# Single sequential formation port (driver + Meep objects + molecule + fourier paths).
+# Single sequential formation port (driver + Meep objects + molecule + absorption paths).
 FORM_PIPELINE = [
     form_all_mod.form_all,
 ]

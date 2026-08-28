@@ -1,0 +1,47 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO: Tau modifier = 200 selected; preparing to apply damping to time-domain signals. See documentation for details.
+INFO:  === FOURIER SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.1 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 400 au (roughly 9.67554 fs).
+INFO: Running 3 directional molecule simulations in parallel...
+INFO: [x-dir] Simulation progress: 0% done (0/4000 steps || 0.1/400.0 au)
+INFO: [y-dir] Simulation progress: 0% done (0/4000 steps || 0.1/400.0 au)
+INFO: [z-dir] Simulation progress: 0% done (0/4000 steps || 0.1/400.0 au)
+INFO: [y-dir] Simulation progress: 10% done (400/4000 steps || 40.0/400.0 au)
+INFO: [z-dir] Simulation progress: 10% done (400/4000 steps || 40.0/400.0 au)
+INFO: [x-dir] Simulation progress: 10% done (400/4000 steps || 40.0/400.0 au)
+INFO: [y-dir] Simulation progress: 20% done (800/4000 steps || 80.0/400.0 au)
+INFO: [y-dir] Simulation progress: 30% done (1200/4000 steps || 120.0/400.0 au)
+INFO: [z-dir] Simulation progress: 20% done (800/4000 steps || 80.0/400.0 au)
+INFO: [x-dir] Simulation progress: 20% done (800/4000 steps || 80.0/400.0 au)
+INFO: [y-dir] Simulation progress: 40% done (1600/4000 steps || 160.0/400.0 au)
+INFO: [y-dir] Simulation progress: 50% done (2000/4000 steps || 200.0/400.0 au)
+INFO: [z-dir] Simulation progress: 30% done (1200/4000 steps || 120.0/400.0 au)
+INFO: [x-dir] Simulation progress: 30% done (1200/4000 steps || 120.0/400.0 au)
+INFO: [y-dir] Simulation progress: 60% done (2400/4000 steps || 240.0/400.0 au)
+INFO: [z-dir] Simulation progress: 40% done (1600/4000 steps || 160.0/400.0 au)
+INFO: [x-dir] Simulation progress: 40% done (1600/4000 steps || 160.0/400.0 au)
+INFO: [y-dir] Simulation progress: 70% done (2800/4000 steps || 280.0/400.0 au)
+INFO: [y-dir] Simulation progress: 80% done (3200/4000 steps || 320.0/400.0 au)
+INFO: [x-dir] Simulation progress: 50% done (2000/4000 steps || 200.0/400.0 au)
+INFO: [z-dir] Simulation progress: 50% done (2000/4000 steps || 200.0/400.0 au)
+INFO: [y-dir] Simulation progress: 90% done (3600/4000 steps || 360.0/400.0 au)
+INFO: [y-dir] Simulation progress: 100% done (4000/4000 steps || 400.0/400.0 au)
+INFO: [x-dir] Simulation progress: 60% done (2400/4000 steps || 240.0/400.0 au)
+INFO: [z-dir] Simulation progress: 60% done (2400/4000 steps || 240.0/400.0 au)
+INFO: [y-dir] Matplotlib image written: y_dir/raw_response.png
+INFO: [z-dir] Simulation progress: 70% done (2800/4000 steps || 280.0/400.0 au)
+INFO: [x-dir] Simulation progress: 70% done (2800/4000 steps || 280.0/400.0 au)
+INFO: [z-dir] Simulation progress: 80% done (3200/4000 steps || 320.0/400.0 au)
+INFO: [x-dir] Simulation progress: 80% done (3200/4000 steps || 320.0/400.0 au)
+INFO: [z-dir] Simulation progress: 90% done (3600/4000 steps || 360.0/400.0 au)
+INFO: [x-dir] Simulation progress: 90% done (3600/4000 steps || 360.0/400.0 au)
+INFO: [z-dir] Simulation progress: 100% done (4000/4000 steps || 400.0/400.0 au)
+INFO: [x-dir] Simulation progress: 100% done (4000/4000 steps || 400.0/400.0 au)
+INFO: [z-dir] Matplotlib image written: z_dir/raw_response.png
+INFO: [x-dir] Matplotlib image written: x_dir/raw_response.png
+INFO: Damped polarizability field written to x_dir/field_p_damped.csv
+INFO: Damped polarizability field written to y_dir/field_p_damped.csv
+INFO: Damped polarizability field written to z_dir/field_p_damped.csv
+INFO: Absorption spectrum written to 'water_absorption_spectrum.png'.

@@ -106,12 +106,12 @@ class MOLECULE():
                 
         skip_checkpoint = False
         if self.resumed_from_checkpoint:
-            dir_component = getattr(params, 'molecule_source_component') if self.has_fourier else None
+            dir_component = getattr(params, 'molecule_source_component') if self.has_absorption else None
             if dir_component in params.not_checkpointed_dirs:
                 skip_checkpoint = True
 
         if self.resumed_from_checkpoint and not skip_checkpoint:
-            suffix = f"_{dir_component}" if self.has_fourier and dir_component else ""
+            suffix = f"_{dir_component}" if self.has_absorption and dir_component else ""
             self.D_ao_0 = self.values_from_checkpoint[f"D_ao_0{suffix}"]
             self.mf.mo_coeff = self.values_from_checkpoint[f"mo_coeff{suffix}"]
             self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)

@@ -5,9 +5,7 @@
     "driver": "tune"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "Na", "coord": [0.0, 0.0, 0.0]}
-    ],
+    "geometry": [{"atom": "Na", "coord": [0.0, 0.0, 0.0]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 1,

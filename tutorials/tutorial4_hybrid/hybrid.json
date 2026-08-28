@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 50,
+    "driver": "plasmol"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.12,
+      "pml_thickness": 0.015,
+      "surrounding_material_index": 1.33
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.05, 0.0, 0.0],
+      "size": [0.0, 0.08, 0.08],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.5,
+        "fwidth": 0.8
+      }
+    },
+    "nanoparticle": {
+      "material": "Au_JC_visible",
+      "radius": 0.025,
+      "center": [0.0, 0.0, 0.0]
+    },
+    "molecule": {
+      "position": [0.035, 0.0, 0.0],
+      "tolerance_field_e": 1e-12,
+      "back_propagation": true
+    },
+    "images": {
+      "timesteps_between": 5,
+      "dir_name": "hybrid_frames",
+      "make_gif": true,
+      "additional_parameters": ["-m -5e-5", "-M 5e-5", "-Zc dkbluered", "-S 3"]
+    }
+  },
+  "molecule": {
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 0,
+    "basis": "sto3g",
+    "xc": "pbe0",
+    "propagator": {
+      "type": "magnus2"
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "hybrid_response.png"
+  }
+}

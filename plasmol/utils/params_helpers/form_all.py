@@ -105,7 +105,7 @@ def form_all(params):
         if not self.has_plasmon:
             time_values = np.arange(0, self.t_end + self.dt, self.dt)
             self.times = np.round(np.linspace(0, time_values[-1], int(len(time_values))), decimals=self.time_rounding_decimals)
-            if not self.has_fourier:
+            if not self.has_absorption:
                 self.molecule_source_field = QUANTUMSOURCE(self).field
         else:
             # Meep field CSVs stamp (meep_time + dt) after at_beginning + at_every,
@@ -116,7 +116,7 @@ def form_all(params):
                 decimals=self.time_rounding_decimals,
             )
 
-        if self.has_fourier:
+        if self.has_absorption:
             for dir in {"x", "y", "z"}:
                 attr = f"field_e_{dir}_filepath"
                 value = f"{dir}_dir/{self.field_e_filepath}"

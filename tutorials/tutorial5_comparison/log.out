@@ -1,0 +1,3 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO: Comparison modifier selected; ignoring basis set and xc. Using values given in additional_parameters.
+INFO: Comparison modifier selected; preparing to run additional simulations for comparison to molecule results.

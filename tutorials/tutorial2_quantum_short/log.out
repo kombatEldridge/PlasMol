@@ -1,0 +1,17 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO:  === QUANTUM SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.1 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 40 au (roughly 0.96755 fs).
+INFO: Simulation progress: 0% done (0/400 steps || 0.1/40.0 au)
+INFO: Simulation progress: 10% done (40/400 steps || 4.0/40.0 au)
+INFO: Simulation progress: 20% done (80/400 steps || 8.0/40.0 au)
+INFO: Simulation progress: 30% done (120/400 steps || 12.0/40.0 au)
+INFO: Simulation progress: 40% done (160/400 steps || 16.0/40.0 au)
+INFO: Simulation progress: 50% done (200/400 steps || 20.0/40.0 au)
+INFO: Simulation progress: 60% done (240/400 steps || 24.0/40.0 au)
+INFO: Simulation progress: 70% done (280/400 steps || 28.0/40.0 au)
+INFO: Simulation progress: 80% done (320/400 steps || 32.0/40.0 au)
+INFO: Simulation progress: 90% done (360/400 steps || 36.0/40.0 au)
+INFO: Simulation progress: 100% done (400/400 steps || 40.0/40.0 au)
+INFO: Matplotlib image written: field_vs_polarization.png

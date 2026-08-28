@@ -1,43 +1,62 @@
-# Parameter-copy builders for directional Fourier jobs.
+# Parameter-copy builders for directional absorption jobs.
 import copy
-import logging
 import os
 
 from plasmol.quantum.sources import QUANTUMSOURCE
-from plasmol.drivers.custom_drivers.fourier.source_face import (
-    ensure_transverse_plane_wave_source,
-)
-
-logger = logging.getLogger("main")
 
 
-def make_plasmol_direction_copy(params, component):
-    """One production plasmol params copy for a single source polarization."""
+def make_plasmol_direction_copy(params, component, flat=False):
+    """One production plasmol params copy for a single source polarization.
+
+    Source-face rearrange (k ⊥ E) is deferred to the Meep worker so the
+    log lines carry the ``[x-dir]`` / ``[y-dir]`` / ``[z-dir]`` prefix.
+
+    When ``flat`` is True (parallel / perpendicular), CSVs stay in the job
+    directory. Full x+y+z mode still uses ``{component}_dir/``.
+    """
     params_copy = copy.deepcopy(params)
     params_copy.plasmon_source_component = component
-    ensure_transverse_plane_wave_source(params_copy, component=component)
-    params_copy.dir_path = f"{component}_dir"
-    params_copy.field_e_filepath = getattr(params_copy, f'field_e_{component}_filepath')
-    params_copy.field_p_filepath = getattr(params_copy, f'field_p_{component}_filepath')
-    params_copy.spectra_e_vs_p_filepath = getattr(
-        params_copy, f'spectra_e_{component}_vs_p_{component}_filepath'
-    )
-    os.makedirs(params_copy.dir_path, exist_ok=True)
+    if flat:
+        params_copy.dir_path = ""
+        params_copy.field_e_filepath = getattr(params_copy, 'field_e_filepath', 'field_e.csv')
+        params_copy.field_p_filepath = getattr(params_copy, 'field_p_filepath', 'field_p.csv')
+        params_copy.spectra_e_vs_p_filepath = getattr(
+            params_copy, 'spectra_e_vs_p_filepath', 'output.png'
+        )
+    else:
+        params_copy.dir_path = f"{component}_dir"
+        params_copy.field_e_filepath = getattr(params_copy, f'field_e_{component}_filepath')
+        params_copy.field_p_filepath = getattr(params_copy, f'field_p_{component}_filepath')
+        params_copy.spectra_e_vs_p_filepath = getattr(
+            params_copy, f'spectra_e_{component}_vs_p_{component}_filepath'
+        )
+        os.makedirs(params_copy.dir_path, exist_ok=True)
     return params_copy
 
 
-def make_reference_direction_copy(params, component):
-    """One vacuum reference params copy for a single source polarization."""
+def make_reference_direction_copy(params, component, flat=False):
+    """One vacuum reference params copy for a single source polarization.
+
+    Source-face rearrange (k ⊥ E) is deferred to the Meep worker so the
+    log lines carry the ``[ref-x-dir]`` (etc.) prefix.
+
+    When ``flat`` is True (parallel / perpendicular), the raw vacuum E CSV
+    is written in the job directory rather than ``{component}_dir/``.
+    """
     if not getattr(params, 'has_molecule_position', False):
         raise ValueError(
-            "Meep Fourier reference runs require plasmon.molecule.position "
+            "Meep absorption reference runs require plasmon.molecule.position "
             "(location at which to sample the vacuum incident field)."
         )
     params_copy = copy.deepcopy(params)
     params_copy.plasmon_source_component = component
-    ensure_transverse_plane_wave_source(params_copy, component=component)
-    params_copy.dir_path = f"{component}_dir"
-    params_copy.field_e_filepath = f"{component}_dir/field_e_ref.csv"
+    if flat:
+        params_copy.dir_path = ""
+        params_copy.field_e_filepath = "field_e_ref.csv"
+    else:
+        params_copy.dir_path = f"{component}_dir"
+        params_copy.field_e_filepath = f"{component}_dir/field_e_ref.csv"
+        os.makedirs(params_copy.dir_path, exist_ok=True)
     params_copy.has_nanoparticle = False
     params_copy.has_molecule = False
     params_copy.record_field_only = True
@@ -46,7 +65,6 @@ def make_reference_direction_copy(params, component):
     params_copy.probe_points = None
     if hasattr(params_copy, 'nanoparticle'):
         params_copy.nanoparticle = None
-    os.makedirs(params_copy.dir_path, exist_ok=True)
     return params_copy
 
 

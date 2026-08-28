@@ -23,7 +23,7 @@ The codebase is intentionally **extensible**. Empty commented sections and clear
       </div>
       <ul>
         <li><strong>Core-hole driver</strong> (<code>core_hole</code>) for sudden SCH/DCH dynamics and MO hole tracking</li>
-        <li>Hybrid Fourier <strong>parallel / perpendicular</strong> polarization modes with vacuum <em>E</em><sub>inc</sub> deconvolution</li>
+        <li>Hybrid absorption <strong>parallel / perpendicular</strong> polarization modes with vacuum <em>E</em><sub>inc</sub> deconvolution</li>
         <li>Quasistatic Gersten–Nitzan model and hybrid spectral validation</li>
         <li>Expanded per-driver simulation docs, JSON templates, and Sphinx RTD documentation</li>
         <li>Parameter refactor (<code>params_helpers</code>) and improved validation surface</li>

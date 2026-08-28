@@ -1,4 +1,5 @@
-"""Unit tests for parallel / perpendicular Fourier helpers (no full Meep run)."""
+"""Unit tests for parallel / perpendicular absorption-driver helpers (no full Meep run)."""
+import logging
 import os
 from types import SimpleNamespace
 
@@ -6,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from plasmol.drivers.custom_drivers.fourier import (
+from plasmol.drivers.custom_drivers.absorption import (
     absorption_single,
     build_parallel_abs_spec_runs,
     build_perpendicular_abs_spec_runs,
@@ -18,6 +19,7 @@ from plasmol.drivers.custom_drivers.fourier import (
     source_face_normal_index,
     write_single_reference_e_field,
 )
+from plasmol.drivers.custom_drivers.absorption.setup import set_up_params_copy_plasmol
 
 
 def _base_params(**kwargs):
@@ -27,8 +29,8 @@ def _base_params(**kwargs):
         nanoparticle_center=[0.0, 0.0, 0.0],
         has_nanoparticle=True,
         has_molecule_position=True,
-        fourier_perp_component=None,
-        fourier_use_existing_e_field_ref=False,
+        absorption_perp_component=None,
+        absorption_use_existing_e_field_ref=False,
         plasmon_source_component="z",
         plasmon_source_center=[-0.04, 0.0, 0.0],
         plasmon_source_size=[0.0, 0.2, 0.2],
@@ -62,12 +64,12 @@ def test_perpendicular_defaults_to_y_for_x_axis():
 
 
 def test_perpendicular_user_override():
-    p = _base_params(fourier_perp_component="z")
+    p = _base_params(absorption_perp_component="z")
     assert resolve_perpendicular_component(p) == "z"
 
 
 def test_perpendicular_user_override_rejects_parallel_axis():
-    p = _base_params(fourier_perp_component="x")
+    p = _base_params(absorption_perp_component="x")
     with pytest.raises(ValueError, match="not perpendicular"):
         resolve_perpendicular_component(p)
 
@@ -79,17 +81,29 @@ def test_build_parallel_one_prod_one_ref(tmp_path, monkeypatch):
     assert comp == "x"
     assert len(prod) == 1 and len(ref) == 1
     assert prod[0].plasmon_source_component == "x"
-    assert prod[0].dir_path == "x_dir"
+    assert prod[0].dir_path == ""
+    assert prod[0].field_e_filepath == "field_e.csv"
+    assert prod[0].field_p_filepath == "field_p.csv"
     assert ref[0].record_field_only is True
     assert ref[0].has_nanoparticle is False
     assert ref[0].has_molecule is False
-    assert ref[0].field_e_filepath == "x_dir/field_e_ref.csv"
-    assert os.path.isdir("x_dir")
+    assert ref[0].dir_path == ""
+    assert ref[0].field_e_filepath == "field_e_ref.csv"
+    assert not os.path.isdir("x_dir")
+
+
+def test_full_mode_still_uses_component_subdirs(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    copies = set_up_params_copy_plasmol(_base_params())
+    assert {c.dir_path for c in copies} == {"x_dir", "y_dir", "z_dir"}
+    assert all(os.path.isdir(c.dir_path) for c in copies)
+    by_comp = {c.plasmon_source_component: c for c in copies}
+    assert by_comp["x"].field_e_filepath == "x_dir/field_e.csv"
 
 
 def test_build_parallel_skips_ref_when_existing(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    p = _base_params(fourier_use_existing_e_field_ref=True)
+    p = _base_params(absorption_use_existing_e_field_ref=True)
     prod, ref, comp = build_parallel_abs_spec_runs(p)
     assert comp == "x"
     assert len(prod) == 1 and len(ref) == 0
@@ -102,7 +116,9 @@ def test_build_perpendicular_one_run(tmp_path, monkeypatch):
     assert comp == "y"
     assert len(prod) == 1 and len(ref) == 1
     assert prod[0].plasmon_source_component == "y"
-    assert ref[0].field_e_filepath == "y_dir/field_e_ref.csv"
+    assert prod[0].dir_path == ""
+    assert ref[0].field_e_filepath == "field_e_ref.csv"
+    assert not os.path.isdir("y_dir")
 
 
 def test_fold_single_and_write_ref(tmp_path):
@@ -205,20 +221,55 @@ def test_ensure_nonplanar_raises():
         ensure_transverse_plane_wave_source(p, component="x")
 
 
-def test_parallel_builder_makes_transverse_source(tmp_path, monkeypatch):
-    """Parallel E||x must not keep a k||x face from the default JSON-like source."""
+def test_parallel_builder_defers_face_rearrange(tmp_path, monkeypatch):
+    """Parent copies keep the user face; workers rearrange independently to the same k ⊥ E."""
     monkeypatch.chdir(tmp_path)
+    user_size = [0.0, 0.2, 0.2]
+    user_center = [-0.04, 0.0, 0.0]
     p = _base_params(
         # typical user source: k||x, E||z — parallel mode switches E to x
         plasmon_source_component="z",
-        plasmon_source_center=[-0.04, 0.0, 0.0],
-        plasmon_source_size=[0.0, 0.2, 0.2],
+        plasmon_source_center=user_center,
+        plasmon_source_size=user_size,
     )
     prod, ref, comp = build_parallel_abs_spec_runs(p)
     assert comp == "x"
     assert prod[0].plasmon_source_component == "x"
-    k = source_face_normal_index(prod[0].plasmon_source_size)
-    assert k is not None and k != 0  # not longitudinal
-    # reference matches production face orientation
-    assert source_face_normal_index(ref[0].plasmon_source_size) == k
     assert ref[0].plasmon_source_component == "x"
+    # still the JSON face (longitudinal for E||x) until the Meep worker runs
+    assert prod[0].plasmon_source_size == user_size
+    assert prod[0].plasmon_source_center == user_center
+    assert ref[0].plasmon_source_size == user_size
+    assert ref[0].plasmon_source_center == user_center
+
+    info_prod = ensure_transverse_plane_wave_source(prod[0], component="x")
+    info_ref = ensure_transverse_plane_wave_source(ref[0], component="x")
+    assert info_prod["modified"] is True and info_ref["modified"] is True
+    assert info_prod["k_component"] == info_ref["k_component"]
+    k = source_face_normal_index(prod[0].plasmon_source_size)
+    assert k is not None and k != 0
+    assert source_face_normal_index(ref[0].plasmon_source_size) == k
+    assert prod[0].plasmon_source_size == ref[0].plasmon_source_size
+    assert prod[0].plasmon_source_center == ref[0].plasmon_source_center
+
+
+def test_direction_prefix_tags_rearrange_logs(caplog):
+    """Worker prefix is installed before the face rearrange, so logs are tagged."""
+    from plasmol.drivers.custom_drivers.absorption.workers import direction_log_prefix
+
+    p = _base_params(
+        plasmon_source_component="x",
+        plasmon_source_center=[-0.04, 0.0, 0.0],
+        plasmon_source_size=[0.0, 0.2, 0.2],
+    )
+    caplog.set_level(logging.INFO, logger="main")
+    with direction_log_prefix("ref-x"):
+        ensure_transverse_plane_wave_source(p, component="x")
+    msgs = [rec.getMessage() for rec in caplog.records]
+    assert any(
+        m.startswith("[ref-x-dir] ") and "longitudinal" in m for m in msgs
+    ), msgs
+    assert any(
+        m.startswith("[ref-x-dir] ") and "Rearranged plane-wave source" in m
+        for m in msgs
+    ), msgs

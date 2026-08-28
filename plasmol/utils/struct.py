@@ -96,19 +96,19 @@ param_defs = [
     ## Checkpoint / resume
     ('checkpoint_filename_used', ['additional_parameters', 'checkpoint_filename_used'], False, None, None, None, str, "Path to the checkpoint .npz used for this resume run (injected into the restored input when restoring files with -c)", None),
     
-    ## Driver: fourier.py
-    ('fourier_dict', ['additional_parameters', 'fourier'], True, "has_fourier", None, 'molecule', dict, None, None),
-    ('fourier_gamma', ['additional_parameters', 'fourier', 'gamma'], False, 'has_fourier', 0, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
-    ('fourier_min_ev', ['additional_parameters', 'fourier', 'min_ev'], False, 'has_fourier', 1.5, 'molecule', (int, float), "Minimum energy for Fourier transformed spectrum", "eV"),
-    ('fourier_max_ev', ['additional_parameters', 'fourier', 'max_ev'], False, 'has_fourier', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
-    ('fourier_npz_filepath', ['additional_parameters', 'fourier', 'npz_filepath'], False, 'has_fourier', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
-    ('fourier_spectrum_filepath', ['additional_parameters', 'fourier', 'spectrum_filepath'], False, 'has_fourier', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
-    ('fourier_tau', ['additional_parameters', 'fourier', 'tau'], False, 'has_fourier', None, 'molecule', (int, float), "Artificial damping time constant tau; applied as exp(-t/tau) to polarization field before FFT", "a.u."),
-    ('fourier_use_existing_e_field_ref', ['additional_parameters', 'fourier', 'use_existing_e_field_ref'], False, 'has_fourier', False, 'molecule', bool, "Whether to use an existing vacuum E_inc field reference", None),
-    ('fourier_field_e_ref_filepath', ['additional_parameters', 'fourier', 'field_e_ref_filepath'], False, 'has_fourier', 'field_e_ref.csv', 'molecule', str, "Vacuum E_inc CSV (time,xx,yy,zz). If the file exists it is used and vacuum reference sims are skipped; otherwise Meep Fourier runs write the merged reference here (default field_e_ref.csv)", None),
-    ('fourier_reference_only', ['additional_parameters', 'fourier', 'reference_only'], False, 'has_fourier', False, 'molecule', bool, "If true, only run vacuum reference E_inc simulations (no molecule/NP production runs, no spectrum); write merged field_e_ref_filepath and exit", None),
-    ('fourier_polarization', ['additional_parameters', 'fourier', 'polarization'], False, 'has_fourier', 'full', 'molecule', str, "Fourier polarization mode: 'full' (x+y+z), 'parallel' (E along NP–molecule axis, one run), or 'perpendicular' (E perp. to that axis, one run)", None),
-    ('fourier_perp_component', ['additional_parameters', 'fourier', 'perp_component'], False, 'has_fourier', None, 'molecule', str, "Optional Cartesian component ('x','y','z') for perpendicular mode; if omitted, chosen as the axis most orthogonal to the NP–molecule vector", None),
+    ## Driver: absorption
+    ('absorption_dict', ['additional_parameters', 'absorption'], True, "has_absorption", None, 'molecule', dict, None, None),
+    ('absorption_gamma', ['additional_parameters', 'absorption', 'gamma'], False, 'has_absorption', 0, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
+    ('absorption_min_ev', ['additional_parameters', 'absorption', 'min_ev'], False, 'has_absorption', 1.5, 'molecule', (int, float), "Minimum energy for Fourier transformed spectrum", "eV"),
+    ('absorption_max_ev', ['additional_parameters', 'absorption', 'max_ev'], False, 'has_absorption', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
+    ('absorption_npz_filepath', ['additional_parameters', 'absorption', 'npz_filepath'], False, 'has_absorption', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
+    ('absorption_spectrum_filepath', ['additional_parameters', 'absorption', 'spectrum_filepath'], False, 'has_absorption', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
+    ('absorption_tau', ['additional_parameters', 'absorption', 'tau'], False, 'has_absorption', None, 'molecule', (int, float), "Artificial damping time constant tau; applied as exp(-t/tau) to polarization field before FFT", "a.u."),
+    ('absorption_use_existing_e_field_ref', ['additional_parameters', 'absorption', 'use_existing_e_field_ref'], False, 'has_absorption', False, 'molecule', bool, "Whether to use an existing vacuum E_inc field reference", None),
+    ('absorption_field_e_ref_filepath', ['additional_parameters', 'absorption', 'field_e_ref_filepath'], False, 'has_absorption', 'field_e_ref.csv', 'molecule', str, "Vacuum E_inc CSV (time,xx,yy,zz). If the file exists it is used and vacuum reference sims are skipped; otherwise Meep absorption runs write the merged reference here (default field_e_ref.csv)", None),
+    ('absorption_reference_only', ['additional_parameters', 'absorption', 'reference_only'], False, 'has_absorption', False, 'molecule', bool, "If true, only run vacuum reference E_inc simulations (no molecule/NP production runs, no spectrum); write merged field_e_ref_filepath and exit", None),
+    ('absorption_polarization', ['additional_parameters', 'absorption', 'polarization'], False, 'has_absorption', 'full', 'molecule', str, "Absorption polarization mode: 'full' (x+y+z), 'parallel' (E along NP–molecule axis, one run), or 'perpendicular' (E perp. to that axis, one run)", None),
+    ('absorption_perp_component', ['additional_parameters', 'absorption', 'perp_component'], False, 'has_absorption', None, 'molecule', str, "Optional Cartesian component ('x','y','z') for perpendicular mode; if omitted, chosen as the axis most orthogonal to the NP–molecule vector", None),
 
     ## Driver: comparison.py
     ('comparison_dict', ['additional_parameters', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),

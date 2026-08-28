@@ -8,7 +8,7 @@
 
 ## When to use
 
-- Field-driven molecular dynamics of the density (not spectrum post-processing — use [fourier](fourier.md) for spectra)
+- Field-driven molecular dynamics of the density (not spectrum post-processing — use [absorption](absorption.md) for spectra)
 - Checkpointed long pure-quantum runs
 
 ## Required JSON
@@ -42,3 +42,4 @@ Source (repo path): `templates/template-quantum.json`
 
 - [All simulations](index.md)
 - [Usage](../usage.md) — parameter reference
+- [Checkpointing](../checkpointing.md) — snapshots and resume

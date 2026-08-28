@@ -38,12 +38,7 @@
     },
     "images": {
       "timesteps_between": 1,
-      "additional_parameters": [
-        "-m -3",
-        "-M 10",
-        "-Zc dkbluered",
-        "-S 10"
-      ],
+      "additional_parameters": ["-m -3", "-M 10", "-Zc dkbluered", "-S 10"],
       "dir_name": "hello",
       "make_gif": true
     },
@@ -55,11 +50,7 @@
     }
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0000000000, 0.0000000000, -0.1302052882]},
-      {"atom": "H", "coord": [1.4891244004, 0.0000000000, 1.0332262019]},
-      {"atom": "H", "coord": [-1.4891244004, 0.0000000000, 1.0332262019]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0000000000, 0.0000000000, -0.1302052882]}, {"atom": "H", "coord": [1.4891244004, 0.0000000000, 1.0332262019]}, {"atom": "H", "coord": [-1.4891244004, 0.0000000000, 1.0332262019]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,
@@ -102,14 +93,8 @@
     "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
-    "probe_points": [
-      [0.011, 0, 0],
-      [0.012, 0, 0],
-      [0.013, 0, 0],
-      [0.014, 0, 0],
-      [0.015, 0, 0]
-    ],
-    "fourier": {
+    "probe_points": [[0.011, 0, 0], [0.012, 0, 0], [0.013, 0, 0], [0.014, 0, 0], [0.015, 0, 0]],
+    "absorption": {
       "gamma": 0.01,
       "min_ev": 1.5,
       "max_ev": 5.0,

@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from plasmol.drivers.custom_drivers.fourier._util import as_xyz_array
+from plasmol.drivers.custom_drivers.absorption._util import as_xyz_array
 
 logger = logging.getLogger("main")
 

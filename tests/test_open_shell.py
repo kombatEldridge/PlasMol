@@ -296,7 +296,7 @@ def test_checkpoint_roundtrip_preserves_uks_shapes(h_atom_molecule, tmp_path):
     h_atom_molecule.checkpoint_filepath = str(ckpt)
     h_atom_molecule.input_file_path = str(tmp_path / "dummy.json")
     (tmp_path / "dummy.json").write_text("{}")
-    h_atom_molecule.has_fourier = False
+    h_atom_molecule.has_absorption = False
 
     init_checkpoint(h_atom_molecule)
     update_checkpoint(h_atom_molecule, h_atom_molecule, checkpoint_time=0.0)

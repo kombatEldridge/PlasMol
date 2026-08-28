@@ -64,11 +64,7 @@ The input file has five top-level keys (all optional except `settings`):
     }
   },
   "molecule": {
-    "geometry": [
-      {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-      {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-      {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-    ],
+    "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
     "geometry_units": "bohr",
     "charge": 0,
     "spin": 0,
@@ -169,7 +165,7 @@ Defines the incident electromagnetic source within the FDTD simulation. Again, i
       "frequency": 5.0,
       "wavelength": null,
       "start_time": 0,
-      "end_time": 1e20,
+      "end_time": 1e+20,
       "width": 0,
       "fwidth": null,
       "slowness": 3.0,
@@ -275,11 +271,7 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 
 ```json
 {
-  "geometry": [
-    {"atom": "O", "coord": [0.0, 0.0, -0.1302]},
-    {"atom": "H", "coord": [1.4891, 0.0, 1.0332]},
-    {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}
-  ],
+  "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
   "geometry_units": "bohr",
   "charge": 0,
   "spin": 0,
@@ -299,11 +291,31 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 | `xc` | str | Exchange-correlation functional (PySCF/Libxc name) | – | – |
 | `lrc_parameter` | float or `"tune"` | Range-separation parameter μ (ω) for RSH functionals; use `"tune"` for automatic IP-tuning | – | a.u. |
 
-For `geometry` entries given as `.xyz` files, they must follow this format:
+A `geometry` string is a path to a `.xyz` file (relative paths are resolved from the input JSON’s directory). Use the usual two-line XYZ header, then one atom per line:
 
-- First line: total number of atoms (optional)
-- Second line: molecule name or comment (optional)
-- All other lines: element symbol or atomic number, x, y, and z coordinates, separated by spaces or tabs
+```xyz
+3
+water, optional comment — this entire line is ignored
+O   0.000000   0.000000  -0.065588
+H   0.000000   0.757000   0.520588
+H   0.000000  -0.757000   0.520588
+```
+
+| Line (after blank lines are dropped) | Role |
+| -------------------------------------- | ------ |
+| 1 | Atom count (a lone integer). Optional as a *value*, but this slot must still exist |
+| 2 | Title / comment. **Any text** is allowed and is never parsed as an atom |
+| 3 … | `Symbol x y z` (or atomic number + coordinates), whitespace-separated |
+
+`geometry_units` still applies (`"bohr"` or `"angstrom"`). Extra columns after *z* are ignored.
+
+```{note}
+The reader always takes coordinates starting at the **third non-empty line**. The first line does **not** have to be the atom count (any lone integer in the file can supply the count), but you still need two non-empty lines before the atoms you want parsed. A file that is only coordinate lines will skip the first two atoms.
+```
+
+```{warning}
+JSON comment markers (`#`, `//`, `--`, `%`) are **not** stripped from `.xyz` files. Do not put `#` comments on atom lines or extra comment lines between atoms — those shift the “start at line 3” window and will be read as atoms. Put remarks on line 2 only. Comma-separated coordinates (`O,0,0,0`) are not accepted.
+```
 
 ### 3.2 Propagator
 
@@ -355,7 +367,7 @@ When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must
 | `additional_parameters.wavelength` | float | `pulse` | Central wavelength of the pulse | – | μm |
 | `additional_parameters.frequency` | float | `pulse` | Central frequency of the pulse (alternative to wavelength) | – | 1/a.u. |
 
-For absorption spectra use `"type": "kick"` together with the `"fourier"` section under `additional_parameters` top-level key.
+For absorption spectra use `"type": "kick"` together with the `"absorption"` section under `additional_parameters` top-level key.
 
 ### 3.4 CAP (Lopata-style)
 
@@ -409,19 +421,19 @@ Controls output file names and checkpointing behavior.
 | `field_p_filepath` | str | CSV file for the induced dipole (polarization) of the molecule | `"field_p.csv"` | – |
 | `spectra_e_vs_p_filepath` | str | PNG file showing incident field vs. molecular response | auto-timestamped | – |
 
-**Note**: Checkpointing is only supported for pure quantum simulations. Use either `frequency_steps` **or** `frequency_time`, not both.
+**Note**: Checkpointing is only supported for pure quantum (molecule-only) simulations. Use either `frequency_steps` **or** `frequency_time`, not both. Resume workflow, what is stored, and what is **not** supported: [Checkpointing](checkpointing.md).
 
 ## 5. "additional_parameters"
 
 This top-level section holds advanced or workflow-specific options.
 
-### 5.1 "fourier" (Absorption spectrum workflow)
+### 5.1 "absorption" (Absorption spectrum workflow)
 
 When present (and the molecule source is a delta kick), PlasMol automatically runs three directional simulations and performs a Fourier transform to produce an absorption spectrum.
 
 ```json
 {
-  "fourier": {
+  "absorption": {
     "gamma": 0.01,
     "min_ev": 1.5,
     "max_ev": 5.0,
@@ -455,7 +467,9 @@ Runs a series of ground-state SCF calculations for different basis sets / XC fun
   "comparison": {
     "bases": ["6-31g", "def2-tzvpp"],
     "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
-    "lrc_parameters": {"cam-b3lyp": 0.33},
+    "lrc_parameters": {
+      "cam-b3lyp": 0.33
+    },
     "num_occupied": 5,
     "num_virtual": 10,
     "y_min": -1.0,
@@ -484,10 +498,7 @@ List of spatial locations (in μm) at which the electric field time series will 
 
 ```json
 {
-  "probe_points": [
-    [0.011, 0, 0],
-    [0.012, 0, 0]
-  ]
+  "probe_points": [[0.011, 0, 0], [0.012, 0, 0]]
 }
 ```
 

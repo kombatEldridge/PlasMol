@@ -9,7 +9,7 @@ PlasMol routes every run through `get_driver(driver_str)` in `plasmol/drivers/__
 | `classical` | `drivers/classical.py` | Pure Meep FDTD |
 | `quantum` | `drivers/quantum.py` | Pure RT-TDDFT |
 | `plasmol` | `drivers/plasmol.py` | Hybrid FDTD ↔ RT-TDDFT |
-| `fourier` | `custom_drivers/fourier/` | Absorption spectra (kick or hybrid deconvolution; full/∥/⊥) |
+| `absorption` | `custom_drivers/absorption/` | Absorption spectra (kick or hybrid deconvolution; full/∥/⊥) |
 | `core_hole` | `custom_drivers/core_hole.py` | Sudden SCH/DCH + MO hole tracking |
 | `comparison` | `custom_drivers/comparison.py` | MO energy diagrams across bases/XCs |
 | `tune` | `custom_drivers/tune.py` | Auto-tune LRC ω and CAP ε₀ |
@@ -42,4 +42,4 @@ def get_driver(driver_str):
 - [Usage](usage.md) — JSON schema
 - [Contributing](contributing.md) — style and PR process
 - [Core-Hole Dynamics](methodology/core_hole.md) — `core_hole` theory
-- [Fourier Spectra](methodology/fourier.md) — `fourier` theory
+- [Fourier Spectra](methodology/fourier.md) — `absorption` driver theory

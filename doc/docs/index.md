@@ -16,6 +16,7 @@ PlasMol aims to provide users with a scaffold to measure molecular properites un
 introduction
 installation
 usage
+checkpointing
 tutorials
 ```
 
@@ -53,6 +54,7 @@ custom_drivers
 |----------|-------------|
 | [Installation](installation.md) | Conda + Meep setup |
 | [Usage](usage.md) | JSON input schema |
+| [Checkpointing](checkpointing.md) | Snapshots, resume, and limits |
 | [Simulations](simulations/index.md) | Per-driver guides and templates |
 | [GitHub](https://github.com/kombatEldridge/PlasMol) | Source and issues |
 

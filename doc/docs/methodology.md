@@ -294,7 +294,7 @@ $$
 
 —is developed on the dedicated page [Quasistatic Model](quasistatic_model.md).
 
-That model is analytically soluble once geometry, host index, metal dielectric $\varepsilon_m(\omega)$, and oscillator parameters are fixed. PlasMol’s hybrid Fourier workflow targets the **same observables**:
+That model is analytically soluble once geometry, host index, metal dielectric $\varepsilon_m(\omega)$, and oscillator parameters are fixed. PlasMol’s hybrid Absorption workflow targets the **same observables**:
 
 | Quasistatic model | PlasMol hybrid Fourier |
 | ------------------- | ------------------------ |
@@ -514,7 +514,7 @@ $$
 
 with a global damping rate $\gamma$. This is distinct from the **state-specific** non-Hermitian CAP described above, which acts *during* propagation and can reproduce continuum shoulders more physically.
 
-PlasMol’s production Fourier workflow implements these ideas (with optional vacuum $E_{\mathrm{inc}}$ deconvolution for hybrid NP–molecule runs, and parallel/perpendicular polarization modes). See [Fourier Spectra](fourier.md) for the methodology and [Quasistatic Model](quasistatic_model.md) for the analytic $\alpha_{\mathrm{eff}}$ benchmark (with alignments discussed in [Validation](#validation-against-an-analytically-soluble-model)).
+PlasMol’s production Absorption workflow implements these ideas (with optional vacuum $E_{\mathrm{inc}}$ deconvolution for hybrid NP–molecule runs, and parallel/perpendicular polarization modes). See [Fourier Spectra](fourier.md) for the methodology and [Quasistatic Model](quasistatic_model.md) for the analytic $\alpha_{\mathrm{eff}}$ benchmark (with alignments discussed in [Validation](#validation-against-an-analytically-soluble-model)).
 
 ---
 

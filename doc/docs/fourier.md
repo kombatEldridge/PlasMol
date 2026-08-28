@@ -2,7 +2,7 @@
 
 This page describes the **mathematics and methodology** of PlasMol’s Fourier absorption workflow: how an induced dipole is transformed into a spectrum, how quantum-only and hybrid drives differ, and why parallel / perpendicular polarizations are treated separately near a nanoparticle.
 
-For runnable inputs, CLI usage, and parameter tables, see [Simulations: Fourier](../simulations/fourier.md), [Usage](../usage.md), and [Tutorials](../tutorials.md).
+For runnable inputs, CLI usage, and parameter tables, see [Simulations: Absorption](../simulations/absorption.md), [Usage](../usage.md), and [Tutorials](../tutorials.md).
 
 ---
 
@@ -204,5 +204,5 @@ All three share the same underlying objects—$\boldsymbol{\mu}(t)$, optional da
 - [Theory & Methodology](../methodology.md) — hybrid time loop, RT-TDDFT, CAP, and spectrum appendix
 - [Quasistatic Model](quasistatic_model.md) — Gersten–Nitzan $G,S$ and $\alpha_{\mathrm{eff}}$
 - [Core-Hole Dynamics](core_hole.md) — sudden SCH/DCH (separate from Fourier linear absorption)
-- [Simulations: Fourier](../simulations/fourier.md) — driver usage and inputs
+- [Simulations: Absorption](../simulations/absorption.md) — driver usage and inputs
 - [Usage](../usage.md) — full JSON schema

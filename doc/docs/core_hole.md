@@ -36,16 +36,15 @@ Core-hole runs **always force open-shell (UKS)** so α/β channels can describe 
     "driver": "core_hole"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "C", "coord": [0.0, 0.0, 0.0]},
-      {"atom": "O", "coord": [0.0, 0.0, 1.13]}
-    ],
+    "geometry": [{"atom": "C", "coord": [0.0, 0.0, 0.0]}, {"atom": "O", "coord": [0.0, 0.0, 1.13]}],
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
     "basis": "6-311G*",
     "xc": "PBE0",
-    "propagator": { "type": "magnus2" }
+    "propagator": {
+      "type": "magnus2"
+    }
   },
   "files": {
     "field_e_filepath": "field_e.csv",
@@ -53,7 +52,9 @@ Core-hole runs **always force open-shell (UKS)** so α/β channels can describe 
     "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
-    "mo_removal_index_dict": {"0": 2},
+    "mo_removal_index_dict": {
+      "0": 2
+    },
     "core_hole_mo_occ_filepath": "mo_occ.csv",
     "core_hole_watch_indices": [21, 22, 23, 24],
     "core_hole_filter_by_amplitude": false,
@@ -75,9 +76,7 @@ Core-hole runs **always force open-shell (UKS)** so α/β channels can describe 
 
 After each RT-TDDFT step the driver projects the current density onto the **neutral** MOs and records
 
-\[
-n_{\mathrm{hole},k}(t) = n_k^{(0)} - n_k(t)
-\]
+\[n_{\mathrm{hole}, k}(t) = n_k^{(0)} - n_k(t) \]
 
 for each logged MO index \(k\). A double hole on MO 0 starts near \(n_{\mathrm{hole},0}\approx 2\); dynamics may redistribute the hole among valence/virtuals.
 
@@ -95,16 +94,15 @@ Before a production run it is often useful to inspect which atoms dominate a can
     "driver": "core_hole"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "C", "coord": [0.0, 0.0, 0.0]},
-      {"atom": "O", "coord": [0.0, 0.0, 1.13]}
-    ],
+    "geometry": [{"atom": "C", "coord": [0.0, 0.0, 0.0]}, {"atom": "O", "coord": [0.0, 0.0, 1.13]}],
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
     "basis": "sto3g",
     "xc": "pbe0",
-    "propagator": { "type": "magnus2" }
+    "propagator": {
+      "type": "magnus2"
+    }
   },
   "files": {
     "field_e_filepath": "field_e.csv",
@@ -113,7 +111,11 @@ Before a production run it is often useful to inspect which atoms dominate a can
   },
   "additional_parameters": {
     "check_mo_contrib_by_atom": true,
-    "mo_removal_index_dict": {"0": 2, "1": 2, "2": 2},
+    "mo_removal_index_dict": {
+      "0": 2,
+      "1": 2,
+      "2": 2
+    },
     "core_hole_mo_occ_filepath": "mo_occ.csv"
   }
 }
@@ -123,7 +125,7 @@ PlasMol builds the neutral molecule, prints AO-projected contributions above a s
 
 ## Checkpointing
 
-Core-hole runs are pure quantum simulations and support the usual checkpoint machinery. The MO-occupation CSV content is embedded in the checkpoint NPZ so restarts can restore both the electronic state and the occupation history.
+Core-hole runs are pure quantum simulations and support the usual [checkpoint](checkpointing.md) machinery. The MO-occupation CSV content is embedded in the checkpoint NPZ so restarts can restore both the electronic state and the occupation history.
 
 ## Implementation map
 
@@ -138,5 +140,6 @@ Core-hole runs are pure quantum simulations and support the usual checkpoint mac
 ## See also
 
 - [Usage](../usage.md) — full parameter tables
+- [Checkpointing](checkpointing.md) — snapshots and resume
 - [Tutorials](../tutorials.md) — walkthroughs
 - [Theory & Methodology](../methodology.md) — hybrid FDTD–RT-TDDFT loop

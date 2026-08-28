@@ -3,7 +3,7 @@ import pytest
 from plasmol.drivers import get_driver
 
 EXPECTED = {
-    "classical", "plasmol", "quantum", "comparison", "fourier",
+    "classical", "plasmol", "quantum", "comparison", "absorption",
     "scatter_response_fxn", "np_abs_cross_sec", "verify_source",
     "tune", "core_hole",
 }

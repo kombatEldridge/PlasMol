@@ -1,7 +1,7 @@
-"""Fourier IO / spectrum helpers beyond polarization builders."""
+"""Absorption-driver IO / spectrum helpers beyond polarization builders."""
 import numpy as np
 
-from plasmol.drivers.custom_drivers.fourier import (
+from plasmol.drivers.custom_drivers.absorption import (
     apply_damping,
     absorption,
     absorption_single,

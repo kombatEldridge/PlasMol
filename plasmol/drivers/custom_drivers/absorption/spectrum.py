@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from plasmol.utils import constants
+from plasmol.utils.npz import save_npz
 
 logger = logging.getLogger("main")
 
@@ -83,9 +84,13 @@ def fourier(time, dipole, damp, min_ev, max_ev, npz=None, field_e=None, e_floor_
         abs_imag[i] = np.array(abs_imag[i])
 
     if npz:
-        save_kw = dict(abs_imag=abs_imag, abs_real=abs_real, freqs=freqs_out, deconvolved=deconvolve)
-        np.savez(npz, **save_kw)
-        logger.debug(f"Fourier transform saved to {npz}!")
+        save_npz(
+            npz,
+            abs_imag=abs_imag,
+            abs_real=abs_real,
+            freqs=freqs_out,
+            deconvolved=deconvolve,
+        )
 
     return abs_imag, freqs_out
 
@@ -150,16 +155,16 @@ def orient_spectrum_sign(abs_vals, freqs=None):
 
 def save_spectrum_plot(freqs, normalized, params, title='Absorption Spectrum', label='Spectrum'):
     pd.DataFrame({'Frequency': freqs, 'Absorption': normalized}).to_csv(
-        Path(params.fourier_spectrum_filepath).with_suffix(".csv"), index=False
+        Path(params.absorption_spectrum_filepath).with_suffix(".csv"), index=False
     )
     plt.figure(figsize=(14, 8))
     plt.plot(freqs, normalized, color='green', label=label)
     plt.xlabel('Energy (eV)', fontsize=16)
     plt.ylabel('Absorption', fontsize=16)
     plt.title(title, fontsize=20)
-    plt.xlim(params.fourier_min_ev, params.fourier_max_ev)
+    plt.xlim(params.absorption_min_ev, params.absorption_max_ev)
     plt.grid(True)
     plt.legend(fontsize=16)
     plt.tight_layout()
-    plt.savefig(params.fourier_spectrum_filepath, dpi=600)
-    logger.info(f"Absorption spectrum written to '{params.fourier_spectrum_filepath}'.")
+    plt.savefig(params.absorption_spectrum_filepath, dpi=600)
+    logger.info(f"Absorption spectrum written to '{params.absorption_spectrum_filepath}'.")

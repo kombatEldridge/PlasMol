@@ -6,12 +6,23 @@ import logging
 import _pickle
 import os
 from plasmol.utils.csv import read_field_csv, init_csv
+from plasmol.utils.npz import save_npz
 from argparse import Namespace
 import fcntl
 import time
 from contextlib import contextmanager
 from pathlib import Path
 logger = logging.getLogger("main")
+
+
+def _npz_scalar(value):
+    """Unwrap 0-d / object NPZ entries (``None`` is stored as an array)."""
+    if isinstance(value, np.ndarray):
+        if value.shape == ():
+            return value.item()
+        if value.dtype == object and value.size == 1:
+            return value.reshape(-1)[0]
+    return value
 
 
 def _get_per_dir_checkpoint(base_checkpoint_filepath: str, direction: str) -> str:
@@ -29,7 +40,7 @@ def _build_checkpoint_base(params, for_direction: str = None) -> dict:
     """Build the invariant + pre-populated optional keys for a checkpoint dict.
     Does not write anything. Used by init and by per-direction final writers.
 
-    If for_direction is given (and is_fourier), only the checkpoint_time and
+    If for_direction is given (and is_absorption), only the checkpoint_time and
     related suffixed entries for *that* direction are pre-populated; foreign
     direction suffixed keys are omitted so that per-dir final files don't
     contain "empty" values for other directions that would stomp good data on merge.
@@ -46,13 +57,13 @@ def _build_checkpoint_base(params, for_direction: str = None) -> dict:
         xyz_file_path = None
         xyz_content = None
 
-    is_fourier = getattr(params, 'has_fourier', False)
+    is_absorption = getattr(params, 'has_absorption', False)
 
     save_dict = {
         "params_dict":         dict(params.__dict__),
         "input_file_path":     input_file_path,
         "input_file_content":  input_file_content,
-        "is_fourier":          is_fourier,
+        "is_absorption":          is_absorption,
         "is_open_shell":       getattr(params, "molecule_spin", 0) != 0,
         "updated_after_init":  False,
         "xyz_file_path":       xyz_file_path,
@@ -60,7 +71,7 @@ def _build_checkpoint_base(params, for_direction: str = None) -> dict:
     }
 
     for dir in params.xyz:
-        suffix = f"_{dir}" if is_fourier else ""
+        suffix = f"_{dir}" if is_absorption else ""
         if for_direction is None or dir == for_direction:
             save_dict[f"checkpoint_time{suffix}"] = 0.0
 
@@ -70,7 +81,7 @@ def _build_checkpoint_base(params, for_direction: str = None) -> dict:
 
     # For per-direction final files, drop suffixed keys belonging to other directions
     # so their 0/None values cannot overwrite good data from other per-dir files during merge.
-    if for_direction and is_fourier:
+    if for_direction and is_absorption:
         other_dirs = [dd for dd in params.xyz if dd != for_direction]
         keys_to_drop = []
         for k in list(save_dict.keys()):
@@ -93,7 +104,7 @@ REQUIRED_CHECKPOINT_KEYS = {
     "params_dict",
     "input_file_path",
     "input_file_content",
-    "is_fourier",
+    "is_absorption",
     "updated_after_init",
     "xyz_file_path",
     "xyz_content",
@@ -190,7 +201,7 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
     """Initialize the checkpoint file with the invariant data only.
     This should be called once at the start (before any Fourier directions run).
     Creates the .npz with params_dict, input_file_path, input_file_content,
-    is_fourier, and all optional keys pre-initialized to None.
+    is_absorption, and all optional keys pre-initialized to None.
     """
     if final_checkpoint_filepath:
         checkpoint_path = final_checkpoint_filepath
@@ -213,7 +224,7 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
     save_dict = _build_checkpoint_base(params)
 
     with _checkpoint_lock(checkpoint_path):
-        np.savez(checkpoint_path, allow_pickle=True, **save_dict)
+        save_npz(checkpoint_path, detail="summary", **save_dict)
 
     logger.debug(f"Initialized checkpoint to {checkpoint_path}")
 
@@ -229,8 +240,8 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
     else:
         checkpoint_path = params.checkpoint_filepath
 
-    is_fourier = getattr(params, 'has_fourier', False) or bool(getattr(params, 'molecule_source_component', None))
-    dir_component = getattr(params, 'molecule_source_component', None) if is_fourier else None
+    is_absorption = getattr(params, 'has_absorption', False) or bool(getattr(params, 'molecule_source_component', None))
+    dir_component = getattr(params, 'molecule_source_component', None) if is_absorption else None
 
     # Per-direction hidden checkpoint (Fourier only): write directly to own file, no lock.
     # This covers both the regular checkpoint path and the final-checkpoint path.
@@ -247,11 +258,11 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
         with open(field_e_filepath, "rb") as f:
             save_dict[f"field_e_{dir_component}_content"] = f.read()
         save_dict.pop('allow_pickle', None)
-        np.savez(per_path, allow_pickle=True, **save_dict)
+        save_npz(per_path, detail="summary", **save_dict)
         logger.debug(f"Wrote per-direction field_e {kind} checkpoint for {dir_component}: {per_path}")
         return
 
-    # Non-Fourier path: original locked behavior on the (hidden) checkpoint.
+    # Non-absorption path: original locked behavior on the (hidden) checkpoint.
     checkpoint_path = "".join([".", checkpoint_path])
 
     # === Locked read-modify-write ===
@@ -263,16 +274,16 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
         else:
             raise FileNotFoundError("Checkpoint file not found during update")
         
-        is_fourier = save_dict["is_fourier"]
-        dir_component = getattr(params, 'molecule_source_component') if is_fourier else None
-        suffix = f"_{dir_component}" if is_fourier and dir_component else ""
+        is_absorption = save_dict["is_absorption"] if "is_absorption" in save_dict else save_dict.get("is_fourier", False)
+        dir_component = getattr(params, 'molecule_source_component') if is_absorption else None
+        suffix = f"_{dir_component}" if is_absorption and dir_component else ""
 
         with open(field_e_filepath, "rb") as f:
             save_dict[f"field_e{suffix}_content"] = f.read()
     
         # In case 'allow_pickle=True' is in the save_dict
         save_dict.pop('allow_pickle', None)
-        np.savez(checkpoint_path, allow_pickle=True, **save_dict)
+        save_npz(checkpoint_path, detail="summary", **save_dict)
 
 
 def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_checkpoint_filepath=None):
@@ -296,8 +307,8 @@ def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_che
     else:
         checkpoint_path = params.checkpoint_filepath
 
-    is_fourier = getattr(params, 'has_fourier', False) or bool(getattr(params, 'molecule_source_component', None))
-    dir_component = getattr(params, 'molecule_source_component', None) if is_fourier else None
+    is_absorption = getattr(params, 'has_absorption', False) or bool(getattr(params, 'molecule_source_component', None))
+    dir_component = getattr(params, 'molecule_source_component', None) if is_absorption else None
 
     if dir_component:
         if final_checkpoint_filepath:
@@ -317,7 +328,7 @@ def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_che
         with open(core_hole_mo_occ_filepath, "rb") as f:
             save_dict["core_hole_mo_occ_content"] = f.read()
         save_dict.pop('allow_pickle', None)
-        np.savez(per_path, allow_pickle=True, **save_dict)
+        save_npz(per_path, detail="summary", **save_dict)
         logger.debug(
             f"Wrote core_hole_mo_occ {kind} checkpoint content for {dir_component}: {per_path}"
         )
@@ -337,7 +348,7 @@ def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_che
             save_dict["core_hole_mo_occ_content"] = f.read()
 
         save_dict.pop('allow_pickle', None)
-        np.savez(checkpoint_path, allow_pickle=True, **save_dict)
+        save_npz(checkpoint_path, detail="summary", **save_dict)
     logger.debug(f"Embedded core_hole_mo_occ content from {core_hole_mo_occ_filepath}")
 
 
@@ -349,7 +360,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
 
     For Fourier *final* checkpoints (final_checkpoint_filepath provided + molecule_source_component),
     we bypass locking entirely: each direction writes its own hidden per-dir file
-    (e.g. .final-checkpoint_x.npz). The parent Fourier driver merges them in a finally block.
+    (e.g. .final-checkpoint_x.npz). The parent absorption driver merges them in a finally block.
     """
     if final_checkpoint_filepath:
         checkpoint_path = final_checkpoint_filepath
@@ -357,10 +368,10 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
         checkpoint_path = params.checkpoint_filepath
 
     method = getattr(params, "propagator", getattr(params, "molecule_propagator_str", "")).lower()
-    is_fourier = getattr(params, 'has_fourier', False)
+    is_absorption = getattr(params, 'has_absorption', False)
 
     # Determine current direction (x/y/z) only in Fourier mode
-    dir_component = getattr(params, 'molecule_source_component') if is_fourier else None
+    dir_component = getattr(params, 'molecule_source_component') if is_absorption else None
 
     # === Per-direction hidden (Fourier): no lock, each direction writes its own file ===
     # This now covers BOTH regular periodic checkpoints and final checkpoints for Fourier runs.
@@ -400,12 +411,12 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
                     logger.warning(f"Could not read field_e for per-dir {kind} checkpoint ({dir_component}): {e}")
 
         # === Embed the CSV files as exact raw bytes (direction-aware) ===
-        dir_path = f"{dir_component}_dir" if is_fourier and dir_component else ''
+        dir_path = f"{dir_component}_dir" if is_absorption and dir_component else ''
 
         for name, filepath_attr in [("e", "field_e_filepath"), ("p", "field_p_filepath")]:
             base_filename = getattr(params, filepath_attr, f"field_{name}.csv").split(os.sep)[-1] or f"field_{name}.csv"
             filepath = os.path.join(dir_path, base_filename) if dir_path else getattr(params, f"field_{name}_filepath", None)
-            content_key = f"field_{name}_{dir_component}_content" if is_fourier and dir_component else f"field_{name}_content"
+            content_key = f"field_{name}_{dir_component}_content" if is_absorption and dir_component else f"field_{name}_content"
 
             if filepath and os.path.exists(filepath):
                 try:
@@ -415,12 +426,12 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
                     logger.error(f"Failed to read {filepath} for checkpoint: {e}")
                     raise RuntimeError(f"Cannot update checkpoint - unable to read {name} file") from e
             else:
-                logger.warning(f"{name} file for {dir_component or 'non-fourier'} ('{filepath}') not found - keeping existing content")
+                logger.warning(f"{name} file for {dir_component or 'non-absorption'} ('{filepath}') not found - keeping existing content")
 
         _embed_core_hole_mo_occ_content(save_dict, params)
 
         # === Update molecule / propagator state for the current direction ===
-        suffix = f"_{dir_component}" if is_fourier and dir_component else ""
+        suffix = f"_{dir_component}" if is_absorption and dir_component else ""
 
         save_dict[f"checkpoint_time{suffix}"] = checkpoint_time
         save_dict[f"D_ao_0{suffix}"] = molecule.D_ao_0
@@ -437,7 +448,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
             raise RuntimeError(f"BUG: checkpoint is missing required keys: {missing}")
         
         save_dict.pop('allow_pickle', None)
-        np.savez(per_path, allow_pickle=True, **save_dict)
+        save_npz(per_path, detail="summary", **save_dict)
 
         time_log_str = f"{'='*20} Updated per-dir {kind} checkpoint {per_path} at time = {checkpoint_time} (direction: {dir_component}) {'='*20}"
         logger.debug(time_log_str)
@@ -464,17 +475,17 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
         else:
             raise FileNotFoundError("Checkpoint file not found during update")
         
-        # re-compute is_fourier/dir in case (kept for minimal diff in original branch)
-        is_fourier = getattr(params, 'has_fourier', False)
-        dir_component = getattr(params, 'molecule_source_component') if is_fourier else None
+        # re-compute is_absorption/dir in case (kept for minimal diff in original branch)
+        is_absorption = getattr(params, 'has_absorption', False)
+        dir_component = getattr(params, 'molecule_source_component') if is_absorption else None
 
         # === Embed the CSV files as exact raw bytes (direction-aware) ===
-        dir_path = f"{dir_component}_dir" if is_fourier and dir_component else ''
+        dir_path = f"{dir_component}_dir" if is_absorption and dir_component else ''
 
         for name, filepath_attr in [("e", "field_e_filepath"), ("p", "field_p_filepath")]:
             base_filename = getattr(params, filepath_attr, f"field_{name}.csv").split(os.sep)[-1] or f"field_{name}.csv"
             filepath = os.path.join(dir_path, base_filename) if dir_path else getattr(params, f"field_{name}_filepath", None)
-            content_key = f"field_{name}_{dir_component}_content" if is_fourier and dir_component else f"field_{name}_content"
+            content_key = f"field_{name}_{dir_component}_content" if is_absorption and dir_component else f"field_{name}_content"
 
             if filepath and os.path.exists(filepath):
                 try:
@@ -484,12 +495,12 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
                     logger.error(f"Failed to read {filepath} for checkpoint: {e}")
                     raise RuntimeError(f"Cannot update checkpoint - unable to read {name} file") from e
             else:
-                logger.warning(f"{name} file for {dir_component or 'non-fourier'} ('{filepath}') not found - keeping existing content")
+                logger.warning(f"{name} file for {dir_component or 'non-absorption'} ('{filepath}') not found - keeping existing content")
 
         _embed_core_hole_mo_occ_content(save_dict, params)
 
         # === Update molecule / propagator state for the current direction ===
-        suffix = f"_{dir_component}" if is_fourier and dir_component else ""
+        suffix = f"_{dir_component}" if is_absorption and dir_component else ""
 
         save_dict[f"checkpoint_time{suffix}"] = checkpoint_time
         save_dict[f"D_ao_0{suffix}"] = molecule.D_ao_0
@@ -510,10 +521,10 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
             
         # remove "." at front of temp file name
         checkpoint_path = checkpoint_path[1:]
-        np.savez(checkpoint_path, allow_pickle=True, **save_dict)
+        save_npz(checkpoint_path, detail="summary", **save_dict)
 
     time_log_str = f"{'='*20} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time} "
-    time_log_str += f"(direction: {dir_component}) " if is_fourier else ""
+    time_log_str += f"(direction: {dir_component}) " if is_absorption else ""
     time_log_str += f"{'='*20}"
     logger.debug(time_log_str)
 
@@ -532,8 +543,12 @@ def _load_checkpoint_archive(fn):
         raise
 
     loaded_keys = set(data.keys())
+    # Older archives stored this flag as is_fourier.
+    if "is_absorption" not in loaded_keys and "is_fourier" in loaded_keys:
+        data["is_absorption"] = data["is_fourier"]
+        loaded_keys = set(data.keys())
     missing = REQUIRED_CHECKPOINT_KEYS - loaded_keys
-    extra = loaded_keys - REQUIRED_CHECKPOINT_KEYS - OPTIONAL_KEYS
+    extra = loaded_keys - REQUIRED_CHECKPOINT_KEYS - OPTIONAL_KEYS - {"is_fourier"}
     if missing:
         raise RuntimeError(f"Checkpoint is missing required keys: {missing}")
     if extra:
@@ -557,9 +572,10 @@ def restore_files_from_checkpoint(checkpoint_path):
 
     # === Reconstruct geometry xyz (if any) before rewriting the input JSON ===
     restored_xyz_filepath = None
-    if data["xyz_file_path"] is not None:
-        restored_xyz_filepath = _get_restored_filepath(data["xyz_file_path"], False, restored_text="_restored")
-        content = np.ndarray.item(data["xyz_content"])
+    xyz_file_path = _npz_scalar(data["xyz_file_path"])
+    if xyz_file_path:
+        restored_xyz_filepath = _get_restored_filepath(xyz_file_path, False, restored_text="_restored")
+        content = _npz_scalar(data["xyz_content"])
         with open(restored_xyz_filepath, "w", encoding="utf-8") as f:
             f.write(content.decode("utf-8") if isinstance(content, (bytes, bytearray)) else content)
         logger.info(f"Geometry xyz file reconstructed from checkpoint: {restored_xyz_filepath}")
@@ -592,9 +608,9 @@ def restore_files_from_checkpoint(checkpoint_path):
         f.write("\n")
     logger.info(f"Input file reconstructed from checkpoint: {restored_input_filepath}")
 
-    is_fourier = bool(data.get("is_fourier", False))
-    if is_fourier:
-        logger.info("Fourier checkpoint detected (contains data for x/y/z directions).")
+    is_absorption = bool(data.get("is_absorption", False))
+    if is_absorption:
+        logger.info("Absorption checkpoint detected (contains data for x/y/z directions).")
 
     saved_params_dict = data["params_dict"].item()
     params = Namespace(**saved_params_dict)
@@ -602,7 +618,7 @@ def restore_files_from_checkpoint(checkpoint_path):
         params.geometry_xyz_filepath = restored_xyz_filepath
 
     # === Restore CSV files ===
-    if is_fourier:
+    if is_absorption:
         xyz = getattr(params, "xyz", ["x", "y", "z"])
         checkpoint_dirs = [d for d in xyz
                            if float(data.get(f"checkpoint_time_{d}", 0.0)) > 1e-12]
@@ -624,7 +640,7 @@ def restore_files_from_checkpoint(checkpoint_path):
                 restored_filepath = _get_restored_filepath(original_filepath, restored_text="")
                 try:
                     os.makedirs(os.path.dirname(restored_filepath) or ".", exist_ok=True)
-                    if is_fourier and name in [f"field_p_{d}" for d in not_checkpointed_dirs]:
+                    if is_absorption and name in [f"field_p_{d}" for d in not_checkpointed_dirs]:
                         with open(restored_filepath, "wb") as f:
                             init_csv(restored_filepath, "Molecule's Polarizability Field intensity in atomic units")
                     else:
@@ -657,7 +673,7 @@ def restore_files_from_checkpoint(checkpoint_path):
 
     # === Validate restored field CSVs ===
     try:
-        if is_fourier:
+        if is_absorption:
             for d in getattr(params, "xyz", ["x", "y", "z"]):
                 _ = read_field_csv(getattr(params, f"field_e_{d}_filepath"))
             for d in checkpoint_dirs:
@@ -684,7 +700,7 @@ def load_state_from_checkpoint(params, checkpoint_path=None):
 
     Called when the parsed input has ``additional_parameters.checkpoint_filename_used``.
     Mutates ``params`` in place: sets ``values_from_checkpoint``, ``not_checkpointed_dirs``
-    (fourier), and ``resumed_from_checkpoint = True``.
+    (absorption), and ``resumed_from_checkpoint = True``.
     """
     fn = checkpoint_path or getattr(params, "checkpoint_filename_used", None)
     if not fn:
@@ -699,7 +715,7 @@ def load_state_from_checkpoint(params, checkpoint_path=None):
     data = _load_checkpoint_archive(fn)
     logger.info(f"Loading propagator state from checkpoint: {fn}")
 
-    is_fourier = bool(data.get("is_fourier", False))
+    is_absorption = bool(data.get("is_absorption", False))
     saved_params_dict = data["params_dict"].item()
 
     saved_open_shell = bool(data.get("is_open_shell", False))
@@ -714,15 +730,15 @@ def load_state_from_checkpoint(params, checkpoint_path=None):
     if saved_open_shell != (saved_params_dict.get("molecule_spin", 0) != 0):
         raise RuntimeError("Checkpoint open-shell flag inconsistent with saved molecule_spin")
 
-    if is_fourier:
-        logger.info("Fourier checkpoint detected (contains data for x/y/z directions).")
+    if is_absorption:
+        logger.info("Absorption checkpoint detected (contains data for x/y/z directions).")
 
     xyz = getattr(params, "xyz", ["x", "y", "z"])
     method = getattr(params, "molecule_propagator_str",
                      getattr(params, "propagator", "") or "").lower()
 
     params.values_from_checkpoint = {}
-    if is_fourier:
+    if is_absorption:
         checkpoint_dirs = [d for d in xyz
                            if float(data.get(f"checkpoint_time_{d}", 0.0)) > 1e-12]
         if len(checkpoint_dirs) < len(xyz):
@@ -751,9 +767,9 @@ def load_state_from_checkpoint(params, checkpoint_path=None):
             params.values_from_checkpoint["F_orth_n12dt"] = data["F_orth_n12dt"]
 
     params.resumed_from_checkpoint = True
-    if is_fourier:
+    if is_absorption:
         logger.info(
-            f"Loaded fourier checkpoint state at "
+            f"Loaded absorption checkpoint state at "
             f"t_x={params.values_from_checkpoint['checkpoint_time_x']} au, "
             f"t_y={params.values_from_checkpoint['checkpoint_time_y']} au, "
             f"t_z={params.values_from_checkpoint['checkpoint_time_z']} au."
@@ -786,7 +802,7 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
     that "owns" that direction. This prevents 0/None placeholder values (from each per-dir
     file's private base skeleton) from stomping good data from sibling per-dir files.
 
-    Intended to be called from the parent Fourier driver's finally block so it runs even
+    Intended to be called from the parent absorption driver's finally block so it runs even
     on crashes/partial failures. The combined result is written as both hidden (for cleanup)
     and visible (for resume / artifacts).
     """
@@ -842,10 +858,10 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
     # Write hidden + visible (consistent with prior behavior)
     base = checkpoint_filepath[1:] if checkpoint_filepath.startswith(".") else checkpoint_filepath
     hidden_path = "." + base
-    np.savez(hidden_path, allow_pickle=True, **merged)
+    save_npz(hidden_path, detail="summary", **merged)
 
     visible_path = base
-    np.savez(visible_path, allow_pickle=True, **merged)
+    save_npz(visible_path, detail="summary", **merged)
 
     # Best-effort flag (final case)
     if "final" in base.lower():

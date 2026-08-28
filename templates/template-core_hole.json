@@ -5,10 +5,7 @@
     "driver": "core_hole"
   },
   "molecule": {
-    "geometry": [
-      {"atom": "C", "coord": [0.0, 0.0, 0.0]},
-      {"atom": "O", "coord": [0.0, 0.0, 1.13]}
-    ],
+    "geometry": [{"atom": "C", "coord": [0.0, 0.0, 0.0]}, {"atom": "O", "coord": [0.0, 0.0, 1.13]}],
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
@@ -24,7 +21,9 @@
     "spectra_e_vs_p_filepath": "output.png"
   },
   "additional_parameters": {
-    "mo_removal_index_dict": {"0": 2},
+    "mo_removal_index_dict": {
+      "0": 2
+    },
     "core_hole_mo_occ_filepath": "mo_occ.csv",
     "core_hole_watch_indices": [0, 1, 2, 3]
   }
