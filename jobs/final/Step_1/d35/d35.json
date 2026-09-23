@@ -1,0 +1,37 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 5000,
+    "driver": {
+      "name": "np_abs_cross_sec",
+      "n_flux_freqs": 120,
+      "flux_padding": 0.005,
+      "line_fit": true
+    }
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "surrounding_material_index": 1.33,
+      "courant": 0.5,
+      "symmetries": ["Y", 1, "Z", -1]
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.045, 0.0, 0.0],
+      "size": [0.0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.575758,
+        "fwidth": 1.515152
+      }
+    },
+    "nanoparticle": {
+      "material": "Ag",
+      "radius": 0.0175,
+      "center": [0.0, 0.0, 0.0]
+    }
+  }
+}

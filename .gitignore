@@ -2,8 +2,6 @@
 .vscode
 .venv
 .pytest_cache
-/plan.md
-jobs/
 doc/site/
 __pycache__/
 merge/

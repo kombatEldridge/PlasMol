@@ -1,0 +1,21 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO:  === CORE-HOLE SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 206.7 au (roughly 4.99983 fs).
+INFO: Simulation progress: 0% done (0/4134 steps || 0.05/206.7 au)
+INFO: Simulation progress: 10% done (413/4134 steps || 20.650000000000002/206.7 au)
+INFO: Simulation progress: 20% done (827/4134 steps || 41.349999999999994/206.7 au)
+INFO: Simulation progress: 30% done (1240/4134 steps || 62.0/206.7 au)
+INFO: Simulation progress: 40% done (1654/4134 steps || 82.7/206.7 au)
+INFO: Simulation progress: 50% done (2067/4134 steps || 103.35/206.7 au)
+INFO: Simulation progress: 60% done (2480/4134 steps || 124.0/206.7 au)
+INFO: Simulation progress: 70% done (2894/4134 steps || 144.70000000000002/206.7 au)
+INFO: Simulation progress: 80% done (3307/4134 steps || 165.35000000000002/206.7 au)
+INFO: Simulation progress: 90% done (3721/4134 steps || 186.05/206.7 au)
+INFO: Simulation progress: 100% done (4134/4134 steps || 206.70000000000002/206.7 au)
+INFO: Matplotlib image written: output.png
+INFO: Plotting core-hole occupations for all logged MO indices.
+INFO: Amplitude filter (>0.4): plotting ['6', '15', '17', '19', '21', '23', '24']
+INFO: Matplotlib image written: mo_occ.png

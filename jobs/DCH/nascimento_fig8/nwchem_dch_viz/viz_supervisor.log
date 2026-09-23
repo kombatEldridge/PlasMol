@@ -1,0 +1,46 @@
+START nwchem 3p_dch_viz_A.nw -> phase_A.out
+PROJECT dumps
+{
+  "n_dumps": 799,
+  "t0_au": 0.0,
+  "t_end_au": 39.900000000000006,
+  "nelec_t0": 46.000000000000284,
+  "n0_core": -1.340898209247791e-16,
+  "mean_abs_occ_err": 4.8531227346005755e-14,
+  "mean_virt": -2.7996953097488925e-20,
+  "h21_t0": -3.9968028886505635e-15,
+  "h23_t0": -5.10702591327572e-15,
+  "h24_t0": -1.083215729432667e-18,
+  "period_21_fs": 0.13182919579892075,
+  "period_24_fs": 0.13424808012550637,
+  "e_mo0": -19.18941806938964,
+  "t0_ok": true,
+  "period_ok": true,
+  "green": true,
+  "csv": "/Users/brinton/Downloads/repos/PlasMol/jobs/DCH/nascimento_fig8/nwchem_dch_viz/mo_occ_projected.csv"
+}
+PHASE_A_VERDICT {"n_dumps": 799, "t0_au": 0.0, "t_end_au": 39.900000000000006, "nelec_t0": 46.000000000000284, "n0_core": -1.340898209247791e-16, "mean_abs_occ_err": 4.8531227346005755e-14, "mean_virt": -2.7996953097488925e-20, "h21_t0": -3.9968028886505635e-15, "h23_t0": -5.10702591327572e-15, "h24_t0": -1.083215729432667e-18, "period_21_fs": 0.13182919579892075, "period_24_fs": 0.13424808012550637, "e_mo0": -19.18941806938964, "t0_ok": true, "period_ok": true, "green": true, "csv": "/Users/brinton/Downloads/repos/PlasMol/jobs/DCH/nascimento_fig8/nwchem_dch_viz/mo_occ_projected.csv"}
+GREEN: starting Phase B
+START nwchem 3p_dch_viz_B.nw -> phase_B.out
+PROJECT dumps
+{
+  "n_dumps": 4131,
+  "t0_au": 0.0,
+  "t_end_au": 206.60000000000002,
+  "nelec_t0": 46.000000000000284,
+  "n0_core": -1.340898209247791e-16,
+  "mean_abs_occ_err": 4.8531227346005755e-14,
+  "mean_virt": -2.7996953097488925e-20,
+  "h21_t0": -3.9968028886505635e-15,
+  "h23_t0": -5.10702591327572e-15,
+  "h24_t0": -1.083215729432667e-18,
+  "period_21_fs": 0.1390858487786777,
+  "period_24_fs": 0.1390858487786777,
+  "e_mo0": -19.18941806938964,
+  "t0_ok": true,
+  "period_ok": true,
+  "green": true,
+  "csv": "/Users/brinton/Downloads/repos/PlasMol/jobs/DCH/nascimento_fig8/nwchem_dch_viz/mo_occ_projected.csv"
+}
+PHASE_B_VERDICT {"n_dumps": 4131, "t0_au": 0.0, "t_end_au": 206.60000000000002, "nelec_t0": 46.000000000000284, "n0_core": -1.340898209247791e-16, "mean_abs_occ_err": 4.8531227346005755e-14, "mean_virt": -2.7996953097488925e-20, "h21_t0": -3.9968028886505635e-15, "h23_t0": -5.10702591327572e-15, "h24_t0": -1.083215729432667e-18, "period_21_fs": 0.1390858487786777, "period_24_fs": 0.1390858487786777, "e_mo0": -19.18941806938964, "t0_ok": true, "period_ok": true, "green": true, "csv": "/Users/brinton/Downloads/repos/PlasMol/jobs/DCH/nascimento_fig8/nwchem_dch_viz/mo_occ_projected.csv"}
+ALL_DONE

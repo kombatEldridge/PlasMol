@@ -1,0 +1,828 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------------
+% Packages
+% ---------------------------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!60!black
+}
+
+% ---------------------------------------------------------------------------
+% Theorem environments
+% ---------------------------------------------------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{goal}{Goal}[section]
+
+% ---------------------------------------------------------------------------
+% Convenience macros
+% ---------------------------------------------------------------------------
+\newcommand{\epsb}{\varepsilon_b}
+\newcommand{\epsm}{\varepsilon}
+\newcommand{\alpham}{\alpha_{\text{mol}}}
+\newcommand{\alphanp}{\alpha_{\text{NP}}}
+\newcommand{\alphaeff}{\alpha_{\mathrm{eff}}}
+\newcommand{\Einc}{\mathbf{E}_{\mathrm{inc}}}
+\newcommand{\Etot}{\mathbf{E}_{\mathrm{tot}}}
+\newcommand{\Erefl}{\mathbf{E}_{\mathrm{refl}}}
+\newcommand{\p}{\mathbf{p}}
+\newcommand{\rhat}{\hat{\mathbf{r}}}
+\newcommand{\thetahat}{\hat{\boldsymbol{\theta}}}
+\newcommand{\nhat}{\hat{\mathbf{n}}}
+\newcommand{\I}{\mathbf{I}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Effective polarizability near a spherical NP}
+\fancyhead[R]{\small Derivation notes}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\title{Gersten--Nitzan Model}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+These notes derive, from elementary electrostatics, the \emph{effective} polarizability of a molecule modeled as a point dipole sitting outside a dielectric (or metallic) sphere:
+\[
+  \alphaeff(\omega)
+  =
+  \frac{\alpham(\omega)G(\omega)}{1-\alpham(\omega)S(\omega)}.
+\]
+
+\noindent
+We start with the definition of polarizability, solve the quasistatic sphere problem, introduce the dipole--dipole interaction tensor, eliminate the nanoparticle dipole, and identify the local-field factor $G$ and the self-interaction (image) propagator $S$. The full multipolar image series for $S$ is derived in the appendix; for small molecules one typically need not retain it ($\alpham S\ll 1$, or simply $S=0$).
+\end{abstract}
+\newpage
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{What we are trying to compute}
+% ===========================================================================
+
+\begin{goal}
+\noindent
+Find the induced molecular dipole $\p$ when a molecule sits next to a spherical nanoparticle (NP) in a uniform incident field $\Einc$, and express the result as
+\[
+  \p = \alphaeff\Einc
+\]
+along a chosen axis.
+\end{goal}
+
+\subsection*{Geometry and notation}
+
+\begin{center}
+  \begin{tabular}{@{}ll@{}}
+  \toprule
+  Symbol & Meaning \\
+  \midrule
+  $a$ & NP sphere radius \\
+  $d$ & distance from NP sphere center to the molecular point dipole ($d>a$) \\
+  $\epsm(\omega)$ & relative permittivity of the NP sphere (e.g.\ gold) \\
+  $\epsb$ & relative permittivity of the host medium (real; water: $\epsb=n^2\approx 1.769$) \\
+  $\alpham(\omega)$ & bare molecular polarizability \emph{volume} \\
+  $\alphanp^{(\ell)}(\omega)$ & multipole polarizability volume of the NP sphere, order $\ell$ \\
+  $\rhat$ & unit vector from NP sphere center to the molecule \\
+  $\parallel$ & radial orientation: $\p\parallel\rhat$ \\
+  $\perp$ & tangential orientation: $\p\perp\rhat$ \\
+  \bottomrule
+  \end{tabular}
+\end{center}
+
+\begin{remark}[Units / polarizability volume]
+\noindent
+Throughout we work in a convention where polarizabilities have dimensions of volume (cgs-like ``polarizability volume''). Then $\p = \alpha \mathbf{E}$ is dimensionally consistent without $4\pi\varepsilon_0$ factors. SI formulas differ only by constant prefactors that cancel in the dimensionless combinations $\alpha S$ and $G$.
+\end{remark}
+
+% ===========================================================================
+\section{Polarizability of a single object}
+% ===========================================================================
+
+\begin{definition}[Linear polarizability]
+\noindent
+An object in a weak electric field $\mathbf{E}$ acquires an induced dipole
+\begin{equation}
+  \p = \alpha\mathbf{E} ,
+  \label{eq:p-alpha-E}
+\end{equation}
+where $\alpha$ may be a tensor. For an isotropic point molecule we take $\alpha=\alpham(\omega) \I$. For a sphere in a uniform field only the $\ell=1$ channel responds, with polarizability volume $\alphanp^{(1)}(\omega)$ derived below.
+\end{definition}
+
+\subsection{Bare molecular polarizability (Lorentz oscillator)}
+
+\noindent
+A single electronic transition is modeled classically as a driven damped harmonic oscillator. The resulting polarizability volume is
+\begin{equation}
+  \alpham(\omega)
+  =
+  \alpha_0 
+  \frac{\omega_m^2}{\omega_m^2 - \omega^2 - i\gamma_m\omega} ,
+  \label{eq:alpha-m}
+\end{equation}
+where
+
+\begin{itemize}[leftmargin=1.6em]
+  \item $\omega_m$ is the transition frequency,
+  \item $\gamma_m$ is a phenomenological linewidth (lifetime + dephasing + numerical broadening),
+  \item $\alpha_0=\alpham(0)$ is the static polarizability volume (sets the oscillator strength).
+\end{itemize}
+
+\noindent
+This is the classical analogue of a two-level system in linear response. Without the nanoparticle, $\p=\alpham\Einc$ and absorption is proportional to $-\omega \mathrm{Im} \alpham$.
+
+% ===========================================================================
+\section{Quasistatic response of a dielectric sphere}
+% ===========================================================================
+
+\subsection{Uniform field}
+
+\noindent
+Place a sphere of permittivity $\epsm$ and radius $a$ in a host of permittivity $\epsb$, with uniform external field $\mathbf{E}_0=E_0\hat{\mathbf{z}}$. Laplace's equation outside and inside, with continuity of the potential and of the normal component of $\mathbf{D}=\varepsilon\mathbf{E}$ at $r=a$, yields the exterior potential
+\begin{equation}
+  \Phi_{\mathrm{out}}(r,\theta)
+  =
+  -E_0 r\cos\theta
+  +
+  \frac{p_{\mathrm{NP}}}{r^2}\cos\theta ,
+  \qquad
+  r\ge a ,
+\end{equation}
+where the induced sphere dipole (polarizability volume form from Huffman 1983 eq 5.15) is
+\begin{equation}
+  \alphanp^{(1)}(\omega)
+  =
+  a^3
+  \frac{\epsm(\omega)-\epsb}{\epsm(\omega)+2\epsb}.
+  \label{eq:beta1}
+\end{equation}
+
+\noindent
+Thus the NP sphere looks like a point dipole $\p_{\mathrm{NP}}=\alphanp^{(1)}\mathbf{E}_0$ sitting at the origin (valid for $r>a$).
+
+\subsection{Higher multipoles (for the image channel)}
+
+\noindent
+A \emph{non-uniform} external potential expandable in spherical harmonics of order $\ell$ induces a multipole response characterized by
+\begin{equation}
+  \alphanp^{(\ell)}(\omega)
+  =
+  a^{2\ell+1}
+  \frac{\epsm(\omega)-\epsb}
+       {\epsm(\omega)+(\ell+1)\epsb/\ell},
+  \qquad
+  \ell=1,2,\ldots
+  \label{eq:beta-ell}
+\end{equation}
+
+\noindent
+For $\ell=1$ this reduces to~\eqref{eq:beta1}. These higher multipoles enter only the image propagator $S$ (Appendix~\ref{app:multipolar-S}), not the laser-driven local field $G$.
+
+\begin{remark}[Small molecules: multipoles usually unnecessary]
+\noindent
+A uniform incident field only drives the sphere dipole ($\ell=1$), so $G$ never needs the multipole tower. The image series for $S$ \emph{can} require high $\ell$ at small gaps---but for a small molecule $\alpham$ is weak and $\alpham S\ll 1$. In that regime one may set $S=0$ (or keep only the $\ell=1$ image) without changing the spectrum appreciably. Multipolar $S$ matters mainly for large, intensely polarizable molecules (or aggregates) at small gaps.
+\end{remark}
+
+% ===========================================================================
+\section{The quasistatic dipole--dipole interaction tensor}
+% ===========================================================================
+
+\noindent
+Before coupling two polarizable objects we need the field produced by one dipole at the location of the other.
+
+\begin{definition}[Dipole field / interaction tensor]
+\noindent
+The electric field at position $\mathbf{r}=\mathbf{d}$ due to a point dipole $\boldsymbol{\mu}$ at the origin (host permittivity absorbed into the polarizability-volume convention) is
+\begin{equation}
+  \mathbf{E}(\mathbf{d})
+  =
+  \mathbf{M}(\mathbf{d})\cdot\boldsymbol{\mu},
+  \qquad
+  \mathbf{M}(\mathbf{d})
+  =
+  \frac{3\nhat\nhat - \I}{d^3},
+  \qquad
+  \nhat=\mathbf{d}/d.
+  \label{eq:M-tensor}
+\end{equation}
+\noindent where \( \mathbf{M} \) is the quasistatic dipole–dipole interaction tensor and \( \nhat \) is the unit vector along the NP--molecule axis (\( = \rhat \)). This is the quasistatic (near-field) limit of the dyadic Green function; it is valid for $d\ll\lambda$.
+\end{definition}
+
+\subsection{Eigenvalues along the two principal axes}
+
+\noindent
+Let $\nhat=\rhat$ be the NP--molecule axis. For radial (parallel) orientation, act with $\mathbf{M}$ on $\rhat$:
+\begin{equation}
+  \mathbf{M}\cdot\rhat
+  =
+  \frac{3\rhat(\rhat\cdot\rhat)-\rhat}{d^3}
+  =
+  \frac{3\rhat-\rhat}{d^3}
+  =
+  \frac{2}{d^3}\rhat.
+\end{equation}
+
+\noindent
+since \( \rhat \cdot \rhat = 1 \), so the scalar eigenvalue is
+\begin{equation}
+  M_\parallel = \frac{2}{d^3}.
+  \label{eq:M-par}
+\end{equation}
+
+\noindent For the tangential (perpendicular) orientation, act on a unit vector $\thetahat\perp\rhat$:
+\begin{equation}
+  \mathbf{M}\cdot\thetahat
+  =
+  \frac{3\rhat(\rhat\cdot\thetahat)-\thetahat}{d^3}
+  =
+  -\frac{1}{d^3}\thetahat,
+\end{equation}
+
+\noindent
+since \( \rhat \cdot \thetahat = 0 \), so
+\begin{equation}
+  M_\perp = -\frac{1}{d^3}.
+  \label{eq:M-perp}
+\end{equation}
+
+% ===========================================================================
+\section{Two polarizable bodies: Gersten--Nitzan elimination}
+% ===========================================================================
+
+\noindent
+This is the heart of the derivation. We follow the classical coupled-dipole construction of Gersten and Nitzan (1980).
+
+\subsection{Step 1 --- Coupled equations}
+
+\noindent
+Label:
+
+\begin{itemize}[leftmargin=1.6em]
+  \item body 1 = molecule, polarizability $\alpha_1=\alpham$ (scalar along a principal axis);
+  \item body 2 = nanoparticle, polarizability $\alpha_2$ (for now a point polarizability; later $\alphanp^{(1)}$ or a multipolar series).
+\end{itemize}
+
+\noindent
+Each dipole responds to the \emph{total} field at its location:
+\begin{align}
+  \boldsymbol{\mu}_1
+  &=
+  \alpha_1\Bigl(
+    \mathbf{E}_0
+    +
+    \mathbf{M}(\mathbf{d})\cdot\boldsymbol{\mu}_2
+  \Bigr),
+  \label{eq:mu1}\\[0.4em]
+  \boldsymbol{\mu}_2
+  &=
+  \alpha_2\Bigl(
+    \mathbf{E}_0
+    +
+    \mathbf{M}(\mathbf{d})\cdot\boldsymbol{\mu}_1
+  \Bigr).
+  \label{eq:mu2}
+\end{align}
+
+\noindent
+Here $\mathbf{E}_0\equiv\Einc$ is the incident field in the host, and $\mathbf{d}$ points from body~2 to body~1. Equation~\eqref{eq:mu1} says: the molecule feels $\mathbf{E}_0$ plus the field of the NP dipole. Equation~\eqref{eq:mu2} is the converse.
+
+\subsection{Step 2 --- Eliminate the nanoparticle dipole}
+
+\noindent
+Substitute~\eqref{eq:mu2} into~\eqref{eq:mu1}:
+\begin{equation}
+  \boldsymbol{\mu}_1
+  =
+  \alpha_1\Biggl[
+    \mathbf{E}_0
+    +
+    \mathbf{M}\cdot\alpha_2\cdot\mathbf{E}_0
+    +
+    \mathbf{M}\cdot\alpha_2\cdot\mathbf{M}\cdot\boldsymbol{\mu}_1
+  \Biggr].
+  \label{eq:sub}
+\end{equation}
+\begin{equation}
+  \boldsymbol{\mu}_1
+  -
+  \alpha_1\cdot\mathbf{M}\cdot\alpha_2\cdot\mathbf{M}\cdot\boldsymbol{\mu}_1
+  =
+  \alpha_1\cdot\bigl(\I + \mathbf{M}\cdot\alpha_2\bigr)\cdot\mathbf{E}_0,
+\end{equation}
+
+\noindent
+or, more compactly,
+\begin{equation}
+  \bigl(
+    \I
+    -
+    \alpha_1\cdot\mathbf{M}\cdot\alpha_2\cdot\mathbf{M}
+  \bigr)
+  \boldsymbol{\mu}_1
+  =
+  \alpha_1\cdot\bigl(\I + \mathbf{M}\cdot\alpha_2\bigr)\cdot\mathbf{E}_0.
+  \label{eq:operator}
+\end{equation}
+
+\noindent
+Invert the operator on the left:
+\begin{equation}
+  \boldsymbol{\mu}_1
+  =
+  \alphaeff\cdot\mathbf{E}_0,
+  \qquad
+  \alphaeff
+  =
+  \bigl(
+    \I
+    -
+    \alpha_1\cdot\mathbf{M}\cdot\alpha_2\cdot\mathbf{M}
+  \bigr)^{-1}
+  \cdot
+  \alpha_1\cdot\bigl(\I + \mathbf{M}\cdot\alpha_2\bigr).
+\end{equation}
+\noindent 
+or 
+\begin{equation}
+  \alphaeff
+  =
+  \frac{\alpha_1\cdot\bigl(\I + \mathbf{M}\cdot\alpha_2\bigr)}{\I - \alpha_1\cdot\mathbf{M}\cdot\alpha_2\cdot\mathbf{M}}
+\end{equation}
+
+\noindent
+This is Gersten and Nitzan's effective polarizability of the molecule (their Eq.~1.5): the response to $\mathbf{E}_0$ already includes electromagnetic coupling to body~2.
+
+\subsection{Step 3 --- Scalar reduction; define $G$ and $S$}
+
+\noindent
+Along a principal axis ($\parallel$ or $\perp$), everything reduces to scalars $\alpham$, $\alpha_2$, and $M$. Then
+\begin{equation}
+  \alphaeff
+  =
+  \frac{\alpham(1+M\alpha_2)}{1-\alpham(M\alpha_2 M)}
+  =
+  \frac{\alpham(1+M\alpha_2)}{1-\alpham M^2\alpha_2}.
+  \label{eq:alphaeff-scalar}
+\end{equation}
+
+\noindent
+Define the two fundamental scalars of the model:
+\begin{align}
+  G
+  &\equiv
+  1 + M\alpha_2,
+  \label{eq:G-def}\\[0.3em]
+  S
+  &\equiv
+  M\alpha_2 M
+  =
+  M^2\alpha_2.
+  \label{eq:S-def}
+\end{align}
+
+\noindent
+Equation~\eqref{eq:alphaeff-scalar} becomes the working formula
+\begin{equation}
+  \boxed{
+    \alphaeff
+    =
+    \frac{\alpham G}{1-\alpham S}.
+  }
+  \label{eq:alphaeff-main}
+\end{equation}
+
+\subsection{Physical meaning of $G$ and $S$}
+
+\begin{itemize}[leftmargin=1.6em]
+  \item $G\,\mathbf{E}_0$ is the field at the molecular site \emph{when the molecule is absent}: incident field plus the field of body~2 driven by $\mathbf{E}_0$ alone. 
+  \item $S\,\p$ is the additional field returned to the molecule when its own dipole $\p$ polarizes body~2. This is the \textbf{image / self-interaction}.
+\end{itemize}
+
+\begin{remark}[Limits]
+\noindent
+\begin{itemize}[leftmargin=1.6em]
+  \item $S=0$ (image neglected; default for small molecules): $\alphaeff=\alpham G$ --- pure local-field enhancement.
+  \item $G=1$ (no local-field boost, but keep image): $\alphaeff=\alpham/(1-\alpham S)$ --- pure self-interaction renormalization.
+  \item No NP: $G=1$, $S=0$, $\alphaeff=\alpham$.
+\end{itemize}
+\end{remark}
+
+% ===========================================================================
+\section{Identify $G$ and $S$ for a point-dipole sphere}
+% ===========================================================================
+
+\noindent
+Replace body~2 by a sphere with dipole polarizability volume $\alpha_2=\alphanp^{(1)}$ from~\eqref{eq:beta1}, and use the eigenvalues~\eqref{eq:M-par}--\eqref{eq:M-perp}.
+
+\subsection{Parallel (radial)}
+
+\begin{equation}
+  G_\parallel
+  =
+  1 + M_\parallel\alphanp^{(1)}
+  =
+  1 + \frac{2}{d^3}\alphanp^{(1)}
+  =
+  1 + 2 \frac{a^3}{d^3} 
+      \frac{\epsm-\epsb}{\epsm+2\epsb} ,
+  \label{eq:G-par-dip}
+\end{equation}
+\begin{equation}
+  S_\parallel^{(\ell=1)}
+  =
+  M_\parallel^2\alphanp^{(1)}
+  =
+  4\frac{a^3}{d^6}\frac{\epsm-\epsb}{\epsm+2\epsb} .
+  \label{eq:S-par-dip}
+\end{equation}
+
+\subsection{Perpendicular (tangential)}
+
+\begin{equation}
+  G_\perp
+  =
+  1 + M_\perp\alphanp^{(1)}
+  =
+  1 - \frac{1}{d^3}\alphanp^{(1)}
+  =
+  1 - \frac{a^3}{d^3} 
+      \frac{\epsm-\epsb}{\epsm+2\epsb} ,
+  \label{eq:G-perp-dip}
+\end{equation}
+\begin{equation}
+  S_\perp^{(\ell=1)}
+  =
+  M_\perp^2\alphanp^{(1)}
+  =
+  \frac{a^3}{d^6}\frac{\epsm-\epsb}{\epsm+2\epsb} .
+  \label{eq:S-perp-dip}
+\end{equation}
+
+\begin{remark}[Working model for small molecules]
+\noindent
+Equations~\eqref{eq:G-par-dip}--\eqref{eq:S-perp-dip} already close the point-dipole sphere model. For a small molecule, $\alpham$ is weak, so the product $\alpham S$ is negligible even if $S$ includes high multipoles. One may therefore take
+\begin{equation}
+  S=0
+  \qquad\Rightarrow\qquad
+  \alphaeff = \alpham G
+  \label{eq:alphaeff-S0}
+\end{equation}
+and never evaluate the multipole image series. That series is derived in Appendix~\ref{app:multipolar-S} for completeness (and for large, strongly polarizable molecules).
+\end{remark}
+
+% ===========================================================================
+\section{Assembling $\alpha_{\mathrm{eff}}$}
+% ===========================================================================
+
+\noindent
+Collecting every piece:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item \textbf{Choose orientation} $\parallel$ or $\perp$, host $\epsb$, geometry $(a,d)$, and sphere dielectric $\epsm(\omega)$.
+
+  \item \textbf{Sphere dipole} (laser-driven $\ell=1$ channel):
+  \[
+    \alphanp^{(1)}(\omega)
+    =
+    a^{3}
+    \frac{\epsm-\epsb}{\epsm+2\epsb} .
+  \]
+
+  \item \textbf{Local field $G$.}
+  \[
+    G_\parallel = 1 + 2\frac{\alphanp^{(1)}}{d^3} ,
+    \qquad
+    G_\perp = 1 - \frac{\alphanp^{(1)}}{d^3} .
+  \]
+
+  \item \textbf{Self-interaction $S$.}
+  \begin{itemize}[leftmargin=1.4em]
+    \item \textbf{Small molecule (typical):} $S=0$ --- multipoles not needed.
+    \item \textbf{Large / intense $\alpham$:} multipole series of Appendix~\ref{app:multipolar-S}, or the $\ell=1$ truncations~\eqref{eq:S-par-dip}--\eqref{eq:S-perp-dip}.
+  \end{itemize}
+
+  \item \textbf{Bare molecule.}
+  \[
+    \alpham(\omega)
+    =
+    \alpha_0
+    \frac{\omega_m^2}{\omega_m^2-\omega^2-i\gamma_m\omega} .
+  \]
+
+  \item \textbf{Effective polarizability.}
+  \[
+    \boxed{
+      \alphaeff(\omega)
+      =
+      \frac{\alpham(\omega) G(\omega)}{1-\alpham(\omega) S(\omega)}
+      \quad
+      \xrightarrow{\,S=0\,}
+      \alpham(\omega)\, G(\omega)\,.
+    }
+  \]
+
+  \item \textbf{Absorption-like spectrum} (molecular channel relative to $\Einc$):
+  \[
+    A(\omega) = -\omega \mathrm{Im} \alphaeff(\omega) .
+  \]
+\end{enumerate}
+
+\subsection{What each factor does to the spectrum}
+
+\begin{center}
+\begin{tabular}{@{}p{0.22\textwidth}p{0.68\textwidth}@{}}
+\toprule
+Ingredient & Role in $A(\omega)$ \\
+\midrule
+$\alpham(\omega)$ & Places the bare molecular resonance and sets its oscillator strength. \\[0.4em]
+$G(\omega)$ & Multiplies the drive. Near the LSPR, $|G|$ can be large (especially $G_\parallel$), boosting absorption. Complex $G$ also mixes $\mathrm{Re} \alpham$ into $\mathrm{Im} \alphaeff$. \\[0.4em]
+$S(\omega)$ & Enters the denominator if retained. Shifts / splits / broadens the molecular peak when $\alpham S$ is not small. For small molecules set $S=0$ (multipoles unnecessary). \\[0.4em]
+$\epsm(\omega)$ & Enters through $G$ (and through $S$ if retained). Plasmonic structure in $A(\omega)$ is \emph{not} nanoparticle extinction plotted directly. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ===========================================================================
+\section{Limitations}
+% ===========================================================================
+
+\begin{itemize}[leftmargin=1.6em]
+  \item \textbf{Quasistatic sphere.} No retardation, no radiative damping, no higher Mie coefficients of the laser-driven sphere.
+  \item \textbf{Local bulk dielectric.} No electron spill-out, nonlocality, or surface scattering in $\epsm(\omega)$.
+  \item \textbf{Point molecule.} No finite orbital size or multipolar transitions.
+  \item \textbf{Linear classical response.} No saturation; any hybridization through $S$ is classical.
+  \item \textbf{Multipolar image often unnecessary.} For small molecules $\alpham S\ll 1$; the multipole series for $S$ is in Appendix~\ref{app:multipolar-S}.
+  \item \textbf{Non-dispersive host.} $\epsb$ real and constant.
+\end{itemize}
+
+% ===========================================================================
+\appendix
+\section{Multipolar image series for $S$}
+\label{app:multipolar-S}
+% ===========================================================================
+
+\noindent
+A real dielectric sphere is \emph{not} a pure point dipole when driven by a nearby molecule. Matching boundary conditions for a point dipole outside a sphere produces a multipole expansion of the reflected field. This appendix derives the image series for $S_\parallel$ and $S_\perp$.
+
+\noindent
+\textbf{When to use this appendix.} For a small molecule one probably need not consider multipoles at all: $\alpham$ is weak, $\alpham S\ll 1$, and the working formula $\alphaeff=\alpham G$ ($S=0$) already captures the leading nanoparticle effect (local-field enhancement through $G$). Retain the multipole series only for large or strongly polarizable molecules at small gaps, where image renormalization becomes order-one.
+
+\subsection{Structure that survives}
+
+\noindent
+Linearity still guarantees
+\begin{equation}
+  \Erefl = S \p
+  \label{eq:Erefl-S}
+\end{equation}
+at the molecular site, but $S$ is no longer simply $M^2\alphanp^{(1)}$. The local-field factor $G$ is unchanged: a uniform incident field only excites the dipole channel of the sphere, so~\eqref{eq:G-par-dip} and \eqref{eq:G-perp-dip} remain exact in the quasistatic limit.
+
+\noindent
+Place the molecule at $\mathbf{r}=d\,\rhat$ with $\rhat=\hat{\mathbf{z}}$. We work in the polarizability-volume convention of~\eqref{eq:M-tensor} (no $4\pi\varepsilon_0$ factors), so the bare dipole potential is $\Phi_{\mathrm{dip}}=\p\cdot\mathbf{R}/R^3$ with $\mathbf{R}=\mathbf{r}-\mathbf{r}'$ and $\mathbf{E}=-\nabla\Phi$.
+
+\subsection{Multipole response of the sphere}
+
+\noindent
+Any exterior driving potential of definite multipole order $\ell$ (and azimuthal order $m$),
+\begin{equation}
+  \Phi_{\mathrm{app}}^{(\ell m)}
+  =
+  A_{\ell m}\, r^{\ell}\, Y_{\ell m}(\theta,\phi),
+\end{equation}
+induces a scattered field of the same $(\ell,m)$,
+\begin{equation}
+  \Phi_{\mathrm{sc}}^{(\ell m)}
+  =
+  \alphanp^{(\ell)}\, A_{\ell m}\, r^{-(\ell+1)}\, Y_{\ell m}(\theta,\phi),
+  \label{eq:sphere-multipole-response}
+\end{equation}
+with $\alphanp^{(\ell)}$ from~\eqref{eq:beta-ell}. The radial boundary-value problem depends only on $\ell$, not $m$. Consequently: expand the bare molecular dipole for $r<d$ into powers $r^{\ell}$, multiply each amplitude by $\alphanp^{(\ell)}$, and re-emit as $r^{-(\ell+1)}$. Evaluating $-\nabla\Phi_{\mathrm{sc}}$ back at the molecule yields $S$.
+
+\subsection{Radial dipole $\Rightarrow S_\parallel$}
+
+\noindent
+Take $\p = p_\parallel\,\hat{\mathbf{z}}$ at $z=d$. Start from the charge expansion for $r<d$
+\begin{equation}
+  \frac{1}{|\mathbf{r}-d\hat{\mathbf{z}}|}
+  =
+  \sum_{\ell=0}^{\infty}
+  \frac{r^{\ell}}{d^{\ell+1}}\, P_\ell(\cos\theta)
+  \qquad (r<d).
+\end{equation}
+A radial dipole is obtained by differentiating a charge pair along $d$. Using
+\begin{equation}
+  \frac{\partial}{\partial d}\!\left(\frac{r^{\ell}}{d^{\ell+1}}\right)
+  =
+  -(\ell+1)\frac{r^{\ell}}{d^{\ell+2}}
+\end{equation}
+and orienting $\p$ so that the applied amplitudes are positive as below gives
+\begin{equation}
+  \Phi_\parallel^{\mathrm{app}}
+  =
+  p_\parallel
+  \sum_{\ell=1}^{\infty}
+  (\ell+1)\,
+  \frac{r^{\ell}}{d^{\ell+2}}\,
+  P_\ell(\cos\theta).
+  \label{eq:Phi-par-app}
+\end{equation}
+Thus
+\begin{equation}
+  A_\ell
+  =
+  p_\parallel\,
+  \frac{\ell+1}{d^{\ell+2}}.
+  \label{eq:A-ell-par}
+\end{equation}
+From~\eqref{eq:sphere-multipole-response},
+\begin{equation}
+  \Phi_\parallel^{\mathrm{sc}}
+  =
+  p_\parallel
+  \sum_{\ell=1}^{\infty}
+  \alphanp^{(\ell)}\,
+  \frac{\ell+1}{d^{\ell+2}}\,
+  r^{-(\ell+1)}\,
+  P_\ell(\cos\theta).
+  \label{eq:Phi-par-sc}
+\end{equation}
+On the positive $z$-axis ($\theta=0$, $P_\ell(1)=1$),
+\begin{equation}
+  E_r^{\mathrm{sc}}
+  =
+  -\frac{\partial\Phi_\parallel^{\mathrm{sc}}}{\partial r}
+  =
+  p_\parallel
+  \sum_{\ell=1}^{\infty}
+  \alphanp^{(\ell)}\,
+  \frac{\ell+1}{d^{\ell+2}}\,
+  (\ell+1)\, r^{-(\ell+2)}.
+\end{equation}
+Set $r=d$:
+\begin{equation}
+  E_\parallel^{\mathrm{refl}}
+  =
+  p_\parallel
+  \sum_{\ell=1}^{\infty}
+  (\ell+1)^2
+  \frac{\alphanp^{(\ell)}}{d^{2\ell+4}}.
+\end{equation}
+Comparing with~\eqref{eq:Erefl-S} identifies
+\begin{equation}
+  S_\parallel(\omega)
+  =
+  \sum_{\ell=1}^{\ell_{\max}}
+  (\ell+1)^2
+  \frac{\alphanp^{(\ell)}(\omega)}{d^{2\ell+4}}.
+  \label{eq:S-par-multi}
+\end{equation}
+
+\begin{remark}[$\ell=1$ truncation]
+\noindent
+$S_\parallel^{(\ell=1)}=4\alphanp^{(1)}/d^6=M_\parallel^2\alphanp^{(1)}$ with $M_\parallel=2/d^3$, recovering~\eqref{eq:S-par-dip}.
+\end{remark}
+
+\subsection{Tangential dipole $\Rightarrow S_\perp$}
+
+\noindent
+Take $\p = p_\perp\,\hat{\mathbf{x}}$ at $z=d$. Differentiating the Coulomb expansion off-axis (or using the addition theorem) for $r<d$ yields
+\begin{equation}
+  \Phi_\perp^{\mathrm{app}}
+  =
+  p_\perp
+  \sum_{\ell=1}^{\infty}
+  \frac{r^{\ell}}{d^{\ell+2}}\,
+  P_\ell^1(\cos\theta)\,\cos\phi.
+  \label{eq:Phi-perp-app}
+\end{equation}
+The applied amplitudes are
+\begin{equation}
+  D_\ell
+  =
+  \frac{p_\perp}{d^{\ell+2}}
+  \label{eq:D-ell-perp}
+\end{equation}
+(no extra $(\ell+1)$ factor, unlike the radial case). For the scattered potential,
+\begin{equation}
+  \Phi_\perp^{\mathrm{sc}}
+  =
+  p_\perp
+  \sum_{\ell=1}^{\infty}
+  \frac{\alphanp^{(\ell)}}{d^{\ell+2}}\,
+  r^{-(\ell+1)}\,
+  P_\ell^1(\cos\theta)\,\cos\phi.
+  \label{eq:Phi-perp-sc}
+\end{equation}
+On the $z$-axis, $P_\ell^1$ vanishes but $\mathbf{E}_\perp$ is finite. Near $\theta=0$,
+\begin{equation}
+  P_\ell^1(\cos\theta)
+  =
+  -\sin\theta\,\frac{dP_\ell}{du}
+  \sim
+  -\theta\cdot\frac{\ell(\ell+1)}{2},
+\end{equation}
+using the standard value $(dP_\ell/du)|_{u=1}=\ell(\ell+1)/2$. Writing one multipole as $\Phi=f(r)\,P_\ell^1(\cos\theta)\cos\phi$ with $f=C\,r^{-(\ell+1)}$ and converting
+\begin{equation}
+  E_x
+  =
+  \lim_{\theta\to 0}
+  \bigl(E_\theta\cos\phi - E_\phi\sin\phi\bigr)
+\end{equation}
+gives, for each $\ell$,
+\begin{equation}
+  E_x^{(\ell)}
+  =
+  \frac{\ell(\ell+1)}{2}\,\frac{f(r)}{r}
+  =
+  \frac{\ell(\ell+1)}{2}\, C\, r^{-(\ell+2)}.
+\end{equation}
+With $C=\alphanp^{(\ell)}p_\perp/d^{\ell+2}$ and $r=d$,
+\begin{equation}
+  E_\perp^{\mathrm{refl}}
+  =
+  p_\perp
+  \sum_{\ell=1}^{\infty}
+  \frac{\ell(\ell+1)}{2}
+  \frac{\alphanp^{(\ell)}}{d^{2\ell+4}}.
+\end{equation}
+Hence
+\begin{equation}
+  S_\perp(\omega)
+  =
+  \sum_{\ell=1}^{\ell_{\max}}
+  \frac{\ell(\ell+1)}{2}
+  \frac{\alphanp^{(\ell)}(\omega)}{d^{2\ell+4}}.
+  \label{eq:S-perp-multi}
+\end{equation}
+
+\begin{remark}[$\ell=1$ truncation]
+\noindent
+$S_\perp^{(\ell=1)}=\alphanp^{(1)}/d^6=M_\perp^2\alphanp^{(1)}$ with $M_\perp=-1/d^3$, recovering~\eqref{eq:S-perp-dip}.
+\end{remark}
+
+\begin{remark}[Origin of the geometric powers]
+\noindent
+Each multipole contributes two factors of $d^{-(\ell+2)}$: one from the dipole driving the sphere, and one from the scattered multipole field returning to the molecule, giving $d^{-(2\ell+4)}$ overall. Angular structure supplies the prefactors $(\ell+1)^2$ (radial) and $\ell(\ell+1)/2$ (tangential, from $P_\ell^1$ on axis).
+\end{remark}
+
+\subsection{Numerically stable rewriting}
+
+\noindent
+Because $\alphanp^{(\ell)}\propto a^{2\ell+1}$, each term contains a power of $(a/d)^{2\ell+1}/d^3$. Explicitly,
+\begin{equation}
+  \frac{\alphanp^{(\ell)}}{d^{2\ell+4}}
+  =
+  \frac{1}{d^3}
+  \left(\frac{a}{d}\right)^{2\ell+1}
+  \frac{\epsm-\epsb}{\epsm+(\ell+1)\epsb/\ell} .
+  \label{eq:stable-term}
+\end{equation}
+
+\noindent
+Since $a/d<1$, successive terms fall as powers of $(a/d)^2$ and the series is stable even for large $\ell_{\max}$. When the gap $d-a$ is small, $a/d\to 1^-$ and many multipoles are required; increase $\ell_{\max}$ until $S$ converges.
+
+\begin{remark}[Connection to Gersten--Nitzan 1981]
+\noindent
+In the 1981 molecule--particle treatment, the same physics appears as an image enhancement factor $A$ built from multipole sums; molecular amplitudes pick up $(1-A)^{-1}$. That factor is identical to $(1-\alpham S)^{-1}$ once $A$ is identified with $\alpham S$.
+\end{remark}
+
+% ===========================================================================
+\begin{thebibliography}{9}
+\bibitem{mie}
+  G.~Mie, \emph{Ann.\ Phys.} \textbf{330}, 377 (1908).
+\bibitem{bohren}
+  C.~F.~Bohren and D.~R.~Huffman, \emph{Absorption and Scattering of Light by Small Particles} (Wiley, 1983).
+\bibitem{gn80}
+  J.~Gersten and A.~Nitzan, \emph{J.\ Chem.\ Phys.} \textbf{73}, 3023 (1980).
+\bibitem{gn81}
+  J.~Gersten and A.~Nitzan, \emph{J.\ Chem.\ Phys.} \textbf{75}, 1139 (1981).
+\bibitem{ruppin}
+  R.~Ruppin, \emph{Phys.\ Rev.\ B} \textbf{26}, 3440 (1982).
+\bibitem{jackson}
+  J.~D.~Jackson, \emph{Classical Electrodynamics}, 3rd ed.\ (Wiley, 1999).
+\bibitem{maier}
+  S.~A.~Maier, \emph{Plasmonics} (Springer, 2007).
+\bibitem{novotny}
+  L.~Novotny and B.~Hecht, \emph{Principles of Nano-Optics}, 2nd ed.\ (CUP, 2012).
+\end{thebibliography}
+
+\end{document}

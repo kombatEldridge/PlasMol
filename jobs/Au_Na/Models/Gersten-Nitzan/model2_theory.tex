@@ -1,0 +1,913 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{enumitem}
+
+\usepackage{url}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+\newcommand{\doiref}[1]{\href{https://doi.org/#1}{doi:\nolinkurl{#1}}}
+
+\title{Quasistatic Sphere and Molecular Point Dipole:\\
+\large An Analytical Model of Hybrid Absorption}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+A classical analytical model is developed for the linear optical response of a
+spherical metal nanoparticle coupled to a single molecular (or atomic)
+transition treated as a point polarizable dipole.  The nanoparticle is described
+in the quasistatic Mie limit by a frequency-dependent dielectric function
+$\varepsilon(\omega)$.  Local-field enhancement and multipolar image response
+of the sphere yield a closed-form effective molecular polarizability
+$\alpha_{\mathrm{eff}}(\omega)$ for radial (parallel) and tangential
+(perpendicular) orientations~\citep{gersten1980,gersten1981,bohren1983}.
+Absorption is obtained from $-\omega\,\operatorname{Im}\alpha_{\mathrm{eff}}(\omega)$.
+A concrete parameterization uses the Raki\'{c} Drude--Lorentz representation of
+gold~\citep{rakic1998} as implemented in the Meep material \texttt{Au}~\citep{oskooi2010},
+a non-dispersive aqueous host with refractive index $n=1.33$ ($\varepsilon_b=n^2$),
+and a single Lorentz oscillator for the sodium $D$-line transition.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Physical system}
+\label{sec:system}
+% =============================================================================
+
+Consider a sphere of radius $a$ centered at the origin, with isotropic dielectric
+function $\varepsilon(\omega)$, embedded in a homogeneous host medium of real,
+frequency-independent permittivity $\varepsilon_b$ (relative to vacuum).  A
+molecule (or atom) is modeled as a point dipole of polarizability
+$\alpha_m(\omega)$ located at distance $d>a$ from the center, so that the
+surface gap is $d-a$.  For aqueous surroundings with refractive index
+$n=1.33$ one has $\varepsilon_b=n^2\approx 1.769$; vacuum corresponds to
+$\varepsilon_b=1$.\\
+
+\noindent
+Two principal orientations are distinguished relative to the sphere--molecule
+axis $\hat{\mathbf{r}}$:
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Parallel (radial):} the molecular dipole and the driving field
+        lie along $\hat{\mathbf{r}}$.
+  \item \textbf{Perpendicular (tangential):} both lie in a plane orthogonal to
+        $\hat{\mathbf{r}}$.
+\end{itemize}
+
+\noindent
+The quasistatic approximation is adopted throughout: the sphere diameter is much
+smaller than the optical wavelength, retardation across the particle is neglected,
+and the incident field is taken as spatially uniform over the sphere~\citep{bohren1983,novotny2012}.
+For gold spheres of radius tens of nanometers in the visible, this is a controlled first
+approximation; radiative damping and retardation shift the true localized surface
+plasmon resonance (LSPR) relative to the quasistatic Fr\"{o}hlich condition derived
+below~\citep{maier2007,bohren1983}.  All multipole and local-field formulas below are written for general
+$\varepsilon_b$ and are specialized to water by setting $n=1.33$.
+
+% =============================================================================
+\section{Dielectric response of the sphere}
+\label{sec:sphere}
+% =============================================================================
+
+\subsection{Quasistatic multipole coefficients}
+
+In the quasistatic limit of Mie theory~\citep{mie1908,bohren1983}, the response of a sphere in a host of permittivity
+$\varepsilon_b$ to an external potential expandable in spherical harmonics of
+order $\ell$ is fully characterized by the multipole polarizabilities (volume form)
+\begin{equation}
+  \beta_\ell(\omega)
+  =
+  a^{2\ell+1}\,
+  \frac{\varepsilon(\omega)-\varepsilon_b}{\varepsilon(\omega)+(\ell+1)\varepsilon_b/\ell},
+  \qquad
+  \ell = 1,2,\ldots
+  \label{eq:beta}
+\end{equation}
+The electric dipole channel is
+\begin{equation}
+  \beta_1(\omega)
+  =
+  a^3\,
+  \frac{\varepsilon(\omega)-\varepsilon_b}{\varepsilon(\omega)+2\varepsilon_b}.
+  \label{eq:beta1}
+\end{equation}
+A uniform external field in the medium therefore induces a sphere dipole
+proportional to $\beta_1\mathbf{E}_{\mathrm{inc}}$ (in the present units).
+Vacuum formulas are recovered by setting $\varepsilon_b=1$.
+
+\subsection{Fr\"{o}hlich resonance}
+
+The dipole denominator vanishes (in the absence of losses) when
+\begin{equation}
+  \operatorname{Re}\varepsilon(\omega_{\mathrm{LSPR}}) = -2\,\varepsilon_b,
+  \label{eq:frohlich}
+\end{equation}
+which is the Fr\"{o}hlich condition for a sphere in a dielectric host~\citep{frohlich1958,bohren1983,maier2007}.  For
+water with $n=1.33$,
+\begin{equation}
+  \varepsilon_b = n^2 \approx 1.769
+  \qquad\Rightarrow\qquad
+  \operatorname{Re}\varepsilon(\omega_{\mathrm{LSPR}}) \approx -3.54,
+\end{equation}
+red-shifting the quasistatic LSPR relative to the vacuum condition
+$\operatorname{Re}\varepsilon=-2$.  With realistic $\operatorname{Im}\varepsilon>0$
+the resonance is a peak in $|\beta_1(\omega)|$ near that energy rather than a true
+pole on the real axis.
+
+% =============================================================================
+\section{Local field and reflected field at the molecule}
+\label{sec:fields}
+% =============================================================================
+
+\subsection{Incident-field enhancement}
+
+A uniform incident field $\mathbf{E}_{\mathrm{inc}}$ (the field far from the
+sphere in the host medium) polarizes the sphere.  On the radial axis at distance
+$d$, the total field \emph{in the absence of the molecule} is enhanced by the
+dipole term~\citep{bohren1983,novotny2012}
+\begin{align}
+  G_\parallel(\omega)
+  &=
+  1 + 2
+  \left(\frac{a}{d}\right)^3
+  \frac{\varepsilon-\varepsilon_b}{\varepsilon+2\varepsilon_b}
+  =
+  1 + 2\,\frac{\beta_1}{d^3},
+  \label{eq:Gpar} \\[0.35em]
+  G_\perp(\omega)
+  &=
+  1 -
+  \left(\frac{a}{d}\right)^3
+  \frac{\varepsilon-\varepsilon_b}{\varepsilon+2\varepsilon_b}
+  =
+  1 - \frac{\beta_1}{d^3}.
+  \label{eq:Gperp}
+\end{align}
+Near the LSPR, $|G_\parallel|$ can substantially exceed unity when $a/d$ is not
+small.
+
+\subsection{Image multipoles and self-interaction}
+
+A molecular dipole $\mathbf{p}$ induces higher multipoles in the sphere, which
+radiate a reflected field $\mathbf{E}_{\mathrm{refl}}=S\,\mathbf{p}$ back at the
+molecular site.  With polarizability volumes, the radial and tangential
+propagators admit the multipole series~\citep{gersten1980,gersten1981,ruppin1982}
+\begin{align}
+  S_\parallel(\omega)
+  &=
+  \sum_{\ell=1}^{\ell_{\max}}
+  (\ell+1)^2\,
+  \frac{\beta_\ell(\omega)}{d^{2\ell+4}},
+  \label{eq:Spar} \\[0.35em]
+  S_\perp(\omega)
+  &=
+  \sum_{\ell=1}^{\ell_{\max}}
+  \frac{\ell(\ell+1)}{2}\,
+  \frac{\beta_\ell(\omega)}{d^{2\ell+4}}.
+  \label{eq:Sperp}
+\end{align}
+Equivalently, in terms of the ratio $a/d<1$,
+\begin{equation}
+  \frac{\beta_\ell}{d^{2\ell+4}}
+  =
+  \frac{1}{d^3}
+  \left(\frac{a}{d}\right)^{2\ell+1}
+  \frac{\varepsilon-\varepsilon_b}{\varepsilon+(\ell+1)\varepsilon_b/\ell},
+\end{equation}
+so that the series is built from successive powers of $(a/d)^2$ and remains
+numerically stable even for large $\ell_{\max}$.  When the gap $d-a$ is small,
+many multipoles contribute and $\ell_{\max}$ must be increased until $S$ converges.
+
+% =============================================================================
+\section{Molecular polarizability and effective response}
+\label{sec:molecule}
+% =============================================================================
+
+\subsection{Bare molecule}
+
+The molecule is assigned an isotropic Lorentzian polarizability volume
+\begin{equation}
+  \alpha_m(\omega)
+  =
+  \alpha_0\,
+  \frac{\omega_m^2}{\omega_m^2 - \omega^2 - i\gamma_m\omega},
+  \label{eq:alpham}
+\end{equation}
+where $\omega_m$ is the transition energy, $\gamma_m$ a phenomenological
+linewidth, and $\alpha_0$ the static polarizability volume
+$\alpha_m(0)=\alpha_0$.  This is the classical point-dipole analogue of a
+two-level resonance~\citep{jackson1999,novotny2012}.
+
+\subsection{Dressed (effective) polarizability}
+\label{sec:alphaeff-deriv}
+
+We now derive the effective molecular polarizability
+\begin{equation}
+  \alpha_{\mathrm{eff}}(\omega)
+  \equiv
+  \frac{p}{E_{\mathrm{inc}}}
+  =
+  \frac{\alpha_m(\omega)\, G(\omega)}{1 - \alpha_m(\omega)\, S(\omega)}
+  \label{eq:alphaeff}
+\end{equation}
+from the classical coupled-dipole picture of Gersten and Nitzan~\citep{gersten1980},
+and then identify $G$ and $S$ for a multipolar sphere~\citep{gersten1981,bohren1983}.
+
+\paragraph{Step 1: two polarizable bodies in an external field.}
+Following Ref.~\citenum{gersten1980}, consider two classical objects in a uniform
+incident field $\mathbf{E}_{\mathrm{inc}}\equiv\mathbf{E}_0$ (the quasistatic part of the
+incident radiation).  The molecule (label 1) has polarizability $\boldsymbol{\alpha}_1=\alpha_m$
+(taken isotropic and scalar along the chosen axis for simplicity).  The second body
+(label 2)---later the nanoparticle---has polarizability $\boldsymbol{\alpha}_2$.
+Each dipole responds to the total electric field at its location:
+\begin{align}
+  \boldsymbol{\mu}_1
+  &=
+  \boldsymbol{\alpha}_1
+  \bigl(
+    \mathbf{E}_0
+    +
+    \mathbf{M}(\mathbf{d})\cdot\boldsymbol{\mu}_2
+  \bigr),
+  \label{eq:mu1} \\[0.35em]
+  \boldsymbol{\mu}_2
+  &=
+  \boldsymbol{\alpha}_2
+  \bigl(
+    \mathbf{E}_0
+    +
+    \mathbf{M}(\mathbf{d})\cdot\boldsymbol{\mu}_1
+  \bigr),
+  \label{eq:mu2}
+\end{align}
+where $\mathbf{d}$ is the vector from body~2 to body~1 and $\mathbf{M}(\mathbf{d})$ is the
+quasistatic dipole--dipole interaction tensor~\citep{jackson1999,gersten1980},
+\begin{equation}
+  \mathbf{M}(\mathbf{d})
+  =
+  \frac{3\,\hat{\mathbf{n}}\hat{\mathbf{n}}-\mathbf{I}}{d^3},
+  \qquad
+  \hat{\mathbf{n}}=\mathbf{d}/d,
+  \label{eq:Mtensor}
+\end{equation}
+valid for $d\ll\lambda$ (no retardation).  Equation~\eqref{eq:mu1} states that the
+molecular dipole feels $\mathbf{E}_0$ plus the field produced by $\boldsymbol{\mu}_2$;
+Eq.~\eqref{eq:mu2} states the converse.
+
+\paragraph{Step 2: eliminate $\boldsymbol{\mu}_2$ and define $\boldsymbol{\alpha}_{\mathrm{eff}}$.}
+Substitute~\eqref{eq:mu2} into~\eqref{eq:mu1}:
+\begin{equation}
+  \boldsymbol{\mu}_1
+  =
+  \boldsymbol{\alpha}_1
+  \Bigl[
+    \mathbf{E}_0
+    +
+    \mathbf{M}\cdot\boldsymbol{\alpha}_2\cdot\mathbf{E}_0
+    +
+    \mathbf{M}\cdot\boldsymbol{\alpha}_2\cdot\mathbf{M}\cdot\boldsymbol{\mu}_1
+  \Bigr].
+\end{equation}
+Collect terms that multiply $\boldsymbol{\mu}_1$:
+\begin{equation}
+  \boldsymbol{\mu}_1
+  -
+  \boldsymbol{\alpha}_1\cdot\mathbf{M}\cdot\boldsymbol{\alpha}_2\cdot\mathbf{M}\cdot\boldsymbol{\mu}_1
+  =
+  \boldsymbol{\alpha}_1\cdot\bigl(\mathbf{I}+\mathbf{M}\cdot\boldsymbol{\alpha}_2\bigr)\cdot\mathbf{E}_0,
+\end{equation}
+or
+\begin{equation}
+  \bigl(
+    \mathbf{I}
+    -
+    \boldsymbol{\alpha}_1\cdot\mathbf{M}\cdot\boldsymbol{\alpha}_2\cdot\mathbf{M}
+  \bigr)
+  \boldsymbol{\mu}_1
+  =
+  \boldsymbol{\alpha}_1\cdot\bigl(\mathbf{I}+\mathbf{M}\cdot\boldsymbol{\alpha}_2\bigr)\cdot\mathbf{E}_0.
+  \label{eq:mu1-lin}
+\end{equation}
+Inverting the operator on the left-hand side gives Gersten and Nitzan's effective
+polarizability of the molecule~\citep{gersten1980},
+\begin{equation}
+  \boldsymbol{\mu}_1
+  =
+  \boldsymbol{\alpha}_{\mathrm{eff}}\cdot\mathbf{E}_0,
+  \qquad
+  \boldsymbol{\alpha}_{\mathrm{eff}}
+  =
+  \bigl(
+    \mathbf{I}
+    -
+    \boldsymbol{\alpha}_1\cdot\mathbf{M}\cdot\boldsymbol{\alpha}_2\cdot\mathbf{M}
+  \bigr)^{-1}
+  \cdot
+  \boldsymbol{\alpha}_1
+  \cdot
+  \bigl(
+    \mathbf{I}
+    +
+    \mathbf{M}\cdot\boldsymbol{\alpha}_2
+  \bigr).
+  \label{eq:aeff-GN}
+\end{equation}
+Equation~\eqref{eq:aeff-GN} is their Eq.~(1.5): the molecule's response to the
+\emph{incident} field already incorporates electromagnetic coupling to body~2.
+
+\paragraph{Step 3: scalar reduction and identification of $G$ and $S$.}
+Along a principal axis (radial or tangential), $\boldsymbol{\alpha}_1$, $\boldsymbol{\alpha}_2$,
+and $\mathbf{M}$ reduce to scalars $\alpha_m$, $\alpha_2$, and $M$.  Then
+\begin{equation}
+  \alpha_{\mathrm{eff}}
+  =
+  \frac{\alpha_m\,(1+M\alpha_2)}{1-\alpha_m\,(M\alpha_2 M)}
+  =
+  \frac{\alpha_m\,(1+M\alpha_2)}{1-\alpha_m\,M^2\alpha_2}.
+  \label{eq:aeff-scalar}
+\end{equation}
+Define
+\begin{align}
+  G
+  &\equiv
+  1 + M\alpha_2,
+  \label{eq:G-def} \\[0.25em]
+  S
+  &\equiv
+  M\,\alpha_2\,M
+  =
+  M^2\alpha_2.
+  \label{eq:S-def}
+\end{align}
+Then~\eqref{eq:aeff-scalar} is exactly
+\begin{equation}
+  \alpha_{\mathrm{eff}}
+  =
+  \frac{\alpha_m\, G}{1 - \alpha_m\, S}.
+  \label{eq:aeff-GS}
+\end{equation}
+The physical content of~\eqref{eq:G-def}--\eqref{eq:S-def} is transparent:
+\begin{itemize}[leftmargin=1.4em]
+  \item $G E_0$ is the field at the molecular site \emph{when the molecule is absent}:
+        the incident field plus the field of body~2 driven by $\mathbf{E}_0$ alone
+        (the local-field or ``lightning-rod'' contribution of Ref.~\citenum{gersten1980}).
+  \item $S p$ is the additional field returned to the molecule when its own dipole
+        $p$ polarizes body~2 (the image / self-interaction contribution).
+\end{itemize}
+Gersten and Nitzan emphasize the same decomposition: local-field enhancement
+from polarizing the body in $\mathbf{E}_0$, and image enhancement from the body
+responding to the molecular dipole~\citep{gersten1980}.
+
+\paragraph{Step 4: total field at the molecule (equivalent one-site form).}
+An equivalent and convenient statement is obtained by writing the total field
+acting on the molecule as
+\begin{equation}
+  E_{\mathrm{tot}}
+  =
+  G\, E_{\mathrm{inc}}
+  +
+  S\, p,
+  \qquad
+  p
+  =
+  \alpha_m\, E_{\mathrm{tot}}.
+  \label{eq:Etot}
+\end{equation}
+(The first term is present even if $p=0$; the second is linear in $p$.)
+Eliminating $E_{\mathrm{tot}}$,
+\begin{equation}
+  p
+  =
+  \alpha_m\bigl(G E_{\mathrm{inc}} + S p\bigr)
+  =
+  \alpha_m G\, E_{\mathrm{inc}}
+  +
+  \alpha_m S\, p,
+\end{equation}
+so
+\begin{equation}
+  p - \alpha_m S\, p
+  =
+  \alpha_m G\, E_{\mathrm{inc}}
+  \qquad\Rightarrow\qquad
+  p
+  =
+  \frac{\alpha_m G}{1-\alpha_m S}\, E_{\mathrm{inc}},
+\end{equation}
+which is~\eqref{eq:alphaeff}.  Setting $S=0$ recovers the pure local-field limit
+$\alpha_{\mathrm{eff}}=\alpha_m G$ (image neglected), as discussed in
+Ref.~\citenum{gersten1980} when the inverse matrices associated with the image
+are dropped.
+
+\paragraph{Step 5: dipole tensor eigenvalues for parallel and perpendicular.}
+For a unit dipole oriented along $\hat{\mathbf{n}}=\hat{\mathbf{r}}$ (radial /
+parallel to the sphere--molecule axis),
+\begin{equation}
+  \mathbf{M}\cdot\hat{\mathbf{r}}
+  =
+  \frac{2}{d^3}\,\hat{\mathbf{r}}
+  \qquad\Rightarrow\qquad
+  M_\parallel = \frac{2}{d^3}.
+\end{equation}
+For a unit dipole tangential to the sphere (perpendicular orientation),
+\begin{equation}
+  \mathbf{M}\cdot\hat{\boldsymbol{\theta}}
+  =
+  -\frac{1}{d^3}\,\hat{\boldsymbol{\theta}}
+  \qquad\Rightarrow\qquad
+  M_\perp = -\frac{1}{d^3}.
+\end{equation}
+If body~2 is replaced by a sphere whose \emph{dipole} polarizability volume is
+$\beta_1$ from Eq.~\eqref{eq:beta1}, then~\eqref{eq:G-def}--\eqref{eq:S-def} give
+\begin{align}
+  G_\parallel
+  &=
+  1 + M_\parallel\beta_1
+  =
+  1 + 2\,\frac{\beta_1}{d^3},
+  &
+  S_\parallel^{(\ell=1)}
+  &=
+  M_\parallel^2\beta_1
+  =
+  4\,\frac{\beta_1}{d^6},
+  \label{eq:GSdip-par} \\[0.35em]
+  G_\perp
+  &=
+  1 + M_\perp\beta_1
+  =
+  1 - \frac{\beta_1}{d^3},
+  &
+  S_\perp^{(\ell=1)}
+  &=
+  M_\perp^2\beta_1
+  =
+  \frac{\beta_1}{d^6},
+  \label{eq:GSdip-perp}
+\end{align}
+which matches Eqs.~\eqref{eq:Gpar}--\eqref{eq:Gperp} for $G$ and the $\ell=1$
+truncation of the multipole series~\eqref{eq:Spar}--\eqref{eq:Sperp} for $S$
+[since $(\ell+1)^2\beta_1/d^{2\ell+4}$ at $\ell=1$ is $4\beta_1/d^6$].
+
+\paragraph{Step 6: multipolar sphere (beyond a single point polarizability).}
+A real sphere is not a pure point dipole: a molecular source at finite $d$
+excites all multipoles $\ell\ge 1$.  The field of the sphere at the molecular
+site remains linear in the molecular dipole, so one may still write
+$E_{\mathrm{refl}}=S p$, but $S$ is no longer $M^2\beta_1$.  Matching boundary
+conditions for a point dipole outside a dielectric sphere (or spheroid) yields
+the multipole series of Sec.~\ref{sec:fields},
+Eqs.~\eqref{eq:Spar}--\eqref{eq:Sperp}~\citep{gersten1981,ruppin1982,novotny2012}.
+Likewise, the field of the sphere driven by $\mathbf{E}_{\mathrm{inc}}$ alone is
+still of the form $G E_{\mathrm{inc}}$ with $G$ given by the dipole channel
+\eqref{eq:Gpar}--\eqref{eq:Gperp} for a uniform incident field.
+
+In Gersten and Nitzan's 1981 treatment of a molecule outside a small dielectric
+particle, the same physics appears as an \emph{image enhancement factor}
+$A(\parallel)$, $A(\perp)$ built from multipole sums; molecular amplitudes
+acquire factors $(1-A)^{-1}$~\citep{gersten1981}.  That factor is the same
+renormalization as $(1-\alpha_m S)^{-1}$ once $A$ is identified with
+$\alpha_m S$ in the present notation.  Thus:
+\begin{itemize}[leftmargin=1.4em]
+  \item the \emph{structure} $\alpha_{\mathrm{eff}}=\alpha_m G/(1-\alpha_m S)$
+        follows from the two-body classical electrodynamics of
+        Ref.~\citenum{gersten1980};
+  \item the \emph{explicit multipole forms} of $G$ and $S$ for a sphere (or
+        spheroid) are those of the quasistatic boundary-value problem developed
+        for molecule--particle systems in Ref.~\citenum{gersten1981}.
+\end{itemize}
+
+\paragraph{Step 7: summary of the working formula.}
+Collecting the pieces used in this model:
+\begin{enumerate}[leftmargin=1.4em]
+  \item Choose orientation $\parallel$ or $\perp$ and host permittivity
+        $\varepsilon_b$.
+  \item Compute $\beta_\ell(\omega)$ from~\eqref{eq:beta} and form
+        $G(\omega)$ and $S(\omega)$ from~\eqref{eq:Gpar}--\eqref{eq:Sperp}.
+  \item Insert the bare molecular polarizability $\alpha_m(\omega)$
+        from~\eqref{eq:alpham}.
+  \item Evaluate
+        \[
+          \alpha_{\mathrm{eff}}(\omega)
+          =
+          \frac{\alpha_m(\omega)\, G(\omega)}{1-\alpha_m(\omega)\, S(\omega)}.
+        \]
+\end{enumerate}
+The numerator enhances the drive of the molecule by the nanoparticle local field;
+the denominator shifts and reshapes the molecular resonance through image
+(self-)interaction with the sphere.  Both ingredients are required for a consistent
+classical treatment of a polarizable molecule outside a polarizable particle.
+
+% =============================================================================
+\section{Absorption spectrum}
+\label{sec:abs}
+% =============================================================================
+
+In linear response, dissipation associated with the induced dipole driven by a
+real monochromatic field is proportional to the imaginary part of the
+polarizability~\citep{jackson1999,novotny2012}.  An absorption-like lineshape consistent with the Fourier
+transform of a causal dipole response is
+\begin{equation}
+  A(\omega)
+  =
+  -\omega\,
+  \operatorname{Im}
+  \alpha_{\mathrm{eff}}(\omega).
+  \label{eq:A}
+\end{equation}
+Overall scale is fixed by $\alpha_0$ and is often removed by peak normalization,
+\begin{equation}
+  A_{\mathrm{norm}}(\omega)
+  =
+  \frac{A(\omega)}{\max_{\omega}|A(\omega)|},
+\end{equation}
+optionally after a global sign flip if the dominant extremum is negative (a
+convention that depends on Fourier phase conventions when $A$ is reconstructed
+from time-domain data).\\
+
+\noindent
+Important interpretive points:
+\begin{itemize}[leftmargin=1.4em]
+  \item $A(\omega)$ is the \emph{molecular-channel} spectrum relative to
+        $E_{\mathrm{inc}}$.  It is not the extinction of the composite particle.
+  \item Plasmonic structure enters only through $G(\omega)$ and $S(\omega)$, and
+        therefore through $\varepsilon(\omega)$.
+  \item A second peak near $\omega_{\mathrm{LSPR}}$ appears only if
+        $\operatorname{Im}(\alpha_m G)$ or the hybrid poles of
+        $1-\alpha_m S=0$ place appreciable weight there---not because nanoparticle
+        absorption is plotted directly.
+\end{itemize}
+
+% =============================================================================
+\section{Parameterization of gold: Meep material \texttt{Au}}
+\label{sec:au}
+% =============================================================================
+
+\subsection{Source and functional form}
+
+The dielectric function of the sphere is taken from the bulk gold model
+distributed as the material \texttt{Au} in the Meep electromagnetic library
+(\texttt{meep.materials.Au})~\citep{oskooi2010,meepdocs}.  That implementation follows the analytic
+Drude--Lorentz fit of Raki\'{c} \emph{et al.}~\citep{rakic1998} to tabulated optical constants of
+gold over a broad infrared--ultraviolet window.\\
+
+\noindent
+In frequency units where susceptibilities are written with energies $E=\hbar\omega$
+in electronvolts, Meep's Lorentzian and Drude poles~\citep{oskooi2010} reduce to
+\begin{align}
+  \chi_{\mathrm{L}}(E)
+  &=
+  \frac{\mathcal{A}}{E_0^2 - E^2 - i\Gamma E},
+  \label{eq:chiL} \\[0.35em]
+  \chi_{\mathrm{D}}(E)
+  &=
+  \frac{\mathcal{A}}{-E^2 - i\Gamma E},
+  \label{eq:chiD}
+\end{align}
+with amplitude $\mathcal{A}=\sigma E_0^2$ related to Meep's dimensionless
+oscillator strength $\sigma$ and pole energy $E_0$.  The full permittivity is
+\begin{equation}
+  \varepsilon(E)
+  =
+  \varepsilon_\infty
+  +
+  \chi_{\mathrm{D}}(E)
+  +
+  \sum_{j=1}^{N_{\mathrm{L}}}
+  \chi_{\mathrm{L},j}(E).
+  \label{eq:eps-au}
+\end{equation}
+
+\subsection{Raki\'{c} parameters for \texttt{Au}}
+
+For \texttt{Au} one has $\varepsilon_\infty=1$ and a plasma energy
+$\hbar\omega_p=9.03\,\mathrm{eV}$.  The Drude weight is set by the free-electron
+oscillator strength $f_0=0.760$ and damping $\Gamma_0=0.053\,\mathrm{eV}$,
+\begin{equation}
+  \mathcal{A}_{\mathrm{D}}
+  =
+  f_0\,(\hbar\omega_p)^2
+  =
+  0.760\times(9.03\,\mathrm{eV})^2,
+\end{equation}
+as tabulated by Raki\'{c} \emph{et al.}~\citep{rakic1998}.
+Five Lorentzian interband (and multi-electron) terms complete the fit.  In the
+Raki\'{c} parameterization each Lorentzian carries strength $f_j$ at energy
+$E_j$ with damping $\Gamma_j$, and
+\begin{equation}
+  \mathcal{A}_j = f_j\,(\hbar\omega_p)^2,
+\end{equation}
+which is equivalent to Meep's $\sigma_j=f_j\omega_p^2/E_j^2$ after conversion of
+units.
+\begin{center}
+\begin{tabular}{@{}clccc@{}}
+\toprule
+$j$ & Type & $E_j$ (eV) & $\Gamma_j$ (eV) & $f_j$ \\
+\midrule
+0 & Drude   & ---   & $0.053$ & $0.760$ \\
+1 & Lorentz & $0.415$ & $0.241$ & $0.024$ \\
+2 & Lorentz & $0.830$ & $0.345$ & $0.010$ \\
+3 & Lorentz & $2.969$ & $0.870$ & $0.071$ \\
+4 & Lorentz & $4.304$ & $2.494$ & $0.601$ \\
+5 & Lorentz & $13.32$ & $2.214$ & $4.384$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+These values are those encoded in Meep's \texttt{Au} material following
+Ref.~\citenum{rakic1998}.  The stated validity range of the fit spans roughly
+$0.25$--$6.2\,\mu\mathrm{m}$~\citep{rakic1998}.
+
+\subsection{Consequences for the sphere resonance}
+
+With this $\varepsilon(E)$, the quasistatic Fr\"{o}hlich energy defined by
+$\operatorname{Re}\varepsilon(E)=-2\varepsilon_b$ depends on the host~\citep{bohren1983,maier2007}.  In vacuum
+($\varepsilon_b=1$) one finds
+\begin{equation}
+  E_{\mathrm{LSPR}}^{\mathrm{(qs,vac)}}
+  \approx
+  2.60\,\mathrm{eV},
+\end{equation}
+whereas in water ($n=1.33$, $\varepsilon_b\approx 1.769$, target
+$\operatorname{Re}\varepsilon\approx-3.54$)
+\begin{equation}
+  E_{\mathrm{LSPR}}^{\mathrm{(qs,water)}}
+  \approx
+  2.42\,\mathrm{eV}.
+\end{equation}
+Finite-size retardation and radiative damping further shift the extinction peak
+of a real nanoparticle relative to these bulk quasistatic estimates~\citep{bohren1983,maier2007}.  Within the
+present model, plasmonic structure in $G$ and $S$ is locked to
+Eqs.~\eqref{eq:eps-au}--\eqref{eq:frohlich} with the table above and the chosen
+$\varepsilon_b$.
+
+\subsection{Unit conversion from Meep frequencies}
+
+Meep stores pole frequencies $f$ in units of $c/(1\,\mu\mathrm{m})$ when the
+characteristic length scale is one micrometre~\citep{oskooi2010,meepdocs}.  Conversion to electronvolts uses
+\begin{equation}
+  E[\mathrm{eV}]
+  =
+  \frac{f}{\eta},
+  \qquad
+  \eta
+  =
+  \frac{1}{1.23984193}\,\mu\mathrm{m}^{-1}\,\mathrm{eV}^{-1}.
+\end{equation}
+After this conversion, Eqs.~\eqref{eq:chiL}--\eqref{eq:chiD} are free of
+explicit $2\pi$ factors because Meep's angular-frequency convention cancels
+between numerator and denominator of each susceptibility.
+
+% =============================================================================
+\section{Parameterization of sodium}
+\label{sec:na}
+% =============================================================================
+
+\subsection{Physical transition}
+
+Atomic sodium is treated as a single effective optical transition corresponding
+to the $D$ lines ($3s\to 3p$), represented by the Lorentz oscillator
+\eqref{eq:alpham}.  The sodium $D_1$ and $D_2$ resonances lie near
+$589.6\,\mathrm{nm}$ and $589.0\,\mathrm{nm}$~\citep{nistasd}, often combined into one
+effective optical peak in reduced models.  In the model the three scalar parameters are:
+\begin{itemize}[leftmargin=1.4em]
+  \item $\omega_m$ --- resonance energy of the absorption peak of the isolated
+        atom (or of the chosen electronic-structure calculation for Na);
+  \item $\gamma_m$ --- phenomenological damping (lifetime, dephasing, and any
+        artificial broadening);
+  \item $\alpha_0$ --- static polarizability volume fixing the integrated
+        oscillator strength of the classical dipole.
+\end{itemize}
+
+\subsection{Typical values}
+
+A representative optical resonance energy for Na in the visible is of order
+\begin{equation}
+  \omega_m \sim 2.1\,\mathrm{eV},
+\end{equation}
+consistent with the sodium $D$ lines near $589\,\mathrm{nm}$
+($2.104\,\mathrm{eV}$) when a single effective peak is retained~\citep{nistasd}.  The natural
+radiative linewidth is far smaller than typical condensed-phase or numerical
+broadenings; $\gamma_m$ is therefore an effective parameter (often
+$10^{-2}$--$10^{-1}\,\mathrm{eV}$ in reduced models).\\
+
+\noindent
+The static electric dipole polarizability of atomic sodium is known accurately
+from theory and experiment~\citep{ekstrom1995,mitroy2010},
+\begin{equation}
+  \alpha_{\mathrm{Na}}(0)
+  \approx
+  24.1\,\text{\AA}^3
+  =
+  0.0241\,\mathrm{nm}^3.
+\end{equation}
+In Eq.~\eqref{eq:alpham} one may set $\alpha_0$ to this value if the Lorentzian
+is understood as carrying the full static polarizability, or treat $\alpha_0$ as
+an effective resonant weight when only the optical $D$-line contribution is of
+interest.  Increasing $\alpha_0$ strengthens both the bare absorption and the
+back-action factor $\alpha_m S$ near the sphere.
+
+\subsection{Coupling geometry}
+
+With Na represented as a point dipole, the only geometric parameters entering
+the hybrid response are $(a,d)$ and the orientation.  No internal structure of
+the atom (orbital shape, multipolar transition density) is retained beyond
+$\alpha_m(\omega)$.  The model is therefore appropriate when the surface gap is
+large compared with the atomic size, and becomes increasingly schematic for
+sub-nanometre gaps where nonlocal response of the metal and finite orbital
+extent matter~\citep{ciraci2012,zhu2016}.
+
+% =============================================================================
+\section{Summary of the closed-form model}
+\label{sec:summary}
+% =============================================================================
+
+Given $\varepsilon(\omega)$ for gold (Sec.~\ref{sec:au}), host index
+$n$ (hence $\varepsilon_b=n^2$; default $n=1.33$), molecular parameters
+$(\omega_m,\gamma_m,\alpha_0)$ for sodium (Sec.~\ref{sec:na}), geometry
+$(a,d)$, and orientation, the absorption spectrum is obtained as follows:
+\begin{enumerate}[leftmargin=1.4em]
+  \item Evaluate $\varepsilon(\omega)$ from the Raki\'{c}/\texttt{Au}
+        Drude--Lorentz expansion~\citep{rakic1998,oskooi2010}.
+  \item Form $\beta_\ell(\omega)$ from Eq.~\eqref{eq:beta} with the host
+        $\varepsilon_b$~\citep{bohren1983}.
+  \item Compute $G(\omega)$ and $S(\omega)$ from
+        Eqs.~\eqref{eq:Gpar}--\eqref{eq:Sperp}~\citep{gersten1980,gersten1981}.
+  \item Form $\alpha_m(\omega)$ from Eq.~\eqref{eq:alpham}.
+  \item Construct $\alpha_{\mathrm{eff}}(\omega)$ from
+        Eq.~\eqref{eq:alphaeff}~\citep{gersten1980}.
+  \item Evaluate $A(\omega)=-\omega\,\operatorname{Im}\alpha_{\mathrm{eff}}(\omega)$.
+\end{enumerate}
+
+\noindent
+All steps are algebraic once $\varepsilon(\omega)$ is known; the only numerical
+tasks are evaluation on a frequency grid and truncation of the multipole sum at
+convergent $\ell_{\max}$.
+
+% =============================================================================
+\section{Limitations}
+\label{sec:limits}
+% =============================================================================
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Quasistatic sphere.}
+        Retardation, radiative damping, and higher Mie coefficients of the
+        driven sphere are omitted~\citep{bohren1983,maier2007}.  Extinction peaks of finite spheres therefore
+        need not coincide with the Fr\"{o}hlich energy
+        $\operatorname{Re}\varepsilon=-2\varepsilon_b$.
+  \item \textbf{Non-dispersive host.}
+        Water is treated as a real constant $n=1.33$.  Dispersion and absorption
+        of the solvent are neglected.
+  \item \textbf{Local bulk dielectric.}
+        Electron spill-out, nonlocality, and surface scattering in the metal are
+        absent from Raki\'{c} bulk $\varepsilon(\omega)$~\citep{rakic1998,ciraci2012}.
+  \item \textbf{Point molecule.}
+        Finite orbital size and multipolar transitions of Na are neglected.
+  \item \textbf{Linear classical response.}
+        No saturation, quantum strong-coupling corrections beyond classical
+        hybridization through $S$, or non-Markovian metal continuum beyond the
+        fitted poles~\citep{torma2015}.
+  \item \textbf{Single Na oscillator.}
+        Additional electronic transitions of sodium or a molecule are omitted
+        unless extra Lorentzians are added to $\alpha_m$.
+\end{itemize}
+
+% =============================================================================
+\begin{thebibliography}{99}
+
+\bibitem{mie1908}
+G.~Mie,
+``Beitr\"{a}ge zur Optik tr\"{u}ber Medien, speziell kolloidaler Metall\"{o}sungen,''
+\emph{Ann.\ Phys.} \textbf{330}, 377--445 (1908).
+\doiref{10.1002/andp.19083300302}.
+
+\bibitem{frohlich1958}
+H.~Fr\"{o}hlich,
+\emph{Theory of Dielectrics},
+2nd~ed.\ (Oxford University Press, Oxford, 1958).
+% No DOI for this edition; catalog record often listed under ISBN~978-0-19-851379-7.
+
+\bibitem{bohren1983}
+C.~F.~Bohren and D.~R.~Huffman,
+\emph{Absorption and Scattering of Light by Small Particles}
+(Wiley, New York, 1983).
+\doiref{10.1002/9783527618156}.
+
+\bibitem{gersten1980}
+J.~Gersten and A.~Nitzan,
+``Electromagnetic theory of enhanced Raman scattering by molecules adsorbed on
+rough surfaces,''
+\emph{J.\ Chem.\ Phys.} \textbf{73}, 3023--3037 (1980).
+\doiref{10.1063/1.440560}.
+
+\bibitem{gersten1981}
+J.~Gersten and A.~Nitzan,
+``Spectroscopic properties of molecules interacting with small dielectric
+particles,''
+\emph{J.\ Chem.\ Phys.} \textbf{75}, 1139--1152 (1981).
+\doiref{10.1063/1.442161}.
+
+\bibitem{ruppin1982}
+R.~Ruppin,
+``Optical properties of small metal spheres,''
+\emph{Phys.\ Rev.\ B} \textbf{26}, 3440--3444 (1982).
+\doiref{10.1103/PhysRevB.26.3440}.
+
+\bibitem{jackson1999}
+J.~D.~Jackson,
+\emph{Classical Electrodynamics},
+3rd~ed.\ (Wiley, New York, 1999).
+% No DOI for this edition; ISBN~978-0-471-30932-1.
+
+\bibitem{maier2007}
+S.~A.~Maier,
+\emph{Plasmonics: Fundamentals and Applications}
+(Springer, New York, 2007).
+\doiref{10.1007/0-387-37825-1}.
+
+\bibitem{novotny2012}
+L.~Novotny and B.~Hecht,
+\emph{Principles of Nano-Optics},
+2nd~ed.\ (Cambridge University Press, Cambridge, 2012).
+\doiref{10.1017/CBO9780511794193}.
+
+\bibitem{rakic1998}
+A.~D.~Raki\'{c}, A.~B.~Djuri\v{s}i\'{c}, J.~M.~Elazar, and M.~L.~Majer,
+``Optical properties of metallic films for vertical-cavity optoelectronic
+devices,''
+\emph{Appl.\ Opt.} \textbf{37}, 5271--5283 (1998).
+\doiref{10.1364/AO.37.005271}.
+
+\bibitem{oskooi2010}
+A.~F.~Oskooi, D.~Roundy, M.~Ibanescu, P.~Bermel, J.~D.~Joannopoulos, and
+S.~G.~Johnson,
+``{MEEP}: A flexible free-software package for electromagnetic simulations by
+the {FDTD} method,''
+\emph{Comput.\ Phys.\ Commun.} \textbf{181}, 687--702 (2010).
+\doiref{10.1016/j.cpc.2009.11.008}.
+
+\bibitem{meepdocs}
+A.~F.~Oskooi, D.~Roundy, M.~Ibanescu, P.~Bermel, J.~D.~Joannopoulos, and
+S.~G.~Johnson,
+``{MEEP}: A flexible free-software package for electromagnetic simulations by
+the {FDTD} method,''
+\emph{Comput.\ Phys.\ Commun.} \textbf{181}, 687--702 (2010);
+materials library documentation at \url{https://meep.readthedocs.io/}.
+\doiref{10.1016/j.cpc.2009.11.008}.
+
+\bibitem{nistasd}
+A.~Kramida, Yu.~Ralchenko, J.~Reader, and {NIST ASD Team},
+\emph{{NIST} Atomic Spectra Database} (ver.\ 5.x),
+National Institute of Standards and Technology, Gaithersburg, MD.
+\doiref{10.18434/T4W30F}.
+
+\bibitem{ekstrom1995}
+C.~R.~Ekstrom, J.~Schmiedmayer, M.~S.~Chapman, T.~D.~Hammond, and D.~E.~Pritchard,
+``Measurement of the electric polarizability of sodium with an atom interferometer,''
+\emph{Phys.\ Rev.\ A} \textbf{51}, 3883--3888 (1995).
+\doiref{10.1103/PhysRevA.51.3883}.
+
+\bibitem{mitroy2010}
+J.~Mitroy, M.~S.~Safronova, and C.~W.~Clark,
+``Theory and applications of atomic and ionic polarizabilities,''
+\emph{J.\ Phys.\ B: At.\ Mol.\ Opt.\ Phys.} \textbf{43}, 202001 (2010).
+\doiref{10.1088/0953-4075/43/20/202001}.
+
+\bibitem{ciraci2012}
+C.~Cirac\`{i}, R.~T.~Hill, J.~J.~Mock, Y.~Urzhumov, A.~I.~Fern\'{a}ndez-Dom\'{i}nguez,
+S.~A.~Maier, J.~B.~Pendry, A.~Chilkoti, and D.~R.~Smith,
+``Probing the ultimate limits of plasmonic enhancement,''
+\emph{Science} \textbf{337}, 1072--1074 (2012).
+\doiref{10.1126/science.1224823}.
+
+\bibitem{zhu2016}
+W.~Zhu, R.~Esteban, A.~G.~Borisov, J.~J.~Baumberg, P.~Nordlander, H.~J.~Lezec,
+J.~Aizpurua, and K.~B.~Crozier,
+``Quantum mechanical effects in plasmonic structures with subnanometre gaps,''
+\emph{Nat.\ Commun.} \textbf{7}, 11495 (2016).
+\doiref{10.1038/ncomms11495}.
+
+\bibitem{torma2015}
+P.~T\"{o}rm\"{a} and W.~L.~Barnes,
+``Strong coupling between surface plasmon polaritons and emitters: a review,''
+\emph{Rep.\ Prog.\ Phys.} \textbf{78}, 013901 (2015).
+\doiref{10.1088/0034-4885/78/1/013901}.
+
+\end{thebibliography}
+
+\end{document}

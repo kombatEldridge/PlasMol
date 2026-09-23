@@ -1,0 +1,63 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 10000,
+    "driver": "absorption"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.04, 0, 0],
+      "size": [0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.291666667,
+        "fwidth": 2.083333335
+      }
+    },
+    "molecule": {
+      "position": [0.02645, 0, 0]
+    }
+  },
+  "molecule": {
+    "geometry": "Na.xyz",
+    "geometry_units": "bohr",
+    "charge": 0,
+    "spin": 1,
+    "basis": "631g*",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": 0.339181,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "cap": {
+      "type": "static",
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": 0.023007,
+      "clamp": 100
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png"
+  },
+  "additional_parameters": {
+    "absorption": {
+      "spectrum_filepath": "spectrum.png",
+      "min_ev": 1.5,
+      "max_ev": 5.0,
+      "absorption_use_existing_e_field_ref": true,
+      "field_e_ref_filepath": "field_e_ref.csv"
+    }
+  }
+}

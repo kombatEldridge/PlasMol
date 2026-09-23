@@ -1,0 +1,36 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 5000,
+    "driver": "np_abs_cross_sec"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "symmetries": ["Y", 1, "Z", -1]
+    },
+    "source": {
+      "type": "gaussian",
+      "center": [-0.05, 0, 0],
+      "size": [0, 0.2, 0.2],
+      "component": "z",
+      "is_integrated": true,
+      "additional_parameters": {
+        "frequency": 2.291666667,
+        "fwidth": 2.083333335
+      }
+    },
+    "nanoparticle": {
+      "material": "Au",
+      "radius": 0.025,
+      "center": [0, 0, 0]
+    }
+  },
+  "additional_parameters": {
+    "n_flux_freqs": 50,
+    "decay_stop": true,
+    "decay_threshold": 1e-06,
+    "line_fit": true
+  }
+}

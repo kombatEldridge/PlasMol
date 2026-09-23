@@ -1,0 +1,12 @@
+START nwchem pid=14759
+START cart pid=14760
+START grid5 pid=14761
+START hf20 pid=14762
+START rk4 pid=14763
+DONE rk4 rc=0
+START grid7 pid=29554
+DONE hf20 rc=0
+START hf30 pid=88317
+DONE nwchem rc=0
+DONE cart rc=0
+START dt025 pid=96543

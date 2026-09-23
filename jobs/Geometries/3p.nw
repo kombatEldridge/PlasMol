@@ -1,0 +1,45 @@
+echo
+
+title "3-Pentanone (diethyl ketone) - Geometry Optimization"
+
+start 3p_opt
+
+geometry units angstroms print xyz noautoz
+  C     2.15429  -0.44703  -0.47163
+  C     1.38716   0.69015   0.17219
+  C    -0.07259   0.66032  -0.23147
+  O    -0.48314   1.35994  -1.15731
+  C    -0.97453  -0.28849   0.53932
+  C    -2.42675  -0.19226   0.10688
+  H     2.06392  -0.41337  -1.56242
+  H     1.77833  -1.41909  -0.13709
+  H     3.21571  -0.38575  -0.21266
+  H     1.45846   0.64343   1.26374
+  H     1.80907   1.65343  -0.13541
+  H    -0.89662  -0.04499   1.60405
+  H    -0.61536  -1.31082   0.38597
+  H    -3.04478  -0.88115   0.69086
+  H    -2.53936  -0.44615  -0.95235
+  H    -2.81380   0.82182   0.25161
+end
+
+basis
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  iterations 100
+  convergence energy 1e-7
+end
+
+driver
+  maxiter 200
+  gmax 0.0005
+  grms 0.0003
+  xmax 0.0010
+  xrms 0.0007
+end
+
+task dft optimize

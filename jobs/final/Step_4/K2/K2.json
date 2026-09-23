@@ -1,0 +1,54 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 4000,
+    "driver": {
+      "name": "absorption",
+      "polarization": "full",
+      "spectrum_filepath": "spectrum_K2.png",
+      "npz_filepath": "absorption_K2.npz",
+      "observables": ["cross_section"],
+      "min_ev": 1.5,
+      "max_ev": 15.0,
+      "gamma": 0.01
+    }
+  },
+  "molecule": {
+    "geometry": "../../Step_1/transthioindigo.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-311G*",
+    "basis_coords": "cartesian",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": 0.34272,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "source": {
+      "type": "kick",
+      "intensity": 0.001,
+      "peak_time": 0.0,
+      "width_steps": 1
+    },
+    "cap": {
+      "type": "static",
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": 0.003028,
+      "clamp": 100
+    }
+  },
+  "files": {
+    "checkpoint": {
+      "frequency_steps": 400,
+      "filepath": "checkpoint_K2.npz"
+    },
+    "field_e_filepath": "field_e_K2.csv",
+    "field_p_filepath": "field_p_K2.csv",
+    "spectra_e_vs_p_filepath": "fields_K2.png"
+  }
+}

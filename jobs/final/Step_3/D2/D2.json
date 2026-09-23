@@ -1,0 +1,46 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 400.0,
+    "driver": "quantum"
+  },
+  "molecule": {
+    "geometry": "../../Step_1/transthioindigo.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-311G*",
+    "basis_coords": "cartesian",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": 0.34272,
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "cap": {
+      "type": "static",
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": 0.003028,
+      "clamp": 100
+    },
+    "core_hole": {
+      "mo_removal_index_dict": {
+        "0": 2
+      },
+      "mo_occ_filepath": "mo_occ.csv",
+      "watch_indices": [74, 75, 76]
+    }
+  },
+  "files": {
+    "checkpoint": {
+      "frequency_steps": 400,
+      "filepath": "checkpoint_D2.npz"
+    },
+    "field_e_filepath": "field_e_D2.csv",
+    "field_p_filepath": "field_p_D2.csv",
+    "spectra_e_vs_p_filepath": "fields_D2.png"
+  }
+}

@@ -1,0 +1,60 @@
+INFO: Adjusted dt from 0.1 to 0.10007255400844287 au to match Meep's actual timestep (resolution=689 pixels/μm, courant=0.5).
+INFO: Adjusted t_end from 10000 to 10007.255400844286 au to preserve 100000 timesteps.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.339181 was provided. Using the given value will override the default.
+WARNING: Fourier runs with plasmon settings was not given a nanoparticle.
+INFO:  === FOURIER SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.10007255400844287 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 10007.255400844286 au (roughly 242.06393 fs).
+INFO: Running 3 directional plasmol simulations in parallel...
+INFO: [x-dir] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [x-dir] Meep simulation started.
+WARNING: [x-dir] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [z-dir] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [z-dir] Meep simulation started.
+WARNING: [z-dir] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [y-dir] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [y-dir] Meep simulation started.
+WARNING: [y-dir] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [x-dir] Simulation progress: 0% done (0/100000 steps || 0.0/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 0% done (0/100000 steps || 0.0/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 0% done (0/100000 steps || 0.0/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 10% done (10000/100000 steps || 1000.725540084/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 10% done (10000/100000 steps || 1000.725540084/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 10% done (10000/100000 steps || 1000.725540084/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 20% done (20000/100000 steps || 2001.451080169/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 20% done (20000/100000 steps || 2001.451080169/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 30% done (30000/100000 steps || 3002.176620253/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 20% done (20000/100000 steps || 2001.451080169/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 40% done (40000/100000 steps || 4002.902160338/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 30% done (30000/100000 steps || 3002.176620253/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 30% done (30000/100000 steps || 3002.176620253/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 50% done (50000/100000 steps || 5003.627700422/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 40% done (40000/100000 steps || 4002.902160338/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 40% done (40000/100000 steps || 4002.902160338/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 60% done (60000/100000 steps || 6004.353240507/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 50% done (50000/100000 steps || 5003.627700422/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 50% done (50000/100000 steps || 5003.627700422/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 70% done (70000/100000 steps || 7005.078780591/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 60% done (60000/100000 steps || 6004.353240507/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 80% done (80000/100000 steps || 8005.804320675/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 60% done (60000/100000 steps || 6004.353240507/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 70% done (70000/100000 steps || 7005.078780591/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 90% done (90000/100000 steps || 9006.52986076/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 70% done (70000/100000 steps || 7005.078780591/10007.255400844286 au)
+INFO: [x-dir] Simulation progress: 100% done (100000/100000 steps || 10007.255400844/10007.255400844286 au)
+INFO: [x-dir] Simulation completed successfully!
+INFO: [x-dir] Matplotlib image written: x_dir/output.png
+INFO: [x-dir] Simulation completed successfully.
+INFO: [y-dir] Simulation progress: 80% done (80000/100000 steps || 8005.804320675/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 80% done (80000/100000 steps || 8005.804320675/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 90% done (90000/100000 steps || 9006.52986076/10007.255400844286 au)
+INFO: [z-dir] Simulation progress: 90% done (90000/100000 steps || 9006.52986076/10007.255400844286 au)
+INFO: [y-dir] Simulation progress: 100% done (100000/100000 steps || 10007.255400844/10007.255400844286 au)
+INFO: [y-dir] Simulation completed successfully!
+INFO: [y-dir] Matplotlib image written: y_dir/output.png
+INFO: [y-dir] Simulation completed successfully.
+INFO: [z-dir] Simulation progress: 100% done (100000/100000 steps || 10007.255400844/10007.255400844286 au)
+INFO: [z-dir] Simulation completed successfully!
+INFO: [z-dir] Matplotlib image written: z_dir/output.png
+INFO: [z-dir] Simulation completed successfully.

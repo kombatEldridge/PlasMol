@@ -1,0 +1,65 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO:  === CORE-HOLE SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: Loading propagator state from checkpoint: checkpoint.npz
+INFO: Loaded checkpoint state at t=120.0 au.
+INFO: ===== Resuming simulation from checkpoint 'checkpoint.npz' =====
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 206.7 au (roughly 4.99983 fs).
+INFO: Checkpointing enabled.
+INFO: Will write a snapshot every 20 au (every 400 time steps) to checkpoint_new.npz.
+INFO: A final archive is written to final-checkpoint_new.npz at the end of the run.
+INFO: Checkpoint archive keys:
+INFO:   C_orth_ndt                step-propagator orthonormal C
+INFO:   C_orth_ndt_x              step-propagator orthonormal C
+INFO:   C_orth_ndt_y              step-propagator orthonormal C
+INFO:   C_orth_ndt_z              step-propagator orthonormal C
+INFO:   D_ao_0                    AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_x                  AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_y                  AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_z                  AO density at t=0 (or current snapshot)
+INFO:   F_orth_n12dt              magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_x            magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_y            magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_z            magnus2 Fock at n+1/2
+INFO:   checkpoint_time           simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_x         simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_y         simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_z         simulation time of this snapshot (a.u.)
+INFO:   core_hole_mo_occ_content  embedded core-hole MO occupation CSV bytes
+INFO:   field_e_content           embedded field_e.csv bytes
+INFO:   field_e_x_content         embedded file bytes
+INFO:   field_e_y_content         embedded file bytes
+INFO:   field_e_z_content         embedded file bytes
+INFO:   field_p_content           embedded field_p.csv bytes
+INFO:   field_p_x_content         embedded file bytes
+INFO:   field_p_y_content         embedded file bytes
+INFO:   field_p_z_content         embedded file bytes
+INFO:   input_file_content        raw input JSON bytes
+INFO:   input_file_path           path of the input JSON used for this run
+INFO:   is_absorption             True if directional absorption checkpoint
+INFO:   is_open_shell             True if UKS (spin ≠ 0)
+INFO:   mo_coeff                  MO coefficients
+INFO:   mo_coeff_x                MO coefficients
+INFO:   mo_coeff_y                MO coefficients
+INFO:   mo_coeff_z                MO coefficients
+INFO:   params_dict               pickled PARAMS.__dict__ at save time
+INFO:   updated_after_init        True after the first propagator state write
+INFO:   xyz_content               raw xyz / geometry bytes
+INFO:   xyz_file_path             geometry filename, if any
+INFO: Unpack a snapshot with:
+INFO:   d = np.load('checkpoint_new.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 60% done (2480/4134 steps || 124.00/206.70 au)
+INFO: Checkpoint updated: t=140 au -> checkpoint_new.npz
+INFO: Simulation progress: 70% done (2894/4134 steps || 144.70/206.70 au)
+INFO: Checkpoint updated: t=160 au -> checkpoint_new.npz
+INFO: Simulation progress: 80% done (3307/4134 steps || 165.35/206.70 au)
+INFO: Checkpoint updated: t=180 au -> checkpoint_new.npz
+INFO: Simulation progress: 90% done (3721/4134 steps || 186.05/206.70 au)
+INFO: Checkpoint updated: t=200 au -> checkpoint_new.npz
+INFO: Simulation progress: 100% done (4134/4134 steps || 206.70/206.70 au)
+INFO: Checkpoint written: t=206.65 au -> final-checkpoint_new.npz
+INFO: Matplotlib image written: output.png
+INFO: Matplotlib image written: mo_occ.png

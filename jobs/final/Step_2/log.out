@@ -1,0 +1,27 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.34272 was provided. Using the given value will override the default.
+INFO: Core-hole MO contribution survey: will report atom contributions for MOs [0, 1, 2, 3, 4, 5] and exit before propagation.
+INFO:  === CORE-HOLE MO SURVEY CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 1.0 au (roughly 0.02419 fs).
+INFO: === MO 1 (index 0) contributions ===
+INFO: Atom          Contribution (%)
+INFO: S              99.33%
+INFO: === MO 2 (index 1) contributions ===
+INFO: Atom          Contribution (%)
+INFO: S              99.33%
+INFO: === MO 3 (index 2) contributions ===
+INFO: Atom          Contribution (%)
+INFO: O              99.20%
+INFO: === MO 4 (index 3) contributions ===
+INFO: Atom          Contribution (%)
+INFO: O              99.20%
+INFO: === MO 5 (index 4) contributions ===
+INFO: Atom          Contribution (%)
+INFO: C              99.05%
+INFO: === MO 6 (index 5) contributions ===
+INFO: Atom          Contribution (%)
+INFO: C              99.05%
+INFO: Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_2/mo_survey.txt
+INFO: Core-hole MO contribution survey complete; exiting before propagation.

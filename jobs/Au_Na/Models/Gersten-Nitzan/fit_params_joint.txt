@@ -1,0 +1,36 @@
+Model 2 joint fit → PlasMol parallel_abs + perp_abs
+Geometry fixed from Na.json: a=25 nm, d=26.451 nm (gap=1.451 nm)
+Objective: mean peak-normalized MSE over both orientations
+
+=== RECOMMENDED (best avg MSE) ===
+material            = Au_JC_visible
+n_host              = 1.33
+eps_b               = 1.768900
+include_back_action = True
+a_nm                = 25.0
+d_nm                = 26.451
+l_max               = 25
+omega_m_eV          = 2.054920
+gamma_m_eV          = 0.076360
+alpha0_nm3          = 0.42546
+Frohlich_LSPR_eV    = 2.439111
+avg_MSE             = 0.000961
+  parallel: MSE=0.000330, peak_model=2.0160, peak_PlasMol=2.0331
+  perpendicular: MSE=0.001592, peak_model=2.0331, peak_PlasMol=2.0331
+
+=== Runner-up matching PlasMol material key Au (Rakić) ===
+material=Au, n_host=1.33, ba=True, omega_m=2.061900, gamma_m=0.079100, alpha0=0.4717, avg_MSE=0.000974
+
+=== All fixed-geometry candidates ===
+best_overall     Au_JC_visible   n=1.33 ba=True ωm=2.0549 γm=0.0764 α0=0.4255 MSE_par=0.00033 MSE_perp=0.00159 avg=0.00096
+job_Au_best      Au              n=1.33 ba=True ωm=2.0619 γm=0.0791 α0=0.4717 MSE_par=0.00016 MSE_perp=0.00179 avg=0.00097
+Au_JC_S0         Au_JC_visible   n=1.33 ba=False ωm=2.0360 γm=0.0794 α0=0.05 MSE_par=0.00078 MSE_perp=0.00192 avg=0.00135
+Au_S0            Au              n=1.33 ba=False ωm=2.0399 γm=0.0836 α0=0.05 MSE_par=0.00074 MSE_perp=0.00222 avg=0.00148
+Au_vac_ba        Au              n=1.00 ba=True ωm=2.0765 γm=0.0673 α0=0.8428 MSE_par=0.00105 MSE_perp=0.00380 avg=0.00242
+defaults         Au              n=1.33 ba=True ωm=2.1090 γm=0.0800 α0=0.05 MSE_par=0.01776 MSE_perp=0.01269 avg=0.01522
+
+Notes:
+- PlasMol jobs use material "Au" and vacuum reference fields; n_host=1.33 still fits better
+  because it red-shifts the quasistatic LSPR and improves hybrid lineshape vs DFT/Meep data.
+- Back-action (αm S) helps slightly; α0 ~ 0.4 nm³ is an effective classical polarizability volume.
+- Free-gap optimization wanted gap→0.5 nm (bound); rejected as inconsistent with job geometry.

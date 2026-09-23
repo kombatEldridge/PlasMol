@@ -1,0 +1,302 @@
+#INFO: **** input file is /Users/brinton/Downloads/repos/PlasMol/jobs/Geometries/lr_tddft_thioindigo.py ****
+# Linear-response TDDFT for neutral trans-thioindigo.
+# Geometry is the PBE0/6-311G* structure in transthioindigo.xyz.
+# The excitation is the campaign functional, not the geometry functional:
+# LC-ωPBE, μ = 0.34272, Cartesian 6-311G*, same as Step_5.
+#
+#   conda activate meep
+#   python lr_tddft_thioindigo.py
+
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from pyscf import dft, gto
+
+HERE = Path(__file__).resolve().parent
+GEOM = HERE / "transthioindigo.xyz"
+NSTATES = 30
+HA_TO_EV = 27.211386
+# Same half-width on every root. Not the real-time Fourier gamma.
+HWHM_EV = 0.15
+WINDOW_EV = (1.5, 6.0)
+# Benzene solution maximum, not the gas-phase root this calculation produces.
+EXPT_EV = 1239.84193 / 543.0
+
+
+def load_geometry(path):
+    """Atom list in the same window PlasMol uses: coordinates start on line 3."""
+    lines = [line.strip() for line in Path(path).read_text().splitlines() if line.strip()]
+    natom = None
+    for line in lines:
+        parts = line.split()
+        if len(parts) == 1 and parts[0].isdigit():
+            natom = int(parts[0])
+    if natom is None:
+        raise ValueError(f"No atom count in {path}")
+    atoms = []
+    for line in lines[2:2 + natom]:
+        symbol, x, y, z = line.split()[:4]
+        atoms.append((symbol, (float(x), float(y), float(z))))
+    if len(atoms) != natom:
+        raise ValueError(f"Expected {natom} atoms in {path}, found {len(atoms)}")
+    return atoms
+
+
+def uniform_spectrum(energies_ev, strengths, grid, hwhm):
+    """Sum of identical Lorentzians. Each line has area equal to its oscillator strength."""
+    spectrum = np.zeros_like(grid, dtype=float)
+    for energy, strength in zip(energies_ev, strengths):
+        if strength == 0.0:
+            continue
+        spectrum += strength * (hwhm / np.pi) / ((grid - energy) ** 2 + hwhm ** 2)
+    return spectrum
+
+
+def main():
+    mol = gto.M(
+        atom=load_geometry(GEOM),
+        basis="6-311G*",
+        cart=True,
+        charge=0,
+        spin=0,
+        unit="Angstrom",
+        verbose=4,
+    )
+    mf = dft.RKS(mol)
+    mf.xc = "HYB_GGA_XC_LC_WPBE"
+    mf.omega = 0.34272
+    mf.max_memory = 10000
+    mf.kernel()
+
+    td = mf.TDDFT()
+    td.nstates = NSTATES
+    td.max_memory = 10000
+    td.kernel()
+    strengths = np.asarray(td.oscillator_strength(gauge="length"), dtype=float)
+    energies_ev = np.asarray(td.e, dtype=float) * HA_TO_EV
+    wavelengths_nm = np.where(energies_ev > 0.0, 1239.84193 / energies_ev, np.nan)
+
+    rows = ["state\tenergy_eV\twavelength_nm\toscillator_strength"]
+    print(f"{'state':>5} {'E (eV)':>10} {'λ (nm)':>10} {'f':>12}")
+    for i, (energy, wavelength, strength) in enumerate(
+        zip(energies_ev, wavelengths_nm, strengths), start=1
+    ):
+        print(f"{i:5d} {energy:10.4f} {wavelength:10.1f} {strength:12.6f}")
+        rows.append(f"{i}\t{energy:.6f}\t{wavelength:.4f}\t{strength:.8e}")
+    table = HERE / "lr_thioindigo_states.txt"
+    table.write_text("\n".join(rows) + "\n")
+
+    grid = np.linspace(WINDOW_EV[0], WINDOW_EV[1], 2000)
+    spectrum = uniform_spectrum(energies_ev, strengths, grid, HWHM_EV)
+    wavelengths = 1239.84193 / grid
+    spectrum_rows = ["energy_eV\twavelength_nm\tintensity"]
+    for energy, wavelength, intensity in zip(grid, wavelengths, spectrum):
+        spectrum_rows.append(f"{energy:.6f}\t{wavelength:.4f}\t{intensity:.8e}")
+    spectrum_file = HERE / "lr_thioindigo_spectrum.txt"
+    spectrum_file.write_text(
+        f"# uniform Lorentzian, HWHM {HWHM_EV} eV, area of each line = oscillator strength\n"
+        + "\n".join(spectrum_rows)
+        + "\n"
+    )
+
+    in_window = (energies_ev >= WINDOW_EV[0]) & (energies_ev <= WINDOW_EV[1])
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(grid, spectrum, color="C0", label=f"uniform Lorentzian, HWHM {HWHM_EV} eV")
+    ax.vlines(
+        energies_ev[in_window], 0.0, strengths[in_window],
+        color="0.55", lw=1, label="roots",
+    )
+    ax.axvline(EXPT_EV, color="0.35", ls="--", lw=1, label="benzene λmax (543 nm)")
+    ax.set_xlim(*WINDOW_EV)
+    ax.set_xlabel("Energy (eV)")
+    ax.set_ylabel("Intensity (oscillator strength per eV)")
+    ax.set_title("trans-thioindigo LR-TDDFT, LC-ωPBE, 6-311G*")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    figure = HERE / "lr_thioindigo_spectrum.png"
+    fig.savefig(figure, dpi=150)
+    print(f"Wrote {table}")
+    print(f"Wrote {spectrum_file}")
+    print(f"Wrote {figure}")
+
+
+if __name__ == "__main__":
+    main()
+#INFO: ******************** input file end ********************
+
+
+System: uname_result(system='Darwin', node='Brintons-Mac-mini.local', release='25.6.0', version='Darwin Kernel Version 25.6.0: Fri Jul 31 19:11:03 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T8132', machine='arm64')  Threads 10
+Python 3.13.11 | packaged by conda-forge | (main, Dec  6 2025, 11:28:54) [Clang 19.1.7 ]
+numpy 2.4.1  scipy 1.17.0  h5py 3.15.1
+Date: Wed Sep 23 07:23:32 2026
+PySCF version 2.13.0
+PySCF path  /Users/brinton/miniconda/envs/meep/lib/python3.13/site-packages/pyscf
+
+[CONFIG] conf_file None
+[INPUT] verbose = 4
+[INPUT] num. atoms = 28
+[INPUT] num. electrons = 152
+[INPUT] charge = 0
+[INPUT] spin (= nelec alpha-beta = 2S) = 0
+[INPUT] symmetry False subgroup None
+[INPUT] Mole.unit = Angstrom
+[INPUT] Cartesian GTO integrals (6d 10f)
+[INPUT] Symbol           X                Y                Z      unit          X                Y                Z       unit  Magmom
+[INPUT]  1 S      1.599251690000  -1.520722180000   0.000000000000 AA    3.022147698348  -2.873748431752   0.000000000000 Bohr   0.0
+[INPUT]  2 S     -1.599251690000   1.520722180000   0.000000000000 AA   -3.022147698348   2.873748431752   0.000000000000 Bohr   0.0
+[INPUT]  3 O     -2.250504730000  -1.202735050000   0.000000000000 AA   -4.252837581738  -2.272839844915   0.000000000000 Bohr   0.0
+[INPUT]  4 O      2.250504730000   1.202735050000   0.000000000000 AA    4.252837581738   2.272839844915   0.000000000000 Bohr   0.0
+[INPUT]  5 C      0.071005310000  -0.672125390000   0.000000000000 AA    0.134180589290  -1.270132908466   0.000000000000 Bohr   0.0
+[INPUT]  6 C     -0.071005310000   0.672125390000   0.000000000000 AA   -0.134180589290   1.270132908466   0.000000000000 Bohr   0.0
+[INPUT]  7 C     -0.633079620000  -2.982344880000   0.000000000000 AA   -1.196347096844  -5.635815032199   0.000000000000 Bohr   0.0
+[INPUT]  8 C      0.633079620000   2.982344880000   0.000000000000 AA    1.196347096844   5.635815032199   0.000000000000 Bohr   0.0
+[INPUT]  9 C      0.758028830000  -3.080466870000   0.000000000000 AA    1.432466883224  -5.821238720096   0.000000000000 Bohr   0.0
+[INPUT] 10 C     -0.758028830000   3.080466870000   0.000000000000 AA   -1.432466883224   5.821238720096   0.000000000000 Bohr   0.0
+[INPUT] 11 C     -1.101443700000  -1.595388830000   0.000000000000 AA   -2.081426934628  -3.014847950890   0.000000000000 Bohr   0.0
+[INPUT] 12 C      1.101443700000   1.595388830000   0.000000000000 AA    2.081426934628   3.014847950890   0.000000000000 Bohr   0.0
+[INPUT] 13 C     -1.430689900000  -4.122027780000   0.000000000000 AA   -2.703612080181  -7.789503582049   0.000000000000 Bohr   0.0
+[INPUT] 14 C      1.430689900000   4.122027780000   0.000000000000 AA    2.703612080181   7.789503582049   0.000000000000 Bohr   0.0
+[INPUT] 15 C      1.376849470000  -4.323597350000   0.000000000000 AA    2.601868413053  -8.170414864395   0.000000000000 Bohr   0.0
+[INPUT] 16 C     -1.376849470000   4.323597350000   0.000000000000 AA   -2.601868413053   8.170414864395   0.000000000000 Bohr   0.0
+[INPUT] 17 C     -0.820551300000  -5.366500070000   0.000000000000 AA   -1.550617228156 -10.141215379759   0.000000000000 Bohr   0.0
+[INPUT] 18 C      0.820551300000   5.366500070000   0.000000000000 AA    1.550617228156  10.141215379759   0.000000000000 Bohr   0.0
+[INPUT] 19 C      0.573611150000  -5.458973550000   0.000000000000 AA    1.083967975497 -10.315964930745   0.000000000000 Bohr   0.0
+[INPUT] 20 C     -0.573611150000   5.458973550000   0.000000000000 AA   -1.083967975497  10.315964930745   0.000000000000 Bohr   0.0
+[INPUT] 21 H     -2.510565940000  -4.010865670000   0.000000000000 AA   -4.744282044261  -7.579437638720   0.000000000000 Bohr   0.0
+[INPUT] 22 H      2.510565940000   4.010865670000   0.000000000000 AA    4.744282044261   7.579437638720   0.000000000000 Bohr   0.0
+[INPUT] 23 H      2.458622080000  -4.411125180000   0.000000000000 AA    4.646122375008  -8.335818491373   0.000000000000 Bohr   0.0
+[INPUT] 24 H     -2.458622080000   4.411125180000   0.000000000000 AA   -4.646122375008   8.335818491373   0.000000000000 Bohr   0.0
+[INPUT] 25 H     -1.421293370000  -6.269867730000   0.000000000000 AA   -2.685855211960 -11.848332846948   0.000000000000 Bohr   0.0
+[INPUT] 26 H      1.421293370000   6.269867730000   0.000000000000 AA    2.685855211960  11.848332846948   0.000000000000 Bohr   0.0
+[INPUT] 27 H      1.044139690000  -6.437599420000   0.000000000000 AA    1.973138049888 -12.165299803459   0.000000000000 Bohr   0.0
+[INPUT] 28 H     -1.044139690000   6.437599420000   0.000000000000 AA   -1.973138049888  12.165299803459   0.000000000000 Bohr   0.0
+
+nuclear repulsion = 1648.98092964746
+number of shells = 192
+number of NR pGTOs = 708
+number of NR cGTOs = 420
+basis = 6-311G*
+ecp = {}
+CPU time:         0.61
+
+
+******** <class 'pyscf.dft.rks.RKS'> ********
+method = RKS
+initial guess = minao
+damping factor = 0
+level_shift factor = 0
+DIIS = <class 'pyscf.scf.diis.CDIIS'>
+diis_start_cycle = 1
+diis_space = 8
+diis_damp = 0
+SCF conv_tol = 1e-09
+SCF conv_tol_grad = None
+SCF max_cycles = 50
+direct_scf = True
+direct_scf_tol = 1e-13
+chkfile to save SCF result = /var/folders/_g/krqmg1ls39d3msnvnprcn9l00000gn/T/tmpre1lt11f
+max_memory 10000 MB (current use 0 MB)
+XC library pyscf.dft.libxc version 7.0.0
+    S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques.,  SoftwareX 7, 1–5 (2018)
+XC functionals = HYB_GGA_XC_LC_WPBE
+    O. A. Vydrov and G. E. Scuseria.,  J. Chem. Phys. 125, 234109 (2006)
+radial grids: 
+Treutler-Ahlrichs [JCP 102, 346 (1995); DOI:10.1063/1.469408] (M4) radial grids
+
+becke partition: Becke, JCP 88, 2547 (1988); DOI:10.1063/1.454033
+pruning grids: <function nwchem_prune at 0x11e48cd60>
+grids dens level: 3
+symmetrized grids: False
+atomic radii adjust function: <function treutler_atomic_radii_adjust at 0x11e48cc20>
+small_rho_cutoff = 0
+Set gradient conv threshold to 3.16228e-05
+Initial guess from minao.
+tot grids = 370280
+init E= -1566.06672363827
+  HOMO = -0.236654361742943  LUMO = -0.150678021669209
+cycle= 1 E= -1560.33874070211  delta_E= 5.73  |g|= 1.34  |ddm|=    6
+  HOMO = -0.211254868553005  LUMO = -0.0729951673541325
+cycle= 2 E= -1559.79740838887  delta_E= 0.541  |g|= 2.26  |ddm|= 5.26
+  HOMO = -0.298436655831618  LUMO = -0.0608334521200398
+cycle= 3 E= -1560.71774519293  delta_E= -0.92  |g|= 0.0972  |ddm|= 3.64
+  HOMO = -0.304850431886631  LUMO = -0.0525857994932842
+cycle= 4 E= -1560.7209147038  delta_E= -0.00317  |g|= 0.052  |ddm|= 0.207
+  HOMO = -0.304388600923488  LUMO = -0.0504187371117338
+cycle= 5 E= -1560.72166752305  delta_E= -0.000753  |g|= 0.0188  |ddm|= 0.0832
+  HOMO = -0.303969389072628  LUMO = -0.0499326919836357
+cycle= 6 E= -1560.72181554501  delta_E= -0.000148  |g|= 0.00621  |ddm|= 0.0401
+  HOMO = -0.304043554815223  LUMO = -0.0494271186670009
+cycle= 7 E= -1560.72184327895  delta_E= -2.77e-05  |g|= 0.00354  |ddm|= 0.0213
+  HOMO = -0.304076619716668  LUMO = -0.0495022450287986
+cycle= 8 E= -1560.7218497052  delta_E= -6.43e-06  |g|= 0.000906  |ddm|= 0.0103
+  HOMO = -0.304045973036645  LUMO = -0.0494294169227786
+cycle= 9 E= -1560.72185060973  delta_E= -9.05e-07  |g|= 0.000389  |ddm|= 0.00411
+  HOMO = -0.304052747023463  LUMO = -0.0494160409145431
+cycle= 10 E= -1560.72185071661  delta_E= -1.07e-07  |g|= 0.000186  |ddm|= 0.000868
+  HOMO = -0.304045787630371  LUMO = -0.049418291618913
+cycle= 11 E= -1560.72185075406  delta_E= -3.74e-08  |g|= 9.29e-05  |ddm|= 0.000593
+  HOMO = -0.304042634046591  LUMO = -0.0494228123572305
+cycle= 12 E= -1560.7218507604  delta_E= -6.33e-09  |g|= 4.79e-05  |ddm|= 0.000244
+  HOMO = -0.304040882038982  LUMO = -0.0494230409481919
+cycle= 13 E= -1560.72185076295  delta_E= -2.55e-09  |g|= 1.44e-05  |ddm|= 0.000154
+  HOMO = -0.304039922078586  LUMO = -0.0494231975445266
+cycle= 14 E= -1560.72185076318  delta_E= -2.35e-10  |g|= 6.85e-06  |ddm|= 5.43e-05
+  HOMO = -0.304039897138059  LUMO = -0.0494234558294586
+Extra cycle  E= -1560.72185076321  delta_E= -3.05e-11  |g|= 6.42e-06  |ddm|= 1.72e-05
+converged SCF energy = -1560.72185076321
+
+
+******** <class 'pyscf.tdscf.rks.TDDFT'> for <class 'pyscf.dft.rks.RKS'> ********
+nstates = 30 singlet
+deg_eia_thresh = 1.000e-03
+wfnsym = None
+conv_tol = 1e-05
+eigh lindep = 1e-12
+eigh level_shift = 0
+eigh max_cycle = 100
+chkfile = /var/folders/_g/krqmg1ls39d3msnvnprcn9l00000gn/T/tmpre1lt11f
+max_memory 10000 MB (current use 0 MB)
+
+
+Excitation energies (eV)
+[2.97623576 3.31285325 3.55464788 3.65735926 4.7737886  4.85589177
+ 4.99009209 5.24219662 5.64180686 5.80000064 5.86812102 5.9096055
+ 5.92748948 6.00033401 6.20285044 6.25687607 6.54874307 6.57320214
+ 6.73473791 6.78198741 6.82326683 6.99735666 7.00392508 7.02913761
+ 7.0454644  7.19221659 7.22547463 7.25708697 7.2577335  7.27613261]
+state     E (eV)     λ (nm)            f
+    1     2.9762      416.6     0.286379
+    2     3.3129      374.3     0.000000
+    3     3.5546      348.8     0.000001
+    4     3.6574      339.0     0.000000
+    5     4.7738      259.7     0.000000
+    6     4.8559      255.3     0.452431
+    7     4.9901      248.5     0.180870
+    8     5.2422      236.5     0.000000
+    9     5.6418      219.8     0.000000
+   10     5.8000      213.8     0.632852
+   11     5.8681      211.3     0.000064
+   12     5.9096      209.8     0.000000
+   13     5.9275      209.2     0.097723
+   14     6.0003      206.6     0.000000
+   15     6.2029      199.9     0.000343
+   16     6.2569      198.2     0.000000
+   17     6.5487      189.3     0.000835
+   18     6.5732      188.6     0.106406
+   19     6.7347      184.1     0.000000
+   20     6.7820      182.8     0.000000
+   21     6.8233      181.7     0.039314
+   22     6.9974      177.2     0.557002
+   23     7.0039      177.0     0.000000
+   24     7.0291      176.4     0.018088
+   25     7.0455      176.0     0.000000
+   26     7.1922      172.4     0.000000
+   27     7.2255      171.6     0.000000
+   28     7.2571      170.8     0.001658
+   29     7.2577      170.8     0.000000
+   30     7.2761      170.4     0.000334
+Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/Geometries/lr_thioindigo_states.txt
+Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/Geometries/lr_thioindigo_spectrum.txt
+Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/Geometries/lr_thioindigo_spectrum.png

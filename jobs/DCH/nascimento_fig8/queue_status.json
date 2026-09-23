@@ -1,0 +1,24 @@
+{
+  "state": "running",
+  "running": [
+    "grid5",
+    "grid7"
+  ],
+  "pending": [],
+  "done": [
+    "rk4",
+    "hf20",
+    "nwchem",
+    "cart"
+  ],
+  "failed": [],
+  "pids": {
+    "grid5": 25243,
+    "grid7": 25244
+  },
+  "cancelled": [
+    "hf30",
+    "dt025"
+  ],
+  "note": "hf30 and dt025 killed on this machine (user running them on laptop). Supervisor stopped. grid5/grid7 resumed from checkpoint."
+}

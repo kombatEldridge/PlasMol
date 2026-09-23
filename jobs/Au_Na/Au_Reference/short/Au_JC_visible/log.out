@@ -1,0 +1,85 @@
+INFO: Only 'plasmon' parameters given. Running MEEP simulation only.
+INFO:  === NANOPARTICLE ABSORPTION SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.1 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 5000 au (roughly 120.94422 fs).
+INFO: ===== Starting NP Absorption Driver =====
+INFO: [EMPTY] Starting EMPTY simulation...
+INFO: [EMPTY] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [EMPTY] Meep simulation started.
+WARNING: [EMPTY] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [EMPTY] Simulation progress: 0% done (0/50000 steps || 0.0/5000 au)
+INFO: [EMPTY] Simulation progress: 10% done (5000/50000 steps || 500.0/5000 au)
+INFO: [EMPTY] Simulation progress: 20% done (10000/50000 steps || 1000.0/5000 au)
+INFO: [EMPTY] Simulation progress: 30% done (15000/50000 steps || 1500.0/5000 au)
+INFO: [EMPTY] Simulation progress: 50% done (25000/50000 steps || 2500.0/5000 au)
+INFO: [EMPTY] Simulation progress: 60% done (30000/50000 steps || 3000.0/5000 au)
+INFO: [EMPTY] Simulation progress: 70% done (35000/50000 steps || 3500.0/5000 au)
+INFO: [EMPTY] Simulation progress: 80% done (40000/50000 steps || 4000.0/5000 au)
+INFO: [EMPTY] Simulation progress: 90% done (45000/50000 steps || 4500.0/5000 au)
+INFO: [EMPTY] Simulation completed successfully!
+INFO: [SCATT] Starting SCATT simulation...
+INFO: [SCATT] Nanoparticle geometry recreated
+INFO: [SCATT] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [SCATT] -----------
+INFO: [SCATT] Initializing structure...
+WARNING: [SCATT] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [SCATT] Halving computational cell along direction y
+INFO: [SCATT] Halving computational cell along direction z
+INFO: [SCATT] time for choose_chunkdivision = 0.000148058 s
+INFO: [SCATT] Working in 3D dimensions.
+INFO: [SCATT] Computational cell is 0.20029 x 0.20029 x 0.20029 with resolution 689
+INFO: [SCATT] sphere
+INFO: [SCATT] , center = (0,0,0)
+INFO: [SCATT]           radius 0.025
+INFO: [SCATT]           dielectric constant epsilon diagonal = (6.1599,6.1599,6.1599)
+INFO: [ABS] Starting ABS simulation...
+INFO: [ABS] Nanoparticle geometry recreated
+INFO: [ABS] Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: [ABS] Meep simulation started.
+WARNING: [ABS] Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: [SCATT] time for set_epsilon = 1.03629 s
+INFO: [SCATT] lorentzian susceptibility: frequency=2.47485, gamma=0.886257
+INFO: [SCATT] drude susceptibility: frequency=7.15414, gamma=0.0382746
+INFO: [SCATT] -----------
+INFO: [SCATT] Meep simulation started.
+WARNING: [SCATT] RuntimeWarning: Note: your sources include frequencies outside the range of validity of the material models. This is fine as long as you eventually only look at outputs (fluxes, resonant modes, etc.) at valid frequencies.
+WARNING: [SCATT] RuntimeWarning: DFT frequency 1.2499999995 is out of material's range of 1.25-2.5
+WARNING: [SCATT] RuntimeWarning: DFT frequency 3.3333333345 is out of material's range of 1.25-2.5
+INFO: [SCATT] Simulation progress: 0% done (0/50000 steps || 0.0/5000 au)
+WARNING: [ABS] RuntimeWarning: Note: your sources include frequencies outside the range of validity of the material models. This is fine as long as you eventually only look at outputs (fluxes, resonant modes, etc.) at valid frequencies.
+WARNING: [ABS] RuntimeWarning: DFT frequency 1.2499999995 is out of material's range of 1.25-2.5
+WARNING: [ABS] RuntimeWarning: DFT frequency 3.3333333345 is out of material's range of 1.25-2.5
+INFO: [ABS] Simulation progress: 0% done (0/50000 steps || 0.0/5000 au)
+INFO: [SCATT] Simulation progress: 10% done (5000/50000 steps || 500.0/5000 au)
+INFO: [ABS] Simulation progress: 10% done (5000/50000 steps || 500.0/5000 au)
+INFO: [SCATT] Simulation progress: 20% done (10000/50000 steps || 1000.0/5000 au)
+INFO: [ABS] Simulation progress: 20% done (10000/50000 steps || 1000.0/5000 au)
+INFO: [SCATT] Simulation progress: 30% done (15000/50000 steps || 1500.0/5000 au)
+INFO: [ABS] Simulation progress: 30% done (15000/50000 steps || 1500.0/5000 au)
+INFO: [SCATT] Simulation progress: 50% done (25000/50000 steps || 2500.0/5000 au)
+INFO: [ABS] Simulation progress: 50% done (25000/50000 steps || 2500.0/5000 au)
+INFO: [SCATT] Simulation progress: 60% done (30000/50000 steps || 3000.0/5000 au)
+INFO: [ABS] Simulation progress: 60% done (30000/50000 steps || 3000.0/5000 au)
+INFO: [SCATT] Simulation progress: 70% done (35000/50000 steps || 3500.0/5000 au)
+INFO: [ABS] Simulation progress: 70% done (35000/50000 steps || 3500.0/5000 au)
+INFO: [SCATT] Simulation progress: 80% done (40000/50000 steps || 4000.0/5000 au)
+INFO: [ABS] Simulation progress: 80% done (40000/50000 steps || 4000.0/5000 au)
+INFO: [SCATT] Simulation progress: 90% done (45000/50000 steps || 4500.0/5000 au)
+INFO: [ABS] Simulation progress: 90% done (45000/50000 steps || 4500.0/5000 au)
+INFO: [SCATT] Simulation completed successfully!
+INFO: SCATT run completed
+INFO: [ABS] Simulation completed successfully!
+INFO: ABS run completed
+INFO: Arrays saved to output_arrays.txt
+INFO: [EMPTY] Loading CSV: output_arrays.txt
+INFO: [EMPTY] Fitting Absorption Cross-Section
+INFO: [EMPTY] 
+Detected 2 peak(s) at: [2.351 3.509] eV
+INFO: [EMPTY] === ALL FITTED PEAKS ===
+INFO: [EMPTY] Peak |   E (eV)   |  λ (nm)   |   γ (eV)   |   Amp    |   gamma_p_eV
+INFO: [EMPTY] ----------------------------------------------------------------------
+INFO: [EMPTY]    0 |   3.4489   |   359.5   |   1.1116   |   0.4582 |   1.1116
+INFO: [EMPTY]    1 |   2.3839   |   520.1   |   0.3568   |   0.4681 |   0.3568
+INFO: [EMPTY] ----------------------------------------------------------------------
+INFO: Absorption cross section driver finished.

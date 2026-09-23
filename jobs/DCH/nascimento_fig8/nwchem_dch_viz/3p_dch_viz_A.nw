@@ -1,0 +1,104 @@
+echo
+
+title "Phase A: sudden O 1s DCH with AO density dumps (0-40 au)"
+
+start 3p_dch_viz
+
+memory total 8000 mb
+
+geometry "mol" units angstroms noautoz nocenter noautosym
+  C      0.00000000     2.53631910     0.13461532
+  C      0.00000000    -2.53631910     0.13461532
+  C      0.00000000     1.28911810    -0.72919769
+  C      0.00000000    -1.28911810    -0.72919769
+  C      0.00000000     0.00000000     0.06965728
+  O      0.00000000     0.00000000     1.27660755
+  H      0.00000000     3.43925645    -0.48117669
+  H      0.00000000    -3.43925645    -0.48117669
+  H      0.87765934     2.56433867     0.78373887
+  H     -0.87765934    -2.56433867     0.78373887
+  H      0.87765934    -2.56433867     0.78373887
+  H     -0.87765934     2.56433867     0.78373887
+  H      0.86938045     1.27148903    -1.39993208
+  H     -0.86938045    -1.27148903    -1.39993208
+  H      0.86938045    -1.27148903    -1.39993208
+  H     -0.86938045     1.27148903    -1.39993208
+end
+
+set geometry "mol"
+
+basis
+  * library 6-311G*
+end
+
+charge 0
+
+dft
+  xc pbe0
+  mult 1
+  iterations 100
+  convergence energy 1e-8
+  vectors input neutral.movecs output neutral.movecs
+end
+
+task dft energy
+
+charge 2
+
+occup
+  24
+  0.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+  2.0
+end
+
+dft
+  xc pbe0
+  mult 1
+  noscf
+  vectors input neutral.movecs output dch.movecs
+end
+
+task dft energy
+
+set geometry "mol"
+unset rt_tddft:*
+
+rt_tddft
+  tmax 40.0
+  dt 0.05
+  propagator magnus
+  nprints *
+  nrestarts 5
+  nchecks 2
+  print dipole charge energy
+  load vectors dch.movecs
+  tag "<rt_tddft>"
+  visualization
+    tstart 0.0
+    tend 40.0
+  end
+end
+
+task dft rt_tddft

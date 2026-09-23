@@ -1,0 +1,64 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO: Fourier modifier selected; running three simulations for Fourier analysis along each axis.
+INFO: CAP modifier selected; applying Lopata CAP to spectra.
+INFO: Checkpointing selected; preparing to save and load checkpoints during simulation.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.1 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 2000 au (roughly 48.37769 fs).
+INFO: Running Fourier transform process with gamma: 0
+INFO: Running 3 directional quantum simulations in parallel...
+INFO: [x-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [y-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [z-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [x-dir] RSH(0.516, 1, -1) + WPBEH, PBE
+INFO: [z-dir] RSH(0.516, 1, -1) + WPBEH, PBE
+INFO: [y-dir] RSH(0.516, 1, -1) + WPBEH, PBE
+INFO: [z-dir] Simulation progress: 0% done (0/20000 steps || 0.0/2000.0 au)
+INFO: [x-dir] Simulation progress: 0% done (0/20000 steps || 0.0/2000.0 au)
+INFO: [y-dir] Simulation progress: 0% done (0/20000 steps || 0.0/2000.0 au)
+INFO: [y-dir] Simulation progress: 10% done (2000/20000 steps || 199.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 10% done (2000/20000 steps || 199.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 10% done (2000/20000 steps || 199.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 20% done (4000/20000 steps || 399.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 20% done (4000/20000 steps || 399.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 20% done (4000/20000 steps || 399.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 30% done (6000/20000 steps || 599.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 30% done (6000/20000 steps || 599.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 30% done (6000/20000 steps || 599.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 40% done (8000/20000 steps || 799.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 40% done (8000/20000 steps || 799.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 40% done (8000/20000 steps || 799.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 50% done (10000/20000 steps || 999.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 50% done (10000/20000 steps || 999.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 50% done (10000/20000 steps || 999.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 60% done (12000/20000 steps || 1199.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 60% done (12000/20000 steps || 1199.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 60% done (12000/20000 steps || 1199.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 70% done (14000/20000 steps || 1399.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 70% done (14000/20000 steps || 1399.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 70% done (14000/20000 steps || 1399.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 80% done (16000/20000 steps || 1599.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 80% done (16000/20000 steps || 1599.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 80% done (16000/20000 steps || 1599.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 90% done (18000/20000 steps || 1799.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 90% done (18000/20000 steps || 1799.9/2000.0 au)
+INFO: [x-dir] Simulation progress: 90% done (18000/20000 steps || 1799.9/2000.0 au)
+INFO: [y-dir] Simulation progress: 100% done (20000/20000 steps || 1999.9/2000.0 au)
+INFO: [z-dir] Simulation progress: 100% done (20000/20000 steps || 1999.9/2000.0 au)
+INFO: [y-dir] Matplotlib image written: y_dir/output.png
+INFO: y-dir quantum run completed successfully
+INFO: [z-dir] Matplotlib image written: z_dir/output.png
+INFO: z-dir quantum run completed successfully
+INFO: [x-dir] Simulation progress: 100% done (20000/20000 steps || 1999.9/2000.0 au)
+INFO: [x-dir] Matplotlib image written: x_dir/output.png
+INFO: x-dir quantum run completed successfully
+INFO: 
+Elapsed run time = 7505.7479 s
+INFO: 
+Elapsed run time = 7505.6907 s
+INFO: 
+Elapsed run time = 7505.7188 s
+INFO: Merged per-dir checkpoints for checkpoint.npz -> checkpoint.npz (hidden: .checkpoint.npz)
+INFO: Merged per-dir checkpoints for final-checkpoint.npz -> final-checkpoint.npz (hidden: .final-checkpoint.npz)
+INFO: 
+Elapsed run time = 7508.6669 s

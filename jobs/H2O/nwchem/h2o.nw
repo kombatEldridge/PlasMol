@@ -1,0 +1,30 @@
+title "H2O TD-PBE0 absorption spectrum"
+echo
+
+start water
+
+geometry "system" units bohr nocenter noautoz noautosym
+  O      0.0000000000       0.0000000000       -0.1302052882
+  H      1.4891244004       0.0000000000        1.0332262019
+  H     -1.4891244004       0.0000000000        1.0332262019
+end
+
+set geometry "system"
+
+basis
+ * library 6-31G
+end
+
+dft
+ xc pbe0
+end
+
+task dft energy
+
+tddft
+ nroots 50
+ rpa 
+ notriplet
+end
+
+task tddft

@@ -1,0 +1,50 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO: Checkpointing selected; preparing to save and load checkpoints during simulation.
+INFO:  === CORE-HOLE SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 206.7 au (roughly 4.99983 fs).
+INFO: Wrote NPZ '.checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('.checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Wrote NPZ '.final-checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('.final-checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Wrote NPZ '.checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('.checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 0% done (0/4134 steps || 0.05/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 10% done (413/4134 steps || 20.650000000000002/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 20% done (827/4134 steps || 41.349999999999994/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 30% done (1240/4134 steps || 62.0/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 40% done (1654/4134 steps || 82.7/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 50% done (2067/4134 steps || 103.35/206.7 au)
+INFO: Wrote NPZ 'checkpoint.npz' (37 arrays)
+INFO:   keys: params_dict, input_file_path, input_file_content, is_absorption, is_open_shell, updated_after_init, xyz_file_path, xyz_content, checkpoint_time, field_e_content, checkpoint_time_z, field_p_x_content, ...
+INFO:   d = np.load('checkpoint.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 60% done (2480/4134 steps || 124.0/206.7 au)

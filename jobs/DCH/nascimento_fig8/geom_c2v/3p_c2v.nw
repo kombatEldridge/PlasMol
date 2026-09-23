@@ -1,0 +1,41 @@
+echo
+
+title "3-Pentanone C2v (AA) geometry optimization - PBE0/6-311G*"
+
+start 3p_c2v
+
+memory total 4000 mb
+
+# Unique atoms only. C2 along z, sigma_v = yz (molecular plane) and xz.
+# NWChem generates the C2v images (16 atoms total).
+geometry units angstroms print xyz noautoz
+  symmetry c2v
+  C     0.00000000     2.53665715     0.06248766
+  C     0.00000000     1.28823369    -0.79961056
+  C     0.00000000     0.00000000     0.00000000
+  O     0.00000000     0.00000000     1.20694000
+  H     0.00000000     3.42544389    -0.56851006
+  H     0.88703947     2.55241436     0.69574328
+  H     0.88461564     1.30378733    -1.43625273
+end
+
+basis
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  iterations 100
+  convergence energy 1e-8
+end
+
+driver
+  maxiter 200
+  gmax 0.0005
+  grms 0.0003
+  xmax 0.0010
+  xrms 0.0007
+end
+
+task dft optimize

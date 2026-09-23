@@ -1,0 +1,75 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+WARNING: Using default value for molecule_charge: 0
+WARNING: Using default value for molecule_spin: 0
+WARNING: Using default value for molecule_pc_convergence: 1e-12
+WARNING: Using default value for molecule_max_iterations: 200
+WARNING: Using default value for molecule_hermiticity_tolerance: 1e-12
+WARNING: Using default value for broadening_type: static
+INFO: Fourier modifier selected; running three simulations for Fourier analysis along each axis.
+INFO: Broadening modifier selected; applying Lopata broadening to spectra.
+INFO: Checkpointing selected; preparing to save and load checkpoints during simulation.
+INFO: Additional parameters specified: ['fourier_dict', 'fourier_min_ev', 'fourier_max_ev', 'fourier_npz_filepath', 'fourier_spectrum_filepath'].
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.01 au (roughly 0.00024 fs).
+INFO: The simulation will propagate until 2000 au (roughly 48.37769 fs).
+INFO: Running Fourier transform process with gamma: 0
+INFO: Running 3 directional quantum simulations in parallel...
+INFO: [x-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [y-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [z-dir]  === RUNNING QUANTUM ONLY SIMULATION === 
+INFO: [y-dir] Simulation progress: 10% done (20000/200001 steps)
+INFO: [x-dir] Simulation progress: 10% done (20000/200001 steps)
+INFO: [z-dir] Simulation progress: 10% done (20000/200001 steps)
+INFO: [x-dir] Simulation progress: 20% done (40000/200001 steps)
+INFO: [y-dir] Simulation progress: 20% done (40000/200001 steps)
+INFO: [z-dir] Simulation progress: 20% done (40000/200001 steps)
+INFO: [x-dir] Simulation progress: 30% done (60000/200001 steps)
+INFO: [y-dir] Simulation progress: 30% done (60000/200001 steps)
+INFO: [z-dir] Simulation progress: 30% done (60000/200001 steps)
+INFO: [x-dir] Simulation progress: 40% done (80000/200001 steps)
+INFO: [y-dir] Simulation progress: 40% done (80000/200001 steps)
+INFO: [z-dir] Simulation progress: 40% done (80000/200001 steps)
+INFO: [x-dir] Simulation progress: 50% done (100000/200001 steps)
+INFO: [x-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 1000.0 (direction: x) ========================================
+INFO: [y-dir] Simulation progress: 50% done (100000/200001 steps)
+INFO: [y-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 1000.0 (direction: y) ========================================
+INFO: [z-dir] Simulation progress: 50% done (100000/200001 steps)
+INFO: [z-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 1000.0 (direction: z) ========================================
+INFO: [x-dir] Simulation progress: 60% done (120000/200001 steps)
+INFO: [y-dir] Simulation progress: 60% done (120000/200001 steps)
+INFO: [z-dir] Simulation progress: 60% done (120000/200001 steps)
+INFO: [x-dir] Simulation progress: 70% done (140000/200001 steps)
+INFO: [y-dir] Simulation progress: 70% done (140000/200001 steps)
+INFO: [z-dir] Simulation progress: 70% done (140000/200001 steps)
+INFO: [x-dir] Simulation progress: 80% done (160000/200001 steps)
+INFO: [y-dir] Simulation progress: 80% done (160000/200001 steps)
+INFO: [z-dir] Simulation progress: 80% done (160000/200001 steps)
+INFO: [x-dir] Simulation progress: 90% done (180000/200001 steps)
+INFO: [y-dir] Simulation progress: 90% done (180000/200001 steps)
+INFO: [z-dir] Simulation progress: 90% done (180000/200001 steps)
+INFO: [x-dir] Simulation progress: 100% done (200000/200001 steps)
+INFO: [x-dir] Simulation progress: 100% done (200001/200001 steps)
+INFO: [x-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 2000.0 (direction: x) ========================================
+INFO: [x-dir] ======================================== Updated checkpoint file final-checkpoint.npz at time = 2000.0 (direction: x) ========================================
+INFO: [x-dir] Matplotlib image written: x_dir/output.png
+INFO: x-dir quantum run completed successfully
+INFO: [y-dir] Simulation progress: 100% done (200000/200001 steps)
+INFO: [y-dir] Simulation progress: 100% done (200001/200001 steps)
+INFO: [y-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 2000.0 (direction: y) ========================================
+INFO: [y-dir] ======================================== Updated checkpoint file final-checkpoint.npz at time = 2000.0 (direction: y) ========================================
+INFO: [y-dir] Matplotlib image written: y_dir/output.png
+INFO: y-dir quantum run completed successfully
+INFO: [z-dir] Simulation progress: 100% done (200000/200001 steps)
+INFO: [z-dir] Simulation progress: 100% done (200001/200001 steps)
+INFO: [z-dir] ======================================== Updated checkpoint file checkpoint.npz at time = 2000.0 (direction: z) ========================================
+INFO: [z-dir] ======================================== Updated checkpoint file final-checkpoint.npz at time = 2000.0 (direction: z) ========================================
+INFO: [z-dir] Matplotlib image written: z_dir/output.png
+INFO: z-dir quantum run completed successfully
+INFO: 
+Elapsed run time = 15035.6109 s
+INFO: 
+Elapsed run time = 15035.6104 s
+INFO: 
+Elapsed run time = 15035.6108 s
+INFO: 
+Elapsed run time = 15037.9747 s

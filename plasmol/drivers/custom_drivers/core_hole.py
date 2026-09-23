@@ -1,8 +1,12 @@
 # drivers/custom_drivers/core_hole.py
 import logging
+from pathlib import Path
+
 import numpy as np
 from plasmol.quantum.geometry import rotate_molecule_geometry
 from plasmol.quantum.molecule import MOLECULE
+
+SURVEY_FILE = "mo_survey.txt"
 
 
 def run(params):
@@ -17,18 +21,22 @@ def run(params):
     rotate_molecule_geometry(params)
     molecule = MOLECULE(params)
     mo_dict = getattr(params, 'mo_removal_index_dict', None) or {}
+    rows = ["index\telement\tcontribution_percent"]
     for mo_idx in mo_dict.keys():
         nmo = np.asarray(molecule.mf.mo_coeff).shape[-1]
         if mo_idx >= nmo:
             raise ValueError(
                 f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based)."
             )
-        _mo_atom_contribution(molecule, mo_idx)
+        rows.extend(_mo_atom_contribution(molecule, mo_idx))
+    path = Path(SURVEY_FILE)
+    path.write_text("\n".join(rows) + "\n")
+    logger.info(f"Wrote {path.resolve()}")
     logger.info("Core-hole MO contribution survey complete; exiting before propagation.")
 
 
 def _mo_atom_contribution(molecule, mo_idx, threshold=0.01):
-    """Print which atoms contribute most to a specific MO"""
+    """Print which atoms contribute most to a specific MO and return table rows."""
     C = molecule.mf.mo_coeff
     if getattr(molecule, 'is_open_shell', False) and np.asarray(C).ndim == 3:
         c = C[0][:, mo_idx]
@@ -46,6 +54,9 @@ def _mo_atom_contribution(molecule, mo_idx, threshold=0.01):
             atom = label.split()[1]
             atom_pop[atom] = atom_pop.get(atom, 0) + pop_ao[i]
 
+    rows = []
     for atom in sorted(atom_pop, key=atom_pop.get, reverse=True):
         percent = atom_pop[atom] * 100
         logger.info(f"{atom:4s}          {percent:6.2f}%")
+        rows.append(f"{mo_idx}\t{atom}\t{percent:.2f}")
+    return rows

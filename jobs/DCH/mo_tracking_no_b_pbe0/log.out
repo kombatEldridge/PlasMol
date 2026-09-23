@@ -1,0 +1,19 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO:  === DCH SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 200 au (roughly 4.83777 fs).
+INFO: Simulation progress: 0% done (0/4000 steps || 0.0/200.0 au)
+INFO: Simulation progress: 10% done (400/4000 steps || 19.95/200.0 au)
+INFO: Simulation progress: 20% done (800/4000 steps || 39.95/200.0 au)
+INFO: Simulation progress: 30% done (1200/4000 steps || 59.95/200.0 au)
+INFO: Simulation progress: 40% done (1600/4000 steps || 79.95/200.0 au)
+INFO: Simulation progress: 50% done (2000/4000 steps || 99.95/200.0 au)
+INFO: Simulation progress: 60% done (2400/4000 steps || 119.95/200.0 au)
+INFO: Simulation progress: 70% done (2800/4000 steps || 139.95/200.0 au)
+INFO: Simulation progress: 80% done (3200/4000 steps || 159.95/200.0 au)
+INFO: Simulation progress: 90% done (3600/4000 steps || 179.95/200.0 au)
+INFO: Simulation progress: 100% done (4000/4000 steps || 199.95/200.0 au)
+INFO: Matplotlib image written: output.png
+INFO: Matplotlib image written: mo_occ.png

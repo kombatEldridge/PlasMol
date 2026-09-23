@@ -1,0 +1,372 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{enumitem}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  citecolor=blue!60!black
+}
+
+\title{Model 1: Two Coupled Classical Lorentz Oscillators\\
+\large Analytical benchmark for PlasMol parallel absorption}
+\author{PlasMol validation notes}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+We treat the Au nanoparticle LSPR and the Na atomic transition as two
+driven, damped harmonic oscillators coupled by a near-field constant
+$\kappa$.  The linear system is solved in closed form for the
+frequency-dependent displacements, yielding an effective molecular
+polarizability $\alpha_m^{\mathrm{eff}}(\omega)=\mu_m(\omega)/E_{\mathrm{inc}}(\omega)$
+that is directly comparable (up to peak normalization) to PlasMol's
+hybrid Fourier spectrum
+$A(\omega)\propto-\omega\,\mathrm{Im}[\mu(\omega)/E_{\mathrm{inc}}(\omega)]$.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Motivation and correspondence to PlasMol}
+% =============================================================================
+
+PlasMol's parallel Fourier path for a nanoparticle--molecule system
+records the molecular induced dipole $\mu(t)$ under a broadband Meep
+drive and divides by a vacuum incident field $E_{\mathrm{inc}}$ sampled
+at the molecule site (no NP, no molecule).  The published spectrum is
+\begin{equation}
+  A(\omega)
+  \;\propto\;
+  -\omega\,
+  \operatorname{Im}\!
+  \Big[
+    \frac{\mu(\omega)}{E_{\mathrm{inc}}(\omega)}
+  \Big],
+  \label{eq:plasmol-A}
+\end{equation}
+peak-normalized over a user energy window.
+
+Equation~\eqref{eq:plasmol-A} is \emph{not} the hybrid extinction of the
+composite.  It is the molecular channel relative to free-space
+incidence, with nanoparticle scattering retained inside $\mu$.  Model~1
+targets exactly that observable with the simplest two-level (two
+oscillator) dynamics.
+
+\paragraph{Target system (defaults in \texttt{spectrum\_model1.py}).}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Subsystem & Parameters \\
+\midrule
+Au LSPR & $\omega_p = 2.384\,\mathrm{eV}$, damping $\gamma_p$ \\
+Na transition & $\omega_m = 2.109\,\mathrm{eV}$, damping $\gamma_m$ \\
+Detuning & $\delta = \omega_p - \omega_m \approx 0.275\,\mathrm{eV}$ \\
+Coupling & $\kappa$ (units of energy$^2$), user-tunable \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{Bare Lorentz oscillators}
+% =============================================================================
+
+A single classical Lorentz oscillator with resonance $\omega_j$, damping
+$\gamma_j$, and drive strength $f_j$ obeys
+\begin{equation}
+  \ddot x_j + \gamma_j \dot x_j + \omega_j^2 x_j
+  =
+  f_j\, E(t),
+  \qquad
+  j\in\{p,m\}.
+  \label{eq:bare-eom}
+\end{equation}
+In the frequency domain ($e^{-i\omega t}$ convention, or equivalently
+replacing $\partial_t\to -i\omega$ in the Fourier domain used here),
+\begin{equation}
+  \Omega_j^2(\omega)\, x_j(\omega)
+  =
+  f_j\, E(\omega),
+  \qquad
+  \Omega_j^2(\omega)
+  \equiv
+  \omega_j^2 - \omega^2 - i\gamma_j\omega.
+  \label{eq:Omega}
+\end{equation}
+The bare polarizability (reduced units where $\mu_j \propto x_j$) is
+\begin{equation}
+  \alpha_j^{(0)}(\omega)
+  =
+  \frac{f_j}{\Omega_j^2(\omega)}
+  =
+  \frac{f_j}{\omega_j^2 - \omega^2 - i\gamma_j\omega}.
+  \label{eq:alpha0}
+\end{equation}
+Absorption of an isolated oscillator is proportional to
+$-\omega\,\operatorname{Im}\alpha_j^{(0)}(\omega)$, which is a
+non-negative Lorentzian-like peak of width set by $\gamma_j$.
+
+% =============================================================================
+\section{Coupled equations of motion}
+% =============================================================================
+
+Near-field coupling between the plasmon and molecular oscillators is
+encoded as a bilinear term with real coupling constant $\kappa$
+(dimensions of frequency$^2$ / energy$^2$ when $\omega$ is in eV):
+\begin{align}
+  \Omega_p^2(\omega)\, x_p + \kappa\, x_m
+  &=
+  f_p\, E_{\mathrm{inc}},
+  \label{eq:coup-p} \\
+  \kappa\, x_p + \Omega_m^2(\omega)\, x_m
+  &=
+  f_m\, E_{\mathrm{inc}}.
+  \label{eq:coup-m}
+\end{align}
+In matrix form,
+\begin{equation}
+  \begin{pmatrix}
+    \Omega_p^2 & \kappa \\
+    \kappa & \Omega_m^2
+  \end{pmatrix}
+  \begin{pmatrix}
+    x_p \\ x_m
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+    f_p \\ f_m
+  \end{pmatrix}
+  E_{\mathrm{inc}}.
+  \label{eq:matrix}
+\end{equation}
+The determinant
+\begin{equation}
+  \Delta(\omega)
+  =
+  \Omega_p^2\Omega_m^2 - \kappa^2
+  \label{eq:det}
+\end{equation}
+vanishes at the hybrid poles.  Cramer's rule gives the closed-form
+displacements
+\begin{align}
+  x_p(\omega)
+  &=
+  \frac{
+    \Omega_m^2 f_p - \kappa f_m
+  }{
+    \Delta(\omega)
+  }\,
+  E_{\mathrm{inc}},
+  \label{eq:xp} \\[0.4em]
+  x_m(\omega)
+  &=
+  \frac{
+    \Omega_p^2 f_m - \kappa f_p
+  }{
+    \Delta(\omega)
+  }\,
+  E_{\mathrm{inc}}.
+  \label{eq:xm}
+\end{align}
+
+\paragraph{Connection to a coupling energy $g$.}
+In the literature one often writes a Hamiltonian coupling
+$\hbar g(a^\dagger\sigma_- + \mathrm{h.c.})$ or a force constant
+proportional to $g$.  Near resonance, the level repulsion scale is set
+by an effective $g$ with $g^2 \sim \kappa$ (order of magnitude, depending
+on oscillator normalizations).  For detuning
+$\delta=\omega_p-\omega_m$, clear mode hybridization (avoided crossing /
+Rabi-like doublet in the linear spectrum) typically requires
+$g \gtrsim |\delta|/2$ and $g$ comparable to the mean linewidth.
+Weak $\kappa$ yields a single molecular peak that is shifted and
+reshaped---the usual weak-coupling / Purcell-type regime.
+
+% =============================================================================
+\section{Effective molecular polarizability and absorption}
+% =============================================================================
+
+Matching PlasMol's definition, the molecular response relative to the
+incident field is
+\begin{equation}
+  \alpha_m^{\mathrm{eff}}(\omega)
+  \equiv
+  \frac{\mu_m(\omega)}{E_{\mathrm{inc}}(\omega)}
+  \;\propto\;
+  \frac{x_m(\omega)}{E_{\mathrm{inc}}}
+  =
+  \frac{
+    \Omega_p^2 f_m - \kappa f_p
+  }{
+    \Omega_p^2\Omega_m^2 - \kappa^2
+  }.
+  \label{eq:alpha-eff}
+\end{equation}
+The model spectrum is
+\begin{equation}
+  A(\omega)
+  =
+  -\omega\,
+  \operatorname{Im}\!
+  \big[
+    \alpha_m^{\mathrm{eff}}(\omega)
+  \big],
+  \label{eq:A}
+\end{equation}
+subsequently peak-normalized,
+\begin{equation}
+  A_{\mathrm{norm}}(\omega)
+  =
+  \frac{A(\omega)}{\max_{\omega}|A(\omega)|},
+\end{equation}
+with a global sign flip if the dominant extremum is negative (same
+practical convention as PlasMol's \texttt{orient\_spectrum\_sign}).
+
+\paragraph{Limits.}
+\begin{itemize}[leftmargin=1.4em]
+  \item $\kappa\to 0$:
+    $\alpha_m^{\mathrm{eff}}\to f_m/\Omega_m^2=\alpha_m^{(0)}$
+    (bare Na).
+  \item $f_m\to 0$ but $\kappa\neq 0$:
+    the molecule can still be driven indirectly through the plasmon
+    term $-\kappa f_p/\Delta$, i.e.\ a pure near-field imprint of the
+    LSPR on $\mu_m$.
+  \item Large $\kappa$: hybrid poles split; $A(\omega)$ can show two
+    peaks even though only $\mu_m$ is plotted.
+\end{itemize}
+
+% =============================================================================
+\section{Hybrid mode frequencies}
+% =============================================================================
+
+The undriven poles satisfy $\Delta(\omega)=0$.  A useful algebraic
+estimate replaces $\Omega_j^2$ by complex constants
+$z_j=\omega_j^2-i\gamma_j\omega_j$ evaluated at the bare peaks and solves
+\begin{equation}
+  (z_p-\lambda)(z_m-\lambda)-\kappa^2=0
+  \quad\Rightarrow\quad
+  \lambda_\pm
+  =
+  \frac{z_p+z_m}{2}
+  \pm
+  \frac12
+  \sqrt{(z_p-z_m)^2+4\kappa^2},
+\end{equation}
+then $\omega_\pm\approx\sqrt{\lambda_\pm}$ (principal branch).  The
+script prints $\omega_\pm$ as vertical guides.  They are indicative,
+not exact roots of the full transcendental
+$\Omega_p^2(\omega)\Omega_m^2(\omega)=\kappa^2$.
+
+In the equal-damping, near-resonant textbook limit one recovers the
+familiar form
+\begin{equation}
+  \omega_\pm
+  \approx
+  \frac{\omega_p+\omega_m}{2}
+  -\frac{i}{4}(\gamma_p+\gamma_m)
+  \pm
+  \frac12
+  \sqrt{
+    \Big(
+      \delta - \tfrac{i}{2}(\gamma_p-\gamma_m)
+    \Big)^2
+    + 4g^2
+  },
+\end{equation}
+with $g$ the coupling energy related to $\kappa$ through the chosen
+oscillator normalization.
+
+% =============================================================================
+\section{What to expect for Au (2.384 eV) + Na (2.109 eV)}
+% =============================================================================
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Weak $\kappa$.}
+        Single peak near $\omega_m$, possibly red- or blue-shifted by a
+        fraction of $\gamma_m$.  A weak shoulder near $\omega_p$ may
+        appear if $f_p$ and $\kappa$ allow plasmon-mediated driving of
+        $x_m$.
+  \item \textbf{Moderate $\kappa$.}
+        Noticeable shift of the molecular maximum; lineshape becomes
+        asymmetric (Fano-like) when the broad plasmon continuum
+        interferes with the narrow molecular resonance.
+  \item \textbf{Strong $\kappa$.}
+        Two hybrid peaks; energy splitting grows with $\sqrt{\kappa}$.
+        Peak-normalization still forces $\max|A|=1$, so compare
+        \emph{positions and relative heights}, not absolute scale.
+\end{enumerate}
+
+\noindent
+Your PlasMol \texttt{parallel\_abs} result---one dominant peak near the
+Na energy---is the weak-to-moderate coupling pattern.  Model~1 validates
+the \emph{method} when:
+\begin{itemize}[leftmargin=1.4em]
+  \item $\kappa=0$ recovers the bare Na lineshape used as input;
+  \item increasing $\kappa$ shifts / splits $A(\omega)$ in the direction
+        predicted by $\omega_\pm$;
+  \item PlasMol's hybrid curve lies in the same qualitative regime as a
+        $\kappa$ estimated from geometry (see Model~2 for a
+        geometry-based $\kappa$).
+\end{itemize}
+
+% =============================================================================
+\section{Script interface}
+% =============================================================================
+
+File: \texttt{jobs/model1\_coupled\_oscillators/spectrum\_model1.py}
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Edit the \textbf{PARAMETERS} block at the bottom of the script
+        ($\omega_p,\gamma_p,f_p,\omega_m,\gamma_m,f_m,\kappa$, grid,
+        optional PlasMol CSV overlay).
+  \item Run: \texttt{python spectrum\_model1.py}
+  \item Outputs: \texttt{spectrum\_model1.csv}, \texttt{spectrum\_model1.png}
+\end{itemize}
+
+\noindent
+Columns in the CSV:
+\texttt{Frequency}, \texttt{Absorption} (normalized),
+\texttt{Re\_alpha\_m\_eff}, \texttt{Im\_alpha\_m\_eff}.
+
+% =============================================================================
+\section{Limitations}
+% =============================================================================
+
+\begin{itemize}[leftmargin=1.4em]
+  \item $\kappa$ is phenomenological; it does not know the sphere radius
+        or gap.  Use Model~2 for geometry-explicit coupling.
+  \item Linear, classical, Markovian damping only---no quantum saturation,
+        no non-Markovian continuum of the metal beyond a single Lorentzian
+        plasmon mode.
+  \item Absolute oscillator strengths $f_p,f_m$ are relative; only ratios
+        and $\kappa$ set the hybrid lineshape after peak normalization.
+  \item PlasMol's RT-TDDFT Na line and Meep Au dielectric are richer than
+        two Lorentzians; agreement is expected at the level of peak count,
+        ordering, and rough shifts, not spectroscopic identity.
+\end{itemize}
+
+% =============================================================================
+\section{References (entry points)}
+% =============================================================================
+
+\begin{itemize}[leftmargin=1.4em]
+  \item Classical coupled-oscillator / plexciton models for
+        plasmon--exciton hybrids (e.g.\ Wu \emph{et al.}, \emph{Nature}
+        \textbf{2010}; subsequent plasmon--exciton reviews).
+  \item Novotny, ``Strong coupling, energy splitting, and level crossings''
+        style treatments of two damped oscillators.
+  \item PlasMol Fourier methodology notes
+        (\texttt{doc/latex/fourier\_driver\_methodology.tex}): definition
+        of $\mu/E_{\mathrm{inc}}$ deconvolution.
+\end{itemize}
+
+\end{document}

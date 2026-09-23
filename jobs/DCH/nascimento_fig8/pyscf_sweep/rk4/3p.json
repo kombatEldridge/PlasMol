@@ -1,0 +1,38 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 206.7,
+    "driver": "core_hole"
+  },
+  "molecule": {
+    "geometry": "../../3p_c2v.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-311G*",
+    "xc": "PBE0",
+    "propagator": {
+      "type": "rk4",
+      "pc_convergence": 1e-08,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12
+  },
+  "files": {
+    "field_e_filepath": "field_e.csv",
+    "field_p_filepath": "field_p.csv",
+    "spectra_e_vs_p_filepath": "output.png",
+    "checkpoint": {
+      "filepath": "checkpoint.npz",
+      "frequency_time": 20.0
+    }
+  },
+  "additional_parameters": {
+    "mo_removal_index_dict": {
+      "0": 2
+    },
+    "core_hole_mo_occ_filepath": "mo_occ.csv",
+    "core_hole_watch_indices": [21, 23, 24],
+    "core_hole_filter_by_amplitude": false
+  }
+}

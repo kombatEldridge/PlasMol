@@ -2,7 +2,7 @@
 """Rotation that puts the field-free DCH dipole on the nanoparticle axis.
 
 D3–D6 keep the dipole as a three-component vector. Only the part that moves
-along the gap radiates onto the gold sphere. D1, run on the stock geometry
+along the gap radiates onto the silver sphere. D1, run on the stock geometry
 with no molecule.rotation, measures that direction. This command turns it
 into the rotation to paste into D3–D6.
 
@@ -113,7 +113,7 @@ def _fmt(vector):
 def _k1_report(root):
     names = ("x", "y", "z")
     paths = [
-        root / "Step_5" / "K1" / f"{name}_dir" / "field_p_K1.csv" for name in names
+        root / "Step_4" / "K1" / f"{name}_dir" / "field_p_K1.csv" for name in names
     ]
     if not all(path.is_file() for path in paths):
         return (
@@ -144,8 +144,8 @@ def compare_campaign(root):
     was itself rotated.
     """
     root = Path(root)
-    d1_json = root / "Step_4" / "D1" / "D1.json"
-    d1_mu = root / "Step_4" / "D1" / "field_p_D1.csv"
+    d1_json = root / "Step_3" / "D1" / "D1.json"
+    d1_mu = root / "Step_3" / "D1" / "field_p_D1.csv"
     missing = [path for path in (d1_json, d1_mu) if not path.is_file()]
     if missing:
         listed = "\n".join(f"  {path}" for path in missing)
@@ -185,7 +185,7 @@ def compare_campaign(root):
         "",
         pasted,
         "",
-        "D1 and D2 stay on the stock geometry. Do not edit Step_1/3p.xyz.",
+        "D1 and D2 stay on the stock geometry. Do not edit Step_1/transthioindigo.xyz.",
         "",
         _k1_report(root),
     ]

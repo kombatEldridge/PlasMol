@@ -1,0 +1,16 @@
+start water
+title "water in aug-cc-pVTZ basis set" 
+
+geometry units bohr  
+    O     0.0000000000  0.0000000000 -0.2249422292
+    H    -1.4345686849  0.0000000000  0.8997914423
+    H     1.4345686849  0.0000000000  0.8997914423
+end  
+basis  
+    * library aug-cc-pVTZ
+end
+dft 
+    iterations 1000
+    xc pbe0
+end
+task dft optimize

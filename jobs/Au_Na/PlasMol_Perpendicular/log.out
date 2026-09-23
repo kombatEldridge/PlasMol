@@ -1,0 +1,13 @@
+INFO: Adjusted dt from 0.1 to 0.10007255400844287 au to match Meep's actual timestep (resolution=689 pixels/μm, courant=0.5).
+INFO: Adjusted t_end from 10000 to 10007.255400844286 au to preserve 100000 timesteps.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.339181 was provided. Using the given value will override the default.
+INFO: Fourier reference file 'field_e_ref_perp.csv' found; vacuum reference Meep runs will be skipped.
+INFO:  === FOURIER SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: Single-pol vacuum reference E_inc ('y') written to field_e_ref_perp.csv
+INFO: Loaded vacuum reference E_inc from field_e_ref_perp.csv (100001 samples)
+INFO: Single-pol Fourier (y): Im[μ/E] using vacuum reference E_inc written to 'field_e_ref_perp.csv'.
+WARNING: No usable E(ω) amplitude for x-pol in the spectrum window; contribution set to zero (max |E| too small for deconvolution).
+WARNING: No usable E(ω) amplitude for z-pol in the spectrum window; contribution set to zero (max |E| too small for deconvolution).
+INFO: Spectrum sign flipped: largest |A| feature was negative (A=-547.78 at 2.0331 eV); multiplied A by −1 so the dominant peak is positive.
+INFO: Absorption spectrum written to 'spectrum_perp.png'.

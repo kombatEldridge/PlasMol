@@ -1,0 +1,14 @@
+\contentsline {section}{\numberline {1}Parallel orientation and the three recorded series}{2}{section.1}%
+\contentsline {section}{\numberline {2}Fourier transforms and linear response}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Beginning equations}{3}{subsection.2.1}%
+\contentsline {section}{\numberline {3}Power of the molecule}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Instantaneous power}{6}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Cycle-averaged power}{7}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Dissipated-power spectrum $A_{\mathrm {diss}}$}{8}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Local field enhancement}{9}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Molecular absorption cross section $\sigma _{\mathrm {mol}}$}{9}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Peak-normalized difference of the two cross sections}{10}{subsection.3.6}%
+\contentsline {section}{\numberline {4}Modified power using $E_{\mathrm {inc}}$}{11}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Why refer the same dipole to $E_{\mathrm {inc}}$}{11}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}The driver spectrum $A_{\mathrm {raw}}$}{12}{subsection.4.2}%
+\contentsline {section}{\numberline {5}The three observables together}{13}{section.5}%
