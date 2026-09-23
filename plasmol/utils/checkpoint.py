@@ -6,7 +6,7 @@ import logging
 import _pickle
 import os
 from plasmol.utils.csv import read_field_csv, init_csv
-from plasmol.utils.npz import save_npz
+from plasmol.utils.npz import save_npz, _help_for, _unpack_lines
 from argparse import Namespace
 import fcntl
 import time
@@ -130,7 +130,7 @@ OPTIONAL_KEYS = {
 
 
 def _embed_core_hole_mo_occ_content(save_dict, params, required=False):
-    """Embed core_hole_mo_occ CSV bytes into save_dict when the core-hole driver is active."""
+    """Embed core_hole_mo_occ CSV bytes into save_dict when molecule.core_hole is active."""
     if not params.has_core_hole:
         return
     filepath = params.core_hole_mo_occ_filepath
@@ -197,6 +197,36 @@ def _get_restored_filepath(original_path, include_dir=True, restored_text="_rest
     return os.path.join(dir_name, restored_name) if dir_name and include_dir else restored_name
 
 
+def log_checkpoint_preamble(params):
+    """One-time job-start banner: interval, keys, and how to unpack."""
+    n_steps = int(params.checkpoint_frequency_steps)
+    interval_au = getattr(params, "checkpoint_frequency_time", None)
+    if interval_au is None:
+        interval_au = n_steps * params.dt
+    path = params.checkpoint_filepath
+    final_path = f"final-{path}"
+    step_word = "time step" if n_steps == 1 else "time steps"
+    logger.info("Checkpointing enabled.")
+    logger.info(
+        f"Will write a snapshot every {interval_au:g} au "
+        f"(every {n_steps} {step_word}) to {path}."
+    )
+    logger.info(f"A final archive is written to {final_path} at the end of the run.")
+
+    key_names = sorted(REQUIRED_CHECKPOINT_KEYS | OPTIONAL_KEYS)
+    width = min(max((len(k) for k in key_names), default=8), 28)
+    logger.info("Checkpoint archive keys:")
+    for name in key_names:
+        meaning = _help_for(name)
+        if meaning:
+            logger.info(f"  {name:<{width}}  {meaning}")
+        else:
+            logger.info(f"  {name}")
+    logger.info("Unpack a snapshot with:")
+    for line in _unpack_lines(path, key_names, needs_pickle=True):
+        logger.info(f"  {line}")
+
+
 def init_checkpoint(params, final_checkpoint_filepath=None):
     """Initialize the checkpoint file with the invariant data only.
     This should be called once at the start (before any Fourier directions run).
@@ -224,7 +254,7 @@ def init_checkpoint(params, final_checkpoint_filepath=None):
     save_dict = _build_checkpoint_base(params)
 
     with _checkpoint_lock(checkpoint_path):
-        save_npz(checkpoint_path, detail="summary", **save_dict)
+        save_npz(checkpoint_path, detail="quiet", **save_dict)
 
     logger.debug(f"Initialized checkpoint to {checkpoint_path}")
 
@@ -258,7 +288,7 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
         with open(field_e_filepath, "rb") as f:
             save_dict[f"field_e_{dir_component}_content"] = f.read()
         save_dict.pop('allow_pickle', None)
-        save_npz(per_path, detail="summary", **save_dict)
+        save_npz(per_path, detail="quiet", **save_dict)
         logger.debug(f"Wrote per-direction field_e {kind} checkpoint for {dir_component}: {per_path}")
         return
 
@@ -283,7 +313,7 @@ def add_field_e_checkpoint(params, field_e_filepath, final_checkpoint_filepath=N
     
         # In case 'allow_pickle=True' is in the save_dict
         save_dict.pop('allow_pickle', None)
-        save_npz(checkpoint_path, detail="summary", **save_dict)
+        save_npz(checkpoint_path, detail="quiet", **save_dict)
 
 
 def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_checkpoint_filepath=None):
@@ -328,7 +358,7 @@ def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_che
         with open(core_hole_mo_occ_filepath, "rb") as f:
             save_dict["core_hole_mo_occ_content"] = f.read()
         save_dict.pop('allow_pickle', None)
-        save_npz(per_path, detail="summary", **save_dict)
+        save_npz(per_path, detail="quiet", **save_dict)
         logger.debug(
             f"Wrote core_hole_mo_occ {kind} checkpoint content for {dir_component}: {per_path}"
         )
@@ -348,7 +378,7 @@ def add_core_hole_mo_occ_checkpoint(params, core_hole_mo_occ_filepath, final_che
             save_dict["core_hole_mo_occ_content"] = f.read()
 
         save_dict.pop('allow_pickle', None)
-        save_npz(checkpoint_path, detail="summary", **save_dict)
+        save_npz(checkpoint_path, detail="quiet", **save_dict)
     logger.debug(f"Embedded core_hole_mo_occ content from {core_hole_mo_occ_filepath}")
 
 
@@ -448,7 +478,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
             raise RuntimeError(f"BUG: checkpoint is missing required keys: {missing}")
         
         save_dict.pop('allow_pickle', None)
-        save_npz(per_path, detail="summary", **save_dict)
+        save_npz(per_path, detail="quiet", **save_dict)
 
         time_log_str = f"{'='*20} Updated per-dir {kind} checkpoint {per_path} at time = {checkpoint_time} (direction: {dir_component}) {'='*20}"
         logger.debug(time_log_str)
@@ -521,7 +551,7 @@ def update_checkpoint(params, molecule, checkpoint_time, final_checkpoint_filepa
             
         # remove "." at front of temp file name
         checkpoint_path = checkpoint_path[1:]
-        save_npz(checkpoint_path, detail="summary", **save_dict)
+        save_npz(checkpoint_path, detail="quiet", **save_dict)
 
     time_log_str = f"{'='*20} Updated checkpoint file {checkpoint_path} at time = {checkpoint_time} "
     time_log_str += f"(direction: {dir_component}) " if is_absorption else ""
@@ -858,10 +888,10 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
     # Write hidden + visible (consistent with prior behavior)
     base = checkpoint_filepath[1:] if checkpoint_filepath.startswith(".") else checkpoint_filepath
     hidden_path = "." + base
-    save_npz(hidden_path, detail="summary", **merged)
+    save_npz(hidden_path, detail="quiet", **merged)
 
     visible_path = base
-    save_npz(visible_path, detail="summary", **merged)
+    save_npz(visible_path, detail="quiet", **merged)
 
     # Best-effort flag (final case)
     if "final" in base.lower():

@@ -1,55 +1,30 @@
 # drivers/custom_drivers/core_hole.py
-import os
 import logging
 import numpy as np
+from plasmol.quantum.geometry import rotate_molecule_geometry
 from plasmol.quantum.molecule import MOLECULE
-from plasmol.drivers.quantum import run as run_quantum
-from plasmol.utils.checkpoint import add_core_hole_mo_occ_checkpoint
-from plasmol.utils.plotting import plot_core_hole_mo_occupations
 
 
 def run(params):
+    """Survey per-atom contributions for listed MOs, then exit (no propagation).
+
+    Sudden SCH/DCH belongs under ``molecule.core_hole`` with driver
+    ``quantum``, ``absorption``, or ``plasmol``.
+    """
     logger = logging.getLogger("main")
 
-    # Survey mode: build the molecule, report MO atom contributions, then exit.
-    if params.check_mo_contrib_by_atom:
-        params.has_core_hole = False
-        molecule = MOLECULE(params)
-        for mo_idx in params.mo_removal_index_dict.keys():
-            nmo = np.asarray(molecule.mf.mo_coeff).shape[-1]
-            if mo_idx >= nmo:
-                raise ValueError(f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based).")
-            _mo_atom_contribution(molecule, mo_idx)
-        logger.info("Core-hole MO contribution survey complete; exiting before propagation.")
-        return
-
-    # MO occupation CSV is initialized in MOLECULE after neutral SCF once
-    # core_hole_log_indices (0 .. LUMO+1) are known. core_hole_watch_indices only selects
-    # which logged series appear in the final plot.
-
-    if getattr(params, 'has_checkpoint', False):
-        add_core_hole_mo_occ_checkpoint(params, params.core_hole_mo_occ_filepath)
-
-    try:
-        run_quantum(params)
-    except Exception as e:
-        logger.error(f"Error occurred while running quantum simulation: {e}")
-        raise
-    finally:
-        base, _ = os.path.splitext(params.core_hole_mo_occ_filepath)
-        plot_indices = getattr(params, 'core_hole_watch_indices', None)
-        if plot_indices is not None:
-            logger.debug(f"Plotting core-hole occupations for MO indices: {plot_indices}")
-        else:
-            logger.info("Plotting core-hole occupations for all logged MO indices.")
-        plot_core_hole_mo_occupations(
-            params.core_hole_mo_occ_filepath,
-            output_image_path=base,
-            indices=plot_indices,
-            filter_by_amplitude=getattr(params, 'core_hole_filter_by_amplitude', False),
-            amplitude_threshold=getattr(params, 'core_hole_amplitude_threshold', 0.2),
-        )
-
+    params.has_core_hole = False
+    rotate_molecule_geometry(params)
+    molecule = MOLECULE(params)
+    mo_dict = getattr(params, 'mo_removal_index_dict', None) or {}
+    for mo_idx in mo_dict.keys():
+        nmo = np.asarray(molecule.mf.mo_coeff).shape[-1]
+        if mo_idx >= nmo:
+            raise ValueError(
+                f"MO index {mo_idx} is out of range (molecule has {nmo} MOs, 0-based)."
+            )
+        _mo_atom_contribution(molecule, mo_idx)
+    logger.info("Core-hole MO contribution survey complete; exiting before propagation.")
 
 
 def _mo_atom_contribution(molecule, mo_idx, threshold=0.01):

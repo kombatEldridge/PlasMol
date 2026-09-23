@@ -22,7 +22,7 @@ The codebase is intentionally **extensible**. Empty commented sections and clear
         <h3>v1.2.0 <span class="timeline-date">July 2026</span> <span class="timeline-badge">Current</span></h3>
       </div>
       <ul>
-        <li><strong>Core-hole driver</strong> (<code>core_hole</code>) for sudden SCH/DCH dynamics and MO hole tracking</li>
+        <li><strong>Core-hole</strong> (<code>molecule.core_hole</code>) for sudden SCH/DCH dynamics and MO hole tracking; <code>core_hole</code> driver surveys MO atom contributions</li>
         <li>Hybrid absorption <strong>parallel / perpendicular</strong> polarization modes with vacuum <em>E</em><sub>inc</sub> deconvolution</li>
         <li>Quasistatic Gersten–Nitzan model and hybrid spectral validation</li>
         <li>Expanded per-driver simulation docs, JSON templates, and Sphinx RTD documentation</li>

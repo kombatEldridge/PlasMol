@@ -44,7 +44,8 @@ class MOLECULE():
                     basis=self.molecule_basis,
                     unit='B',
                     charge=self.molecule_charge,
-                    spin=self.molecule_spin)
+                    spin=self.molecule_spin,
+                    cart=bool(getattr(self, 'molecule_cartesian', True)))
         self.mol.verbose = 0
         self.is_open_shell = (self.molecule_spin != 0) or getattr(self, 'force_open_shell', False)
         if self.is_open_shell:
@@ -57,6 +58,9 @@ class MOLECULE():
             if isinstance(self.molecule_lrc_parameter, (int, float)):
                 self.mf.omega = self.molecule_lrc_parameter
         self.mf.xc = self.molecule_xc
+        grid_level = getattr(self, 'molecule_grid_level', None)
+        if grid_level is not None:
+            self.mf.grids.level = int(grid_level)
         self.mf.kernel()
         self.nmat = 2 if self.is_open_shell else 1
 
@@ -88,9 +92,11 @@ class MOLECULE():
                 e_homo_b = self.mf.mo_energy[1][occ_b > 0][-1]
                 logger.debug(f"E_HOMO(β) = {e_homo_b:.6f} Ha ({e_homo_b*27.2114:.6f} eV)")
         else:
-            logger.debug(f"Number of Occupied MOs: {np.sum(self.mf.mo_occ > 0)}")
-            logger.debug(f"E_HOMO energy: {self.mf.mo_energy[self.mf.mo_occ > 0][-1]:.6f} Ha, "
-                        f"{self.mf.mo_energy[self.mf.mo_occ > 0][-1]*27.2114:.6f} eV")
+            n_occ = int(np.sum(self.mf.mo_occ > 0))
+            logger.debug(f"Number of Occupied MOs: {n_occ}")
+            if n_occ > 0:
+                e_homo = self.mf.mo_energy[self.mf.mo_occ > 0][-1]
+                logger.debug(f"E_HOMO energy: {e_homo:.6f} Ha, {e_homo*27.2114:.6f} eV")
 
         charges = self.mf.mol.atom_charges()
         coords = self.mf.mol.atom_coords()
@@ -255,10 +261,21 @@ class MOLECULE():
 
         self.mf.mol.build(False, False)
 
-        setocc = [self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy()]
-        for mo, n_remove in mo_removal_index_dict.items():
-            for spin_idx in range(n_remove):
-                setocc[spin_idx][mo] = 0
+        if self.is_open_shell:
+            setocc = [self.mf.mo_occ[0].copy(), self.mf.mo_occ[1].copy()]
+            for mo, n_remove in mo_removal_index_dict.items():
+                for spin_idx in range(n_remove):
+                    setocc[spin_idx][mo] = 0
+        else:
+            if len(mo_removal_index_dict) != 1 or n_holes != 2:
+                raise ValueError(
+                    "Closed-shell (RKS) core-hole construction only supports a double "
+                    "hole on one MO (remove 2 electrons). Use SCH/two-site holes with "
+                    "an open-shell parent or let the driver force UKS."
+                )
+            setocc = np.asarray(self.mf.mo_occ, dtype=float).copy()
+            for mo, n_remove in mo_removal_index_dict.items():
+                setocc[mo] = 0.0
 
         dm_sudden = mf_gs.make_rdm1(mo_gs, setocc)
         self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
@@ -354,14 +371,21 @@ class MOLECULE():
         return _gamma_one_spin(F_orth)
 
     def print_occ(self, n_print=30):
-        logger.debug(f"{'MO':>4} | {'Eα (Ha)':>12} | {'occα':>5} | {'Eβ (Ha)':>12} | {'occβ':>5}")
-        logger.debug("-" * 55)
-
-        for i in range(min(n_print, len(self.mf.mo_energy[0]))):
-            logger.debug(f"{i+1:4d} | {self.mf.mo_energy[0][i]:12.5f} | "
-                f"{self.mf.mo_occ[0][i]:5.1f} | "
-                f"{self.mf.mo_energy[1][i]:12.5f} | "
-                f"{self.mf.mo_occ[1][i]:5.1f}")
+        if self.is_open_shell:
+            logger.debug(f"{'MO':>4} | {'Eα (Ha)':>12} | {'occα':>5} | {'Eβ (Ha)':>12} | {'occβ':>5}")
+            logger.debug("-" * 55)
+            nmo = len(self.mf.mo_energy[0])
+            for i in range(min(n_print, nmo)):
+                logger.debug(f"{i+1:4d} | {self.mf.mo_energy[0][i]:12.5f} | "
+                    f"{self.mf.mo_occ[0][i]:5.1f} | "
+                    f"{self.mf.mo_energy[1][i]:12.5f} | "
+                    f"{self.mf.mo_occ[1][i]:5.1f}")
+            return
+        logger.debug(f"{'MO':>4} | {'E (Ha)':>12} | {'occ':>5}")
+        logger.debug("-" * 36)
+        nmo = len(self.mf.mo_energy)
+        for i in range(min(n_print, nmo)):
+            logger.debug(f"{i+1:4d} | {self.mf.mo_energy[i]:12.5f} | {self.mf.mo_occ[i]:5.1f}")
 
     def _neutral_lumo_index(self):
         """
@@ -404,7 +428,7 @@ class MOLECULE():
         filepath = getattr(self, 'core_hole_mo_occ_filepath', None)
         if not filepath:
             raise ValueError(
-                "Core-hole driver requires 'core_hole_mo_occ_filepath' under additional_parameters."
+                "molecule.core_hole requires 'mo_occ_filepath' (CSV of time-dependent hole occupations)."
             )
 
         if self.resumed_from_checkpoint and os.path.exists(filepath):
@@ -412,9 +436,14 @@ class MOLECULE():
             return
 
         header = ['Timestamps (au)'] + [f'MO index {i}' for i in self.core_hole_log_indices]
+        scale = (
+            "open-shell α+β (0–2 electrons)"
+            if self.is_open_shell
+            else "closed-shell P (0–1, Nascimento)"
+        )
         init_csv(
             filepath,
-            f"Time-dependent hole occupations (neutral MO basis) for MO indices: "
+            f"Time-dependent hole occupations (neutral MO basis, {scale}) for MO indices: "
             f"{self.core_hole_log_indices}",
             header=header,
         )
@@ -429,24 +458,36 @@ class MOLECULE():
     def get_mo_occupations(self, current_time):
         """
         Hole occupations on the neutral MO basis (Fig. 8 convention).
-        Core-hole always runs open-shell (UKS).
 
-            n_k^e(t) = [C_n† S D_AO(t) S C_n]_{kk}
-            h_k(t)   = n_k^neutral - n_k^e(t)
+        Closed-shell (RKS) uses Nascimento / NWChem closed-shell P (0 or 1):
+
+            n_k^e(t) = (1/2) [C_n† S D_AO(t) S C_n]_{kk}
+            h_k(t)   = n_k^neutral/2 - n_k^e(t)
+
+        Open-shell (UKS) sums α+β (each already 0 or 1):
+
+            n_k^e(t) = Σ_σ [C_σ† S D_σ(t) S C_σ]_{kk}
+            h_k(t)   = n_k^{neutral,α+β} - n_k^e(t)
 
         Positive h_k is loss of electronic density; negative is gain.
+        Singlet DCH is restricted; SCH / two-site holes are UKS.
 
         All MOs in ``core_hole_log_indices`` (0 through neutral LUMO+1) are written;
         ``core_hole_watch_indices`` only selects which series are plotted at the end.
         """
         S = self.S
-        C_a, C_b = self.C[0], self.C[1]
 
         def _electron_occ(D_ao, C):
             D_mo = (C.conj().T @ S) @ D_ao @ (S @ C)
             return D_mo.diagonal().real
 
-        n_e = _electron_occ(self.D_ao[0], C_a) + _electron_occ(self.D_ao[1], C_b)
-        n0 = np.asarray(self.occ_neutral[0]) + np.asarray(self.occ_neutral[1])
+        if self.is_open_shell:
+            n_e = _electron_occ(self.D_ao[0], self.C[0]) + _electron_occ(self.D_ao[1], self.C[1])
+            n0 = np.asarray(self.occ_neutral[0]) + np.asarray(self.occ_neutral[1])
+        else:
+            # RKS D_AO is the total density (occ 0 or 2). Half of that is
+            # the closed-shell P used by NWChem RT-TDDFT / Nascimento Eq. 2.
+            n_e = 0.5 * _electron_occ(self.D_ao, self.C)
+            n0 = 0.5 * np.asarray(self.occ_neutral)
         values = (n0 - n_e)[self.core_hole_log_indices]
         update_csv(self.core_hole_mo_occ_filepath, current_time, None, None, None, *values)

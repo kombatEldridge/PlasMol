@@ -291,7 +291,15 @@ def test_invalid_molecule_geometry_units(tmp_path):
 
 def _absorption_plasmon_config():
     return {
-        "settings": {"dt": 0.05, "t_end": 2.0, "driver": "absorption"},
+        "settings": {
+            "dt": 0.05,
+            "t_end": 2.0,
+            "driver": {
+                "name": "absorption",
+                "polarization": "parallel",
+                "spectrum_filepath": "spectrum.png",
+            },
+        },
         "plasmon": {
             "simulation": {"cell_length": 0.2, "pml_thickness": 0.05},
             "source": {
@@ -316,7 +324,7 @@ def _absorption_plasmon_config():
 
 def test_absorption_with_plasmon(tmp_path):
     cfg = _absorption_plasmon_config()
-    cfg["additional_parameters"] = {"absorption": {"gamma": 0.01, "spectrum_filepath": "spectrum.png"}}
+    cfg["settings"]["driver"]["gamma"] = 0.01
     json_path = tmp_path / "absorption_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
@@ -325,18 +333,56 @@ def test_absorption_with_plasmon(tmp_path):
     assert params.has_absorption is True
     assert params.absorption_gamma == 0.01
     assert params.absorption_spectrum_filepath == "spectrum.png"
-    assert params.absorption_polarization == "full"
+    assert params.absorption_polarization == "parallel"
+
+
+def test_absorption_single_polarization_parses(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["settings"]["driver"] = {
+        "name": "absorption",
+        "polarization": "single",
+        "spectrum_filepath": "spectrum_single.png",
+    }
+    json_path = tmp_path / "absorption_single.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.absorption_polarization == "single"
+    assert params.plasmon_source_component == "z"
+
+
+def test_absorption_single_keeps_off_axis_geometry(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["plasmon"]["molecule"]["position"] = [0.04, 0.03, 0.0]
+    cfg["settings"]["driver"] = {
+        "name": "absorption",
+        "polarization": "single",
+        "spectrum_filepath": "spectrum_single.png",
+    }
+    json_path = tmp_path / "absorption_single_offaxis.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.absorption_polarization == "single"
+    assert params.plasmon_source_component == "z"
+
+
+def test_absorption_single_requires_source_component(tmp_path):
+    cfg = _absorption_plasmon_config()
+    del cfg["plasmon"]["source"]["component"]
+    cfg["settings"]["driver"] = {
+        "name": "absorption",
+        "polarization": "single",
+        "spectrum_filepath": "spectrum_single.png",
+    }
+    json_path = tmp_path / "absorption_single_no_comp.json"
+    json_path.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="component"):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
 def test_absorption_parallel_polarization_parses(tmp_path):
     cfg = _absorption_plasmon_config()
-    cfg["additional_parameters"] = {
-        "absorption": {
-            "gamma": 0.01,
-            "spectrum_filepath": "spectrum_par.png",
-            "polarization": "parallel",
-        }
-    }
+    cfg["settings"]["driver"]["gamma"] = 0.01
+    cfg["settings"]["driver"]["spectrum_filepath"] = "spectrum_par.png"
     json_path = tmp_path / "absorption_par.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
@@ -346,14 +392,12 @@ def test_absorption_parallel_polarization_parses(tmp_path):
 
 def test_absorption_perpendicular_polarization_parses(tmp_path):
     cfg = _absorption_plasmon_config()
-    cfg["additional_parameters"] = {
-        "absorption": {
-            "gamma": 0.01,
-            "spectrum_filepath": "spectrum_perp.png",
-            "polarization": "perpendicular",
-            "perp_component": "z",
-        }
-    }
+    cfg["settings"]["driver"].update({
+        "gamma": 0.01,
+        "spectrum_filepath": "spectrum_perp.png",
+        "polarization": "perpendicular",
+        "perp_component": "z",
+    })
     json_path = tmp_path / "absorption_perp.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
@@ -382,6 +426,32 @@ def test_absorption_parallel_requires_plasmon(tmp_path):
     json_path = tmp_path / "absorption_par_no_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     with pytest.raises(ValueError, match="requires a plasmon section"):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+
+
+def test_absorption_observables_default_cross_section(tmp_path):
+    cfg = _absorption_plasmon_config()
+    json_path = tmp_path / "abs_obs_default.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.absorption_observables == ["cross_section"]
+
+
+def test_absorption_observables_list_parses(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["settings"]["driver"]["observables"] = ["cross_section", "dissipative_power", "A_raw"]
+    json_path = tmp_path / "abs_obs_all.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.absorption_observables == ["cross_section", "dissipative_power", "A_raw"]
+
+
+def test_absorption_observables_rejects_unknown(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["settings"]["driver"]["observables"] = ["extinction"]
+    json_path = tmp_path / "abs_obs_bad.json"
+    json_path.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="Unknown absorption observable"):
         PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
@@ -429,12 +499,36 @@ def test_non_absorption_kick_still_requires_intensity(tmp_path):
         PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
 
 
+def test_absorption_parallel_omits_source_component(tmp_path):
+    """Hybrid absorption chooses E from the NP–mol axis; JSON component is optional."""
+    cfg = _absorption_plasmon_config()
+    cfg["settings"]["driver"] = {
+        "name": "absorption",
+        "polarization": "parallel",
+        "spectrum_filepath": "spectrum_par.png",
+    }
+    del cfg["plasmon"]["source"]["component"]
+    json_path = tmp_path / "abs_par_no_comp.json"
+    json_path.write_text(json.dumps(cfg))
+    params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+    assert params.absorption_polarization == "parallel"
+    assert not hasattr(params, "plasmon_source_component")
+    assert not hasattr(params, "plasmon_source_object")
+
+
+def test_absorption_full_rejected_with_nanoparticle(tmp_path):
+    cfg = _absorption_plasmon_config()
+    cfg["settings"]["driver"]["polarization"] = "full"
+    json_path = tmp_path / "abs_full_np.json"
+    json_path.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError, match="not allowed with a nanoparticle"):
+        PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))
+
+
 def test_absorption_driver_with_plasmon_parses(tmp_path):
     """driver: absorption without an absorption{} block still selects the driver; spectrum path falls back to files."""
     cfg = _absorption_plasmon_config()
-    cfg["additional_parameters"] = {
-        "absorption": {"spectrum_filepath": "spectrum.png"}
-    }
+    cfg["settings"]["driver"]["spectrum_filepath"] = "spectrum.png"
     json_path = tmp_path / "absorption_plasmon.json"
     json_path.write_text(json.dumps(cfg))
     params = PARAMS(Namespace(input=str(json_path), verbose=0, log=None, checkpoint=None))

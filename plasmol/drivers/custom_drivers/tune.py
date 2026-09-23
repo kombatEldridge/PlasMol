@@ -10,6 +10,7 @@ any time propagation.
 import logging
 
 import numpy as np
+from plasmol.quantum.geometry import rotate_molecule_geometry
 from pyscf import gto, dft, tdscf
 from pyscf.dft import libxc
 from scipy.interpolate import interp1d
@@ -221,6 +222,7 @@ def _tune_eps0(params):
 
 def run(params):
     """Regular (non-custom) tuning driver entry point."""
+    rotate_molecule_geometry(params)
     # Determine what needs to be tuned
     lrc = getattr(params, 'molecule_lrc_parameter', None)
     xc = getattr(params, 'molecule_xc', "")

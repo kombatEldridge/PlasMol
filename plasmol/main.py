@@ -16,7 +16,7 @@ from plasmol.drivers import *
 from plasmol.utils.logging import setup_logging
 from plasmol.utils.cli import parse_arguments
 from plasmol.utils.params import PARAMS
-from plasmol.utils.checkpoint import init_checkpoint, cleanup_checkpoint
+from plasmol.utils.checkpoint import init_checkpoint, cleanup_checkpoint, log_checkpoint_preamble
 
 if __name__ == "__main__":
     # Step 1: Grab CLI args
@@ -70,6 +70,7 @@ if __name__ == "__main__":
         else:
             if params.resumed_from_checkpoint:
                 params.checkpoint_filepath = f"{Path(params.checkpoint_filepath).with_suffix('')}_new.npz"
+            log_checkpoint_preamble(params)
             init_checkpoint(params)
             params.checkpoint_written_after_init = False
             params.final_checkpoint_filepath = f"final-{params.checkpoint_filepath}"

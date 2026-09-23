@@ -14,7 +14,11 @@ from plasmol.quantum.propagation import propagation
 
 def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv"):
     cfg = {
-        "settings": {"dt": 0.2, "t_end": 0.4, "driver": "core_hole"},
+        "settings": {
+            "dt": 0.2,
+            "t_end": 0.4,
+            "driver": "quantum",
+        },
         "molecule": {
             "geometry": [
                 {"atom": "H", "coord": [0.0, 0.0, 0.0]},
@@ -33,10 +37,10 @@ def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv"):
                 "width_steps": 1,
                 "component": "z",
             },
-        },
-        "additional_parameters": {
-            "mo_removal_index_dict": mo_removal,
-            "core_hole_mo_occ_filepath": str(tmp_path / occ_name),
+            "core_hole": {
+                "mo_removal_index_dict": mo_removal,
+                "mo_occ_filepath": str(tmp_path / occ_name),
+            },
         },
         "files": {
             "field_e_filepath": str(tmp_path / "e.csv"),
@@ -48,19 +52,67 @@ def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv"):
     return PARAMS(Namespace(input=str(jp), verbose=0, log=None, checkpoint=None))
 
 
-def test_dch_forces_uks_and_charge(tmp_path):
+def test_cartesian_increases_nao_for_d_functions(tmp_path):
+    def _water(cart):
+        cfg = {
+            "settings": {
+                "dt": 0.2,
+                "t_end": 0.4,
+                "driver": "quantum",
+            },
+            "molecule": {
+                "geometry": [
+                    {"atom": "O", "coord": [0.0, 0.0, 0.0]},
+                    {"atom": "H", "coord": [0.0, 0.0, 1.8]},
+                    {"atom": "H", "coord": [1.4, 0.0, -0.6]},
+                ],
+                "geometry_units": "bohr",
+                "charge": 0,
+                "spin": 0,
+                "basis": "6-31g*",
+                "xc": "pbe",
+                "cartesian": cart,
+                "propagator": {"type": "rk4"},
+                "core_hole": {
+                    "mo_removal_index_dict": {"0": 2},
+                    "mo_occ_filepath": str(tmp_path / f"occ_{int(cart)}.csv"),
+                },
+            },
+            "files": {
+                "field_e_filepath": str(tmp_path / f"e_{int(cart)}.csv"),
+                "field_p_filepath": str(tmp_path / f"p_{int(cart)}.csv"),
+            },
+        }
+        jp = tmp_path / f"water_{int(cart)}.json"
+        jp.write_text(json.dumps(cfg))
+        return MOLECULE(PARAMS(Namespace(input=str(jp), verbose=0, log=None, checkpoint=None)))
+
+    sph = _water(False)
+    cart = _water(True)
+    assert sph.mol.cart is False
+    assert cart.mol.cart is True
+    assert cart.mol.nao > sph.mol.nao
+
+
+def test_grid_level_applied(tmp_path):
+    params = _h2_core_hole_params(tmp_path, {"0": 2})
+    params.molecule_grid_level = 2
+    mol = MOLECULE(params)
+    assert mol.mf.grids.level == 2
+
+
+def test_dch_stays_rks_and_charge(tmp_path):
     params = _h2_core_hole_params(tmp_path, {"0": 2})
     mol = MOLECULE(params)
-    assert isinstance(mol.mf, dft.uks.UKS)
-    assert mol.is_open_shell is True
+    assert isinstance(mol.mf, dft.rks.RKS)
+    assert mol.is_open_shell is False
     assert mol.mf.mol.charge == 2
     # double hole on one MO keeps closed-shell spin for parent spin=0
     assert mol.mf.mol.spin == 0
     assert getattr(mol, "_core_hole_dm0", None) is not None
-    # both spin channels emptied on MO 0
     occ = np.asarray(mol.mf.mo_occ)
-    assert occ[0][0] == 0
-    assert occ[1][0] == 0
+    assert occ.ndim == 1
+    assert occ[0] == 0
 
 
 def test_sch_increments_spin(tmp_path):
@@ -105,11 +157,23 @@ def test_mo_occ_csv_initialized_and_logged(tmp_path):
 def test_get_mo_occupations_hole_on_target(tmp_path):
     params = _h2_core_hole_params(tmp_path, {"0": 2}, "hole.csv")
     mol = MOLECULE(params)
-    # after sudden DCH on MO 0, hole occupation (n0 - n_e) on MO 0 is ~2
+    assert mol.is_open_shell is False
+    # Closed-shell DCH logs Nascimento P (0–1): emptied MO 0 starts near 1.
     mol.get_mo_occupations(0.0)
     path = Path(params.core_hole_mo_occ_filepath)
     rows = [ln for ln in path.read_text().splitlines() if ln and not ln.startswith("#")]
-    # last data row
     data = rows[-1].split(",")
     hole0 = float(data[1])
-    assert hole0 == pytest.approx(2.0, abs=0.2)
+    assert hole0 == pytest.approx(1.0, abs=0.2)
+
+
+def test_get_mo_occupations_sch_spin_sum(tmp_path):
+    params = _h2_core_hole_params(tmp_path, {"0": 1}, "sch_hole.csv")
+    mol = MOLECULE(params)
+    assert mol.is_open_shell is True
+    # UKS keeps the α+β electron count: a single hole on MO 0 starts near 1.
+    mol.get_mo_occupations(0.0)
+    path = Path(params.core_hole_mo_occ_filepath)
+    rows = [ln for ln in path.read_text().splitlines() if ln and not ln.startswith("#")]
+    hole0 = float(rows[-1].split(",")[1])
+    assert hole0 == pytest.approx(1.0, abs=0.2)

@@ -6,7 +6,7 @@ param_defs = [
     # Settings (always required)
     ('dt', ['settings', 'dt'], False, None, None, None, (int, float), "Time step", "a.u."),
     ('t_end', ['settings', 't_end'], False, None, None, None, (int, float), "End time", "a.u."),
-    ('driver_str', ['settings', 'driver'], True, 'has_custom', None, None, str, "Driver to run (will be automatically selected among default three drivers if no custom driver is specified)", None),
+    ('driver_str', ['settings', 'driver', 'name'], True, 'has_custom', None, None, str, "Driver to run. settings.driver may be this name as a string, or a dict with 'name' plus driver-specific keys", None),
 
     # Plasmon params
     ('plasmon_dict', ['plasmon'], True, "has_plasmon", None, 'plasmon', dict, None, None),
@@ -25,7 +25,7 @@ param_defs = [
     ('plasmon_source_type', ['plasmon', 'source', 'type'], False, 'has_plasmon_source', None, 'plasmon', str, "Type of source ('continuous', 'gaussian', 'kick', or 'custom')", None),
     ('plasmon_source_center', ['plasmon', 'source', 'center'], False, 'has_plasmon_source', None, 'plasmon', list, "Center coordinates of the source", "μm"),
     ('plasmon_source_size', ['plasmon', 'source', 'size'], False, 'has_plasmon_source', None, 'plasmon', list, "Size of the source volume (for 3D simulations, propagation dimension should be zero)", "μm"),
-    ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'has_plasmon_source', None, 'plasmon', str, "Electric field component the source acts on", None),
+    ('plasmon_source_component', ['plasmon', 'source', 'component'], False, 'has_plasmon_source', None, 'plasmon', str, "Electric field component the source acts on. Optional when the driver sets polarization (hybrid absorption, scatter_response_fxn)", None),
     ('plasmon_source_amplitude', ['plasmon', 'source', 'amplitude'], False, 'has_plasmon_source', 1, 'plasmon', (int, float), "Overall amplitude multiplying the source", None),
     ('plasmon_source_is_integrated', ['plasmon', 'source', 'is_integrated'], False, 'has_plasmon_source', True, 'plasmon', bool, "Whether the source is integrated over time (dipole moment)", None),
     ('plasmon_source_additional_parameters', ['plasmon', 'source', 'additional_parameters'], False, 'has_plasmon_source', None, 'plasmon', dict, "Type-specific parameters (frequency, wavelength, width, etc.)", "μm"),
@@ -53,7 +53,11 @@ param_defs = [
     ('molecule_dict', ['molecule'], True, "has_molecule", None, 'molecule', dict, None, None),
     ('molecule_geometry', ['molecule', 'geometry'], False, 'has_molecule', None, 'molecule', (list, str), "Molecular geometry as list of atom+coord entries or path to .xyz file", None),
     ('molecule_geometry_units', ['molecule', 'geometry_units'], False, 'has_molecule', None, 'molecule', str, "Units of the geometry coordinates", None),
+    ('molecule_rotation', ['molecule', 'rotation'], False, 'has_molecule', None, 'molecule', (dict, list), "Active rotation of the nuclear frame applied before SCF. An object {axis, angle_deg} or {align: {from_atom, to_atom, axis}, twist_deg}, or a list of those applied in order. Omitted means the input geometry is used as written. The source .xyz is not modified.", None),
     ('molecule_basis', ['molecule', 'basis'], False, 'has_molecule', None, 'molecule', str, "Basis set name (e.g. '6-31g')", None),
+    ('molecule_basis_coords', ['molecule', 'basis_coords'], False, 'has_molecule', None, 'molecule', str, "Gaussian angular type: 'cartesian' (6 d functions, PlasMol default, stock NWChem) or 'spherical' (5 d functions, PySCF default)", None),
+    ('molecule_cartesian', ['molecule', 'cartesian'], False, 'has_molecule', True, 'molecule', bool, "If true (PlasMol default), use Cartesian Gaussians (6 d functions). False is spherical (5 d). Alias of basis_coords.", None),
+    ('molecule_grid_level', ['molecule', 'grid_level'], False, 'has_molecule', None, 'molecule', int, "PySCF DFT quadrature grid level (0–9). Omit to use the PySCF default.", None),
     ('molecule_charge', ['molecule', 'charge'], False, 'has_molecule', 0, 'molecule', int, "Total molecular charge", None),
     ('molecule_spin', ['molecule', 'spin'], False, 'has_molecule', 0, 'molecule', int, "Spin multiplicity minus one (0 = singlet)", None),
     ('molecule_xc', ['molecule', 'xc'], False, 'has_molecule', None, 'molecule', str, "Exchange-correlation functional", None),
@@ -80,6 +84,14 @@ param_defs = [
     ('cap_eps0', ['molecule', 'cap', "eps0"], False, 'has_cap', 0.05, 'molecule', (int, float, str), "Reference energy for CAP", "a.u."),
     ('cap_clamp', ['molecule', 'cap', "clamp"], False, 'has_cap', 100, 'molecule', (int, float), "Maximum allowed CAP value", "a.u."),
 
+    # Sudden core-hole (SCH / DCH) — production on quantum / absorption / plasmol
+    ('core_hole_dict', ['molecule', 'core_hole'], True, "has_core_hole", None, 'molecule', dict, "Sudden SCH/DCH subsection: MO indices to ionize and occupation logging", None),
+    ('mo_removal_index_dict', ['molecule', 'core_hole', 'mo_removal_index_dict'], False, 'has_core_hole', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove (1 or 2). The core_hole driver uses the keys as MOs to survey and ignores the electron counts.", None),
+    ('core_hole_watch_indices', ['molecule', 'core_hole', 'watch_indices'], False, 'has_core_hole', None, 'molecule', list, "List of 0-based MO indices to include in the final hole-occupation plot. Logging always covers MOs 0 through neutral LUMO+1; omit or null to plot all logged MOs.", None),
+    ('core_hole_mo_occ_filepath', ['molecule', 'core_hole', 'mo_occ_filepath'], False, 'has_core_hole', None, 'molecule', str, "Path to the CSV of time-dependent hole occupations", None),
+    ('core_hole_filter_by_amplitude', ['molecule', 'core_hole', 'filter_by_amplitude'], False, 'has_core_hole', False, 'molecule', bool, "If true, plot_core_hole_mo_occupations keeps only MOs with peak-to-peak amplitude > amplitude_threshold", None),
+    ('core_hole_amplitude_threshold', ['molecule', 'core_hole', 'amplitude_threshold'], False, 'has_core_hole', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when filter_by_amplitude is true", None),
+
     # Checkpointing params
     ('checkpoint_dict', ['files', 'checkpoint'], True, "has_checkpoint", None, None, dict, None, None),
     ('checkpoint_filepath', ['files', 'checkpoint', 'filepath'], False, 'has_checkpoint', None, None, str, "Path to the checkpoint .npz file", None),
@@ -96,48 +108,72 @@ param_defs = [
     ## Checkpoint / resume
     ('checkpoint_filename_used', ['additional_parameters', 'checkpoint_filename_used'], False, None, None, None, str, "Path to the checkpoint .npz used for this resume run (injected into the restored input when restoring files with -c)", None),
     
-    ## Driver: absorption
-    ('absorption_dict', ['additional_parameters', 'absorption'], True, "has_absorption", None, 'molecule', dict, None, None),
-    ('absorption_gamma', ['additional_parameters', 'absorption', 'gamma'], False, 'has_absorption', 0, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
-    ('absorption_min_ev', ['additional_parameters', 'absorption', 'min_ev'], False, 'has_absorption', 1.5, 'molecule', (int, float), "Minimum energy for Fourier transformed spectrum", "eV"),
-    ('absorption_max_ev', ['additional_parameters', 'absorption', 'max_ev'], False, 'has_absorption', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
-    ('absorption_npz_filepath', ['additional_parameters', 'absorption', 'npz_filepath'], False, 'has_absorption', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
-    ('absorption_spectrum_filepath', ['additional_parameters', 'absorption', 'spectrum_filepath'], False, 'has_absorption', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
-    ('absorption_tau', ['additional_parameters', 'absorption', 'tau'], False, 'has_absorption', None, 'molecule', (int, float), "Artificial damping time constant tau; applied as exp(-t/tau) to polarization field before FFT", "a.u."),
-    ('absorption_use_existing_e_field_ref', ['additional_parameters', 'absorption', 'use_existing_e_field_ref'], False, 'has_absorption', False, 'molecule', bool, "Whether to use an existing vacuum E_inc field reference", None),
-    ('absorption_field_e_ref_filepath', ['additional_parameters', 'absorption', 'field_e_ref_filepath'], False, 'has_absorption', 'field_e_ref.csv', 'molecule', str, "Vacuum E_inc CSV (time,xx,yy,zz). If the file exists it is used and vacuum reference sims are skipped; otherwise Meep absorption runs write the merged reference here (default field_e_ref.csv)", None),
-    ('absorption_reference_only', ['additional_parameters', 'absorption', 'reference_only'], False, 'has_absorption', False, 'molecule', bool, "If true, only run vacuum reference E_inc simulations (no molecule/NP production runs, no spectrum); write merged field_e_ref_filepath and exit", None),
-    ('absorption_polarization', ['additional_parameters', 'absorption', 'polarization'], False, 'has_absorption', 'full', 'molecule', str, "Absorption polarization mode: 'full' (x+y+z), 'parallel' (E along NP–molecule axis, one run), or 'perpendicular' (E perp. to that axis, one run)", None),
-    ('absorption_perp_component', ['additional_parameters', 'absorption', 'perp_component'], False, 'has_absorption', None, 'molecule', str, "Optional Cartesian component ('x','y','z') for perpendicular mode; if omitted, chosen as the axis most orthogonal to the NP–molecule vector", None),
+    ## Driver: absorption (settings.driver keys besides 'name')
+    ('absorption_gamma', ['settings', 'driver', 'gamma'], False, 'has_absorption', 0, 'molecule', (int, float), "Broadening factor for Fourier transformed spectrum", "a.u."),
+    ('absorption_min_ev', ['settings', 'driver', 'min_ev'], False, 'has_absorption', 1.5, 'molecule', (int, float), "Minimum energy for Fourier transformed spectrum", "eV"),
+    ('absorption_max_ev', ['settings', 'driver', 'max_ev'], False, 'has_absorption', 5.0, 'molecule', (int, float), "Maximum energy for Fourier transformed spectrum", "eV"),
+    ('absorption_npz_filepath', ['settings', 'driver', 'npz_filepath'], False, 'has_absorption', None, 'molecule', str, "File path for npz file containing imaginary absorption and frequencies", None),
+    ('absorption_spectrum_filepath', ['settings', 'driver', 'spectrum_filepath'], False, 'has_absorption', None, 'molecule', str, "Output file path for the absorption spectrum plot", None),
+    ('absorption_tau', ['settings', 'driver', 'tau'], False, 'has_absorption', None, 'molecule', (int, float), "Artificial damping time constant tau; applied as exp(-t/tau) to polarization field before FFT", "a.u."),
+    ('absorption_use_existing_e_field_ref', ['settings', 'driver', 'use_existing_e_field_ref'], False, 'has_absorption', False, 'molecule', bool, "Whether to use an existing vacuum E_inc field reference", None),
+    ('absorption_field_e_ref_filepath', ['settings', 'driver', 'field_e_ref_filepath'], False, 'has_absorption', 'field_e_ref.csv', 'molecule', str, "Vacuum E_inc CSV (time,xx,yy,zz). If the file exists it is used and vacuum reference sims are skipped; otherwise Meep absorption runs write the merged reference here (default field_e_ref.csv)", None),
+    ('absorption_reference_only', ['settings', 'driver', 'reference_only'], False, 'has_absorption', False, 'molecule', bool, "If true, only run vacuum reference E_inc simulations (no molecule/NP production runs, no spectrum); write merged field_e_ref_filepath and exit", None),
+    ('absorption_polarization', ['settings', 'driver', 'polarization'], False, 'has_absorption', 'full', 'molecule', str, "Absorption polarization: 'full' (x+y+z, no NP), 'parallel' (E along NP–mol axis), 'perpendicular' (E perp. to that axis), or 'single' (JSON source as given). 'full' is rejected when a nanoparticle is present.", None),
+    ('absorption_perp_component', ['settings', 'driver', 'perp_component'], False, 'has_absorption', None, 'molecule', str, "Optional Cartesian component ('x','y','z') for perpendicular mode; if omitted, chosen as the axis most orthogonal to the NP–molecule vector", None),
+    ('absorption_observables', ['settings', 'driver', 'observables'], False, 'has_absorption', ["cross_section"], 'molecule', list, "Which absorption spectra to write: 'cross_section' (σ_m), 'dissipative_power' (A_diss), and/or 'A_raw' (μ/E_inc)", None),
 
     ## Driver: comparison.py
-    ('comparison_dict', ['additional_parameters', 'comparison'], True, "has_comparison", None, 'molecule', dict, None, None),
-    ('comparison_bases', ['additional_parameters', 'comparison', 'bases'], False, 'has_comparison', None, 'molecule', list, "List of basis sets to compare", None),
-    ('comparison_xcs', ['additional_parameters', 'comparison', 'xcs'], False, 'has_comparison', None, 'molecule', list, "List of exchange-correlation functionals to compare", None),
-    ('comparison_lrc_parameters', ['additional_parameters', 'comparison', 'lrc_parameters'], False, 'has_comparison', None, 'molecule', dict, "Long-range correction parameters for RSH functionals", None),
-    ('comparison_num_virtual', ['additional_parameters', 'comparison', 'num_virtual'], False, 'has_comparison', None, 'molecule', int, "Number of virtual orbitals to show in MO plot", None),
-    ('comparison_num_occupied', ['additional_parameters', 'comparison', 'num_occupied'], False, 'has_comparison', None, 'molecule', int, "Number of occupied orbitals to show in MO plot", None),
-    ('comparison_y_min', ['additional_parameters', 'comparison', 'y_min'], False, 'has_comparison', None, 'molecule', (int, float), "Minimum energy for MO plot (Hartree)", "Ha"),
-    ('comparison_y_max', ['additional_parameters', 'comparison', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float), "Maximum energy for MO plot (Hartree)", "Ha"),
-    ('comparison_index_min', ['additional_parameters', 'comparison', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float), "Lowest MO index to plot (1-indexed)", None),
-    ('comparison_index_max', ['additional_parameters', 'comparison', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float), "Highest MO index to plot (1-indexed)", None),
-    ('comparison_dir_name', ['additional_parameters', 'comparison', 'dir_name'], False, 'has_comparison', "comparison-plots", 'molecule', str, "Directory name for comparison plots", None),
-    
+    ('comparison_bases', ['settings', 'driver', 'bases'], False, 'has_comparison', None, 'molecule', list, "List of basis sets to compare", None),
+    ('comparison_xcs', ['settings', 'driver', 'xcs'], False, 'has_comparison', None, 'molecule', list, "List of exchange-correlation functionals to compare", None),
+    ('comparison_lrc_parameters', ['settings', 'driver', 'lrc_parameters'], False, 'has_comparison', None, 'molecule', dict, "Long-range correction parameters for RSH functionals", None),
+    ('comparison_num_virtual', ['settings', 'driver', 'num_virtual'], False, 'has_comparison', None, 'molecule', int, "Number of virtual orbitals to show in MO plot", None),
+    ('comparison_num_occupied', ['settings', 'driver', 'num_occupied'], False, 'has_comparison', None, 'molecule', int, "Number of occupied orbitals to show in MO plot", None),
+    ('comparison_y_min', ['settings', 'driver', 'y_min'], False, 'has_comparison', None, 'molecule', (int, float), "Minimum energy for MO plot (Hartree)", "Ha"),
+    ('comparison_y_max', ['settings', 'driver', 'y_max'], False, 'has_comparison', None, 'molecule', (int, float), "Maximum energy for MO plot (Hartree)", "Ha"),
+    ('comparison_index_min', ['settings', 'driver', 'index_min'], False, 'has_comparison', None, 'molecule', (int, float), "Lowest MO index to plot (1-indexed)", None),
+    ('comparison_index_max', ['settings', 'driver', 'index_max'], False, 'has_comparison', None, 'molecule', (int, float), "Highest MO index to plot (1-indexed)", None),
+    ('comparison_dir_name', ['settings', 'driver', 'dir_name'], False, 'has_comparison', "comparison-plots", 'molecule', str, "Directory name for comparison plots", None),
+
     ## Driver: scatter_response_fxn.py
-    ('probe_points', ['additional_parameters', 'probe_points'], False, 'has_scatter_response_fxn', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
+    ('probe_points', ['settings', 'driver', 'probe_points'], False, 'has_scatter_response_fxn', None, 'plasmon', list, "List of points (x,y,z) at which to record electric field", "μm"),
 
     ## Driver: np_abs_cross_sec.py
-    ('n_flux_freqs', ['additional_parameters', 'n_flux_freqs'], False, 'has_np_abs_cross_sec', 50, 'plasmon', int, "Number of frequency points for flux monitors", None),
-    ('flux_padding', ['additional_parameters', 'flux_padding'], False, 'has_np_abs_cross_sec', 0.005, 'plasmon', (int, float), "Padding added to nanoparticle radius for flux box placement", "μm"),
-    ('line_fit', ['additional_parameters', 'line_fit'], False, 'has_np_abs_cross_sec', False, 'plasmon', bool, "Whether to perform Lorentzian peak fitting on the cross-section spectrum", None),
+    ('n_flux_freqs', ['settings', 'driver', 'n_flux_freqs'], False, 'has_np_abs_cross_sec', 50, 'plasmon', int, "Number of frequency points for flux monitors", None),
+    ('flux_padding', ['settings', 'driver', 'flux_padding'], False, 'has_np_abs_cross_sec', 0.005, 'plasmon', (int, float), "Padding added to nanoparticle radius for flux box placement", "μm"),
+    ('line_fit', ['settings', 'driver', 'line_fit'], False, 'has_np_abs_cross_sec', False, 'plasmon', bool, "Whether to perform Lorentzian peak fitting on the cross-section spectrum", None),
     ('decay_stop', ['additional_parameters', 'decay_stop'], False, 'has_plasmon', False, 'plasmon', bool, "Stop the simulation after the source field has decayed to a predetermined fraction of its peak", None),
     ('decay_threshold', ['additional_parameters', 'decay_threshold'], False, 'has_plasmon', 1e-5, 'plasmon', (int, float), "Field amplitude fraction at which to stop the simulation when decay_stop is true", None),
 
-    ## Driver: core_hole.py
-    ('check_mo_contrib_by_atom', ['additional_parameters', 'check_mo_contrib_by_atom'], False, 'has_core_hole', False, 'molecule', bool, "If true, survey per-atom contributions for each MO in mo_removal_index_dict via mo_atom_contribution() and exit before propagation", None),
-    ('mo_removal_index_dict', ['additional_parameters', 'mo_removal_index_dict'], False, 'has_core_hole', None, 'molecule', dict, "Dictionary mapping 0-based MO indices to the number of electrons to remove. If check_mo_contrib_by_atom: MOs to survey and e count ignored.", None),
-    ('core_hole_watch_indices', ['additional_parameters', 'core_hole_watch_indices'], False, 'has_core_hole', None, 'molecule', list, "List of 0-based MO indices to include in the final hole-occupation plot. Logging always covers MOs 0 through neutral LUMO+1; omit or null to plot all logged MOs.", None),
-    ('core_hole_mo_occ_filepath', ['additional_parameters', 'core_hole_mo_occ_filepath'], False, 'has_core_hole', None, 'molecule', str, "Path to file containing time dependent MO occupations for core-hole calculations", None),
-    ('core_hole_filter_by_amplitude', ['additional_parameters', 'core_hole_filter_by_amplitude'], False, 'has_core_hole', False, 'molecule', bool, "If true, plot_core_hole_mo_occupations keeps only MOs with peak-to-peak amplitude > core_hole_amplitude_threshold", None),
-    ('core_hole_amplitude_threshold', ['additional_parameters', 'core_hole_amplitude_threshold'], False, 'has_core_hole', 0.2, 'molecule', (int, float), "Peak-to-peak hole-occupation amplitude cutoff when core_hole_filter_by_amplitude is true", None),
 ]
+
+# Driver-specific keys that live on settings.driver next to 'name'.
+# Used to normalize string-or-dict driver input and to migrate legacy
+# additional_parameters blocks.
+DRIVER_PARAM_KEYS = {
+    'absorption': frozenset({
+        'gamma', 'min_ev', 'max_ev', 'npz_filepath', 'spectrum_filepath',
+        'tau', 'use_existing_e_field_ref', 'field_e_ref_filepath',
+        'reference_only', 'polarization', 'perp_component', 'observables',
+    }),
+    'comparison': frozenset({
+        'bases', 'xcs', 'lrc_parameters', 'num_virtual', 'num_occupied',
+        'y_min', 'y_max', 'index_min', 'index_max', 'dir_name',
+    }),
+    'scatter_response_fxn': frozenset({'probe_points'}),
+    'np_abs_cross_sec': frozenset({'n_flux_freqs', 'flux_padding', 'line_fit'}),
+    'core_hole': frozenset(),
+}
+
+DRIVER_HAS_FLAGS = {
+    'absorption': 'has_absorption',
+    'comparison': 'has_comparison',
+    'np_abs_cross_sec': 'has_np_abs_cross_sec',
+    'scatter_response_fxn': 'has_scatter_response_fxn',
+}
+
+# Keys that may appear on settings.driver for np_abs_cross_sec (and any
+# plasmon job) but are stored under additional_parameters.
+SHARED_DRIVER_ADDL_KEYS = frozenset({'decay_stop', 'decay_threshold'})
+
+# Nested legacy additional_parameters blocks: additional_parameters.absorption, etc.
+LEGACY_NESTED_DRIVER_BLOCKS = frozenset({'absorption', 'comparison'})

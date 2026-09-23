@@ -126,11 +126,44 @@ def _unpack_lines(path, names, needs_pickle):
     return lines
 
 
-def describe_mapping(mapping, path, *, detail="full", log=None):
+def _checkpoint_time_label(mapping):
+    """Human-readable snapshot time from a checkpoint mapping, or None."""
+    if "checkpoint_time" in mapping and mapping["checkpoint_time"] is not None:
+        try:
+            t = float(np.asarray(mapping["checkpoint_time"]).reshape(-1)[0])
+            return f"t={t:g} au"
+        except (TypeError, ValueError):
+            pass
+    parts = []
+    for axis in ("x", "y", "z"):
+        key = f"checkpoint_time_{axis}"
+        if key not in mapping or mapping[key] is None:
+            continue
+        try:
+            t = float(np.asarray(mapping[key]).reshape(-1)[0])
+        except (TypeError, ValueError):
+            continue
+        parts.append(f"t_{axis}={t:g} au")
+    return ", ".join(parts) if parts else None
+
+
+def describe_mapping(mapping, path, *, detail="full", log=None, existed=None):
     """Log a header for an in-memory mapping that was (or will be) written to path."""
     log = log or logger
     items = list(mapping.items())
     n = len(items)
+
+    if detail == "quiet":
+        verb = "updated" if existed else "written"
+        when = _checkpoint_time_label(mapping)
+        if when:
+            log.debug(f"Checkpoint {verb}: {when} -> {path}")
+        else:
+            log.debug(f"Checkpoint {verb}: {path}")
+        if log.isEnabledFor(logging.DEBUG):
+            _log_key_table(items, log.debug)
+        return
+
     log.info(f"Wrote NPZ '{path}' ({n} array{'' if n == 1 else 's'})")
 
     names = [k for k, _ in items]
@@ -189,12 +222,16 @@ def save_npz(path, *, detail="full", **arrays):
     — use for user-facing archives such as absorption spectra.
 
     ``detail='summary'`` prints the key list and unpack line at INFO (full
-    table at DEBUG) — use for checkpoint blobs.
+    table at DEBUG).
+
+    ``detail='quiet'`` logs snapshot time and path at DEBUG
+    (``written`` on first create, ``updated`` if the file already existed).
     """
     payload = dict(arrays)
     payload.pop("allow_pickle", None)
+    existed = Path(path).exists()
     np.savez(path, **payload)
-    describe_mapping(payload, path, detail=detail)
+    describe_mapping(payload, path, detail=detail, existed=existed)
     return path
 
 

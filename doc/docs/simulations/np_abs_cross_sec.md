@@ -15,9 +15,10 @@ Classical **absorption, scattering, and extinction** efficiencies for a spherica
 
 | Section | Role |
 | --------- | ------ |
-| `settings.driver` | `"np_abs_cross_sec"` |
+| `settings.driver` | `{"name": "np_abs_cross_sec", ...}` |
 | `plasmon` | Cell, broadband source, nanoparticle |
-| `additional_parameters` | `n_flux_freqs`, `flux_padding`, optional `line_fit`, `decay_stop` |
+| Driver keys | `n_flux_freqs`, `flux_padding`, optional `line_fit` |
+| `additional_parameters` | Optional `decay_stop` / `decay_threshold` |
 
 ## Typical outputs
 

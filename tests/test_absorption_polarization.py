@@ -11,6 +11,7 @@ from plasmol.drivers.custom_drivers.absorption import (
     absorption_single,
     build_parallel_abs_spec_runs,
     build_perpendicular_abs_spec_runs,
+    build_single_abs_spec_runs,
     ensure_transverse_plane_wave_source,
     fold_single,
     np_mol_axis_vector,
@@ -81,14 +82,15 @@ def test_build_parallel_one_prod_one_ref(tmp_path, monkeypatch):
     assert comp == "x"
     assert len(prod) == 1 and len(ref) == 1
     assert prod[0].plasmon_source_component == "x"
-    assert prod[0].dir_path == ""
-    assert prod[0].field_e_filepath == "field_e.csv"
-    assert prod[0].field_p_filepath == "field_p.csv"
+    assert prod[0].dir_path == "fields"
+    assert prod[0].field_e_filepath == "fields/field_e.csv"
+    assert prod[0].field_p_filepath == "fields/field_p.csv"
     assert ref[0].record_field_only is True
     assert ref[0].has_nanoparticle is False
     assert ref[0].has_molecule is False
-    assert ref[0].dir_path == ""
-    assert ref[0].field_e_filepath == "field_e_ref.csv"
+    assert ref[0].dir_path == "fields"
+    assert ref[0].field_e_filepath == "fields/field_e_ref.csv"
+    assert os.path.isdir("fields")
     assert not os.path.isdir("x_dir")
 
 
@@ -109,6 +111,29 @@ def test_build_parallel_skips_ref_when_existing(tmp_path, monkeypatch):
     assert len(prod) == 1 and len(ref) == 0
 
 
+def test_build_single_keeps_json_component(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    p = _base_params()
+    prod, ref, comp = build_single_abs_spec_runs(p)
+    assert comp == "z"
+    assert prod[0].plasmon_source_component == "z"
+    assert prod[0].plasmon_source_size == [0.0, 0.2, 0.2]
+    assert prod[0].plasmon_source_center == [-0.04, 0.0, 0.0]
+    assert prod[0].dir_path == "fields"
+    assert prod[0].field_e_filepath == "fields/field_e.csv"
+    assert ref[0].plasmon_source_component == "z"
+    assert ref[0].field_e_filepath == "fields/field_e_ref.csv"
+    assert os.path.isdir("fields")
+    assert not os.path.isdir("z_dir")
+    assert not os.path.isdir("x_dir")
+
+
+def test_build_single_requires_component():
+    p = _base_params(plasmon_source_component=None)
+    with pytest.raises(ValueError, match="JSON source"):
+        build_single_abs_spec_runs(p)
+
+
 def test_build_perpendicular_one_run(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     p = _base_params()
@@ -116,8 +141,9 @@ def test_build_perpendicular_one_run(tmp_path, monkeypatch):
     assert comp == "y"
     assert len(prod) == 1 and len(ref) == 1
     assert prod[0].plasmon_source_component == "y"
-    assert prod[0].dir_path == ""
-    assert ref[0].field_e_filepath == "field_e_ref.csv"
+    assert prod[0].dir_path == "fields"
+    assert ref[0].field_e_filepath == "fields/field_e_ref.csv"
+    assert os.path.isdir("fields")
     assert not os.path.isdir("y_dir")
 
 

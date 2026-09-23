@@ -10,6 +10,7 @@ from plasmol.drivers.custom_drivers.absorption.io_fields import (
 from plasmol.drivers.custom_drivers.absorption.polarization import (
     build_parallel_abs_spec_runs,
     build_perpendicular_abs_spec_runs,
+    build_single_abs_spec_runs,
 )
 from plasmol.drivers.custom_drivers.absorption.postprocess import (
     absorption_post_process,
@@ -37,7 +38,7 @@ def run(params):
     params_copies = []
     pol_mode = getattr(params, 'absorption_polarization', 'full') or 'full'
     pol_mode = pol_mode.lower().strip()
-    single_pol = pol_mode in ('parallel', 'perpendicular')
+    single_pol = pol_mode in ('parallel', 'perpendicular', 'single')
     active_component = None
 
     if params.absorption_reference_only:
@@ -56,8 +57,10 @@ def run(params):
             )
         if pol_mode == 'parallel':
             params_copies, ref_copies, active_component = build_parallel_abs_spec_runs(params)
-        else:
+        elif pol_mode == 'perpendicular':
             params_copies, ref_copies, active_component = build_perpendicular_abs_spec_runs(params)
+        else:
+            params_copies, ref_copies, active_component = build_single_abs_spec_runs(params)
         params.absorption_active_component = active_component
     elif params.has_plasmon:
         params_copies = set_up_params_copy_plasmol(params)
@@ -133,7 +136,7 @@ def run(params):
         )
         logger.info(
             f"Absorption reference_only complete. Vacuum E_inc written to '{params.absorption_field_e_ref_filepath}'. "
-            f"Reuse it in a full Fourier run via additional_parameters.absorption.field_e_ref_filepath."
+            f"Reuse it in a full Fourier run via settings.driver.field_e_ref_filepath."
         )
         return
 
@@ -152,6 +155,7 @@ def run(params):
             active_component,
             params,
             ref_e_filepath=ref_e_file,
+            loc_e_filepath=params_copies[0].field_e_filepath,
         )
     else:
         absorption_post_process(

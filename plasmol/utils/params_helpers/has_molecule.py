@@ -1,6 +1,7 @@
 """params_helpers/has_molecule.py — gate `has_molecule`.
 """
-from plasmol.utils.params_helpers.common import check_xc, resolve_geometry_path
+from plasmol.quantum.geometry import normalize_rotation
+from plasmol.utils.params_helpers.common import check_xc, get_nested_value, resolve_geometry_path
 import logging
 
 logger = logging.getLogger("main")
@@ -52,6 +53,45 @@ def check(params):
             raise ValueError(f"Unsupported propagator: {self.molecule_propagator_str}. Acceptable: step, rk4, magnus2.")
     if not self.molecule_geometry_units in ['angstrom', 'bohr']:
         raise ValueError(f"Invalid 'molecule_geometry_units': '{self.molecule_geometry_units}'. Must be 'angstrom' or 'bohr'.")
+    _BASIS_COORDS = {
+        'spherical': False, 'sph': False,
+        'cartesian': True, 'cart': True,
+    }
+    raw_coords = get_nested_value(getattr(self, 'preparams', {}) or {}, ['molecule', 'basis_coords'])
+    raw_cart = get_nested_value(getattr(self, 'preparams', {}) or {}, ['molecule', 'cartesian'])
+    if raw_coords not in (None, ''):
+        if not isinstance(raw_coords, str):
+            raise ValueError("Molecule 'basis_coords' must be a string ('spherical' or 'cartesian').")
+        key = raw_coords.lower().strip()
+        if key not in _BASIS_COORDS:
+            raise ValueError(
+                "Molecule 'basis_coords' must be 'spherical' or 'cartesian' "
+                f"(aliases: sph, cart); got {raw_coords!r}."
+            )
+        want_cart = _BASIS_COORDS[key]
+        if raw_cart is not None and bool(raw_cart) != want_cart:
+            raise ValueError(
+                "Molecule 'basis_coords' and 'cartesian' disagree "
+                f"({raw_coords!r} vs cartesian={raw_cart!r}). Set only one."
+            )
+        self.molecule_cartesian = want_cart
+        self.molecule_basis_coords = 'cartesian' if want_cart else 'spherical'
+    else:
+        self.molecule_cartesian = bool(getattr(self, 'molecule_cartesian', True))
+        self.molecule_basis_coords = 'cartesian' if self.molecule_cartesian else 'spherical'
+    if self.molecule_cartesian:
+        logger.debug("Molecular basis uses Cartesian Gaussians (6 d functions; PlasMol default).")
+    else:
+        logger.info("Molecular basis uses spherical Gaussians (5 d functions; PySCF default).")
+    grid_level = getattr(self, 'molecule_grid_level', None)
+    if grid_level is not None:
+        if not isinstance(grid_level, int) or isinstance(grid_level, bool) or grid_level < 0 or grid_level > 9:
+            raise ValueError(
+                f"Molecule 'grid_level' must be an integer 0–9, got {grid_level!r}."
+            )
+    rotation = getattr(self, 'molecule_rotation', None)
+    if rotation:
+        normalize_rotation(rotation)
 
 
     # Tuning ("tune" / {TUNE}) validation: must use driver="tune"

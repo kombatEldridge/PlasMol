@@ -11,6 +11,18 @@ from plasmol.utils.npz import save_npz
 
 logger = logging.getLogger("main")
 
+ABSORPTION_OBSERVABLES = ('cross_section', 'dissipative_power', 'A_raw')
+OBSERVABLE_TITLES = {
+    'cross_section': 'Molecular absorption cross section',
+    'dissipative_power': 'Dissipated-power spectrum',
+    'A_raw': 'Absorption spectrum ($A_{\\mathrm{raw}}$)',
+}
+OBSERVABLE_LABELS = {
+    'cross_section': r'$\sigma_m$',
+    'dissipative_power': r'$A_{\mathrm{diss}}$',
+    'A_raw': r'$A_{\mathrm{raw}}$',
+}
+
 
 def fourier(time, dipole, damp, min_ev, max_ev, npz=None, field_e=None, e_floor_rel=1e-8):
     """
@@ -95,6 +107,110 @@ def fourier(time, dipole, damp, min_ev, max_ev, npz=None, field_e=None, e_floor_
     return abs_imag, freqs_out
 
 
+def frequency_mask(time, min_ev, max_ev):
+    """FFT frequency axis (eV) and boolean mask for ``[min_ev, max_ev]``."""
+    dt = time[1] - time[0]
+    freqs_au = np.fft.fftfreq(len(time), d=dt) * 2 * np.pi
+    freqs_ev = freqs_au * 27.211386
+    mask = (freqs_ev >= min_ev) & (freqs_ev <= max_ev)
+    return freqs_ev[mask], mask
+
+
+def dft_3(time, data, damp, mask):
+    """Windowed DFT of a (3, N) time series, restricted to ``mask``."""
+    data = np.asarray(data, dtype=float)
+    dt = time[1] - time[0]
+    window = np.exp(-damp * np.asarray(time, dtype=float))
+    nfreq = int(np.count_nonzero(mask))
+    out = np.empty((3, nfreq), dtype=complex)
+    for axis in (0, 1, 2):
+        S = np.fft.fft(data[axis] * window) * dt
+        out[axis] = S[mask]
+    return out
+
+
+def imag_for_observable(name, S_mu, S_loc=None, S_inc=None, e_floor_rel=1e-8):
+    """
+    Cartesian imaginary parts for one observable, before the −4πω/c dressing.
+
+    ``A_raw``
+        Im[μ/E_inc], or Im[μ] if ``S_inc`` is None (δ-kick).
+    ``dissipative_power``
+        Im[μ E_loc*].
+    ``cross_section``
+        Im[μ E_loc*] / |E_inc|².
+    """
+    if name == 'A_raw':
+        if S_inc is None:
+            return np.asarray(S_mu, dtype=complex).imag
+        S_inc = np.asarray(S_inc, dtype=complex)
+        S_mu = np.asarray(S_mu, dtype=complex)
+        imag = np.zeros(S_mu.shape, dtype=float)
+        for ax in range(3):
+            e_max = np.max(np.abs(S_inc[ax])) if S_inc[ax].size else 0.0
+            floor = e_floor_rel * e_max if e_max > 0 else 0.0
+            valid = np.abs(S_inc[ax]) > floor
+            if not np.any(valid):
+                logger.warning(
+                    f"No usable E_inc(ω) for {['x', 'y', 'z'][ax]}-pol in A_raw; "
+                    "contribution set to zero."
+                )
+            else:
+                imag[ax, valid] = (S_mu[ax, valid] / S_inc[ax, valid]).imag
+        return imag
+
+    if S_loc is None:
+        raise ValueError(
+            f"Observable '{name}' requires the local field E_loc "
+            "(production field_e.csv)."
+        )
+    S_mu = np.asarray(S_mu, dtype=complex)
+    S_loc = np.asarray(S_loc, dtype=complex)
+    product_imag = (S_mu * np.conjugate(S_loc)).imag
+    if name == 'dissipative_power':
+        return product_imag
+    if name == 'cross_section':
+        if S_inc is None:
+            raise ValueError(
+                "Observable 'cross_section' requires E_inc "
+                "(vacuum reference or kick field)."
+            )
+        S_inc = np.asarray(S_inc, dtype=complex)
+        imag = np.zeros_like(product_imag)
+        for ax in range(3):
+            e_max = np.max(np.abs(S_inc[ax])) if S_inc[ax].size else 0.0
+            floor = e_floor_rel * e_max if e_max > 0 else 0.0
+            valid = np.abs(S_inc[ax]) > floor
+            if not np.any(valid):
+                logger.warning(
+                    f"No usable E_inc(ω) for {['x', 'y', 'z'][ax]}-pol in "
+                    "cross_section; contribution set to zero."
+                )
+            else:
+                denom = np.abs(S_inc[ax, valid]) ** 2
+                imag[ax, valid] = product_imag[ax, valid] / denom
+        return imag
+    raise ValueError(f"Unknown absorption observable '{name}'.")
+
+
+def dress_spectrum(imag, freqs, axis=None):
+    """Apply −4πω/c. ``axis`` None → isotropic 1/3 sum; else one Cartesian row."""
+    if axis is None:
+        return absorption(imag, freqs)
+    return absorption_single(imag[axis], freqs)
+
+
+def observable_output_paths(spectrum_filepath, observables):
+    """Map each observable to a PNG path. One observable keeps ``spectrum_filepath``."""
+    path = Path(spectrum_filepath)
+    if len(observables) == 1:
+        return {observables[0]: str(path)}
+    return {
+        name: str(path.with_name(f"{path.stem}_{name}{path.suffix}"))
+        for name in observables
+    }
+
+
 def absorption(imag, freqs):
     """Isotropic average of three Cartesian Im[α_i] (or Im[μ_i] for kicks)."""
     fullsum = imag[0] + imag[1] + imag[2]
@@ -153,9 +269,10 @@ def orient_spectrum_sign(abs_vals, freqs=None):
     return abs_vals, True
 
 
-def save_spectrum_plot(freqs, normalized, params, title='Absorption Spectrum', label='Spectrum'):
+def save_spectrum_plot(freqs, normalized, params, title='Absorption Spectrum', label='Spectrum', filepath=None):
+    filepath = filepath or params.absorption_spectrum_filepath
     pd.DataFrame({'Frequency': freqs, 'Absorption': normalized}).to_csv(
-        Path(params.absorption_spectrum_filepath).with_suffix(".csv"), index=False
+        Path(filepath).with_suffix(".csv"), index=False
     )
     plt.figure(figsize=(14, 8))
     plt.plot(freqs, normalized, color='green', label=label)
@@ -166,5 +283,5 @@ def save_spectrum_plot(freqs, normalized, params, title='Absorption Spectrum', l
     plt.grid(True)
     plt.legend(fontsize=16)
     plt.tight_layout()
-    plt.savefig(params.absorption_spectrum_filepath, dpi=600)
-    logger.info(f"Absorption spectrum written to '{params.absorption_spectrum_filepath}'.")
+    plt.savefig(filepath, dpi=600)
+    logger.info(f"Absorption spectrum written to '{filepath}'.")

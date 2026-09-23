@@ -2,7 +2,12 @@
   "settings": {
     "dt": 0.1,
     "t_end": 5000,
-    "driver": "np_abs_cross_sec"
+    "driver": {
+      "name": "np_abs_cross_sec",
+      "n_flux_freqs": 50,
+      "flux_padding": 0.005,
+      "line_fit": true
+    }
   },
   "plasmon": {
     "simulation": {
@@ -29,9 +34,6 @@
     }
   },
   "additional_parameters": {
-    "n_flux_freqs": 50,
-    "flux_padding": 0.005,
-    "line_fit": true,
     "decay_stop": false,
     "decay_threshold": 1e-05
   }

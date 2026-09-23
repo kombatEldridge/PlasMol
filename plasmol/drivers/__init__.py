@@ -42,7 +42,7 @@ def get_driver(driver_str):
         logger.info(" === TUNING SIMULATION CHOSEN === ")
         return run_tune
     elif driver_str == 'core_hole':
-        logger.info(" === CORE-HOLE SIMULATION CHOSEN === ")
+        logger.info(" === CORE-HOLE MO SURVEY CHOSEN === ")
         return run_core_hole
     else:
         raise ValueError(f"Unknown driver: {driver_str}. Please add your custom driver to the drivers/__init__.py file.")

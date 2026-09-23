@@ -139,7 +139,14 @@ Compute the absorption spectrum of water using three directional delta-kick simu
   "settings": {
     "dt": 0.1,
     "t_end": 4000,
-    "driver": "absorption"
+    "driver": {
+      "name": "absorption",
+      "gamma": 0.005,
+      "min_ev": 1.5,
+      "max_ev": 12.0,
+      "spectrum_filepath": "water_absorption_spectrum.png",
+      "tau": 0.01
+    }
   },
   "molecule": {
     "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
@@ -159,15 +166,6 @@ Compute the absorption spectrum of water using three directional delta-kick simu
     "field_e_filepath": "field_e.csv",
     "field_p_filepath": "field_p.csv",
     "spectra_e_vs_p_filepath": "raw_response.png"
-  },
-  "additional_parameters": {
-    "absorption": {
-      "gamma": 0.005,
-      "min_ev": 1.5,
-      "max_ev": 12.0,
-      "spectrum_filepath": "water_absorption_spectrum.png",
-      "tau": 0.01
-    }
   }
 }
 ```
@@ -361,7 +359,17 @@ Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and fu
   "settings": {
     "dt": 0.1,
     "t_end": 10,
-    "driver": "comparison"
+    "driver": {
+      "name": "comparison",
+      "bases": ["6-31g", "6-31g*", "def2-svp", "aug-cc-pvdz"],
+      "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
+      "lrc_parameters": {"cam-b3lyp": 0.33},
+      "num_occupied": 5,
+      "num_virtual": 8,
+      "y_min": -0.8,
+      "y_max": 0.6,
+      "dir_name": "mo_comparison"
+    }
   },
   "molecule": {
     "geometry": [{"atom": "O", "coord": [0.0, 0.0, -0.1302]}, {"atom": "H", "coord": [1.4891, 0.0, 1.0332]}, {"atom": "H", "coord": [-1.4891, 0.0, 1.0332]}],
@@ -372,20 +380,6 @@ Quickly compare HOMO/LUMO and orbital energies across multiple basis sets and fu
     "xc": "pbe0",
     "propagator": {
       "type": "magnus2"
-    }
-  },
-  "additional_parameters": {
-    "comparison": {
-      "bases": ["6-31g", "6-31g*", "def2-svp", "aug-cc-pvdz"],
-      "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
-      "lrc_parameters": {
-        "cam-b3lyp": 0.33
-      },
-      "num_occupied": 5,
-      "num_virtual": 8,
-      "y_min": -0.8,
-      "y_max": 0.6,
-      "dir_name": "mo_comparison"
     }
   }
 }
@@ -416,14 +410,14 @@ Single panel example (sto3g + PBE0):
 
 ## Tutorial 7: Core-Hole (SCH / DCH) MO Tracking
 
-Create a sudden double core-hole on MO 0 and track hole occupations:
+Create a sudden double core-hole on MO 0 and track hole occupations. Production SCH/DCH is `molecule.core_hole` on the quantum (or absorption) driver; `"driver": "core_hole"` only surveys which atoms contribute to candidate MOs.
 
 ```json
 {
   "settings": {
     "dt": 0.05,
     "t_end": 200,
-    "driver": "dch"
+    "driver": "quantum"
   },
   "molecule": {
     "geometry": "3p.xyz",
@@ -437,19 +431,17 @@ Create a sudden double core-hole on MO 0 and track hole occupations:
       "pc_convergence": 1e-08,
       "max_iterations": 200
     },
-    "hermiticity_tolerance": 1e-12
+    "hermiticity_tolerance": 1e-12,
+    "core_hole": {
+      "mo_removal_index_dict": {"0": 2},
+      "watch_indices": [21, 23, 24],
+      "mo_occ_filepath": "mo_occ.csv"
+    }
   },
   "files": {
     "field_e_filepath": "field_e.csv",
     "field_p_filepath": "field_p.csv",
     "spectra_e_vs_p_filepath": "output.png"
-  },
-  "additional_parameters": {
-    "mo_removal_index_dict": {
-      "0": 2
-    },
-    "dch_watch_indices": [21, 23, 24],
-    "dch_mo_occ_filepath": "mo_occ.csv"
   }
 }
 ```
@@ -476,8 +468,8 @@ H    -0.49243996     2.60284823    -1.12425761
 H     0.86990233     2.60003036    -0.01678504
 ```
 
-- Use `"check_mo_contrib_by_atom": true` first to survey which atoms dominate candidate MOs.
-- Full theory: [Core-Hole Dynamics](methodology/core_hole.md).
+- Survey first with `"driver": "core_hole"` and `molecule.core_hole.mo_removal_index_dict` listing candidate MOs (no `mo_occ_filepath` needed).
+- Full theory: [Core-Hole Dynamics](core_hole.md).
 
 **Results**:
 
@@ -498,7 +490,15 @@ For a molecule on the +x side of an Au sphere, compute orientation-resolved hybr
   "settings": {
     "dt": 0.1,
     "t_end": 10000,
-    "driver": "absorption"
+    "driver": {
+      "name": "absorption",
+      "polarization": "parallel",
+      "spectrum_filepath": "spectrum_parallel.png",
+      "npz_filepath": "absorption_parallel.npz",
+      "min_ev": 1.5,
+      "max_ev": 5.0,
+      "field_e_ref_filepath": "field_e_ref_parallel.csv"
+    }
   },
   "plasmon": {
     "simulation": {
@@ -551,16 +551,6 @@ For a molecule on the +x side of an Au sphere, compute orientation-resolved hybr
     "field_e_filepath": "field_e.csv",
     "field_p_filepath": "field_p.csv",
     "spectra_e_vs_p_filepath": "output.png"
-  },
-  "additional_parameters": {
-    "absorption": {
-      "polarization": "parallel",
-      "spectrum_filepath": "spectrum_parallel.png",
-      "npz_filepath": "absorption_parallel.npz",
-      "min_ev": 1.5,
-      "max_ev": 5.0,
-      "field_e_ref_filepath": "field_e_ref_parallel.csv"
-    }
   }
 }
 ```

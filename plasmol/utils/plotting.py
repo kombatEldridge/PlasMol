@@ -1,5 +1,6 @@
 # utils/plotting.py
 import logging
+import os
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -187,6 +188,28 @@ _MO_COLORS = (
     '#1D3557',  # navy
     '#E63946',  # red
 )
+
+
+def maybe_plot_core_hole_occupations(params):
+    """Plot hole occupations after a production SCH/DCH run, if configured."""
+    if not getattr(params, 'has_core_hole', False):
+        return
+    filepath = getattr(params, 'core_hole_mo_occ_filepath', None)
+    if not filepath or not os.path.exists(filepath):
+        return
+    plot_indices = getattr(params, 'core_hole_watch_indices', None)
+    if plot_indices is not None:
+        logger.debug(f"Plotting core-hole occupations for MO indices: {plot_indices}")
+    else:
+        logger.info("Plotting core-hole occupations for all logged MO indices.")
+    base, _ = os.path.splitext(filepath)
+    plot_core_hole_mo_occupations(
+        filepath,
+        output_image_path=base,
+        indices=plot_indices,
+        filter_by_amplitude=getattr(params, 'core_hole_filter_by_amplitude', False),
+        amplitude_threshold=getattr(params, 'core_hole_amplitude_threshold', 0.2),
+    )
 
 
 def plot_core_hole_mo_occupations(

@@ -8,7 +8,11 @@ from plasmol.drivers import get_driver
 from plasmol.quantum.propagators import *
 from plasmol.quantum.sources import QUANTUMSOURCE
 from plasmol.classical.sources import MEEPSOURCE
-from plasmol.utils.params_helpers.common import construct_geometry, load_meep_material
+from plasmol.utils.params_helpers.common import (
+    construct_geometry,
+    driver_sets_plasmon_source_component,
+    load_meep_material,
+)
 
 logger = logging.getLogger("main")
 
@@ -28,7 +32,10 @@ def form_all(params):
     self.driver_str = getattr(self, 'driver_str', None)
     if self.has_custom:
         if self.driver_str is None:
-            raise ValueError(f"Additional parameters specified but no driver name provided. Please specify a driver name.")
+            raise ValueError(
+                "A custom driver was selected but settings.driver has no name. "
+                "Use a string or a dict with 'name'."
+            )
         logging.debug(f"Custom driver specified: {self.driver_str}")
     elif 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:
         self.driver_str = 'plasmol'
@@ -61,15 +68,19 @@ def form_all(params):
 
         with meep_io_context(self.verbose):
             if self.has_plasmon_source:
-                self.plasmon_source_object = MEEPSOURCE(
-                    source_type=self.plasmon_source_type.lower().strip(),
-                    source_center=self.plasmon_source_center,
-                    source_size=self.plasmon_source_size,
-                    component=self.plasmon_source_component.lower().strip(),
-                    amplitude=self.plasmon_source_amplitude,
-                    is_integrated=self.plasmon_source_is_integrated,
-                    **{k: v for k, v in getattr(self, 'plasmon_source_additional_parameters', {}).items()}
-                )
+                component = getattr(self, 'plasmon_source_component', None)
+                if component:
+                    self.plasmon_source_object = MEEPSOURCE(
+                        source_type=self.plasmon_source_type.lower().strip(),
+                        source_center=self.plasmon_source_center,
+                        source_size=self.plasmon_source_size,
+                        component=component.lower().strip(),
+                        amplitude=self.plasmon_source_amplitude,
+                        is_integrated=self.plasmon_source_is_integrated,
+                        **{k: v for k, v in getattr(self, 'plasmon_source_additional_parameters', {}).items()}
+                    )
+                elif not driver_sets_plasmon_source_component(self):
+                    raise ValueError("Source requires 'component' attribute.")
 
             if self.has_nanoparticle:
                 self.nanoparticle_material = load_meep_material(self.nanoparticle_material)
@@ -105,7 +116,7 @@ def form_all(params):
         if not self.has_plasmon:
             time_values = np.arange(0, self.t_end + self.dt, self.dt)
             self.times = np.round(np.linspace(0, time_values[-1], int(len(time_values))), decimals=self.time_rounding_decimals)
-            if not self.has_absorption:
+            if not self.has_absorption and self.driver_str != 'core_hole':
                 self.molecule_source_field = QUANTUMSOURCE(self).field
         else:
             # Meep field CSVs stamp (meep_time + dt) after at_beginning + at_every,

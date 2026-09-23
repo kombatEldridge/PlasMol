@@ -25,8 +25,8 @@ The driver is inferred from your JSON input (`molecule` only → quantum, `plasm
 
 ## Key Features (v1.2.0)
 
-- **Core-hole dynamics** (`driver: "core_hole"`) for sudden SCH and DCH initial conditions with MO occupation tracking.
-- **Absorption polarization modes** (`full` / `parallel` / `perpendicular`) for orientation-resolved hybrid spectra with vacuum \(E_{inc}\) deconvolution.
+- **Core-hole dynamics** (`molecule.core_hole` on quantum / absorption) for sudden SCH and DCH with MO occupation tracking; `driver: "core_hole"` surveys which atoms contribute to candidate MOs.
+- **Absorption polarization modes** (`full` without an NP; `parallel` / `perpendicular` / `single` with an NP) for orientation-resolved hybrid spectra with vacuum \(E_{inc}\) deconvolution.
 - **JSON input format** with validation and the `--describe` CLI flag for exploring every supported parameter.
 - **Custom drivers** for Fourier absorption spectra, MO comparison, NP/plasmon cross-sections, and user-defined workflows.
 - **Lopata CAP broadening** (static and dynamic) with automatic tuning of LRC parameters and vacuum level.

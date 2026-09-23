@@ -6,6 +6,8 @@ from plasmol.drivers.custom_drivers.absorption import (
     absorption,
     absorption_single,
     fold,
+    imag_for_observable,
+    observable_output_paths,
 )
 
 
@@ -56,3 +58,24 @@ def test_fold_three_files(tmp_path):
     assert np.allclose(stacked[0], xs)
     assert np.allclose(stacked[1], ys)
     assert np.allclose(stacked[2], zs)
+
+
+def test_observable_output_paths_single_keeps_name():
+    paths = observable_output_paths("spectrum.png", ["cross_section"])
+    assert paths == {"cross_section": "spectrum.png"}
+
+
+def test_observable_output_paths_suffixes_when_several():
+    paths = observable_output_paths("out/spec.png", ["cross_section", "A_raw"])
+    assert paths["cross_section"] == "out/spec_cross_section.png"
+    assert paths["A_raw"] == "out/spec_A_raw.png"
+
+
+def test_cross_section_matches_araw_when_eloc_equals_einc():
+    """σ_m Im[μ E*] / |E|² = Im[μ/E] when E_loc = E_inc."""
+    rng = np.random.default_rng(0)
+    S_mu = rng.normal(size=(3, 20)) + 1j * rng.normal(size=(3, 20))
+    S_e = rng.normal(size=(3, 20)) + 1j * rng.normal(size=(3, 20)) + 0.5
+    imag_raw = imag_for_observable("A_raw", S_mu, S_inc=S_e)
+    imag_sigma = imag_for_observable("cross_section", S_mu, S_loc=S_e, S_inc=S_e)
+    assert np.allclose(imag_raw, imag_sigma)

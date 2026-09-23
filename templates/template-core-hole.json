@@ -1,7 +1,7 @@
 {
   "settings": {
     "dt": 0.05,
-    "t_end": 100,
+    "t_end": 1.0,
     "driver": "core_hole"
   },
   "molecule": {
@@ -13,18 +13,9 @@
     "xc": "pbe0",
     "propagator": {
       "type": "magnus2"
-    }
-  },
-  "files": {
-    "field_e_filepath": "field_e.csv",
-    "field_p_filepath": "field_p.csv",
-    "spectra_e_vs_p_filepath": "output.png"
-  },
-  "additional_parameters": {
-    "mo_removal_index_dict": {
-      "0": 2
     },
-    "core_hole_mo_occ_filepath": "mo_occ.csv",
-    "core_hole_watch_indices": [0, 1, 2, 3]
+    "core_hole": {
+      "mo_removal_index_dict": {"0": 2, "1": 2, "2": 2}
+    }
   }
 }

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 
+from plasmol.quantum.geometry import rotate_molecule_geometry
 from plasmol.quantum.molecule import MOLECULE
 
 logger = logging.getLogger("main")
@@ -48,6 +49,7 @@ def run(params):
             params.molecule_basis = basis
             params.molecule_xc = xc
 
+            rotate_molecule_geometry(params)
             molecule = MOLECULE(params)
 
             # === Data prep ===

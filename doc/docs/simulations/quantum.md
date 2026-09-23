@@ -16,7 +16,8 @@
 | Section | Role |
 | --------- | ------ |
 | `settings` | `dt`, `t_end` |
-| `molecule` | Geometry, basis, xc, propagator, **source** |
+| `molecule` | Geometry, basis, xc, propagator, **source** (optional for field-free `molecule.core_hole`) |
+| `molecule.core_hole` | Optional sudden SCH/DCH + hole-occupation CSV |
 | `files` | Field CSVs, optional checkpoint |
 
 Molecule source requires full kick/pulse fields (unlike Fourier minimal kick defaults).

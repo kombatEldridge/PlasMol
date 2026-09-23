@@ -6,6 +6,7 @@ import sys
 import logging
 import numpy as np
 
+from plasmol.quantum.geometry import rotate_molecule_geometry
 from plasmol.quantum.molecule import MOLECULE
 
 from plasmol.quantum.propagators import *
@@ -18,10 +19,12 @@ from plasmol.utils.checkpoint import (
     cleanup_checkpoint,
 )
 
-from plasmol.utils.plotting import plot_e_p_fields
+from plasmol.utils.plotting import plot_e_p_fields, maybe_plot_core_hole_occupations
 from plasmol.utils.csv import init_csv, update_csv, read_field_csv
 
 def run(params):
+    # Nuclear orientation is fixed before SCF builds the AO matrices.
+    rotate_molecule_geometry(params)
     logger = logging.getLogger("main")
     if not params.resumed_from_checkpoint:
         # Only initialize CSV files for new runs (checkpoint runs already have them)
@@ -73,7 +76,13 @@ def run(params):
                 update_csv(params.field_p_filepath, current_time, *np.zeros(3))
             if index in report_indices:
                 percent = int(round(index / total_steps * 100))
-                logger.info(f"Simulation progress: {percent}% done ({index}/{total_steps} steps || {time+params.dt}/{params.times[-1]} au)")
+                nd = params.time_rounding_decimals
+                t_now = round(time + params.dt, nd)
+                t_end = round(params.times[-1], nd)
+                logger.info(
+                    f"Simulation progress: {percent}% done "
+                    f"({index}/{total_steps} steps || {t_now:.{nd}f}/{t_end:.{nd}f} au)"
+                )
             if current_time == params.times[-1]:
                 break
             if (params.molecule_source_field[index] == 0).all() and source_has_been_zero and not params.has_core_hole:
@@ -106,5 +115,6 @@ def run(params):
             params.final_checkpoint_written_after_init = True
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+        maybe_plot_core_hole_occupations(params)
 
 

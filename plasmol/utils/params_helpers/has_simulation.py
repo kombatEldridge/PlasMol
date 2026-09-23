@@ -105,7 +105,13 @@ def check_spatial_symmetries(params):
         return self.xyz.index(axis.lower())
 
     tol = max(1e-9, self.plasmon_pixel_length_um / 2)
-    source_center = as_xyz(self.plasmon_source_object.sourceCenter) if self.has_plasmon_source else None
+    source_center = None
+    if self.has_plasmon_source:
+        src_obj = getattr(self, 'plasmon_source_object', None)
+        if src_obj is not None:
+            source_center = as_xyz(src_obj.sourceCenter)
+        elif getattr(self, 'plasmon_source_center', None) is not None:
+            source_center = as_xyz(self.plasmon_source_center)
     nanoparticle_center = as_xyz(self.nanoparticle.center) if self.has_nanoparticle else None
     molecule_position = as_xyz(self.plasmol_molecule_position) if self.has_molecule_position else None
 
@@ -143,11 +149,15 @@ def check_spatial_symmetries(params):
         return True
 
     compatible = []
-    if self.has_plasmon_source:
-        component = self.plasmon_source_component.lower()
+    source_component = getattr(self, 'plasmon_source_component', None)
+    if source_component in ('', None):
+        source_component = None
+    else:
+        source_component = str(source_component).lower().strip()
+    if self.has_plasmon_source and source_component:
         for axis in self.xyz:
             if spatial_compatible(axis):
-                compatible.append((axis, required_phase(axis, component)))
+                compatible.append((axis, required_phase(axis, source_component)))
 
     declared = self.preparams.get("plasmon", {}).get("simulation", {}).get("symmetries")
     if declared is None:
@@ -191,20 +201,20 @@ def check_spatial_symmetries(params):
             seen_axes.add(axis)
 
             if self.has_plasmon_source:
-                component = self.plasmon_source_component.lower()
-                expected = required_phase(axis, component)
-                if phase != expected:
-                    raise ValueError(
-                        f"Declared {axis_label} mirror symmetry has phase={phase:+d} but plasmon source "
-                        f"component '{component}' requires phase={expected:+d}. "
-                        f"Use {format_suggestion([(axis, expected)])} instead."
-                    )
-                if self.plasmon_source_type == 'custom':
-                    logger.warning(
-                        f"Custom plasmon source spatial symmetry under {axis_label} mirror cannot be "
-                        "verified statically; ensure the source distribution is compatible."
-                    )
-                elif not is_on_plane(source_center, axis):
+                if source_component:
+                    expected = required_phase(axis, source_component)
+                    if phase != expected:
+                        raise ValueError(
+                            f"Declared {axis_label} mirror symmetry has phase={phase:+d} but plasmon source "
+                            f"component '{source_component}' requires phase={expected:+d}. "
+                            f"Use {format_suggestion([(axis, expected)])} instead."
+                        )
+                    if self.plasmon_source_type == 'custom':
+                        logger.warning(
+                            f"Custom plasmon source spatial symmetry under {axis_label} mirror cannot be "
+                            "verified statically; ensure the source distribution is compatible."
+                        )
+                if source_center is not None and self.plasmon_source_type != 'custom' and not is_on_plane(source_center, axis):
                     coord = source_center[axis_index(axis)]
                     raise ValueError(
                         f"Declared {axis_label} mirror symmetry (phase={phase:+d}) is incompatible with "

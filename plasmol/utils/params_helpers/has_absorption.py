@@ -34,8 +34,21 @@ def check(params):
             if not self.has_nanoparticle and not self.absorption_reference_only:
                 logger.warning("Absorption runs with plasmon settings was not given a nanoparticle.")
         if not self.absorption_reference_only:
-            if not hasattr(self, 'absorption_spectrum_filepath') or getattr(self, 'absorption_spectrum_filepath') in ['']:
-                raise ValueError("absorption driver requires 'spectrum_filepath' in additional_parameters.absorption or files.spectra_e_vs_p_filepath.")
+            spec = getattr(self, 'absorption_spectrum_filepath', None)
+            if spec in [None, '']:
+                files = (getattr(self, 'preparams', None) or {}).get('files') or {}
+                fallback = files.get('spectra_e_vs_p_filepath')
+                if fallback not in [None, '']:
+                    self.absorption_spectrum_filepath = fallback
+                    logger.info(
+                        "Absorption spectrum_filepath defaulting to "
+                        f"files.spectra_e_vs_p_filepath ('{fallback}')."
+                    )
+                else:
+                    raise ValueError(
+                        "absorption driver requires 'spectrum_filepath' on settings.driver "
+                        "(or files.spectra_e_vs_p_filepath)."
+                    )
         if self.absorption_min_ev < 0:
             raise ValueError("Absorption 'min_ev' must be a non-negative value.")
         if self.absorption_max_ev < 0:
@@ -54,35 +67,93 @@ def check(params):
         else:
             self.absorption_tau = 0
 
-        # Polarization mode: full (x+y+z) | parallel | perpendicular
+        allowed_obs = ('cross_section', 'dissipative_power', 'A_raw')
+        obs = getattr(self, 'absorption_observables', None)
+        if obs in [None, '']:
+            self.absorption_observables = ['cross_section']
+        else:
+            if not isinstance(obs, list) or len(obs) == 0:
+                raise ValueError(
+                    "Absorption 'observables' must be a non-empty list of "
+                    f"{list(allowed_obs)}."
+                )
+            cleaned = []
+            seen = set()
+            for item in obs:
+                if not isinstance(item, str):
+                    raise ValueError(
+                        "Absorption 'observables' entries must be strings; "
+                        f"got {type(item).__name__}."
+                    )
+                name = item.strip()
+                if name not in allowed_obs:
+                    raise ValueError(
+                        f"Unknown absorption observable '{name}'. "
+                        f"Allowed: {list(allowed_obs)}."
+                    )
+                if name not in seen:
+                    cleaned.append(name)
+                    seen.add(name)
+            self.absorption_observables = cleaned
+        logger.info(
+            "Absorption observables: "
+            + ", ".join(self.absorption_observables)
+            + "."
+        )
+
+        # Polarization: full (x+y+z) | parallel | perpendicular | single (JSON source)
         pol = getattr(self, 'absorption_polarization', None)
         if pol in [None, '']:
+            if getattr(self, 'has_nanoparticle', False):
+                raise ValueError(
+                    "Absorption with a nanoparticle requires settings.driver.polarization "
+                    "of 'parallel', 'perpendicular', or 'single' "
+                    "('full' isotropic x+y+z is not allowed when an NP is present)."
+                )
             self.absorption_polarization = 'full'
         else:
             if not isinstance(pol, str):
                 raise ValueError("Absorption 'polarization' must be a string.")
             self.absorption_polarization = pol.lower().strip()
-        if self.absorption_polarization not in ('full', 'parallel', 'perpendicular'):
+        if self.absorption_polarization not in ('full', 'parallel', 'perpendicular', 'single'):
             raise ValueError(
-                "Absorption 'polarization' must be one of 'full', 'parallel', or "
-                f"'perpendicular'; got '{self.absorption_polarization}'."
+                "Absorption 'polarization' must be one of 'full', 'parallel', "
+                f"'perpendicular', or 'single'; got '{self.absorption_polarization}'."
             )
-        if self.absorption_polarization in ('parallel', 'perpendicular'):
+        if self.absorption_polarization == 'full' and getattr(self, 'has_nanoparticle', False):
+            raise ValueError(
+                "Absorption polarization='full' is not allowed with a nanoparticle "
+                "(x+y+z mixes inequivalent ∥ and ⊥ channels). "
+                "Use 'parallel', 'perpendicular', or 'single'."
+            )
+        if self.absorption_polarization in ('parallel', 'perpendicular', 'single'):
             if not self.has_plasmon:
                 raise ValueError(
                     f"Absorption polarization='{self.absorption_polarization}' requires a "
-                    "plasmon section (NP–molecule axis is defined in the Meep cell)."
+                    "plasmon section."
                 )
             if not self.has_molecule_position:
+                need = (
+                    "to define the NP–molecule axis"
+                    if self.absorption_polarization in ('parallel', 'perpendicular')
+                    else "as the vacuum E_inc sample location"
+                )
                 raise ValueError(
                     f"Absorption polarization='{self.absorption_polarization}' requires "
-                    "plasmon.molecule.position (to define the NP–molecule axis)."
+                    f"plasmon.molecule.position ({need})."
                 )
             if self.absorption_reference_only:
                 raise ValueError(
                     "Absorption 'reference_only' is not compatible with polarization "
-                    "'parallel' or 'perpendicular' (use polarization='full' for "
+                    f"'{self.absorption_polarization}' (use polarization='full' for "
                     "three-direction vacuum references, or run a single-pol spectrum)."
+                )
+        if self.absorption_polarization == 'single':
+            component = getattr(self, 'plasmon_source_component', None)
+            if component in (None, ''):
+                raise ValueError(
+                    "Absorption polarization='single' uses the JSON source as given; "
+                    "plasmon.source.component is required ('x', 'y', or 'z')."
                 )
         perp = getattr(self, 'absorption_perp_component', None)
         if perp not in [None, '']:

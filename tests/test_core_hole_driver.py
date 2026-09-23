@@ -1,9 +1,6 @@
-from pathlib import Path
-"""Orchestration tests for core_hole driver (mocked quantum / plot)."""
-import json
-from argparse import Namespace
+"""Orchestration tests for the core_hole survey driver."""
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -26,41 +23,30 @@ def test_get_driver_no_legacy_dch():
         get_driver("dch")
 
 
-def test_survey_mode_skips_quantum(tmp_path, monkeypatch):
+def test_survey_always_runs_and_skips_propagation(monkeypatch):
     params = SimpleNamespace(
-        check_mo_contrib_by_atom=True,
         has_core_hole=True,
-        mo_removal_index_dict={0: 2},
-        core_hole_mo_occ_filepath=str(tmp_path / "mo.csv"),
+        mo_removal_index_dict={0: 2, 1: 2},
+    )
+    fake_mol = MagicMock()
+    fake_mol.mf.mo_coeff = __import__("numpy").zeros((3, 3))
+    contrib = MagicMock()
+    monkeypatch.setattr(core_hole_mod, "MOLECULE", MagicMock(return_value=fake_mol))
+    monkeypatch.setattr(core_hole_mod, "_mo_atom_contribution", contrib)
+    core_hole_mod.run(params)
+    assert params.has_core_hole is False
+    assert contrib.call_count == 2
+    contrib.assert_any_call(fake_mol, 0)
+    contrib.assert_any_call(fake_mol, 1)
+
+
+def test_survey_rejects_out_of_range_mo(monkeypatch):
+    params = SimpleNamespace(
+        has_core_hole=False,
+        mo_removal_index_dict={5: 2},
     )
     fake_mol = MagicMock()
     fake_mol.mf.mo_coeff = __import__("numpy").zeros((2, 2))
-    run_q = MagicMock()
     monkeypatch.setattr(core_hole_mod, "MOLECULE", MagicMock(return_value=fake_mol))
-    monkeypatch.setattr(core_hole_mod, "run_quantum", run_q)
-    monkeypatch.setattr(core_hole_mod, "_mo_atom_contribution", MagicMock())
-    core_hole_mod.run(params)
-    run_q.assert_not_called()
-    assert params.has_core_hole is False  # survey disables hole path for SCF build
-
-
-def test_run_calls_quantum_and_plot(tmp_path, monkeypatch):
-    occ = str(tmp_path / "mo_occ.csv")
-    Path(occ).write_text("Timestamps (au),MO index 0\n0.0,2.0\n")
-    params = SimpleNamespace(
-        check_mo_contrib_by_atom=False,
-        has_checkpoint=False,
-        core_hole_mo_occ_filepath=occ,
-        core_hole_watch_indices=[0],
-        core_hole_filter_by_amplitude=False,
-        core_hole_amplitude_threshold=0.2,
-    )
-    run_q = MagicMock()
-    plot = MagicMock()
-    monkeypatch.setattr(core_hole_mod, "run_quantum", run_q)
-    monkeypatch.setattr(core_hole_mod, "plot_core_hole_mo_occupations", plot)
-    core_hole_mod.run(params)
-    run_q.assert_called_once_with(params)
-    plot.assert_called_once()
-    kwargs = plot.call_args
-    assert kwargs[0][0] == occ
+    with pytest.raises(ValueError, match="out of range"):
+        core_hole_mod.run(params)

@@ -4,32 +4,30 @@
 
 ## Purpose
 
-**Sudden single/double core-hole** initial conditions (SCH/DCH) with RT-TDDFT and MO hole-occupation tracking on the neutral MO basis.
+**Survey** which atoms contribute to candidate MOs (`check_mo_contrib_by_atom`), then exit. This driver does **not** ionize or propagate.
+
+Sudden SCH/DCH is `molecule.core_hole` on a [quantum](quantum.md), [absorption](absorption.md), or [plasmol](plasmol.md) run. See [Core-Hole Dynamics](../core_hole.md).
 
 ## When to use
 
-- Core-ionized dynamics, hole migration / occupation plots
-- Survey which atoms contribute to a candidate core MO
+- Choose which MO to ionize before a production SCH/DCH run
+- Print per-atom AO contributions for several MOs at once (more than two are allowed)
 
 ## Required JSON
 
 | Section | Role |
 | --------- | ------ |
-| `settings.driver` | `"core_hole"` |
-| `molecule` | Neutral geometry; open-shell is forced after hole creation |
-| `additional_parameters.mo_removal_index_dict` | e.g. `{"0": 2}` DCH, `{"0": 1}` SCH |
-| `additional_parameters.core_hole_mo_occ_filepath` | Occupation CSV path |
-
-Optional: `core_hole_watch_indices`, amplitude filter, `check_mo_contrib_by_atom` survey mode.
+| `settings.driver` | `"core_hole"` (no extra keys) |
+| `molecule` | Neutral geometry, basis, xc |
+| `molecule.core_hole.mo_removal_index_dict` | MOs to survey (electron counts ignored) |
 
 ## Typical outputs
 
-- `mo_occ.csv` and occupation plot PNG
-- Standard field CSVs if a source is present
+- Log lines: `=== MO k (index k-1) contributions ===` with atom percentages
 
 ## Theory
 
-- [Core-Hole Dynamics](../methodology/core_hole.md)
+- [Core-Hole Dynamics](../core_hole.md)
 
 ## Template
 
@@ -45,4 +43,4 @@ Source (repo path): `templates/template-core_hole.json`
 ## See also
 
 - [All simulations](index.md)
-- [Usage](../usage.md) — parameter reference
+- [Usage](../usage.md) — `molecule.core_hole` for production SCH/DCH

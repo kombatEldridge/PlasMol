@@ -112,6 +112,38 @@ def build_parallel_abs_spec_runs(params):
     return params_copies, ref_copies, component
 
 
+def build_single_abs_spec_runs(params):
+    """
+    One production (+ optional vacuum reference) using the JSON Meep source as given.
+
+    No NP–molecule axis mapping: ``plasmon.source.component`` / center / size
+    are the incident drive (off-axis illumination).
+    """
+    component = getattr(params, 'plasmon_source_component', None)
+    if component in (None, ''):
+        raise ValueError(
+            "Absorption polarization='single' uses the JSON source as given; "
+            "plasmon.source.component is required ('x', 'y', or 'z')."
+        )
+    component = str(component).lower().strip()
+    if component not in params.xyz:
+        raise ValueError(
+            f"Invalid plasmon.source.component '{component}' for polarization='single'; "
+            "must be 'x', 'y', or 'z'."
+        )
+    params.absorption_active_component = component
+    params_copies = [make_plasmol_direction_copy(params, component, flat=True)]
+    ref_copies = []
+    if not getattr(params, 'absorption_use_existing_e_field_ref', False):
+        ref_copies = [make_reference_direction_copy(params, component, flat=True)]
+    logger.info(
+        f"Single-pol abs spectrum: 1 production run + {len(ref_copies)} vacuum "
+        f"reference run(s) with JSON source E || '{component}' "
+        "(no NP–molecule axis mapping)."
+    )
+    return params_copies, ref_copies, component
+
+
 def build_perpendicular_abs_spec_runs(params):
     """
     Build production (+ optional vacuum reference) params for a perpendicular abs spectrum.

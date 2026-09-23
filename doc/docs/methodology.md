@@ -1,6 +1,6 @@
 # Theory and Methodology of PlasMol
 
-PlasMol performs **self-consistent hybrid FDTD–RT-TDDFT** simulations of plasmon–molecule systems. Classical electromagnetic fields (Meep) drive quantum time propagation (PySCF), and the induced molecular dipole is fed back into the classical simulation as a polarization source. This page presents the theoretical framework in detail. Specialized workflows (Fourier spectra, the quasistatic Gersten–Nitzan model, and sudden core-hole dynamics) are expanded on linked pages.
+PlasMol performs **self-consistent hybrid FDTD–RT-TDDFT** simulations of plasmon–molecule systems. Classical electromagnetic fields (Meep) drive quantum time propagation (PySCF), and the induced molecular dipole is fed back into the classical simulation as a polarization source. This page presents the theoretical framework in detail. Specialized workflows (Fourier spectra, hybrid absorption observables, the quasistatic Gersten–Nitzan model, and sudden core-hole dynamics) are expanded on linked pages.
 
 ---
 
@@ -514,7 +514,7 @@ $$
 
 with a global damping rate $\gamma$. This is distinct from the **state-specific** non-Hermitian CAP described above, which acts *during* propagation and can reproduce continuum shoulders more physically.
 
-PlasMol’s production Absorption workflow implements these ideas (with optional vacuum $E_{\mathrm{inc}}$ deconvolution for hybrid NP–molecule runs, and parallel/perpendicular polarization modes). See [Fourier Spectra](fourier.md) for the methodology and [Quasistatic Model](quasistatic_model.md) for the analytic $\alpha_{\mathrm{eff}}$ benchmark (with alignments discussed in [Validation](#validation-against-an-analytically-soluble-model)).
+PlasMol’s production Absorption workflow implements these ideas (with optional vacuum $E_{\mathrm{inc}}$ deconvolution for hybrid NP–molecule runs, and parallel/perpendicular/single polarization modes). See [Fourier Spectra](fourier.md) for the DFT path, [Hybrid absorption observables](observables.md) for $\sigma_m$, $A_{\mathrm{diss}}$, and $A_{\mathrm{raw}}$, and [Quasistatic Model](quasistatic_model.md) for the analytic $\alpha_{\mathrm{eff}}$ benchmark (with alignments discussed in [Validation](#validation-against-an-analytically-soluble-model)).
 
 ---
 

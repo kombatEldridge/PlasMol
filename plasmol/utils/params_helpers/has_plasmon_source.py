@@ -1,6 +1,7 @@
 """params_helpers/has_plasmon_source.py — gate `has_plasmon_source`.
 """
 from plasmol.classical.sources import walk_through_src_funcs
+from plasmol.utils.params_helpers.common import driver_sets_plasmon_source_component
 import logging
 
 logger = logging.getLogger("main")
@@ -18,7 +19,10 @@ def check(params):
     self = params
     # Plasmon source params
     if self.has_plasmon_source:
-        for attr in ['plasmon_source_type', 'plasmon_source_center', 'plasmon_source_size', 'plasmon_source_component']:
+        required = ['plasmon_source_type', 'plasmon_source_center', 'plasmon_source_size']
+        if not driver_sets_plasmon_source_component(self):
+            required.append('plasmon_source_component')
+        for attr in required:
             if not hasattr(self, attr):
                 pretty = attr.removeprefix("plasmon_source_")
                 raise ValueError(f"Source requires '{pretty}' attribute.")
@@ -28,8 +32,12 @@ def check(params):
         for loc in self.plasmon_source_size:
             if not isinstance(loc, (int, float)):
                 raise ValueError(f"Invalid plasmon source size '{loc}'; must be a number.")
-        if self.plasmon_source_component not in self.xyz:
-            raise ValueError(f"Invalid plasmon source component '{self.plasmon_source_component}'; must be 'x', 'y', or 'z'.")
+        component = getattr(self, 'plasmon_source_component', None)
+        if component in (None, ''):
+            if not driver_sets_plasmon_source_component(self):
+                raise ValueError("Source requires 'component' attribute.")
+        elif component not in self.xyz:
+            raise ValueError(f"Invalid plasmon source component '{component}'; must be 'x', 'y', or 'z'.")
         if getattr(self, "plasmon_source_additional_parameters", None) is not None:
             if 'frequency' not in self.plasmon_source_additional_parameters and 'wavelength' not in self.plasmon_source_additional_parameters and (self.plasmon_source_type == 'continuous' or self.plasmon_source_type == 'gaussian'):
                 raise ValueError(f"Either 'frequency' or 'wavelength' must be provided in 'plasmon_source_additional_parameters'.")

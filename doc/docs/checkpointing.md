@@ -10,9 +10,8 @@ Checkpointing is **molecule-only**. If the input contains a `plasmon` section (M
 
 | Run | Checkpointing |
 | ------ | ---------------- |
-| [`quantum`](simulations/quantum.md) | Yes — mid-run snapshots plus a final archive |
+| [`quantum`](simulations/quantum.md) | Yes — mid-run snapshots plus a final archive (`molecule.core_hole` also embeds the occupation CSV) |
 | [`absorption`](simulations/absorption.md) **without** `plasmon` | Yes — one snapshot set per kick direction (`x`/`y`/`z`), then merged |
-| [`core_hole`](core_hole.md) | Yes — same quantum path, plus the MO-occupation CSV |
 | Hybrid `absorption` (`parallel` / `perpendicular` / full with a plasmon) | **No** |
 | [`plasmol`](simulations/plasmol.md), [`classical`](simulations/classical.md), NP cross-section, scatter, verify-source | **No** |
 | [`comparison`](simulations/comparison.md), [`tune`](simulations/tune.md) | Not used (no time loop writes snapshots) |
@@ -36,10 +35,10 @@ On each snapshot PlasMol embeds:
 - **Clock** — `checkpoint_time` (a.u.), or `checkpoint_time_x/y/z` for three-direction absorption
 - **Input copy** — raw JSON bytes plus the geometry file, if any
 - **CSVs** — `field_e` / `field_p` (per direction when needed) as raw file bytes
-- **Core-hole** — `core_hole_mo_occ_content` when that driver is active
+- **Core-hole** — `core_hole_mo_occ_content` when `molecule.core_hole` is active
 - **Flags** — `is_absorption`, `is_open_shell`, `updated_after_init`
 
-The log prints a short NPZ header (keys + unpack line) when an archive is written. To inspect a file later:
+At job start the log prints a one-time preamble (interval, archive keys, unpack snippet). Each archive write is a DEBUG line (``Checkpoint written`` / ``Checkpoint updated`` plus the snapshot time and path). To inspect a file later:
 
 ```bash
 python -m plasmol.utils.npz checkpoint.npz

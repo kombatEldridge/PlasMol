@@ -15,9 +15,9 @@ Chen2010-style **scatter response** workflow: multiple polarized FDTD runs (with
 
 | Section | Role |
 | --------- | ------ |
-| `settings.driver` | `"scatter_response_fxn"` |
+| `settings.driver` | `{"name": "scatter_response_fxn", "probe_points": [...]}` |
 | `plasmon` | Cell, source, optional NP |
-| `additional_parameters.probe_points` | List of `[x,y,z]` (μm) sample locations |
+| `probe_points` | List of `[x,y,z]` (μm) sample locations |
 
 ## Typical outputs
 

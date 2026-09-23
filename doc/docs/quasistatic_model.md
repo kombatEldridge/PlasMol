@@ -183,4 +183,5 @@ Within that domain the model is **analytically soluble** once $\varepsilon_m(\om
 
 - [Theory & Methodology](../methodology.md#validation-against-an-analytically-soluble-model) — alignment of PlasMol hybrid spectra with this model
 - [Fourier Spectra](fourier.md) — hybrid $\mu/E_{\mathrm{inc}}$ and parallel / perpendicular modes
+- [Hybrid absorption observables](observables.md) — $\sigma_m$, $A_{\mathrm{diss}}$, $A_{\mathrm{raw}}$ relative to $E_{\mathrm{loc}}$ vs $E_{\mathrm{inc}}$
 - [Theory & Methodology](../methodology.md) — self-consistent FDTD–RT-TDDFT loop

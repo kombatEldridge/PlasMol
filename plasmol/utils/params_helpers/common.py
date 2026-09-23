@@ -9,6 +9,24 @@ from pyscf.dft import libxc
 logger = logging.getLogger("main")
 
 
+def driver_sets_plasmon_source_component(params):
+    """True when the selected driver overwrites ``plasmon.source.component`` per run.
+
+    Hybrid absorption ``full`` / ``parallel`` / ``perpendicular`` pick E themselves.
+    ``polarization: single`` keeps the JSON source as given, so component is required.
+    ``scatter_response_fxn`` rebuilds X- and Y-polarized sources itself.
+    """
+    name = getattr(params, 'driver_str', None)
+    if name == 'absorption' and getattr(params, 'has_plasmon', False):
+        pol = getattr(params, 'absorption_polarization', 'full') or 'full'
+        if str(pol).lower().strip() == 'single':
+            return False
+        return True
+    if name == 'scatter_response_fxn':
+        return True
+    return False
+
+
 def get_nested_value(d, path):
     cur = d
     for key in path:
@@ -21,6 +39,11 @@ def get_nested_value(d, path):
 
 def check_xc(params, func_name: str, omega: float = None):
     try:
+        raw = func_name
+        # PySCF compound mixes (e.g. "0.20*HF + 0.80*PBE, PBE") are not Libxc names.
+        if "*" in raw or ("," in raw and "HF" in raw.upper()):
+            logger.debug(f"Using PySCF compound xc '{raw}' without Libxc RSH check.")
+            return
         func_name = func_name.upper()
         if "{TUNE}" in func_name:
             func_name = func_name.replace("{TUNE}", "0.4")

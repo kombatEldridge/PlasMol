@@ -25,7 +25,6 @@ def check(params):
                 if hasattr(self, k):
                     delattr(self, k)
         if self.has_checkpoint:
-            logger.info("Checkpointing selected; preparing to save and load checkpoints during simulation.")
             if not hasattr(self, 'checkpoint_filepath') or self.checkpoint_filepath in ['']:
                 raise ValueError("Checkpointing requires 'filepath' attribute for checkpoint file.")
             if not hasattr(self, 'checkpoint_frequency_steps') and not hasattr(self, 'checkpoint_frequency_time'):

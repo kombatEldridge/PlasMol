@@ -28,7 +28,8 @@ def form(params):
     if self.has_custom:
         if self.driver_str is None:
             raise ValueError(
-                "Additional parameters specified but no driver name provided. Please specify a driver name."
+                "A custom driver was selected but settings.driver has no name. "
+                "Use a string or a dict with 'name'."
             )
         logging.debug(f"Custom driver specified: {self.driver_str}")
     elif 'molecule' in self.simulation_types and 'plasmon' in self.simulation_types:

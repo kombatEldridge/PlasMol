@@ -103,7 +103,10 @@ class SIMULATION:
 
         timestamp_au = round((current_t_meep + self.dt_meep) * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
 
-        if any(abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz):
+        field_triggers = any(
+            abs(field_e[comp]) >= self.plasmon_tolerance_field_e for comp in self.xyz
+        )
+        if field_triggers or getattr(self, 'has_core_hole', False):
             current_time_au = round(
                 current_t_meep * constants.convertTimeMeep2Atomic,
                 self.time_rounding_decimals,
@@ -170,10 +173,12 @@ class SIMULATION:
 
         self._progress_reported.add(current_step)
         percent = min(100, int(round(current_step / self._progress_total_steps * 100)))
-        t_au = round(sim.meep_time() * constants.convertTimeMeep2Atomic, self.time_rounding_decimals)
+        nd = self.time_rounding_decimals
+        t_au = round(sim.meep_time() * constants.convertTimeMeep2Atomic, nd)
+        t_end = round(self.t_end, nd)
         logging.info(
             f"Simulation progress: {percent}% done "
-            f"({current_step}/{self._progress_total_steps} steps || {t_au}/{self.t_end} au)"
+            f"({current_step}/{self._progress_total_steps} steps || {t_au:.{nd}f}/{t_end:.{nd}f} au)"
         )
 
     def run(self):

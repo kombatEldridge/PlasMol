@@ -4,6 +4,26 @@ import os
 
 from plasmol.quantum.sources import QUANTUMSOURCE
 
+# Hybrid NP+molecule (parallel / perpendicular / single) writes one polarization
+# into this directory instead of ``x_dir`` / ``y_dir`` / ``z_dir``.
+FIELDS_DIR = "fields"
+
+
+def _in_fields(path, default):
+    return os.path.join(FIELDS_DIR, os.path.basename(path if path else default))
+
+
+def _relocate_core_hole_occ(params_copy, dest_dir):
+    """Write the hole-occupation CSV next to that copy's field files."""
+    if not getattr(params_copy, 'has_core_hole', False):
+        return
+    src = getattr(params_copy, 'core_hole_mo_occ_filepath', None)
+    if not src:
+        return
+    params_copy.core_hole_mo_occ_filepath = os.path.join(
+        dest_dir, os.path.basename(src)
+    )
+
 
 def make_plasmol_direction_copy(params, component, flat=False):
     """One production plasmol params copy for a single source polarization.
@@ -11,17 +31,23 @@ def make_plasmol_direction_copy(params, component, flat=False):
     Source-face rearrange (k ⊥ E) is deferred to the Meep worker so the
     log lines carry the ``[x-dir]`` / ``[y-dir]`` / ``[z-dir]`` prefix.
 
-    When ``flat`` is True (parallel / perpendicular), CSVs stay in the job
-    directory. Full x+y+z mode still uses ``{component}_dir/``.
+    When ``flat`` is True (NP + molecule: parallel / perpendicular / single),
+    CSVs go in ``fields/``. Molecule-only three-kick and hybrid ``full`` (no NP)
+    still use ``{component}_dir/``.
     """
     params_copy = copy.deepcopy(params)
     params_copy.plasmon_source_component = component
     if flat:
-        params_copy.dir_path = ""
-        params_copy.field_e_filepath = getattr(params_copy, 'field_e_filepath', 'field_e.csv')
-        params_copy.field_p_filepath = getattr(params_copy, 'field_p_filepath', 'field_p.csv')
-        params_copy.spectra_e_vs_p_filepath = getattr(
-            params_copy, 'spectra_e_vs_p_filepath', 'output.png'
+        params_copy.dir_path = FIELDS_DIR
+        os.makedirs(FIELDS_DIR, exist_ok=True)
+        params_copy.field_e_filepath = _in_fields(
+            getattr(params_copy, 'field_e_filepath', None), 'field_e.csv'
+        )
+        params_copy.field_p_filepath = _in_fields(
+            getattr(params_copy, 'field_p_filepath', None), 'field_p.csv'
+        )
+        params_copy.spectra_e_vs_p_filepath = _in_fields(
+            getattr(params_copy, 'spectra_e_vs_p_filepath', None), 'output.png'
         )
     else:
         params_copy.dir_path = f"{component}_dir"
@@ -31,6 +57,7 @@ def make_plasmol_direction_copy(params, component, flat=False):
             params_copy, f'spectra_e_{component}_vs_p_{component}_filepath'
         )
         os.makedirs(params_copy.dir_path, exist_ok=True)
+    _relocate_core_hole_occ(params_copy, params_copy.dir_path)
     return params_copy
 
 
@@ -40,8 +67,8 @@ def make_reference_direction_copy(params, component, flat=False):
     Source-face rearrange (k ⊥ E) is deferred to the Meep worker so the
     log lines carry the ``[ref-x-dir]`` (etc.) prefix.
 
-    When ``flat`` is True (parallel / perpendicular), the raw vacuum E CSV
-    is written in the job directory rather than ``{component}_dir/``.
+    When ``flat`` is True (NP + molecule), the raw vacuum E CSV is
+    ``fields/field_e_ref.csv``.
     """
     if not getattr(params, 'has_molecule_position', False):
         raise ValueError(
@@ -51,8 +78,9 @@ def make_reference_direction_copy(params, component, flat=False):
     params_copy = copy.deepcopy(params)
     params_copy.plasmon_source_component = component
     if flat:
-        params_copy.dir_path = ""
-        params_copy.field_e_filepath = "field_e_ref.csv"
+        params_copy.dir_path = FIELDS_DIR
+        os.makedirs(FIELDS_DIR, exist_ok=True)
+        params_copy.field_e_filepath = os.path.join(FIELDS_DIR, "field_e_ref.csv")
     else:
         params_copy.dir_path = f"{component}_dir"
         params_copy.field_e_filepath = f"{component}_dir/field_e_ref.csv"
@@ -97,5 +125,6 @@ def set_up_params_copy_molecule(params):
         )
         if not params.resumed_from_checkpoint:
             os.makedirs(params_copy.dir_path, exist_ok=True)
+        _relocate_core_hole_occ(params_copy, params_copy.dir_path)
         params_copies.append(params_copy)
     return params_copies

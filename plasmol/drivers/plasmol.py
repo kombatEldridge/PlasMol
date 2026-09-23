@@ -5,8 +5,9 @@ import sys
 import logging
 
 from plasmol.classical.simulation import SIMULATION
+from plasmol.quantum.geometry import rotate_molecule_geometry
 from plasmol.quantum.molecule import MOLECULE
-from plasmol.utils.plotting import plot_e_p_fields
+from plasmol.utils.plotting import plot_e_p_fields, maybe_plot_core_hole_occupations
 from plasmol.utils.csv import init_csv
 from plasmol.utils.checkpoint import init_checkpoint
 
@@ -27,12 +28,14 @@ def run(params):
             else:
                 init_checkpoint(params)
         
+        rotate_molecule_geometry(params)
         params.molecule = MOLECULE(params)
         plasmon = SIMULATION(params)
         plasmon.run()
         
         base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
         plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+        maybe_plot_core_hole_occupations(params)
         logging.info("Simulation completed successfully.")
     except Exception as err:
         logger.error(f"Simulation failed: {err}", exc_info=True)

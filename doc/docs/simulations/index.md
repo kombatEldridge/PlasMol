@@ -8,7 +8,7 @@ PlasMol is organized around **drivers**: self-contained workflows selected by `s
 | [quantum](quantum.md) | Pure RT-TDDFT time propagation | `template-quantum.json` |
 | [plasmol](plasmol.md) | Hybrid FDTD ↔ RT-TDDFT | `template-plasmol.json` |
 | [absorption](absorption.md) | Absorption spectra (kick or hybrid deconvolution) | `template-absorption.json` |
-| [core_hole](core_hole.md) | Sudden SCH/DCH + MO hole tracking | `template-core_hole.json` |
+| [core_hole](core_hole.md) | Survey MO atom contributions (SCH/DCH is `molecule.core_hole`) | `template-core_hole.json` |
 | [comparison](comparison.md) | Ground-state MO energy diagrams | `template-comparison.json` |
 | [tune](tune.md) | Auto-tune LRC ω and/or CAP ε₀ | `template-tune.json` |
 | [np_abs_cross_sec](np_abs_cross_sec.md) | NP absorption / scattering efficiencies | `template-np_abs_cross_sec.json` |

@@ -8,7 +8,7 @@ Submodules
 - ``driver``        – orchestration
 - ``workers``       – parallel Meep / RT-TDDFT workers
 - ``setup``         – per-direction params copies
-- ``polarization``  – parallel / perpendicular NP–mol modes
+- ``polarization``  – parallel / perpendicular / single (JSON source) modes
 - ``source_face``   – plane-wave k ⊥ E geometry
 - ``io_fields``     – CSV fold / damp / reference merge
 - ``spectrum``      – FFT, deconvolution, absorption, plots
@@ -31,6 +31,7 @@ from plasmol.drivers.custom_drivers.absorption.io_fields import (
 from plasmol.drivers.custom_drivers.absorption.polarization import (
     build_parallel_abs_spec_runs,
     build_perpendicular_abs_spec_runs,
+    build_single_abs_spec_runs,
     np_mol_axis_vector,
     resolve_parallel_component,
     resolve_perpendicular_component,
@@ -40,9 +41,12 @@ from plasmol.drivers.custom_drivers.absorption.source_face import (
     source_face_normal_index,
 )
 from plasmol.drivers.custom_drivers.absorption.spectrum import (
+    ABSORPTION_OBSERVABLES,
     absorption,
     absorption_single,
     fourier,
+    imag_for_observable,
+    observable_output_paths,
     orient_spectrum_sign,
 )
 from plasmol.drivers.custom_drivers.absorption.postprocess import (
@@ -53,8 +57,11 @@ from plasmol.drivers.custom_drivers.absorption.postprocess import (
 __all__ = [
     "run",
     "fourier",
+    "ABSORPTION_OBSERVABLES",
     "absorption",
     "absorption_single",
+    "imag_for_observable",
+    "observable_output_paths",
     "orient_spectrum_sign",
     "fold",
     "fold_single",
@@ -69,6 +76,7 @@ __all__ = [
     "resolve_perpendicular_component",
     "build_parallel_abs_spec_runs",
     "build_perpendicular_abs_spec_runs",
+    "build_single_abs_spec_runs",
     "ensure_transverse_plane_wave_source",
     "source_face_normal_index",
     "absorption_post_process",

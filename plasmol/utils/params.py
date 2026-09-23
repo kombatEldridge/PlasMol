@@ -4,7 +4,7 @@ import logging
 from rich.table import Table
 from rich.console import Console
 
-from plasmol.utils.struct import param_defs
+from plasmol.utils.struct import DRIVER_HAS_FLAGS, param_defs
 from plasmol.utils.params_helpers import CHECK_PIPELINE, FORM_PIPELINE, check_spatial_symmetries
 from plasmol.utils.params_helpers.common import (
     get_nested_value,
@@ -56,8 +56,11 @@ class PARAMS:
         for _, _, is_section_dict, bname, _, _, _, _, _ in param_defs:
             if is_section_dict and bname is not None:
                 boolean_names.add(bname)
+        boolean_names.update(DRIVER_HAS_FLAGS.values())
         for bname in boolean_names:
             setattr(self, bname, False)
+
+        self._set_driver_section_flags()
 
         default_values_used = []
 
@@ -102,24 +105,6 @@ class PARAMS:
             for attr, default_value in default_values_used:
                 logger.debug(f"    {attr}: {default_value}")
 
-        if getattr(self, 'driver_str', None) == 'np_abs_cross_sec':
-            self.has_np_abs_cross_sec = True
-            for attr, _, _, boolean_name, default_value, _, _, _, _ in param_defs:
-                if boolean_name == 'has_np_abs_cross_sec' and default_value is not None and not hasattr(self, attr):
-                    setattr(self, attr, default_value)
-                    default_values_used.append((attr, default_value))
-        else:
-            self.has_np_abs_cross_sec = False
-
-        if getattr(self, 'driver_str', None) == 'core_hole':
-            self.has_core_hole = True
-            for attr, _, _, boolean_name, default_value, _, _, _, _ in param_defs:
-                if boolean_name == 'has_core_hole' and default_value is not None and not hasattr(self, attr):
-                    setattr(self, attr, default_value)
-                    default_values_used.append((attr, default_value))
-        else:
-            self.has_core_hole = False
-            
         self._attribute_checks()
         self._attribute_formation()
         self._test_symmetry()
@@ -127,6 +112,20 @@ class PARAMS:
         logger.info("All parameters successfully parsed and validated.")
         delattr(self, 'preparams')
 
+    def _set_driver_section_flags(self):
+        """Turn on has_* gates from settings.driver.name before param_defs defaults apply."""
+        raw = get_nested_value(self.preparams, ['settings', 'driver'])
+        if isinstance(raw, dict):
+            name = raw.get('name')
+        elif isinstance(raw, str):
+            name = raw
+        else:
+            name = None
+        if not name:
+            return
+        flag = DRIVER_HAS_FLAGS.get(str(name).strip())
+        if flag:
+            setattr(self, flag, True)
 
     def _attribute_checks(self):
         """Run section checks (params_helpers/has_*.check)."""

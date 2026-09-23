@@ -2,7 +2,10 @@
   "settings": {
     "dt": 0.1,
     "t_end": 2000,
-    "driver": "scatter_response_fxn"
+    "driver": {
+      "name": "scatter_response_fxn",
+      "probe_points": [[0.03, 0.0, 0.0], [0.04, 0.0, 0.0]]
+    }
   },
   "plasmon": {
     "simulation": {
@@ -26,8 +29,5 @@
       "radius": 0.025,
       "center": [0.0, 0.0, 0.0]
     }
-  },
-  "additional_parameters": {
-    "probe_points": [[0.03, 0.0, 0.0], [0.04, 0.0, 0.0]]
   }
 }

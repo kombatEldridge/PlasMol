@@ -2,7 +2,7 @@
 
 This page describes the **mathematics and methodology** of PlasMol’s Fourier absorption workflow: how an induced dipole is transformed into a spectrum, how quantum-only and hybrid drives differ, and why parallel / perpendicular polarizations are treated separately near a nanoparticle.
 
-For runnable inputs, CLI usage, and parameter tables, see [Simulations: Absorption](../simulations/absorption.md), [Usage](../usage.md), and [Tutorials](../tutorials.md).
+For runnable inputs, CLI usage, and parameter tables, see [Simulations: Absorption](../simulations/absorption.md), [Usage](../usage.md), and [Tutorials](../tutorials.md). Hybrid \(\sigma_m\), \(A_{\mathrm{diss}}\), and \(A_{\mathrm{raw}}\) — which field sits next to \(\mu\) — are in [Hybrid absorption observables](observables.md).
 
 ---
 
@@ -147,15 +147,18 @@ $$
 
 | Mode | Field orientation | Role |
 | ------ | ------------------- | ------ |
-| Full | Three Cartesian drives, isotropic average | Orientation-averaged hybrid response |
+| Full | Three Cartesian drives, isotropic average | Molecule-only (or empty-cell hybrid). **Not allowed with a nanoparticle** |
 | Parallel | $\mathbf{E}$ along $\hat{\mathbf{r}}$ (radial) | Couples strongly to the plasmon gap/radial mode |
 | Perpendicular | $\mathbf{E}\perp\hat{\mathbf{r}}$ (tangential) | Orthogonal Gersten–Nitzan channel |
+| Single | JSON `plasmon.source` as given | Off-axis / user-defined incident beam; no NP–mol axis mapping |
 
 In practice the continuous direction $\hat{\mathbf{r}}$ is mapped onto the nearest lab axis $\hat{\mathbf{e}}_c\in\{\hat{\mathbf{x}},\hat{\mathbf{y}},\hat{\mathbf{z}}\}$ for parallel mode, and onto a lab axis most orthogonal to $\hat{\mathbf{r}}$ (or a user-chosen axis) for perpendicular mode. Geometry is preferred when the molecule lies on a Cartesian axis relative to the NP so that $|\hat{\mathbf{r}}\cdot\hat{\mathbf{e}}_c|\approx 1$.
 
 ### Transverse plane-wave drive
 
-Hybrid Fourier sources are planar faces representing a plane wave with propagation $\mathbf{k}$ **perpendicular** to the polarization $\mathbf{E}$. If the face normal would be parallel to $\mathbf{E}$ (longitudinal injection), the source face is rearranged so that $\mathbf{k}\perp\mathbf{E}$. That keeps the classical drive consistent with a transverse plane wave for the chosen polarization component $c$.
+Hybrid Fourier sources for `full` / `parallel` / `perpendicular` are planar faces representing a plane wave with propagation $\mathbf{k}$ **perpendicular** to the polarization $\mathbf{E}$. If the face normal would be parallel to $\mathbf{E}$ (longitudinal injection), the source face is rearranged so that $\mathbf{k}\perp\mathbf{E}$. That keeps the classical drive consistent with a transverse plane wave for the chosen polarization component $c$.
+
+`polarization: "single"` skips both the NP–molecule axis mapping and this face rearrange: the JSON `component`, `center`, and `size` are the incident field. Use that when the beam is deliberately off-axis.
 
 ### Single-polarization spectrum
 
@@ -187,22 +190,24 @@ The quasistatic $\alpha_{\mathrm{eff}}$ construction and its relation to these s
 
 ---
 
-## Summary of the three regimes
+## Summary of the regimes
 
 | Regime | What is driven | What is divided out | Spectrum |
 | -------- | ---------------- | --------------------- | ---------- |
 | Quantum-only | $\delta$-kick on molecule | — (flat source) | $A(\omega)$ from $\mu_x,\mu_y,\mu_z$ |
-| Hybrid full | Broadband Meep, 3 axes | Vacuum $E_{\mathrm{inc},i}$ each axis | Isotropic $A(\omega)$ |
-| Hybrid ∥ or ⊥ | Broadband Meep, one axis $c$ | Vacuum $E_{\mathrm{inc},c}$ | $A_c(\omega)$ |
+| Hybrid full | Broadband Meep, 3 axes (no NP) | Vacuum $E_{\mathrm{inc},i}$ each axis | Isotropic $A(\omega)$ |
+| Hybrid ∥ or ⊥ | Broadband Meep, one axis $c$ from NP–mol geometry | Vacuum $E_{\mathrm{inc},c}$ | $A_c(\omega)$ |
+| Hybrid single | Broadband Meep, JSON source as given | Vacuum $E_{\mathrm{inc},c}$ | $A_c(\omega)$ |
 
-All three share the same underlying objects—$\boldsymbol{\mu}(t)$, optional damping windows, discrete Fourier transforms, and absorption from $\operatorname{Im}\mathcal{R}(\omega)$—and differ only in the definition of $\mathcal{R}$ and in which polarizations are retained.
+All of these share the same underlying objects—$\boldsymbol{\mu}(t)$, optional damping windows, discrete Fourier transforms, and absorption from $\operatorname{Im}\mathcal{R}(\omega)$—and differ only in the definition of $\mathcal{R}$ and in which polarizations are retained.
 
 ---
 
 ## See also
 
 - [Theory & Methodology](../methodology.md) — hybrid time loop, RT-TDDFT, CAP, and spectrum appendix
+- [Hybrid absorption observables](observables.md) — \(\sigma_m\), \(A_{\mathrm{diss}}\), and \(A_{\mathrm{raw}}\)
 - [Quasistatic Model](quasistatic_model.md) — Gersten–Nitzan $G,S$ and $\alpha_{\mathrm{eff}}$
-- [Core-Hole Dynamics](core_hole.md) — sudden SCH/DCH (separate from Fourier linear absorption)
+- [Core-Hole Dynamics](core_hole.md) — sudden SCH/DCH (`molecule.core_hole`; can be combined with absorption)
 - [Simulations: Absorption](../simulations/absorption.md) — driver usage and inputs
 - [Usage](../usage.md) — full JSON schema

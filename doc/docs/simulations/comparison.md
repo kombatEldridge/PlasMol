@@ -15,9 +15,9 @@
 
 | Section | Role |
 | --------- | ------ |
-| `settings.driver` | `"comparison"` |
+| `settings.driver` | `{"name": "comparison", "bases": [...], "xcs": [...], ...}` |
 | `molecule` | Geometry (basis/xc may be placeholders when comparison supplies lists) |
-| `additional_parameters.comparison` | `bases`, `xcs`, optional LRC map, plot limits, `dir_name` |
+| Driver keys | `bases`, `xcs`, optional LRC map, plot limits, `dir_name` |
 
 Incompatible with plasmon or Fourier sections.
 

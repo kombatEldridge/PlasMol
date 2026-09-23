@@ -44,11 +44,14 @@ def build_meep_source(params):
     """Create the Meep incident-source object on params (not picklable across processes).
 
     Rearranges a longitudinal plane-wave face so k ⊥ E before constructing the
-    Meep source. Callers must install ``direction_log_prefix`` first so the
+    Meep source, except ``polarization: single`` which keeps the JSON source
+    unchanged. Callers must install ``direction_log_prefix`` first so the
     rearrange warning/info lines carry the worker tag.
     """
     component = getattr(params, 'plasmon_source_component', None)
-    if component is not None:
+    pol = getattr(params, 'absorption_polarization', None)
+    keep_json_source = str(pol or '').lower().strip() == 'single'
+    if component is not None and not keep_json_source:
         ensure_transverse_plane_wave_source(params, component=component)
     with meep_io_context(getattr(params, 'verbose', 1)):
         params.plasmon_source_object = MEEPSOURCE(

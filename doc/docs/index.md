@@ -35,6 +35,7 @@ simulations/index
 
 methodology
 fourier
+observables
 quasistatic_model
 core_hole
 ```

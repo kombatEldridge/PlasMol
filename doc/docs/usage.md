@@ -109,14 +109,35 @@ This section is required.
 | ----- | ------ | --------- | ------------- | ------- |
 | `dt` | float | – | Time step | a.u. |
 | `t_end` | float | – | Simulation end time | a.u. |
-| `driver` | str or null | null | Force a specific driver name | – |
+| `driver` | str, dict, or null | null | Driver name, or a dict with `"name"` plus that driver's keys | – |
 
-Driver is inferred automatically if not specified:
+`driver` may be a **string** (name only, no extra keys) or a **dict**:
 
-- Only `"molecule"` top-level key → `quantum` driver
-- Only `"plasmon"` top-level key → `classical` driver
-- Both `"molecule"` and `"plasmon"` top-level keys → `plasmol` driver
-- If `"driver"` present in `"settings: {...}"` → forces a custom driver
+```json
+{ "driver": "quantum" }
+```
+
+```json
+{
+  "driver": {
+    "name": "absorption",
+    "polarization": "perpendicular",
+    "spectrum_filepath": "spectrum_perp.png",
+    "npz_filepath": "fourier_perp.npz",
+    "min_ev": 1.5,
+    "max_ev": 5.0,
+    "field_e_ref_filepath": "field_e_ref_perp.csv"
+  }
+}
+```
+
+If `driver` is omitted it is inferred from which top-level sections are present:
+
+- Only `"molecule"` → `quantum`
+- Only `"plasmon"` → `classical`
+- Both `"molecule"` and `"plasmon"` → `plasmol`
+
+Driver-specific keys (absorption, comparison, core-hole, NP cross-section, scatter probes) live **on this dict**, next to `"name"`. See [§5](#5-additional_parameters) and [Simulations](simulations/index.md).
 
 ## 2. "plasmon"
 
@@ -183,7 +204,7 @@ Defines the incident electromagnetic source within the FDTD simulation. Again, i
 | `type` | str | All | Type of preset electric field to add ("continuous", "gaussian", or <custom\>) | – | – |
 | `center` | list of 3 floats | All | Center coordinates of the source | – | μm |
 | `size` | list of 3 floats | All | Size of the source volume; for 2D/3D sources, set the propagation dimension size to 0 | – | μm |
-| `component` | str | All | Electric field component the source acts on ("x", "y", "z") | – | – |
+| `component` | str | All | Electric field component ("x", "y", "z"). Optional when the driver sets polarization (hybrid `absorption` `full`/`parallel`/`perpendicular`, `scatter_response_fxn`). Required for absorption `polarization: single`. | – | – |
 | `amplitude` | int or float | All | Overall amplitude multiplying the source | 1 | arb. |
 | `is_integrated` | bool | All | Whether the source is integrated over time (dipole moment) | True | – |
 | `additional_parameters.frequency` | int or float | All | Frequency of the source | – | 1/μm |
@@ -276,6 +297,7 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
   "charge": 0,
   "spin": 0,
   "basis": "6-31g",
+  "basis_coords": "cartesian",
   "xc": "pbe0",
   "lrc_parameter": null
 }
@@ -288,8 +310,13 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 | `charge` | int | Total molecular charge | 0 | – |
 | `spin` | int | Spin multiplicity minus one (0 = closed shell) | 0 | – |
 | `basis` | str | Basis set name (e.g. `"6-31g"`, `"def2-tzvpp"`) | – | – |
-| `xc` | str | Exchange-correlation functional (PySCF/Libxc name) | – | – |
+| `basis_coords` | str | `"cartesian"` (6 d functions; **PlasMol default**, stock NWChem) or `"spherical"` (5 d; PySCF default). Aliases: `cart`, `sph` | `"cartesian"` | – |
+| `cartesian` | bool | Same as `basis_coords`. Default `true`. Do not set both unless they agree | true | – |
+| `grid_level` | int | PySCF DFT grid level (0–9). Omit for the PySCF default | – | – |
+| `xc` | str | Exchange-correlation functional (PySCF/Libxc name or a compound mix) | – | – |
 | `lrc_parameter` | float or `"tune"` | Range-separation parameter μ (ω) for RSH functionals; use `"tune"` for automatic IP-tuning | – | a.u. |
+
+**Basis angular type.** PlasMol defaults to **Cartesian** Gaussians (`basis_coords: "cartesian"`, 6 \(d\) functions), matching stock NWChem. PySCF’s own default is spherical (5 \(d\)). Set `"basis_coords": "spherical"` (or `"cartesian": false`) to match PySCF.
 
 A `geometry` string is a path to a `.xyz` file (relative paths are resolved from the input JSON’s directory). Use the usual two-line XYZ header, then one atom per line:
 
@@ -317,6 +344,30 @@ The reader always takes coordinates starting at the **third non-empty line**. Th
 JSON comment markers (`#`, `//`, `--`, `%`) are **not** stripped from `.xyz` files. Do not put `#` comments on atom lines or extra comment lines between atoms — those shift the “start at line 3” window and will be read as atoms. Put remarks on line 2 only. Comma-separated coordinates (`O,0,0,0`) are not accepted.
 ```
 
+#### Rotation
+
+Optional. Applied to the parsed geometry **before SCF**, about the nuclear-charge center, so the molecule does not translate. The input `.xyz` is left unchanged. The rotated Bohr geometry is written to `rotated_geometry.xyz` in the working directory.
+
+A step is either an axis-angle or a bond alignment. A list of steps is applied in order. Axes are fixed lab axes (a later step does not follow the molecule). `align` maps the vector from `from_atom` to `to_atom` (0-based) onto `axis`, then applies `twist_deg` about that axis (default 0).
+
+```json
+{"rotation": {"axis": "z", "angle_deg": 90}}
+```
+
+```json
+{"rotation": [{"align": {"from_atom": 2, "to_atom": 3, "axis": "x"}, "twist_deg": 90}]}
+```
+
+| Key | Type | Description | Default | Units |
+| ----- | ------ | ------------- | ------- | ----- |
+| `axis` | str or list | `"x"`, `"y"`, `"z"`, or a 3-vector. Not used together with `align` | – | – |
+| `angle_deg` | float | Right-handed rotation about `axis` | – | degrees |
+| `align.from_atom`, `align.to_atom` | int | Atom indices. The bond is `coord[to] - coord[from]` | – | – |
+| `align.axis` | str or list | Lab direction that bond is mapped onto | – | – |
+| `twist_deg` | float | Extra right-handed rotation about `align.axis` after the bond is aligned | 0 | degrees |
+
+Omit `rotation` to keep the input frame. The same block is honored on `quantum`, `absorption`, `plasmol`, the core-hole survey, `comparison`, and `tune`, because each of those builds the molecule from `molecule_coords`.
+
 ### 3.2 Propagator
 
 ```json
@@ -339,7 +390,7 @@ JSON comment markers (`#`, `//`, `--`, `%`) are **not** stripped from `.xyz` fil
 
 ### 3.3 Quantum Source (pure quantum runs only)
 
-When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must provide an incident electric field via this block.
+When running a standalone RT-TDDFT simulation (no `"plasmon"` section), provide an incident electric field via this block. Field-free sudden core-hole runs may omit it (the drive is then a zero field).
 
 ```json
 {
@@ -367,7 +418,7 @@ When running a standalone RT-TDDFT simulation (no `"plasmon"` section), you must
 | `additional_parameters.wavelength` | float | `pulse` | Central wavelength of the pulse | – | μm |
 | `additional_parameters.frequency` | float | `pulse` | Central frequency of the pulse (alternative to wavelength) | – | 1/a.u. |
 
-For absorption spectra use `"type": "kick"` together with the `"absorption"` section under `additional_parameters` top-level key.
+For absorption spectra use `"type": "kick"` together with `"driver": {"name": "absorption", ...}` (or the string `"absorption"` plus defaults).
 
 ### 3.4 CAP (Lopata-style)
 
@@ -392,6 +443,30 @@ Optional energy-dependent imaginary potential added to the Fock matrix for lifet
 | `xi` | float | Exponent controlling energy dependence of CAP | 0.5 | – |
 | `eps0` | float or `"tune"` | Reference energy (vacuum level); use `"tune"` for automatic estimation | 0.05 | a.u. |
 | `clamp` | float | Maximum allowed CAP value | 100 | a.u. |
+
+### 3.5 Core-hole (`molecule.core_hole`)
+
+Optional sudden SCH/DCH on a **quantum**, **absorption**, or **plasmol** run. The dedicated `"driver": "core_hole"` workflow does **not** use this for propagation — it only surveys which atoms contribute to listed MOs. See [Core-Hole Dynamics](core_hole.md).
+
+```json
+{
+  "core_hole": {
+    "mo_removal_index_dict": {"0": 2},
+    "mo_occ_filepath": "mo_occ.csv",
+    "watch_indices": [0, 1, 2, 3],
+    "filter_by_amplitude": false,
+    "amplitude_threshold": 0.2
+  }
+}
+```
+
+| Key | Type | Description | Default |
+| ----- | ------ | ------------- | --------- |
+| `mo_removal_index_dict` | dict | 0-based MO index → electrons to remove (1 or 2). `{i:1}` SCH; `{i:2}` DCH; `{i:1,j:1}` two SCH | required |
+| `mo_occ_filepath` | str | CSV path for time-dependent hole occupations | required (production) |
+| `watch_indices` | list | MO indices to plot (logging is 0…LUMO+1) | all logged |
+| `filter_by_amplitude` | bool | Filter plot by peak-to-peak amplitude | false |
+| `amplitude_threshold` | float | Amplitude cutoff when filtering | 0.2 |
 
 ## 4. "files"
 
@@ -423,24 +498,26 @@ Controls output file names and checkpointing behavior.
 
 **Note**: Checkpointing is only supported for pure quantum (molecule-only) simulations. Use either `frequency_steps` **or** `frequency_time`, not both. Resume workflow, what is stored, and what is **not** supported: [Checkpointing](checkpointing.md).
 
-## 5. "additional_parameters"
+## 5. Driver keys and `"additional_parameters"`
 
-This top-level section holds advanced or workflow-specific options.
+Workflow-specific options belong on `settings.driver` when that field is a dict (`"name"` plus keys below). A string `"driver": "absorption"` is the same as `{"name": "absorption"}` with defaults.
 
-### 5.1 "absorption" (Absorption spectrum workflow)
+The top-level `"additional_parameters"` object is only for **plasmon-wide** flags (`decay_stop`, `decay_threshold`) and the checkpoint-resume injection `checkpoint_filename_used`. Older nested blocks (`additional_parameters.absorption`, …) are still accepted and merged onto `settings.driver` with a warning. Flat core-hole keys (`mo_removal_index_dict`, `core_hole_mo_occ_filepath`, …) are moved onto `molecule.core_hole`.
 
-When present (and the molecule source is a delta kick), PlasMol automatically runs three directional simulations and performs a Fourier transform to produce an absorption spectrum.
+### 5.1 Absorption (`"name": "absorption"`)
+
+Runs directional trajectories and Fourier-transforms the induced dipole. Hybrid spectra \(\sigma_m\), \(A_{\mathrm{diss}}\), and \(A_{\mathrm{raw}}\) are derived in [Hybrid absorption observables](observables.md).
 
 ```json
 {
-  "absorption": {
-    "gamma": 0.01,
-    "min_ev": 1.5,
-    "max_ev": 5.0,
-    "spectrum_filepath": "spectrum.png",
-    "npz_filepath": null,
-    "tau": null
-  }
+  "name": "absorption",
+  "gamma": 0.01,
+  "min_ev": 1.5,
+  "max_ev": 5.0,
+  "spectrum_filepath": "spectrum.png",
+  "npz_filepath": null,
+  "tau": null,
+  "observables": ["cross_section"]
 }
 ```
 
@@ -449,35 +526,33 @@ When present (and the molecule source is a delta kick), PlasMol automatically ru
 | `gamma` | float | Broadening (damping) factor applied before FFT | – | a.u. |
 | `min_ev` | float | Lower energy limit of the plotted spectrum | 1.5 | eV |
 | `max_ev` | float | Upper energy limit of the plotted spectrum | 5.0 | eV |
-| `spectrum_filepath` | str | Output PNG file for the absorption spectrum | – | – |
+| `spectrum_filepath` | str | Output PNG (and `.csv`) for the spectrum. With several `observables`, files are `{stem}_{name}.png` | – | – |
+| `observables` | list of str | Spectra to write: `cross_section` (σ_m), `dissipative_power` (A_diss), `A_raw` (μ/E_inc) | `["cross_section"]` | – |
 | `npz_filepath` | str | Optional `.npz` file containing raw Fourier data | – | – |
 | `tau` | float | Extra artificial damping time constant tau (signal *= exp(-t/tau)) applied to time-domain polarization before FFT | – | a.u. |
-| `polarization` | str | `full` (x+y+z), `parallel` (E along NP–mol axis), or `perpendicular` | `full` | – |
+| `polarization` | str | `full` (x+y+z, **no NP**), `parallel` (E along NP–mol axis), `perpendicular`, or `single` (JSON source as given). `full` is rejected when a nanoparticle is present. | `full` (molecule-only) | – |
 | `perp_component` | str | Optional `x`/`y`/`z` for perpendicular mode | auto | – |
 | `field_e_ref_filepath` | str | Vacuum \(E_{inc}\) CSV (`time,xx,yy,zz`) | `field_e_ref.csv` | – |
 | `use_existing_e_field_ref` | bool | Skip vacuum Meep runs when reference file exists | auto | – |
-| `reference_only` | bool | Only build vacuum references and exit (`full` only) | false | – |
+| `reference_only` | bool | Only build vacuum references and exit (`full` only; no nanoparticle) | false | – |
 
-### 5.2 "comparison" (MO energy diagrams)
+### 5.2 Comparison (`"name": "comparison"`)
 
-Runs a series of ground-state SCF calculations for different basis sets / XC functionals and produces publication-quality MO energy plots.
+Ground-state SCF across basis sets / XC functionals; MO energy plots.
 
 ```json
 {
-  "comparison": {
-    "bases": ["6-31g", "def2-tzvpp"],
-    "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
-    "lrc_parameters": {
-      "cam-b3lyp": 0.33
-    },
-    "num_occupied": 5,
-    "num_virtual": 10,
-    "y_min": -1.0,
-    "y_max": 0.6,
-    "index_min": null,
-    "index_max": null,
-    "dir_name": "mo_comparison"
-  }
+  "name": "comparison",
+  "bases": ["6-31g", "def2-tzvpp"],
+  "xcs": ["pbe0", "b3lyp", "cam-b3lyp"],
+  "lrc_parameters": {"cam-b3lyp": 0.33},
+  "num_occupied": 5,
+  "num_virtual": 10,
+  "y_min": -1.0,
+  "y_max": 0.6,
+  "index_min": null,
+  "index_max": null,
+  "dir_name": "mo_comparison"
 }
 ```
 
@@ -492,36 +567,36 @@ Runs a series of ground-state SCF calculations for different basis sets / XC fun
 | `index_min` / `index_max` | int | MO index range to display (1-based) | – | – |
 | `dir_name` | str | Directory in which comparison plots are saved | auto-timestamped | – |
 
-### 5.3 "probe_points"
+### 5.3 Scatter response (`"name": "scatter_response_fxn"`)
 
-List of spatial locations (in μm) at which the electric field time series will be recorded. Primarily used by custom classical drivers such as `chen2010_fig1`.
+`probe_points` is a list of `[x, y, z]` sample locations in μm:
 
 ```json
 {
+  "name": "scatter_response_fxn",
   "probe_points": [[0.011, 0, 0], [0.012, 0, 0]]
 }
 ```
 
-Each entry is a list of three floats `[x, y, z]`.
+### 5.4 NP absorption cross-section (`"name": "np_abs_cross_sec"`)
 
-### 5.5 "core_hole" driver (SCH / DCH)
+| Key | Type | Description | Default | Units |
+| ----- | ------ | --------- | ------------- | ------- |
+| `n_flux_freqs` | int | Frequency samples on the flux monitors | 50 | – |
+| `flux_padding` | float | Extra radius around the NP for the flux box | 0.005 | μm |
+| `line_fit` | bool | Lorentzian fit of the efficiency spectrum | false | – |
 
-Set `"driver": "core_hole"` under `settings`. Parameters live under `additional_parameters`:
+`decay_stop` / `decay_threshold` may be set on the driver dict or under `additional_parameters` (plasmon-wide).
 
-| Key | Type | Description | Default |
-| ----- | ------ | ------------- | --------- |
-| `mo_removal_index_dict` | dict | 0-based MO index → electrons to remove (1 or 2). `{i:1}` SCH; `{i:2}` DCH; `{i:1,j:1}` two SCH | required |
-| `core_hole_mo_occ_filepath` | str | CSV path for time-dependent hole occupations | required |
-| `core_hole_watch_indices` | list | MO indices to plot (logging is 0…LUMO+1) | all logged |
-| `core_hole_filter_by_amplitude` | bool | Filter plot by peak-to-peak amplitude | false |
-| `core_hole_amplitude_threshold` | float | Amplitude cutoff when filtering | 0.2 |
-| `check_mo_contrib_by_atom` | bool | Survey atom contributions and exit | false |
+### 5.5 Core-hole survey (`"name": "core_hole"`)
 
-See [Core-Hole Dynamics](methodology/core_hole.md).
+This driver has **no extra keys**. It always surveys per-atom contributions for MOs in `molecule.core_hole.mo_removal_index_dict` and exits (no ionization, no time loop). Sudden SCH/DCH belongs under `molecule.core_hole` (section 3.5) with driver `quantum` or `absorption`.
 
-### 5.4 Using a Custom Driver
+See [Core-Hole Dynamics](core_hole.md).
 
-To run a completely custom workflow, set the driver name in `settings` and (optionally) supply extra parameters under `additional_parameters`.
+### 5.6 Drivers with no extra keys
+
+`classical`, `quantum`, `plasmol`, `tune`, `verify_source`, and `core_hole` take a string (or `{"name": "..."}` with no other keys):
 
 ```json
 {
