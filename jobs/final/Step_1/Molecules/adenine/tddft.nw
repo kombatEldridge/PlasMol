@@ -1,0 +1,45 @@
+echo
+start adenine_td
+title "adenine LR-TDDFT, LC-wPBE mu=0.296244, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/adenine
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/adenine
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      1.77549838     1.88140500     0.00028055
+  C      1.18951966     0.67155587     0.00019747
+  N      1.95817655    -0.42238913     0.00031905
+  C      1.36134627    -1.61772286     0.00029450
+  N      0.06479797    -1.90666199     0.00014321
+  C     -0.67128619    -0.79647320     0.00012839
+  N     -2.03592678    -0.67423602    -0.00021376
+  H     -2.69302518    -1.43566787    -0.00104311
+  C     -2.31315370     0.66919442    -0.00042202
+  N     -1.24752244     1.42006546    -0.00015850
+  C     -0.20828436     0.51665480     0.00019868
+  H      2.77731664     1.93955225    -0.00247129
+  H      1.21761107     2.71503790    -0.00303571
+  H      2.03670481    -2.47028352     0.00022675
+  H     -3.33096555     1.03554746    -0.00072993
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.296244 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "dt": 0.1,
+    "t_end": 10000,
+    "driver": "plasmol"
+  },
+  "plasmon": {
+    "simulation": {
+      "cell_length": 0.2,
+      "pml_thickness": 0.05,
+      "surrounding_material_index": 1.33,
+      "courant": 0.5
+    },
+    "molecule": {
+      "position": ["PLACEHOLDER_RESONANT_X_GAP005_UM", 0, 0],
+      "tolerance_field_e": 1e-20,
+      "back_propagation": true
+    },
+    "nanoparticle": {
+      "material": "PLACEHOLDER_RESONANT_NP",
+      "radius": "PLACEHOLDER_RESONANT_NP_RADIUS_UM",
+      "center": [0, 0, 0]
+    }
+  },
+  "molecule": {
+    "geometry": "PLACEHOLDER_RESONANT_MOLECULE.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 0,
+    "basis": "6-311G*",
+    "basis_coords": "cartesian",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": "PLACEHOLDER_RESONANT_MU",
+    "propagator": {
+      "type": "magnus2",
+      "pc_convergence": 1e-12,
+      "max_iterations": 200
+    },
+    "hermiticity_tolerance": 1e-12,
+    "core_hole": {
+      "mo_removal_index_dict": {
+        "PLACEHOLDER_RESONANT_CORE_MO": 2
+      },
+      "mo_occ_filepath": "mo_occ.csv",
+      "watch_indices": ["PLACEHOLDER_RESONANT_HOMO_M1", "PLACEHOLDER_RESONANT_HOMO", "PLACEHOLDER_RESONANT_LUMO"]
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e_D3.csv",
+    "field_p_filepath": "field_p_D3.csv",
+    "spectra_e_vs_p_filepath": "fields_D3.png"
+  }
+}

@@ -1,0 +1,34 @@
+echo
+start c2h4_opt
+title "C2H4 geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c2h4
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c2h4
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      0.65500000    -0.00000000    -0.00040000
+  C     -0.65500000     0.00000000     0.00010000
+  H      1.19500000     0.93530000     0.00060000
+  H      1.19500000    -0.93530000     0.00280000
+  H     -1.19500000    -0.93530000    -0.00090000
+  H     -1.19500000     0.93530000     0.00140000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

@@ -1,0 +1,30 @@
+echo
+start co_opt
+title "CO geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/co
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/co
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C     -0.57320000     0.00000000     0.00000000
+  O      0.43030000     0.00000000     0.00000000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

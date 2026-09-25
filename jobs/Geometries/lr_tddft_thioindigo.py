@@ -1,7 +1,7 @@
 # Linear-response TDDFT for neutral trans-thioindigo.
 # Geometry is the PBE0/6-311G* structure in transthioindigo.xyz.
 # The excitation is the campaign functional, not the geometry functional:
-# LC-ωPBE, μ = 0.34272, Cartesian 6-311G*, same as Step_5.
+# LC-ωPBE, μ = 0.34272, Cartesian 6-311G*, same as the jobs/final series.
 #
 #   conda activate meep
 #   python lr_tddft_thioindigo.py

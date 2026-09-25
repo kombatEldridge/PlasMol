@@ -1,0 +1,41 @@
+echo
+start cytosine_opt
+title "cytosine geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/cytosine
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/cytosine
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      2.41280000    -0.84860000     0.00070000
+  C      1.17600000    -0.24640000     0.00090000
+  C      1.07190000     1.15980000    -0.00010000
+  C     -0.15780000     1.72650000    -0.00040000
+  N     -1.26050000     0.92600000     0.00040000
+  H     -2.14530000     1.32350000     0.00020000
+  C     -1.12840000    -0.41310000     0.00090000
+  O     -2.12650000    -1.11450000     0.00080000
+  N      0.07430000    -0.98540000    -0.00350000
+  H      3.21660000    -0.30560000    -0.00010000
+  H      2.48120000    -1.81610000     0.00550000
+  H      1.95940000     1.77530000    -0.00040000
+  H     -0.26350000     2.80140000    -0.00080000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

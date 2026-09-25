@@ -14,14 +14,14 @@
     }
   },
   "molecule": {
-    "geometry": "../../Step_1/transthioindigo.xyz",
+    "geometry": "PLACEHOLDER_RESONANT_MOLECULE.xyz",
     "geometry_units": "angstrom",
     "charge": 0,
     "spin": 0,
     "basis": "6-311G*",
     "basis_coords": "cartesian",
     "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": 0.34272,
+    "lrc_parameter": "PLACEHOLDER_RESONANT_MU",
     "propagator": {
       "type": "magnus2",
       "pc_convergence": 1e-12,
@@ -38,7 +38,7 @@
       "type": "static",
       "gam0": 1,
       "xi": 0.5,
-      "eps0": 0.003028,
+      "eps0": "PLACEHOLDER_RESONANT_EPS0",
       "clamp": 100
     }
   },

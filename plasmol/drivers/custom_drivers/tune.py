@@ -19,6 +19,23 @@ from scipy.optimize import minimize_scalar
 logger = logging.getLogger("main")
 
 
+def _gto_molecule(params, charge, spin):
+    """Build a PySCF molecule the same way Molecule does.
+
+    Cartesian Gaussians are the default (6 d functions). A caller that
+    sets molecule_cartesian False gets spherical functions instead.
+    """
+    return gto.M(
+        atom=params.molecule_coords,
+        unit="B",
+        basis=params.molecule_basis,
+        charge=charge,
+        spin=spin,
+        cart=bool(getattr(params, "molecule_cartesian", True)),
+        verbose=0,
+    )
+
+
 def _resolve_lrc(params):
     """Return a numeric range-separation parameter for ground-state SCF."""
     lrc = getattr(params, "molecule_lrc_parameter", None)
@@ -61,21 +78,9 @@ def _tune_lrc_parameter(params):
     Tune μ (lrc_parameter) for LC functionals to minimize |E_cat - E_neut + ε_HOMO|.
     Ported from previous molecule.xc_tuning so that tuning logic lives only in the driver.
     """
-    mol_neutral = gto.M(
-        atom=params.molecule_coords,
-        unit='B',
-        basis=params.molecule_basis,
-        charge=params.molecule_charge,
-        spin=params.molecule_spin,
-        verbose=0
-    )
-    mol_cation = gto.M(
-        atom=params.molecule_coords,
-        unit='B',
-        basis=params.molecule_basis,
-        charge=params.molecule_charge + 1,
-        spin=abs(params.molecule_spin - 1),
-        verbose=0
+    mol_neutral = _gto_molecule(params, params.molecule_charge, params.molecule_spin)
+    mol_cation = _gto_molecule(
+        params, params.molecule_charge + 1, abs(params.molecule_spin - 1)
     )
 
     xc_template = getattr(params, 'molecule_xc', 'pbe0')
@@ -135,21 +140,9 @@ def _tune_eps0(params):
     """
     logger.info("Calculating vacuum level ε₀ (tune driver)")
 
-    mol_neutral = gto.M(
-        atom=params.molecule_coords,
-        unit='B',
-        basis=params.molecule_basis,
-        charge=params.molecule_charge,
-        spin=params.molecule_spin,
-        verbose=0
-    )
-    mol_anion = gto.M(
-        atom=params.molecule_coords,
-        unit='B',
-        basis=params.molecule_basis,
-        charge=params.molecule_charge - 1,
-        spin=abs(params.molecule_spin - 1),
-        verbose=0
+    mol_neutral = _gto_molecule(params, params.molecule_charge, params.molecule_spin)
+    mol_anion = _gto_molecule(
+        params, params.molecule_charge - 1, abs(params.molecule_spin - 1)
     )
 
     xc = getattr(params, 'molecule_xc', None)

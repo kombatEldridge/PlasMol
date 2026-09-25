@@ -1,0 +1,45 @@
+echo
+start thymine_td
+title "thymine LR-TDDFT, LC-wPBE mu=0.298532, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/thymine
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/thymine
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      2.59661615     0.78357392    -0.00427955
+  C      1.12871835     0.51770835    -0.00443414
+  C      0.18560303     1.47603653    -0.07276103
+  N     -1.15777911     1.19884163    -0.07066459
+  H     -1.83958320     1.93672061    -0.12409529
+  C     -1.67969450    -0.07856202     0.00228947
+  O     -2.86455426    -0.31070016     0.00379161
+  N     -0.69919777    -1.04471170     0.07239895
+  H     -1.02917451    -1.99728967     0.12857841
+  C      0.68898068    -0.87471807     0.07493661
+  O      1.42593461    -1.83398067     0.13962871
+  H      3.06412895     0.38815535     0.90179816
+  H      3.08326798     0.28341514    -0.84622795
+  H      2.80996679     1.85306302    -0.06629510
+  H      0.43631226     2.53001592    -0.13382790
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.298532 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

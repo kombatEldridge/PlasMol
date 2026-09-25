@@ -1,0 +1,48 @@
+echo
+start meta_aminophenol_td
+title "meta-aminophenol LR-TDDFT, LC-wPBE mu=0.292021, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/meta_aminophenol
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/meta_aminophenol
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      2.46145377    -0.98174739    -0.10766307
+  C      1.24261013    -0.32134318    -0.06187968
+  C      1.19215732     1.07968473    -0.02457065
+  C     -0.03306101     1.72505664    -0.03945868
+  C     -1.22594724     1.01350630    -0.08954371
+  C     -1.17232877    -0.37892413    -0.12579880
+  O     -2.29006478    -1.14871640    -0.17390345
+  C      0.04807442    -1.04217967    -0.11186978
+  H      3.24126534    -0.46807064     0.26922408
+  H      2.44631361    -1.93566756     0.21455768
+  H      2.11421059     1.65335642     0.00832184
+  H     -0.06336286     2.81044161    -0.01043190
+  H     -2.18195119     1.53145937    -0.09970659
+  H     -3.06338555    -0.57955405    -0.18232577
+  H      0.04943519    -2.12763997    -0.14839981
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.292021 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+  # The 30th root stalled at a residual of 1.6e-4, just above the
+  # default 1e-4 cutoff, and the Davidson subspace then collapsed.
+  thresh 5.0e-4
+end
+
+task tddft energy

@@ -1,0 +1,46 @@
+echo
+start pentanal_td
+title "pentanal LR-TDDFT, LC-wPBE mu=0.383427, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentanal
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentanal
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      2.94985925    -0.39009474     0.13049186
+  C      1.71427525     0.49579000     0.06651787
+  C      0.42213982    -0.29988929    -0.07314599
+  C     -0.82109066     0.58884090    -0.12240578
+  C     -2.07478254    -0.20829485    -0.34855033
+  O     -3.03509038    -0.20641695     0.37181893
+  H      3.86327275     0.20230032     0.23245703
+  H      2.90534062    -1.07473836     0.98340784
+  H      3.05155574    -0.99905353    -0.77357086
+  H      1.65933089     1.11898082     0.96749348
+  H      1.80124696     1.19311097    -0.77632347
+  H      0.47180677    -0.91564805    -0.98113447
+  H      0.33333152    -1.00237886     0.76486521
+  H     -0.94155253     1.16772560     0.79730683
+  H     -0.72248361     1.29868824    -0.95651653
+  H     -2.06405985    -0.84418887    -1.26517828
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.383427 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

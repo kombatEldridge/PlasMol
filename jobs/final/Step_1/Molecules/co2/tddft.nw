@@ -1,0 +1,33 @@
+echo
+start co2_td
+title "CO2 LR-TDDFT, LC-wPBE mu=0.521026, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/co2
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/co2
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  O     -1.15720316     0.00000011    -0.00000011
+  C      0.00000963    -0.00000021     0.00000023
+  O      1.15719353     0.00000011    -0.00000011
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.521026 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 16
+  notriplet
+end
+
+task tddft energy

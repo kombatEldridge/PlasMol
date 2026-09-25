@@ -1,0 +1,8 @@
+label: O2
+smiles: O=O
+multiplicity: 3
+nroots: 16
+url: https://cactus.nci.nih.gov/chemical/structure/O%3DO/sdf?get3d=true
+fetched: 2026-09-23
+service: NCI Chemical Identifier Resolver (CACTUS), record 3d
+PubChem PUG returned HTTP 500 on this date and was not used.

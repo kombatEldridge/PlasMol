@@ -1,0 +1,100 @@
+n2
+co
+co2
+n2o
+o2
+h2o
+nh3
+ch4
+h2co
+c2h2
+c2h4
+c2h6
+c6h6
+para_aminophenol
+ortho_aminophenol
+meta_aminophenol
+h2s
+so2
+cs2
+lif
+beo
+bf
+pyrimidine
+purine
+uracil
+cytosine
+thymine
+adenine
+guanine
+formamide
+pentan3one
+pentan2one
+pentanal
+START n2 pid=76236
+START co pid=76237
+START co2 pid=76238
+START n2o pid=76239
+OK n2 35s mu=0.594939
+START o2 pid=76332
+OK co 45s mu=0.472691
+START h2o pid=76351
+OK h2o 30s mu=0.546362
+START nh3 pid=76464
+OK nh3 40s mu=0.470089
+START ch4 pid=76591
+OK ch4 45s mu=0.453700
+START h2co pid=76734
+OK o2 135s mu=0.688461
+START c2h2 pid=76759
+OK co2 216s mu=0.521026
+START c2h4 pid=76860
+OK h2co 90s mu=0.476120
+START c2h6 pid=76951
+OK c2h4 105s mu=0.370395
+START c6h6 pid=77100
+OK n2o 416s mu=0.502324
+START para_aminophenol pid=77336
+OK c2h6 210s mu=0.431186
+START ortho_aminophenol pid=77466
+OK c2h2 421s mu=0.417415
+START meta_aminophenol pid=77757
+OK c6h6 1696s mu=0.296607
+START h2s pid=82122
+OK h2s 100s mu=0.414295
+START so2 pid=82487
+OK so2 231s mu=0.499839
+START cs2 pid=83212
+OK cs2 406s mu=0.353777
+START lif pid=84468
+OK lif 8924s mu=0.557662
+START beo pid=85876
+OK beo 15022s mu=0.383825
+START bf pid=87601
+OK bf 157s mu=0.437831
+START pyrimidine pid=88051
+OK ortho_aminophenol 26463s mu=0.294339
+START purine pid=88201
+OK para_aminophenol 26851s mu=0.299475
+START uracil pid=89065
+OK meta_aminophenol 26908s mu=0.292021
+START cytosine pid=89474
+OK pyrimidine 3787s mu=0.367478
+START thymine pid=93299
+OK uracil 4726s mu=0.318252
+START adenine pid=97948
+OK cytosine 5073s mu=0.317059
+START guanine pid=99661
+OK thymine 4209s mu=0.298532
+START formamide pid=9217
+OK formamide 413s mu=0.498438
+START pentan3one pid=12816
+OK pentan3one 1997s mu=0.342545
+START pentan2one pid=23153
+OK adenine 5377s mu=0.296244
+START pentanal pid=23483
+OK purine 12443s mu=0.329576
+OK pentan2one 2159s mu=0.350581
+OK pentanal 2098s mu=0.383427
+OK guanine 7175s mu=0.284965
+ALL_DONE

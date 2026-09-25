@@ -1,0 +1,46 @@
+echo
+start pentan3one_td
+title "3-pentanone LR-TDDFT, LC-wPBE mu=0.342545, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentan3one
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentan3one
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      2.53438092    -0.16595889    -0.00000782
+  C      1.28731392     0.69720783     0.00001356
+  C      0.00000013    -0.10277383     0.00000818
+  O     -0.00000107    -1.30971517     0.00001346
+  C     -1.28731380     0.69720821    -0.00001633
+  C     -2.53438062    -0.16595910     0.00000585
+  H      2.56121753    -0.81510720     0.87743686
+  H      2.56121844    -0.81505887    -0.87748932
+  H      3.43736308     0.44951229     0.00000729
+  H      1.26739116     1.36786947     0.86932578
+  H      1.26738417     1.36791302    -0.86926289
+  H     -1.26738892     1.36791442     0.86926103
+  H     -1.26738661     1.36786867    -0.86932778
+  H     -2.56121946    -0.81510052    -0.87744458
+  H     -2.56121584    -0.81506545     0.87748197
+  H     -3.43736303     0.44951178    -0.00000525
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.342545 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

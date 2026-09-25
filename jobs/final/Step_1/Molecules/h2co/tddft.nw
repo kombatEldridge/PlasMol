@@ -1,0 +1,34 @@
+echo
+start h2co_td
+title "H2CO LR-TDDFT, LC-wPBE mu=0.476120, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/h2co
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/h2co
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      0.50815517    -0.00000009     0.00058814
+  O     -0.68748216     0.00000009    -0.00038632
+  H      1.09846344     0.94024821     0.00114909
+  H      1.09846355    -0.94024821     0.00114909
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.476120 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 16
+  notriplet
+end
+
+task tddft energy

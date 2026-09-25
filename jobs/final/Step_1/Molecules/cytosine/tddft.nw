@@ -1,0 +1,43 @@
+echo
+start cytosine_td
+title "cytosine LR-TDDFT, LC-wPBE mu=0.317059, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/cytosine
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/cytosine
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      2.33717068    -0.86585514     0.00071128
+  C      1.12847072    -0.26442490     0.00013630
+  C      1.06586970     1.17047966    -0.00066268
+  C     -0.17735885     1.70516745    -0.00056057
+  N     -1.25812916     0.90148874    -0.00026007
+  H     -2.19229906     1.27804818     0.00016377
+  C     -1.18114768    -0.51739407     0.00017964
+  O     -2.21560911    -1.14497141     0.00033714
+  N      0.07507704    -1.04770025     0.00050672
+  H      3.19474466    -0.34805981     0.00120797
+  H      2.36302578    -1.87007599     0.00306422
+  H      1.95085409     1.79317542    -0.00062041
+  H     -0.36161363     2.77438937    -0.00050675
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.317059 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

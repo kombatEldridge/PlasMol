@@ -1,0 +1,6 @@
+label: trans-thioindigo
+multiplicity: 1
+nroots: 30
+geometry: PBE0/6-311G*, formerly jobs/final/Step_2/transthioindigo.xyz (copied from jobs/Geometries)
+absorption: PySCF linear-response TDDFT, LC-ωPBE, μ = 0.34272, Cartesian 6-311G*, 30 singlets
+not an NWChem screen folder. CACTUS was not used. The μ tune in LC-wPBE mu/transthioindigo has not been run.

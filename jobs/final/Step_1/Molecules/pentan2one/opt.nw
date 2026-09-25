@@ -1,0 +1,44 @@
+echo
+start pentan2one_opt
+title "2-pentanone geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentan2one
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/pentan2one
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      2.76380000     0.27720000     0.00000000
+  C      1.39860000    -0.41350000    -0.00000000
+  C      0.29230000     0.64340000     0.00000000
+  C     -1.05240000    -0.03690000     0.00000000
+  C     -2.31390000     0.78740000    -0.00000000
+  O     -1.11900000    -1.24270000     0.00000000
+  H      2.85610000     0.89970000     0.89000000
+  H      3.55200000    -0.47580000     0.00000000
+  H      2.85610000     0.89970000    -0.89000000
+  H      1.30640000    -1.03600000    -0.89000000
+  H      1.30640000    -1.03600000     0.89000000
+  H      0.38460000     1.26590000     0.89000000
+  H      0.38460000     1.26590000    -0.89000000
+  H     -2.05590000     1.84650000     0.00000000
+  H     -2.89910000     0.55610000    -0.89000000
+  H     -2.89910000     0.55610000     0.89000000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

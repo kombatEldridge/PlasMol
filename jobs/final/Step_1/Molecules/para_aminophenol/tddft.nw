@@ -1,0 +1,45 @@
+echo
+start para_aminophenol_td
+title "para-aminophenol LR-TDDFT, LC-wPBE mu=0.299475, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/para_aminophenol
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/para_aminophenol
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      2.79058777    -0.00046626    -0.17476296
+  C      1.40198282     0.00012175    -0.06938236
+  C      0.68375448     1.20059326    -0.04503750
+  C     -0.70274384     1.19893920    -0.00043302
+  C     -1.40855333     0.00182880     0.01681938
+  O     -2.78595465     0.00459288     0.11429531
+  C     -0.70423682    -1.19630017    -0.00034224
+  C      0.68230273    -1.19957339    -0.04602204
+  H      3.23825681     0.83092395     0.17696387
+  H      3.23795323    -0.83198739     0.17693004
+  H      1.21904308     2.14683144    -0.06271812
+  H     -1.25438782     2.13368436     0.03216105
+  H     -3.16709400    -0.01284146    -0.76679374
+  H     -1.25632230    -2.13080379     0.03411659
+  H      1.21645495    -2.14646560    -0.06457528
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.299475 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 30
+  notriplet
+end
+
+task tddft energy

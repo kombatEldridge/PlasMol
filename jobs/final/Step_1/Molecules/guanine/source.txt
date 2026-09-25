@@ -1,0 +1,8 @@
+label: guanine
+smiles: Nc1nc2[nH]cnc2c(=O)[nH]1
+multiplicity: 1
+nroots: 30
+url: https://cactus.nci.nih.gov/chemical/structure/Nc1nc2%5BnH%5Dcnc2c%28%3DO%29%5BnH%5D1/sdf?get3d=true
+fetched: 2026-09-23
+service: NCI Chemical Identifier Resolver (CACTUS), record 3d
+PubChem PUG returned HTTP 500 on this date and was not used.

@@ -1,0 +1,32 @@
+echo
+start lif_td
+title "LiF LR-TDDFT, LC-wPBE mu=0.557662, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/lif
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/lif
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  Li    -1.17511786     0.00000000     0.00000000
+  F      0.38511786    -0.00000000    -0.00000000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.557662 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 24
+  notriplet
+end
+
+task tddft energy

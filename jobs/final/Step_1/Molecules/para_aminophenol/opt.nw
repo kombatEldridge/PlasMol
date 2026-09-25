@@ -1,0 +1,43 @@
+echo
+start para_aminophenol_opt
+title "para-aminophenol geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/para_aminophenol
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/para_aminophenol
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      2.79780000    -0.00000000    -0.01400000
+  C      1.39850000    -0.00000000    -0.00270000
+  C      0.70380000     1.20230000     0.00180000
+  C     -0.67730000     1.20140000     0.01290000
+  C     -1.37030000     0.00000000     0.02020000
+  O     -2.73030000     0.00010000     0.03120000
+  C     -0.67730000    -1.20140000     0.01570000
+  C      0.70370000    -1.20230000    -0.00170000
+  H      3.28280000     0.84000000    -0.01870000
+  H      3.28280000    -0.84010000    -0.01300000
+  H      1.24330000     2.13790000    -0.00310000
+  H     -1.21770000     2.13650000     0.01640000
+  H     -3.13080000    -0.00110000    -0.84900000
+  H     -1.21770000    -2.13640000     0.02140000
+  H      1.24320000    -2.13790000    -0.00550000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

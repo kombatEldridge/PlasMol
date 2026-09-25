@@ -1,0 +1,31 @@
+echo
+start o2_td
+title "O2 LR-TDDFT, LC-wPBE mu=0.688461, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/o2
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/o2
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  O     -0.59675164    -0.00000000    -0.00000000
+  O      0.59675164     0.00000000     0.00000000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.688461 cam_alpha 0.00 cam_beta 1.00
+  mult 3
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 16
+end
+
+task tddft energy

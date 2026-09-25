@@ -1,0 +1,9 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+INFO:  === TUNING SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 1.0 au (roughly 0.02419 fs).
+INFO: Calculating μ parameter for xc functional (tune driver)
+INFO: Optimal μ (lrc_parameter) = 0.367478
+INFO:  === TUNE DRIVER COMPLETE (no propagation performed) ===

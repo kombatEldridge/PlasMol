@@ -1,0 +1,100 @@
+n2                   mu=0.594939  roots=12
+co                   mu=0.472691  roots=12
+co2                  mu=0.521026  roots=16
+n2o                  mu=0.502324  roots=16
+o2                   mu=0.688461  roots=16
+h2o                  mu=0.546362  roots=12
+nh3                  mu=0.470089  roots=12
+ch4                  mu=0.453700  roots=12
+h2co                 mu=0.476120  roots=16
+c2h2                 mu=0.417415  roots=16
+c2h4                 mu=0.370395  roots=16
+c2h6                 mu=0.431186  roots=16
+c6h6                 mu=0.296607  roots=24
+para_aminophenol     mu=0.299475  roots=30
+ortho_aminophenol    mu=0.294339  roots=30
+meta_aminophenol     mu=0.292021  roots=30
+h2s                  mu=0.414295  roots=12
+so2                  mu=0.499839  roots=16
+cs2                  mu=0.353777  roots=16
+lif                  mu=0.557662  roots=24
+beo                  mu=0.383825  roots=24
+bf                   mu=0.437831  roots=12
+pyrimidine           mu=0.367478  roots=30
+purine               mu=0.329576  roots=30
+uracil               mu=0.318252  roots=30
+cytosine             mu=0.317059  roots=30
+thymine              mu=0.298532  roots=30
+adenine              mu=0.296244  roots=30
+guanine              mu=0.284965  roots=30
+formamide            mu=0.498438  roots=16
+pentan3one           mu=0.342545  roots=30
+pentan2one           mu=0.350581  roots=30
+pentanal             mu=0.383427  roots=30
+START n2 pid=43663
+START co pid=43668
+START co2 pid=43670
+OK n2 15s roots=12
+OK co 15s roots=12
+START n2o pid=43726
+START o2 pid=43727
+OK co2 40s roots=16
+OK o2 25s roots=16
+START h2o pid=43860
+START nh3 pid=43861
+OK n2o 35s roots=16
+OK h2o 10s roots=12
+START ch4 pid=43899
+START h2co pid=43900
+OK nh3 15s roots=12
+START c2h2 pid=43917
+OK ch4 25s roots=12
+START c2h4 pid=43984
+OK c2h2 30s roots=16
+START c2h6 pid=44026
+OK h2co 40s roots=16
+START c6h6 pid=44040
+OK c2h4 70s roots=16
+START para_aminophenol pid=44279
+OK c2h6 150s roots=16
+START ortho_aminophenol pid=44561
+OK c6h6 1047s roots=24
+START meta_aminophenol pid=47945
+OK para_aminophenol 2424s roots=30
+START h2s pid=52020
+OK h2s 15s roots=12
+START so2 pid=52074
+OK so2 55s roots=16
+START cs2 pid=52258
+OK ortho_aminophenol 2409s roots=30
+START lif pid=52270
+OK lif 15s roots=24
+START beo pid=52327
+OK beo 15s roots=24
+START bf pid=52375
+OK bf 10s roots=12
+START pyrimidine pid=52409
+OK cs2 75s roots=16
+START purine pid=52505
+OK pyrimidine 976s roots=30
+START uracil pid=55396
+OK purine 2342s roots=30
+START cytosine pid=59602
+OK uracil 1622s roots=30
+START thymine pid=60168
+FAIL meta_aminophenol exit=255 roots=0
+START adenine pid=63795
+OK cytosine 1828s roots=30
+START guanine pid=64545
+OK thymine 2709s roots=30
+START formamide pid=67535
+OK formamide 115s roots=16
+START pentan3one pid=67826
+OK adenine 3094s roots=30
+START pentan2one pid=72172
+OK pentan3one 2212s roots=30
+START pentanal pid=73777
+OK guanine 3684s roots=30
+OK pentan2one 2202s roots=30
+OK pentanal 2207s roots=30
+ALL_DONE with failures: meta_aminophenol

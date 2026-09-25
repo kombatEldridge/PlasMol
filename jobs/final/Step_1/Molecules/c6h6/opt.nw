@@ -1,0 +1,40 @@
+echo
+start c6h6_opt
+title "C6H6 geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c6h6
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c6h6
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      0.16410000    -1.37260000    -0.00020000
+  C     -1.10660000    -0.82840000     0.00010000
+  C     -1.27070000     0.54420000    -0.00000000
+  C     -0.16410000     1.37260000     0.00000000
+  C      1.10660000     0.82840000     0.00060000
+  C      1.27070000    -0.54420000    -0.00070000
+  H      0.29230000    -2.44490000     0.00440000
+  H     -1.97120000    -1.47560000     0.00000000
+  H     -2.26350000     0.96930000    -0.00050000
+  H     -0.29230000     2.44490000    -0.00080000
+  H      1.97120000     1.47560000    -0.00010000
+  H      2.26350000    -0.96930000     0.00020000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

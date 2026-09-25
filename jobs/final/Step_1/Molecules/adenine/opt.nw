@@ -1,0 +1,43 @@
+echo
+start adenine_opt
+title "adenine geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/adenine
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/adenine
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  N      1.78020000     1.91930000    -0.00080000
+  C      1.20590000     0.66010000    -0.00050000
+  N      1.96280000    -0.43240000    -0.00040000
+  C      1.42370000    -1.63780000    -0.00010000
+  N      0.12130000    -1.82940000    -0.00030000
+  C     -0.71520000    -0.79680000    -0.00040000
+  N     -2.07990000    -0.65540000    -0.00070000
+  H     -2.73130000    -1.37410000    -0.00090000
+  C     -2.35240000     0.68030000    -0.00070000
+  N     -1.24280000     1.36040000    -0.00050000
+  C     -0.19080000     0.50700000     0.00560000
+  H      2.74570000     2.01200000    -0.00100000
+  H      1.21710000     2.70910000    -0.00490000
+  H      2.07570000    -2.49880000     0.00000000
+  H     -3.34290000     1.11060000    -0.00150000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

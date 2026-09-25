@@ -1,0 +1,106 @@
+START n2 td pid=98646
+START co td pid=98647
+START co2 td pid=98648
+OK n2 td 15s roots=12 first_bright_or_first=9.521
+OK co td 15s roots=12 first_bright_or_first=8.661
+START n2o td pid=99047
+START o2 td pid=99048
+OK co2 td 35s roots=16 first_bright_or_first=8.856
+SKIP h2o already finished
+START nh3 td pid=99127
+FAIL o2 td exit=0 roots=0
+START ch4 td pid=99140
+OK n2o td 35s roots=16 first_bright_or_first=6.650
+OK nh3 td 15s roots=12 first_bright_or_first=7.096
+START h2co td pid=99395
+START c2h2 td pid=99396
+OK ch4 td 25s roots=12 first_bright_or_first=11.561
+START c2h4 td pid=99978
+OK c2h2 td 30s roots=16 first_bright_or_first=6.931
+START c2h6 td pid=133
+OK h2co td 35s roots=16 first_bright_or_first=8.308
+START c6h6 td pid=165
+OK c2h4 td 70s roots=16 first_bright_or_first=8.169
+START para_aminophenol opt pid=318
+OK c2h6 td 145s roots=16 first_bright_or_first=10.215
+START ortho_aminophenol opt pid=895
+OK c6h6 td 1106s roots=24 first_bright_or_first=7.409
+START meta_aminophenol opt pid=8540
+OK para_aminophenol opt 1146s
+START h2s opt pid=10164
+OK h2s opt 5s
+START so2 opt pid=10193
+OK so2 opt 15s
+START cs2 opt pid=10933
+OK cs2 opt 10s
+START lif opt pid=11255
+OK lif opt 5s
+START beo opt pid=11272
+OK beo opt 5s
+START bf opt pid=11298
+OK bf opt 5s
+START pyrimidine opt pid=11313
+OK pyrimidine opt 95s
+START purine opt pid=12230
+OK purine opt 355s
+START uracil opt pid=13529
+OK uracil opt 330s
+START cytosine opt pid=14733
+OK cytosine opt 476s
+START thymine opt pid=17381
+OK ortho_aminophenol opt 2628s
+START adenine opt pid=18427
+OK adenine opt 591s
+START guanine opt pid=21288
+OK meta_aminophenol opt 2268s
+START formamide opt pid=21332
+OK formamide opt 40s
+START pentan3one opt pid=21458
+OK pentan3one opt 390s
+START pentan2one opt pid=22855
+OK pentan2one opt 495s
+START pentanal opt pid=24361
+OK thymine opt 1822s
+START para_aminophenol td pid=24453
+OK pentanal opt 686s
+START h2s td pid=26763
+OK h2s td 15s roots=12 first_bright_or_first=6.915
+START so2 td pid=26820
+OK so2 td 50s roots=16 first_bright_or_first=6.504
+START cs2 td pid=27046
+OK cs2 td 75s roots=16 first_bright_or_first=6.875
+START lif td pid=27373
+OK lif td 10s roots=12 first_bright_or_first=5.495
+START beo td pid=27420
+OK beo td 10s roots=12 first_bright_or_first=1.959
+START bf td pid=27445
+OK bf td 10s roots=12 first_bright_or_first=6.324
+START pyrimidine td pid=27468
+OK pyrimidine td 956s roots=30 first_bright_or_first=5.937
+START purine td pid=30775
+OK guanine opt 3081s
+START uracil td pid=31956
+OK para_aminophenol td 2475s roots=30 first_bright_or_first=4.913
+START cytosine td pid=33019
+OK uracil td 1682s roots=30 first_bright_or_first=5.643
+START ortho_aminophenol td pid=36904
+OK purine td 2320s roots=30 first_bright_or_first=5.358
+START adenine td pid=37865
+OK cytosine td 1883s roots=30 first_bright_or_first=5.163
+START meta_aminophenol td pid=38674
+OK ortho_aminophenol td 2454s roots=30 first_bright_or_first=5.002
+START formamide td pid=45760
+OK formamide td 110s roots=16 first_bright_or_first=7.948
+START pentan3one td pid=46070
+OK meta_aminophenol td 2374s roots=30 first_bright_or_first=5.106
+START pentan2one td pid=47098
+OK adenine td 3135s roots=30 first_bright_or_first=5.614
+START thymine td pid=48632
+OK pentan3one td 2079s roots=30 first_bright_or_first=8.995
+START pentanal td pid=52009
+OK pentan2one td 2094s roots=30 first_bright_or_first=8.116
+START guanine td pid=53059
+OK thymine td 2695s roots=30 first_bright_or_first=5.491
+OK pentanal td 2073s roots=30 first_bright_or_first=8.394
+OK guanine td 3606s roots=30 first_bright_or_first=5.349
+ALL_DONE with failures: o2

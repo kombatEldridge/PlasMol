@@ -1,0 +1,40 @@
+echo
+start uracil_opt
+title "uracil geometry optimization, PBE0/6-311G* Cartesian"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/uracil
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/uracil
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  O     -2.26760000    -0.89630000    -0.00110000
+  C     -1.20090000    -0.30870000    -0.00110000
+  C     -1.16490000     1.10650000     0.00010000
+  C      0.03110000     1.73330000     0.00050000
+  N      1.18310000     0.99490000    -0.00020000
+  H      2.04230000     1.44500000     0.00010000
+  C      1.13520000    -0.34970000    -0.00090000
+  O      2.17110000    -0.98630000    -0.00110000
+  N     -0.04320000    -1.00000000     0.00340000
+  H     -0.05970000    -1.96990000     0.00320000
+  H     -2.08170000     1.67730000     0.00030000
+  H      0.07820000     2.81220000     0.00110000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc pbe0
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+driver
+  maxiter 120
+end
+
+task dft optimize

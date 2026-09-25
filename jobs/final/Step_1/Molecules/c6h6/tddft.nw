@@ -1,0 +1,42 @@
+echo
+start c6h6_td
+title "C6H6 LR-TDDFT, LC-wPBE mu=0.296607, 6-311G* Cartesian, PBE0 geometry"
+scratch_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c6h6
+permanent_dir /Users/bldrdge1/Downloads/repos/PlasMol/jobs/final/Step_1/c6h6
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  C      0.16511290    -1.38103658     0.00101178
+  C     -1.11315667    -0.83337041     0.00028165
+  C     -1.27839481     0.54742664    -0.00046866
+  C     -0.16509941     1.38103313    -0.00042898
+  C      1.11317555     0.83334351    -0.00028797
+  C      1.27839222    -0.54744627     0.00029575
+  H      0.29329767    -2.45950331     0.00288435
+  H     -1.98272710    -1.48389166     0.00022146
+  H     -2.27699094     0.97405952    -0.00059230
+  H     -0.29330299     2.45950816    -0.00049669
+  H      1.98270032     1.48392590    -0.00020698
+  H      2.27699325    -0.97404863     0.00021515
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.296607 cam_alpha 0.00 cam_beta 1.00
+  mult 1
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 24
+  notriplet
+end
+
+task tddft energy

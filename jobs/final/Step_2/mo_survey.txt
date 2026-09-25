@@ -1,7 +1,0 @@
-index	element	contribution_percent
-0	S	99.33
-1	S	99.33
-2	O	99.20
-3	O	99.20
-4	C	99.05
-5	C	99.05
