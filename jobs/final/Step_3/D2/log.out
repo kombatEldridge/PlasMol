@@ -1,0 +1,65 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.35134 was provided. Using the given value will override the default.
+INFO:  === QUANTUM SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 400.0 au (roughly 9.67554 fs).
+INFO: Checkpointing enabled.
+INFO: Will write a snapshot every 20 au (every 400 time steps) to checkpoint_D2.npz.
+INFO: A final archive is written to final-checkpoint_D2.npz at the end of the run.
+INFO: Checkpoint archive keys:
+INFO:   C_orth_ndt                step-propagator orthonormal C
+INFO:   C_orth_ndt_x              step-propagator orthonormal C
+INFO:   C_orth_ndt_y              step-propagator orthonormal C
+INFO:   C_orth_ndt_z              step-propagator orthonormal C
+INFO:   D_ao_0                    AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_x                  AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_y                  AO density at t=0 (or current snapshot)
+INFO:   D_ao_0_z                  AO density at t=0 (or current snapshot)
+INFO:   F_orth_n12dt              magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_x            magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_y            magnus2 Fock at n+1/2
+INFO:   F_orth_n12dt_z            magnus2 Fock at n+1/2
+INFO:   checkpoint_time           simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_x         simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_y         simulation time of this snapshot (a.u.)
+INFO:   checkpoint_time_z         simulation time of this snapshot (a.u.)
+INFO:   core_hole_mo_occ_content  embedded core-hole MO occupation CSV bytes
+INFO:   field_e_content           embedded field_e.csv bytes
+INFO:   field_e_x_content         embedded file bytes
+INFO:   field_e_y_content         embedded file bytes
+INFO:   field_e_z_content         embedded file bytes
+INFO:   field_p_content           embedded field_p.csv bytes
+INFO:   field_p_x_content         embedded file bytes
+INFO:   field_p_y_content         embedded file bytes
+INFO:   field_p_z_content         embedded file bytes
+INFO:   input_file_content        raw input JSON bytes
+INFO:   input_file_path           path of the input JSON used for this run
+INFO:   is_absorption             True if directional absorption checkpoint
+INFO:   is_open_shell             True if UKS (spin ≠ 0)
+INFO:   mo_coeff                  MO coefficients
+INFO:   mo_coeff_x                MO coefficients
+INFO:   mo_coeff_y                MO coefficients
+INFO:   mo_coeff_z                MO coefficients
+INFO:   params_dict               pickled PARAMS.__dict__ at save time
+INFO:   updated_after_init        True after the first propagator state write
+INFO:   xyz_content               raw xyz / geometry bytes
+INFO:   xyz_file_path             geometry filename, if any
+INFO: Unpack a snapshot with:
+INFO:   d = np.load('checkpoint_D2.npz', allow_pickle=True)
+INFO:   # keys listed above; d['<key>'] to unpack one array
+INFO: Simulation progress: 0% done (0/8000 steps || 0.05/400.00 au)
+INFO: Simulation progress: 10% done (800/8000 steps || 40.00/400.00 au)
+INFO: Simulation progress: 20% done (1600/8000 steps || 80.00/400.00 au)
+INFO: Simulation progress: 30% done (2400/8000 steps || 120.00/400.00 au)
+INFO: Simulation progress: 40% done (3200/8000 steps || 160.00/400.00 au)
+INFO: Simulation progress: 50% done (4000/8000 steps || 200.00/400.00 au)
+INFO: Simulation progress: 60% done (4800/8000 steps || 240.00/400.00 au)
+INFO: Simulation progress: 70% done (5600/8000 steps || 280.00/400.00 au)
+INFO: Simulation progress: 80% done (6400/8000 steps || 320.00/400.00 au)
+INFO: Simulation progress: 90% done (7200/8000 steps || 360.00/400.00 au)
+INFO: Simulation progress: 100% done (8000/8000 steps || 400.00/400.00 au)
+INFO: Matplotlib image written: fields_D2.png
+INFO: Plotting core-hole occupations for all logged MO indices.
+INFO: Matplotlib image written: mo_occ.png

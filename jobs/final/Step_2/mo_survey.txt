@@ -1,0 +1,7 @@
+index	element	contribution_percent
+0	Na	100.17
+1	Na	99.65
+2	Na	100.85
+3	Na	101.05
+4	Na	101.38
+5	Na	99.76

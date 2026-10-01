@@ -1,0 +1,15 @@
+D1 double-core-hole dipole, stock frame
+
+field_p is the dipole change from the density at the moment of ionization.
+The axis below is the direction that moves. A static dipole does not radiate.
+
+Swing axis (unsigned): [-0.102595,  0.433595,  0.895249]
+Root-mean-square after removing the mean: x=1.773863e-11  y=1.486000e-11  z=2.486069e-11
+Angle from the nanoparticle axis (+x): 84.11 degrees
+
+Paste this into molecule on D3, D4, D5, and D6 only:
+  "rotation": {"axis": [0.0, -0.89999759, 0.43589487], "angle_deg": 84.1114}
+
+D1 and D2 stay on the stock geometry. Do not edit Na.xyz.
+
+K1 has not been run. Its three dipole files are the valence axis for the Gaussian nanoparticle runs. They are not required for D3–D6.

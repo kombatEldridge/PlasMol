@@ -145,7 +145,11 @@ class PARAMS:
         return get_nested_value(d, path)
 
     def _load_meep_material(self, material_str):
-        return load_meep_material(material_str)
+        return load_meep_material(
+            material_str,
+            getattr(self, "nanoparticle_material_file", None),
+            getattr(self, "input_file_path", None),
+        )
 
     def _check_xc(self, func_name: str, omega: float = None):
         return check_xc(self, func_name, omega)

@@ -83,7 +83,11 @@ def form_all(params):
                     raise ValueError("Source requires 'component' attribute.")
 
             if self.has_nanoparticle:
-                self.nanoparticle_material = load_meep_material(self.nanoparticle_material)
+                self.nanoparticle_material = load_meep_material(
+                    self.nanoparticle_material,
+                    getattr(self, "nanoparticle_material_file", None),
+                    getattr(self, "input_file_path", None),
+                )
                 self.nanoparticle = mp.Sphere(
                     radius=self.nanoparticle_radius,
                     center=mp.Vector3(*self.nanoparticle_center),

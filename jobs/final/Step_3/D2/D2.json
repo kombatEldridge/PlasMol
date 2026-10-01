@@ -5,14 +5,14 @@
     "driver": "quantum"
   },
   "molecule": {
-    "geometry": "PLACEHOLDER_RESONANT_MOLECULE.xyz",
+    "geometry": "Na.xyz",
     "geometry_units": "angstrom",
     "charge": 0,
-    "spin": 0,
-    "basis": "6-311G*",
+    "spin": 1,
+    "basis": "aug-cc-pVTZ",
     "basis_coords": "cartesian",
     "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": "PLACEHOLDER_RESONANT_MU",
+    "lrc_parameter": 0.351340,
     "propagator": {
       "type": "magnus2",
       "pc_convergence": 1e-12,
@@ -23,15 +23,14 @@
       "type": "static",
       "gam0": 1,
       "xi": 0.5,
-      "eps0": "PLACEHOLDER_RESONANT_EPS0",
+      "eps0": 0.009767,
       "clamp": 100
     },
     "core_hole": {
       "mo_removal_index_dict": {
-        "PLACEHOLDER_RESONANT_CORE_MO": 2
+        "0": 2
       },
-      "mo_occ_filepath": "mo_occ.csv",
-      "watch_indices": ["PLACEHOLDER_RESONANT_HOMO_M1", "PLACEHOLDER_RESONANT_HOMO", "PLACEHOLDER_RESONANT_LUMO"]
+      "mo_occ_filepath": "mo_occ.csv"
     }
   },
   "files": {

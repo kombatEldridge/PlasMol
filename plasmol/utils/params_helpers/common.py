@@ -64,16 +64,115 @@ def check_xc(params, func_name: str, omega: float = None):
         raise ValueError(f"Error checking xc functional '{func_name}': {e}")
 
 
-def load_meep_material(material_str):
+def _builtin_media(materials):
+    """Names on ``meep.materials`` that are already a ``Medium``."""
+    import meep as mp
+    return {
+        name: value
+        for name, value in vars(materials).items()
+        if not name.startswith("_") and isinstance(value, mp.Medium)
+    }
+
+
+def _rollback_material_module(materials, media_snapshot, names_before):
+    """Undo a custom-material file that failed the name check."""
+    for name in list(vars(materials)):
+        if name.startswith("_") or name in names_before:
+            continue
+        delattr(materials, name)
+    for name, old in media_snapshot.items():
+        setattr(materials, name, old)
+
+
+def _resolve_material_file(material_file, input_path):
+    path = Path(material_file)
+    if not path.is_absolute():
+        base = Path(input_path).resolve().parent if input_path else Path.cwd()
+        path = (base / path).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Custom material file not found: {path}")
+    return path
+
+
+def _exec_material_file(path):
+    import importlib.util
+    module_name = "plasmol_user_material_" + str(abs(hash(str(path))))
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load custom material file '{path}'.")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+
+def load_meep_material(material_str, material_file=None, input_path=None):
+    """Return a Meep ``Medium``.
+
+    With no ``material_file``, ``material_str`` is a name in ``meep.materials``.
+    With a file, that file is executed first and must assign
+    ``meep.materials.<material_str>``. The name has to be new: it cannot be a
+    built-in ``Medium``, and the file cannot replace any built-in ``Medium``.
+    """
     import importlib
+    import meep as mp
+
     materials = importlib.import_module("meep.materials")
+    if not material_file:
+        try:
+            medium = getattr(materials, material_str)
+        except AttributeError as e:
+            raise ImportError(
+                f"Material '{material_str}' not found in meep.materials. "
+                f"Check spelling/case or available materials."
+            ) from e
+        if not isinstance(medium, mp.Medium):
+            raise TypeError(
+                f"meep.materials.{material_str} is not a Medium."
+            )
+        return medium
+
+    reserved = _builtin_media(materials)
+    if material_str in reserved:
+        known = ", ".join(sorted(reserved))
+        raise ValueError(
+            f"Custom material '{material_str}' already exists in meep.materials. "
+            f"Use a name that is not one of: {known}."
+        )
+
+    path = _resolve_material_file(material_file, input_path)
+    names_before = set(vars(materials))
     try:
-        return getattr(materials, material_str)
+        _exec_material_file(path)
+    except Exception:
+        _rollback_material_module(materials, reserved, names_before)
+        raise
+
+    replaced = [
+        name for name, old in reserved.items()
+        if getattr(materials, name, None) is not old
+    ]
+    if replaced:
+        _rollback_material_module(materials, reserved, names_before)
+        raise ValueError(
+            "Custom material file "
+            f"'{path}' replaces built-in meep.materials "
+            f"{', '.join(sorted(replaced))}. "
+            "Choose a name that is not already a Meep material."
+        )
+
+    try:
+        medium = getattr(materials, material_str)
     except AttributeError as e:
+        _rollback_material_module(materials, reserved, names_before)
         raise ImportError(
-            f"Material '{material_str}' not found in meep.materials. "
-            f"Check spelling/case or available materials."
+            f"Custom material file '{path}' did not set meep.materials.{material_str}."
         ) from e
+    if not isinstance(medium, mp.Medium):
+        _rollback_material_module(materials, reserved, names_before)
+        raise TypeError(
+            f"meep.materials.{material_str} from '{path}' is not a Medium."
+        )
+    logger.info(f"Loaded custom material '{material_str}' from {path}")
+    return medium
 
 
 def resolve_geometry_path(params, geometry: str) -> Path:

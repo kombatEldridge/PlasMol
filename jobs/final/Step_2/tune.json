@@ -1,0 +1,29 @@
+{
+  "settings": {
+    "dt": 0.05,
+    "t_end": 1.0,
+    "driver": "tune"
+  },
+  "molecule": {
+    "geometry": "Na.xyz",
+    "geometry_units": "angstrom",
+    "charge": 0,
+    "spin": 1,
+    "basis": "aug-cc-pVTZ",
+    "basis_coords": "cartesian",
+    "xc": "HYB_GGA_XC_LC_WPBE",
+    "lrc_parameter": "tune",
+    "cap": {
+      "type": "static",
+      "gam0": 1,
+      "xi": 0.5,
+      "eps0": "tune",
+      "clamp": 100
+    }
+  },
+  "files": {
+    "field_e_filepath": "field_e_tune.csv",
+    "field_p_filepath": "field_p_tune.csv",
+    "spectra_e_vs_p_filepath": "fields_tune.png"
+  }
+}

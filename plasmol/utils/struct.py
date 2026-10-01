@@ -32,7 +32,8 @@ param_defs = [
 
     # Nanoparticle params
     ('nanoparticle_dict', ['plasmon', 'nanoparticle'], True, "has_nanoparticle", None, 'plasmon', dict, None, None),
-    ('nanoparticle_material', ['plasmon', 'nanoparticle', 'material'], False, 'has_nanoparticle', None, 'plasmon', str, "Material name from meep.materials (e.g. 'Au_JC_visible')", None),
+    ('nanoparticle_material', ['plasmon', 'nanoparticle', 'material'], False, 'has_nanoparticle', None, 'plasmon', str, "Material name from meep.materials, or the name a material_file assigns onto that module", None),
+    ('nanoparticle_material_file', ['plasmon', 'nanoparticle', 'material_file'], False, 'has_nanoparticle', None, 'plasmon', str, "Python file that assigns meep.materials.<material>. The name must not already be a built-in Medium. Path is relative to the JSON file.", None),
     ('nanoparticle_radius', ['plasmon', 'nanoparticle', 'radius'], False, 'has_nanoparticle', None, 'plasmon', (int, float), "Radius of the spherical nanoparticle", "μm"),
     ('nanoparticle_center', ['plasmon', 'nanoparticle', 'center'], False, 'has_nanoparticle', [0,0,0], 'plasmon', list, "Center coordinates of the nanoparticle", "μm"),
 

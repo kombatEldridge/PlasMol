@@ -482,7 +482,7 @@ function slideStep2() {
     fontFace: FONT.body, fontSize: 13, color: COLOR.subtitleOnDark, margin: 0,
   });
 
-  s.addNotes("Do not launch Step 3 until the resonant survey has been run and the core index is written into the DCH files. The trial lives in Step_2/thioindigo_trial.");
+  s.addNotes("The resonant survey has been run at μ = 0.351340. The core index in the DCH files is 0. The thioindigo trial is not in Step 2.");
 }
 
 // ----------------------------------------------------------------------
@@ -651,7 +651,7 @@ function slideStep5() {
     fontFace: FONT.body, fontSize: 15, color: COLOR.body, margin: 0,
   });
 
-  s.addNotes("Do not reuse a vacuum reference computed with a different source or a different dt. The plot window is a placeholder until the bright root is known. gamma is 0 on these jobs.");
+  s.addNotes("Do not reuse a vacuum reference computed with a different source or a different dt. The plot window is 1.5 to 4.5 eV. gamma is 0 on these jobs.");
 }
 
 // ----------------------------------------------------------------------
@@ -805,7 +805,7 @@ function slideOpen() {
     x: MARGIN_X, y: 6.0, w: W - 2 * MARGIN_X, h: 0.95,
     fill: { color: COLOR.darkBg },
   });
-  s.addText("A file that still contains PLACEHOLDER_ is not an input. The Step 7 x tokens are radius plus that gap. Detuned tokens are only in Step 8.", {
+  s.addText("A file that still contains PLACEHOLDER_ is not an input. Step 7 x is 0.030, 0.055, and 0.085 μm. Detuned tokens are only in Step 8.", {
     x: MARGIN_X + 0.3, y: 6.12, w: W - 2 * MARGIN_X - 0.6, h: 0.72,
     fontFace: FONT.head, fontSize: 16, italic: true, color: COLOR.titleOnDark, margin: 0, valign: "middle",
   });

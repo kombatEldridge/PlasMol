@@ -144,8 +144,8 @@ def compare_campaign(root):
     was itself rotated.
     """
     root = Path(root)
-    d1_json = root / "Step_4" / "D1" / "D1.json"
-    d1_mu = root / "Step_4" / "D1" / "field_p_D1.csv"
+    d1_json = root / "Step_3" / "D1" / "D1.json"
+    d1_mu = root / "Step_3" / "D1" / "field_p_D1.csv"
     missing = [path for path in (d1_json, d1_mu) if not path.is_file()]
     if missing:
         listed = "\n".join(f"  {path}" for path in missing)
@@ -185,7 +185,7 @@ def compare_campaign(root):
         "",
         pasted,
         "",
-        "D1 and D2 stay on the stock geometry. Do not edit Step_2/transthioindigo.xyz.",
+        "D1 and D2 stay on the stock geometry. Do not edit Na.xyz.",
         "",
         _k1_report(root),
     ]

@@ -8,20 +8,20 @@
       "spectrum_filepath": "spectrum_G4_no_backprop.png",
       "npz_filepath": "absorption_G4_no_backprop.npz",
       "observables": ["cross_section"],
-      "min_ev": "PLACEHOLDER_RESONANT_WINDOW_MIN_EV",
-      "max_ev": "PLACEHOLDER_RESONANT_WINDOW_MAX_EV",
+      "min_ev": 1.5,
+      "max_ev": 4.5,
       "field_e_ref_filepath": "field_e_ref_G4_no_backprop.csv"
     }
   },
   "molecule": {
-    "geometry": "PLACEHOLDER_RESONANT_MOLECULE.xyz",
+    "geometry": "Na.xyz",
     "geometry_units": "angstrom",
     "charge": 0,
-    "spin": 0,
-    "basis": "6-311G*",
+    "spin": 1,
+    "basis": "aug-cc-pVTZ",
     "basis_coords": "cartesian",
     "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": "PLACEHOLDER_RESONANT_MU",
+    "lrc_parameter": 0.351340,
     "propagator": {
       "type": "magnus2",
       "pc_convergence": 1e-12,
@@ -30,10 +30,9 @@
     "hermiticity_tolerance": 1e-12,
     "core_hole": {
       "mo_removal_index_dict": {
-        "PLACEHOLDER_RESONANT_CORE_MO": 2
+        "0": 2
       },
-      "mo_occ_filepath": "mo_occ.csv",
-      "watch_indices": ["PLACEHOLDER_RESONANT_HOMO_M1", "PLACEHOLDER_RESONANT_HOMO", "PLACEHOLDER_RESONANT_LUMO"]
+      "mo_occ_filepath": "mo_occ.csv"
     }
   },
   "files": {
@@ -49,13 +48,13 @@
       "courant": 0.5
     },
     "molecule": {
-      "position": ["PLACEHOLDER_RESONANT_MOLECULE_X_UM", 0, 0],
+      "position": [0.02645, 0, 0],
       "tolerance_field_e": 1e-20,
       "back_propagation": false
     },
     "nanoparticle": {
-      "material": "PLACEHOLDER_RESONANT_NP",
-      "radius": "PLACEHOLDER_RESONANT_NP_RADIUS_UM",
+      "material": "Au",
+      "radius": 0.025,
       "center": [0, 0, 0]
     },
     "source": {
@@ -66,7 +65,7 @@
       "amplitude": 1,
       "is_integrated": true,
       "additional_parameters": {
-        "wavelength": "PLACEHOLDER_RESONANT_WAVELENGTH_UM",
+        "wavelength": 0.618422,
         "fwidth": 2.0
       }
     }

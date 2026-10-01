@@ -236,11 +236,12 @@ This section specifies details about the singular NP in your simulation.
 
 | Key | Type | Description | Default | Units |
 | ----- | ------ | --------- | ------------- | ------- |
-| `material` | str | Name from `meep.materials` (e.g. `Au_JC_visible`, `Ag_JC_visible`) | – | – |
+| `material` | str | Name from `meep.materials`, or the name a `material_file` assigns there | – | – |
+| `material_file` | str | Python file that sets `meep.materials.<material>`. The name must not already be a built-in material. Relative to the JSON file. Omit for a library metal | – | – |
 | `radius` | int or float | Radius of Spherical NP | – | μm |
 | `center` | list of int or float | Center position of Spherical NP | [0, 0, 0] | μm |
 
-Note: At v1.2.0, only **spherical** NPs are supported.
+Note: At v1.2.0, only **spherical** NPs are supported. A dielectric that is not in `meep.materials` is described in [Custom nanoparticle materials](custom_material.md). The poles stay in that Python file.
 
 ### 2.4 "images"
 

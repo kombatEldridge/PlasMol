@@ -2,7 +2,7 @@
 
 Same protocol as the resonant campaign, on a nanoparticle–molecule pair whose resonances do not overlap. The plasmon is not on the bright root that the Gaussian is centered on.
 
-These files are the key runs only. The CAP grid (D2, D5, D6, K2, K4, G5–G8) and the two G4 controls stay in Steps 3–6. The gap scan stays in Step 7. They answer lifetime, polarization, and distance, not whether the resonances have to overlap. The gap here stays 0.015 μm. Do not add the controls here until the detuned G4 has moved and D3 − D4 does not already explain it.
+These files are the key runs only. The CAP grid (D2, D5, D6, K2, K4, G5–G8) and the two G4 controls stay in Steps 3–6. The gap scan stays in Step 7. They answer lifetime, polarization, and distance, not whether the resonances have to overlap. The surface gap here stays the resonant baseline, one Yee pixel, rather than 0.015 μm. The molecule x is that pair's radius plus one pixel. Do not add the controls here until the detuned G4 has moved and D3 − D4 does not already explain it.
 
 Every nanoparticle field and every molecule field is a `PLACEHOLDER_DETUNED` token. The list of tokens, and the rule for reusing the resonant molecule, is in `progress.md`. Do not launch a file that still contains `PLACEHOLDER_`.
 

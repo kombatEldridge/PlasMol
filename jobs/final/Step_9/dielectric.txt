@@ -1,0 +1,22 @@
+Synthetic Drude sphere, matched to the Na LR-TDDFT bright root.
+Not a PlasMol input. meep.materials has no entry for this function.
+
+target_eV	2.0048487233
+target_um	0.618422
+radius_um	0.025
+host_index	1.33
+eps_inf	1.0
+sigma	1.0
+gamma_eV	0.053
+gamma_per_um	0.0427473847
+omega_p_eV	4.5056644150
+omega_p_per_um	3.6340635899
+frohlich_omega_p_eV	4.2722433816
+mie_absorption_peak_eV	2.0048487233
+mie_extinction_peak_eV	2.0057874757
+rakic_Au_mie_absorption_peak_eV	2.3399508245
+rakic_Au_mie_extinction_peak_eV	2.3321766144
+detuning_Au_minus_Na_eV	0.3351021011
+
+Meep object, once a custom medium is accepted:
+mp.Medium(epsilon=1.0, E_susceptibilities=[mp.DrudeSusceptibility(frequency=3.6340635899, gamma=0.0427473847, sigma=1.0)])

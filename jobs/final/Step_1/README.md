@@ -404,7 +404,7 @@ Result. The five neutral C 1s → π* energies lie inside 0.7 eV. One oxygen hol
 
 The production initial condition is the pentanone one: a sudden double vacancy on one core MO, neutral orbitals kept, real-time propagation of the valence holes. It is not a calculated double ionization potential, and it is not a two-site hole. The two-site papers are the evidence that a second hole is a chemical probe. They are not the observable this series records.
 
-Which core that vacancy sits on is not chosen. It waits on the molecule. A survey of trans-thioindigo, run before that choice was unset, is in `Step_2/thioindigo_trial/`: MO 0 and MO 1 are sulfur 1s, MO 2 and MO 3 are oxygen 1s. The sulfur comparison that exists in this note is S 2p⁻² of H₂S, SO₂, and CS₂, not a sulfur K⁻² hole. The oxygen comparison that matches the sudden-hole dynamics is 3-pentanone. Neither fact picks the production molecule. Do not copy the thioindigo indices forward unless that molecule is the one selected.
+Which core that vacancy sits on is not chosen. It waits on the molecule. A survey of trans-thioindigo was run before that choice was unset and is not kept in Step 2: MO 0 and MO 1 are sulfur 1s, MO 2 and MO 3 are oxygen 1s. The sulfur comparison that exists in this note is S 2p⁻² of H₂S, SO₂, and CS₂, not a sulfur K⁻² hole. The oxygen comparison that matches the sudden-hole dynamics is 3-pentanone. Neither fact picks the production molecule. Do not copy the thioindigo indices forward unless that molecule is the one selected.
 
 ## Valence absorption against the plasmons
 

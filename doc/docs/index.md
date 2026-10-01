@@ -16,6 +16,7 @@ PlasMol aims to provide users with a scaffold to measure molecular properites un
 introduction
 installation
 usage
+custom_material
 checkpointing
 tutorials
 ```

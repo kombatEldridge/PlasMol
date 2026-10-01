@@ -12,25 +12,29 @@
       "courant": 0.5
     },
     "molecule": {
-      "position": ["PLACEHOLDER_RESONANT_X_GAP005_UM", 0, 0],
+      "position": [0.030, 0, 0],
       "tolerance_field_e": 1e-20,
       "back_propagation": false
     },
     "nanoparticle": {
-      "material": "PLACEHOLDER_RESONANT_NP",
-      "radius": "PLACEHOLDER_RESONANT_NP_RADIUS_UM",
+      "material": "Au",
+      "radius": 0.025,
       "center": [0, 0, 0]
     }
   },
   "molecule": {
-    "geometry": "PLACEHOLDER_RESONANT_MOLECULE.xyz",
+    "geometry": "Na.xyz",
     "geometry_units": "angstrom",
+    "rotation": {
+      "axis": [0.0, -0.89999759, 0.43589487],
+      "angle_deg": 84.1114
+    },
     "charge": 0,
-    "spin": 0,
-    "basis": "6-311G*",
+    "spin": 1,
+    "basis": "aug-cc-pVTZ",
     "basis_coords": "cartesian",
     "xc": "HYB_GGA_XC_LC_WPBE",
-    "lrc_parameter": "PLACEHOLDER_RESONANT_MU",
+    "lrc_parameter": 0.351340,
     "propagator": {
       "type": "magnus2",
       "pc_convergence": 1e-12,
@@ -39,10 +43,9 @@
     "hermiticity_tolerance": 1e-12,
     "core_hole": {
       "mo_removal_index_dict": {
-        "PLACEHOLDER_RESONANT_CORE_MO": 2
+        "0": 2
       },
-      "mo_occ_filepath": "mo_occ.csv",
-      "watch_indices": ["PLACEHOLDER_RESONANT_HOMO_M1", "PLACEHOLDER_RESONANT_HOMO", "PLACEHOLDER_RESONANT_LUMO"]
+      "mo_occ_filepath": "mo_occ.csv"
     }
   },
   "files": {
