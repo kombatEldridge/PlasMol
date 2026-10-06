@@ -19,7 +19,7 @@ Spectra, occupations, and fields are the files named in each JSON. The core-orbi
 | `Step_1` | Done | Which molecules have a bright valence line, including trans-thioindigo, and whether any of them sits on a metallic plasmon |
 | `Step_2` | Tuned. Survey reprinted at 0.351340 | Na 1s index, and the production μ and ε₀ |
 | Check | Done | D1 dipole is below 2e-10 au. The reported rotation is pasted on the hybrid D3 and D4 copies. The nucleus is at the origin, so it does not move |
-| `Step_3` | D1 and D2 finished. D3–D6 running. `D1_10k` is D1 out to 10000 au | Field-free DCH, one factor at a time |
+| `Step_3` | D1–D6 and `D1_10k` finished | Field-free DCH, one factor at a time |
 | `Step_4` | Ready | δ-kick absorption, ± DCH, ± CAP. K1 checks the 2.004849 eV root in real time |
 | `Step_5` | Ready | Gaussian hybrid cross section, ± DCH, ± NP, ± CAP. Plot window 1.5 to 4.5 eV |
 | `Step_6` | Ready | Two controls on G4, not part of the main grid. Plot window 1.5 to 4.5 eV |
@@ -110,9 +110,17 @@ No external electric field. The drive is the sudden hole. D1 and D2 are molecule
 
 Read D2 − D1 as the CAP on the free hole. D3 − D1 as the nanoparticle when the atom is allowed to radiate. D4 − D1 as the nanoparticle when it is not. If D4 matches D1 and D3 does not, the nanoparticle effect is the radiated field coming back.
 
+D4 finished at 10007 au with no error. The local field stayed at zero, so the sphere did not drive the atom. The dipole does not match D1: it stays under 1e-6 until 1089 au, then reaches 0.91 near 2850 au. The three 2p holes, equal on D1, are split on D4.
+
+D5 finished at 10007 au with no error. Back-propagation is on, and the local field stays below 4e-8. The dipole peaks at 0.002. The three 2p holes stay equal, and the 3s hole ends at 0.98. The plotted holes sum to 2.08 at the start and 4.11 at the end. CAP is on, so that increase can be absorption as well as promotion out of MOs 0–6.
+
+D3 finished at 10007 au with no error. Back-propagation is on. The local field peaks at 1.1e-5. Through 400 au the dipole stays under 3e-10, as on D1. After that it follows D4: it passes 0.1 near 2060 au and peaks at 0.81 near 7230 au, and the 2p holes split. The plotted holes sum to 2.07 at the start and 3.26 at the end. There is no CAP, so those extra holes are electrons that left MOs 0–6.
+
+D6 finished at 10007 au with no error. The half-step retry never fired. Back-propagation is off and the local field is zero. The dipole peaks at 0.002. The logged holes match D5 at the 0.001-electron level: the 2p holes stay equal, the 3s hole ends at 0.98, and the plotted holes sum to 4.11. Turning the radiated field off does not change this CAP run.
+
 D1 finished at 400 au with no error. The 1s hole stays near 2. The 2p hole populations stay equal to each other, and the dipole stays below 2e-10 au, so there is no radiating axis. `orientation_check.txt` still reports a noise-direction rotation, 84.1114 degrees about `[0.0, -0.89999759, 0.43589487]`. That object is `molecule.rotation` on D3–D6. D1 and D2 stay on the stock frame, so D2 − D1 remains a same-frame CAP comparison. The same block is on the Step 7 and Step 9 D3 and D4 copies. It is not on the Gaussian jobs.
 
-`Step_3/D1_10k` is that same D1 input with `t_end` 10000 instead of 400. It does not replace the 400 au run. D2 also finished at 400 au with no error. D3–D6 are the hybrid runs, out to about 10007 au. Their first launch stopped when the Magnus residual leveled off near 2e-12, just above the requested 1e-12. The propagator now accepts that roundoff floor. The JSON value of `pc_convergence` is still 1e-12. `rotated_geometry.xyz` is the same origin atom as `Na.xyz`.
+`Step_3/D1_10k` is that same D1 input with `t_end` 10000 instead of 400. It does not replace the 400 au run. It finished at 10000 au with no error. Through 400 au the holes match D1 to 3e-12, and the dipole stays under 1e-10. After that the free atom does what D3 and D4 do: the dipole passes 0.1 near 3140 au, peaks at 0.86 near 7970 au, and the 2p holes split. There is no sphere in this run. D3 and D4 reach a dipole of 0.1 about 1000 au earlier. The CAP runs, D5 and D6, do not grow this dipole. D2 also finished at 400 au with no error. D3–D6 are the hybrid runs, out to about 10007 au. Their first launch stopped when the Magnus residual leveled off near 2e-12, just above the requested 1e-12. A stalled residual below 1e-8 is accepted; the JSON value of `pc_convergence` is still 1e-12. D6 still died at 2730 au, once at 1.3e-9 and again at 9.4e-7. That one interval is retried as two steps of `dt/2`. A half-step that also fails is still an error. The partial traces are `D6/partial_t2730/` and `D6/partial_t2730_rerun/`. `rotated_geometry.xyz` is the same origin atom as `Na.xyz`.
 
 Do not treat D3–D6 as cross sections. There is no incident field to divide by. The outputs are `mo_occ.csv`, `field_e_*.csv`, and `field_p_*.csv`. The occupation plot is MOs 0 through 6.
 

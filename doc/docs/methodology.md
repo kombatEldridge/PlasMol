@@ -199,7 +199,7 @@ Incident electric fields from a plasmon can influence lifetimes of electronic ex
 
 One promising strategy is to incorporate dissipative channels **directly** into the TDDFT Hamiltonian. Lopata and Govind demonstrated—and subsequent studies confirmed—that a non-Hermitian dissipative term yields remarkably accurate state-specific broadenings. Although the approach primarily accounts for autoionization decay, it produces realistic peak widths that align well with experiment. Inclusion of such a modification is essential for evaluating lifetimes in S/DCH relaxations, particularly under plasmon coupling.
 
-Operational SCH/DCH initial conditions, MO tracking, and JSON parameters are documented on the dedicated page [Core-Hole Dynamics](core_hole.md).
+Operational SCH/DCH initial conditions, MO tracking, and JSON parameters are documented on the dedicated page [Core-Hole Dynamics](core_hole.md). The Lopata term models autoionization of orbitals above a vacuum cutoff. It is not an Auger decay. Why this propagation cannot describe Auger decay of any kind, with the sodium KLL path as the example, is set out in [Auger decay](auger_decay.md).
 
 ### The non-Hermitian (Lopata) approach
 

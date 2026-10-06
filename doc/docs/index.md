@@ -39,6 +39,7 @@ fourier
 observables
 quasistatic_model
 core_hole
+auger_decay
 ```
 
 ```{toctree}

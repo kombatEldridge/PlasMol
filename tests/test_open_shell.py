@@ -209,6 +209,118 @@ def test_magnus2_uks_converges_in_few_iterations_at_ground_state(h_atom_molecule
         molecule_pc_convergence=1e-10, molecule=m, exc=_zero_field()
     )
 
+def _magnus_state():
+    """Tiny molecule-shaped object. The interval itself is replaced in the split tests."""
+    coeff = np.eye(2, dtype=np.complex128)
+    fock = np.eye(2, dtype=np.complex128)
+    mf = Namespace(mo_coeff=coeff.copy())
+    return Namespace(
+        mf=mf,
+        D_ao=np.eye(2, dtype=np.complex128),
+        F_orth=fock.copy(),
+        F_orth_n12dt=3.0 * fock,
+    )
+
+def test_magnus2_retries_a_failed_step_as_two_half_steps(monkeypatch):
+    import logging
+    from plasmol.quantum.propagators import magnus2 as mag
+
+    seen = []
+
+    def fake(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc, failure_level):
+        seen.append((
+            dt,
+            np.array(molecule.mf.mo_coeff, copy=True),
+            np.array(molecule.F_orth_n12dt, copy=True),
+            failure_level,
+        ))
+        if len(seen) == 1:
+            molecule.mf.mo_coeff = np.full((2, 2), 9.0)
+            molecule.D_ao = np.full((2, 2), 9.0)
+            raise mag.MagnusNotConverged("Failed to converge within 200 iterations")
+
+    monkeypatch.setattr(mag, "_propagate_interval", fake)
+    mag.propagate(200, 0.1, 1e-12, _magnus_state(), None)
+
+    assert [row[0] for row in seen] == [0.1, 0.05, 0.05]
+    assert np.allclose(seen[1][1], np.eye(2))
+    assert np.allclose(seen[1][2], np.eye(2))
+    assert seen[0][3] == logging.WARNING
+    assert seen[1][3] == logging.ERROR
+    assert seen[2][3] == logging.ERROR
+
+def test_magnus2_half_step_failure_is_not_split_again(monkeypatch):
+    import logging
+    from plasmol.quantum.propagators import magnus2 as mag
+
+    calls = []
+
+    def fake(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc, failure_level):
+        calls.append((dt, failure_level))
+        raise mag.MagnusNotConverged("Failed to converge within 200 iterations")
+
+    monkeypatch.setattr(mag, "_propagate_interval", fake)
+    with pytest.raises(mag.MagnusNotConverged, match="Failed to converge within 200 iterations"):
+        mag.propagate(200, 0.1, 1e-12, _magnus_state(), None)
+    assert calls == [(0.1, logging.WARNING), (0.05, logging.ERROR)]
+
+def test_magnus2_does_not_split_a_converged_step(monkeypatch):
+    from plasmol.quantum.propagators import magnus2 as mag
+
+    calls = []
+
+    def fake(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc, failure_level):
+        calls.append(dt)
+
+    monkeypatch.setattr(mag, "_propagate_interval", fake)
+    mag.propagate(200, 0.1, 1e-12, _magnus_state(), None)
+    assert calls == [0.1]
+
+class _NeverConverges:
+    """Fock changes on every build, so the coefficient residual cannot fall."""
+
+    is_open_shell = False
+    occ = np.array([1.0])
+
+    def __init__(self):
+        self.mf = self
+        self.mo_coeff = np.ones((1, 1), dtype=np.complex128)
+        self.D_ao = np.ones((1, 1), dtype=np.complex128)
+        # Current Fock stays at 0 while each build returns a new value, so the
+        # midpoint predictor keeps moving and the coefficient residual cannot fall.
+        self.F_orth = np.zeros((1, 1), dtype=np.complex128)
+        self.F_orth_n12dt = self.F_orth.copy()
+        self.n = 0
+
+    def rotate_coeff_to_orth(self, coeff):
+        return np.array(coeff, copy=True)
+
+    def rotate_coeff_away_from_orth(self, coeff):
+        return np.array(coeff, copy=True)
+
+    def make_rdm1(self, mo_coeff, mo_occ):
+        self.n += 1
+        return np.array([[self.n]], dtype=np.complex128)
+
+    def get_F_orth(self, D_ao, exc):
+        return np.array([[self.n]], dtype=np.complex128)
+
+def test_magnus2_unconverged_step_logs_samples_and_stops_after_one_split(caplog):
+    import logging
+    from plasmol.quantum.propagators import magnus2 as mag
+
+    caplog.set_level(logging.WARNING, logger="main")
+    with pytest.raises(mag.MagnusNotConverged):
+        mag.propagate(4, 0.1, 1e-12, _NeverConverges(), None)
+
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    errors = [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR]
+    assert any("two steps of dt/2" in message for message in warnings)
+    assert len(errors) == 1
+    assert "density_rms=" in errors[0]
+    assert "check 1=" in errors[0]
+    assert not any("dt/4" in message or "0.025" in message for message in warnings + errors)
+
 def test_expm_wrapper_handles_3d_via_per_spin_loop():
     """Sanity check that our per-spin expm wrapper gives the same result as
     looping by hand. Catches anyone who later 'optimizes' it to a single expm call

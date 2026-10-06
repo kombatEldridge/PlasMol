@@ -137,6 +137,7 @@ Molecule-only quantum (and molecule-only absorption) core-hole runs support the 
 
 ## See also
 
+- [Auger decay](auger_decay.md) — why this propagation cannot refill a core hole
 - [Usage](../usage.md) — full parameter tables
 - [Checkpointing](checkpointing.md) — snapshots and resume
 - [Tutorials](../tutorials.md) — walkthroughs

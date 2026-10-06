@@ -1,0 +1,29 @@
+INFO: Adjusted dt from 0.1 to 0.10007255400844287 au to match Meep's actual timestep (resolution=689 pixels/μm, courant=0.5).
+INFO: Adjusted t_end from 10000 to 10007.255400844286 au to preserve 100000 timesteps.
+INFO: No source chosen for simulation. Continuing without it.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.35134 was provided. Using the given value will override the default.
+INFO:  === PLASMOL SIMULATION CHOSEN === 
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.10007255400844287 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 10007.255400844286 au (roughly 242.06393 fs).
+INFO: Rotated the nuclear frame about the nuclear-charge center before SCF. Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_3/D3/rotated_geometry.xyz.
+INFO: Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: Meep simulation started.
+WARNING: Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: Simulation progress: 0% done (0/100000 steps || 0.000000000/10007.255400844 au)
+INFO: Magnus2 reached a roundoff floor of 1.483e-12 after 10 checks (requested 1.000e-12). Accepting the step.
+INFO: Simulation progress: 10% done (10000/100000 steps || 1000.725540084/10007.255400844 au)
+INFO: Simulation progress: 20% done (20000/100000 steps || 2001.451080169/10007.255400844 au)
+INFO: Simulation progress: 30% done (30000/100000 steps || 3002.176620253/10007.255400844 au)
+INFO: Simulation progress: 40% done (40000/100000 steps || 4002.902160338/10007.255400844 au)
+INFO: Simulation progress: 50% done (50000/100000 steps || 5003.627700422/10007.255400844 au)
+INFO: Simulation progress: 60% done (60000/100000 steps || 6004.353240507/10007.255400844 au)
+INFO: Simulation progress: 70% done (70000/100000 steps || 7005.078780591/10007.255400844 au)
+INFO: Simulation progress: 80% done (80000/100000 steps || 8005.804320675/10007.255400844 au)
+INFO: Simulation progress: 90% done (90000/100000 steps || 9006.529860760/10007.255400844 au)
+INFO: Simulation progress: 100% done (100000/100000 steps || 10007.255400844/10007.255400844 au)
+INFO: Simulation completed successfully!
+INFO: Matplotlib image written: fields_D3.png
+INFO: Plotting core-hole occupations for all logged MO indices.
+INFO: Matplotlib image written: mo_occ.png
+INFO: Simulation completed successfully.

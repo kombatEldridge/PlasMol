@@ -1,0 +1,85 @@
+INFO: Adjusted dt from 0.1 to 0.10007255400844287 au to match Meep's actual timestep (resolution=689 pixels/μm, courant=0.5).
+INFO: Adjusted t_end from 10000 to 10007.255400844286 au to preserve 100000 timesteps.
+INFO: No source chosen for simulation. Continuing without it.
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.35134 was provided. Using the given value will override the default.
+INFO:  === PLASMOL SIMULATION CHOSEN === 
+WARNING: No symmetries specified for plasmon simulation; operating without symmetries will cause longer simulation times.
+INFO: All parameters successfully parsed and validated.
+INFO: The timestep for this simulation is 0.10007255400844287 au (roughly 0.00242 fs).
+INFO: The simulation will propagate until 10007.255400844286 au (roughly 242.06393 fs).
+INFO: Rotated the nuclear frame about the nuclear-charge center before SCF. Wrote /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_3/D6/rotated_geometry.xyz.
+INFO: Initializing simulation with a resolution of 689 pixels/μm ==> 0.001451 μm/pixel
+INFO: Meep simulation started.
+WARNING: Warning: grid volume is not an integer number of pixels; cell size will be rounded to nearest pixel.
+INFO: Simulation progress: 0% done (0/100000 steps || 0.000000000/10007.255400844 au)
+INFO: Magnus2 reached a roundoff floor of 1.570e-12 after 10 checks (requested 1.000e-12). Accepting the step.
+INFO: Simulation progress: 10% done (10000/100000 steps || 1000.725540084/10007.255400844 au)
+INFO: Simulation progress: 20% done (20000/100000 steps || 2001.451080169/10007.255400844 au)
+ERROR: Magnus2 residual RMS over 199 checks: first=6.683e-05 min=9.416e-07 last=9.416e-07
+ERROR: Simulation failed with error: Failed to converge within 200 iterations
+Traceback (most recent call last):
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/classical/simulation.py", line 259, in run
+    self.simulation.run(*run_functions, until=[decay_stop, max_time])
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 4564, in run
+    self._run_until(until, step_funcs)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 2842, in _run_until
+    _eval_step_func(self, func, "step")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5058, in _eval_step_func
+    func(sim, todo)
+    ~~~~^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5157, in _every
+    _eval_step_func(sim, func, todo)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5056, in _eval_step_func
+    func(sim)
+    ~~~~^^^^^
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/classical/simulation.py", line 122, in _call_propagation
+    ind_dipole = propagation(
+        params=self.molecule_propagator_params,
+    ...<2 lines>...
+        propagator=self.molecule_propagator
+    )
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/quantum/propagation.py", line 33, in propagation
+    propagator(**prop_params, molecule=molecule, exc=exc)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/quantum/propagators/magnus2.py", line 58, in propagate
+    raise RuntimeError(f"Failed to converge within {molecule_max_iterations} iterations")
+RuntimeError: Failed to converge within 200 iterations
+ERROR: Simulation failed: Failed to converge within 200 iterations
+Traceback (most recent call last):
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/drivers/plasmol.py", line 34, in run
+    plasmon.run()
+    ~~~~~~~~~~~^^
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/classical/simulation.py", line 259, in run
+    self.simulation.run(*run_functions, until=[decay_stop, max_time])
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 4564, in run
+    self._run_until(until, step_funcs)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 2842, in _run_until
+    _eval_step_func(self, func, "step")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5058, in _eval_step_func
+    func(sim, todo)
+    ~~~~^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5157, in _every
+    _eval_step_func(sim, func, todo)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/miniconda/envs/plasmol_env_bea60207/lib/python3.13/site-packages/meep/simulation.py", line 5056, in _eval_step_func
+    func(sim)
+    ~~~~^^^^^
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/classical/simulation.py", line 122, in _call_propagation
+    ind_dipole = propagation(
+        params=self.molecule_propagator_params,
+    ...<2 lines>...
+        propagator=self.molecule_propagator
+    )
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/quantum/propagation.py", line 33, in propagation
+    propagator(**prop_params, molecule=molecule, exc=exc)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/brinton/Downloads/repos/PlasMol/plasmol/quantum/propagators/magnus2.py", line 58, in propagate
+    raise RuntimeError(f"Failed to converge within {molecule_max_iterations} iterations")
+RuntimeError: Failed to converge within 200 iterations
