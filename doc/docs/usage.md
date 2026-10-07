@@ -317,7 +317,7 @@ Contains all parameters for the RT-TDDFT quantum simulation of the molecule. Thi
 | `xc` | str | Exchange-correlation functional (PySCF/Libxc name or a compound mix) | – | – |
 | `lrc_parameter` | float or `"tune"` | Range-separation parameter μ (ω) for RSH functionals; use `"tune"` for automatic IP-tuning | – | a.u. |
 
-**Basis angular type.** PlasMol defaults to **Cartesian** Gaussians (`basis_coords: "cartesian"`, 6 \(d\) functions), matching stock NWChem. PySCF’s own default is spherical (5 \(d\)). Set `"basis_coords": "spherical"` (or `"cartesian": false`) to match PySCF.
+**Basis angular type.** PlasMol defaults to **Cartesian** Gaussians (`basis_coords: "cartesian"`, 6 $d$ functions), matching stock NWChem. PySCF’s own default is spherical (5 $d$). Set `"basis_coords": "spherical"` (or `"cartesian": false`) to match PySCF.
 
 A `geometry` string is a path to a `.xyz` file (relative paths are resolved from the input JSON’s directory). Use the usual two-line XYZ header, then one atom per line:
 
@@ -507,7 +507,7 @@ The top-level `"additional_parameters"` object is only for **plasmon-wide** flag
 
 ### 5.1 Absorption (`"name": "absorption"`)
 
-Runs directional trajectories and Fourier-transforms the induced dipole. Hybrid spectra \(\sigma_m\), \(A_{\mathrm{diss}}\), and \(A_{\mathrm{raw}}\) are derived in [Hybrid absorption observables](observables.md).
+Runs directional trajectories and Fourier-transforms the induced dipole. Hybrid spectra $\sigma_m$, $A_{\mathrm{diss}}$, and $A_{\mathrm{raw}}$ are derived in [Hybrid absorption observables](observables.md).
 
 ```json
 {
@@ -533,7 +533,7 @@ Runs directional trajectories and Fourier-transforms the induced dipole. Hybrid 
 | `tau` | float | Extra artificial damping time constant tau (signal *= exp(-t/tau)) applied to time-domain polarization before FFT | – | a.u. |
 | `polarization` | str | `full` (x+y+z, **no NP**), `parallel` (E along NP–mol axis), `perpendicular`, or `single` (JSON source as given). `full` is rejected when a nanoparticle is present. | `full` (molecule-only) | – |
 | `perp_component` | str | Optional `x`/`y`/`z` for perpendicular mode | auto | – |
-| `field_e_ref_filepath` | str | Vacuum \(E_{inc}\) CSV (`time,xx,yy,zz`) | `field_e_ref.csv` | – |
+| `field_e_ref_filepath` | str | Vacuum $E_{inc}$ CSV (`time,xx,yy,zz`) | `field_e_ref.csv` | – |
 | `use_existing_e_field_ref` | bool | Skip vacuum Meep runs when reference file exists | auto | – |
 | `reference_only` | bool | Only build vacuum references and exit (`full` only; no nanoparticle) | false | – |
 

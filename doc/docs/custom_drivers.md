@@ -43,4 +43,4 @@ def get_driver(driver_str):
 - [Contributing](contributing.md) — style and PR process
 - [Core-Hole Dynamics](core_hole.md) — `molecule.core_hole` sudden SCH/DCH; `core_hole` driver survey
 - [Fourier Spectra](fourier.md) — `absorption` driver theory
-- [Hybrid absorption observables](observables.md) — \(\sigma_m\), \(A_{\mathrm{diss}}\), \(A_{\mathrm{raw}}\)
+- [Hybrid absorption observables](observables.md) — $\sigma_m$, $A_{\mathrm{diss}}$, $A_{\mathrm{raw}}$

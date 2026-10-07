@@ -18,13 +18,13 @@ Core-ionized states are the starting point for X-ray spectroscopies and many pum
 4. **Adjust charge and spin** on the PySCF molecule object and rebuild. A singlet DCH stays restricted (RKS); SCH and two-site holes switch to UKS.
 5. **Propagate** with the usual RT-TDDFT stack (default Magnus2). The density is **not** re-optimized after ionization; the initial condition is intentionally non-stationary.
 
-Charge/spin rules (neutral parent with spin \(S_0\)):
+Charge/spin rules (neutral parent with spin $S_0$):
 
 | Mode | `mo_removal_index_dict` | Charge | Spin |
 | ------ | ------------------------- | -------- | ------ |
-| SCH | `{i: 1}` | \(+1\) | \(S_0 + 1\) |
-| DCH (one MO) | `{i: 2}` | \(+2\) | \(S_0\) (closed double hole) |
-| Two SCH | `{i: 1, j: 1}` | \(+2\) | \(S_0 + 2\) |
+| SCH | `{i: 1}` | $+1$ | $S_0 + 1$ |
+| DCH (one MO) | `{i: 2}` | $+2$ | $S_0$ (closed double hole) |
+| Two SCH | `{i: 1, j: 1}` | $+2$ | $S_0 + 2$ |
 
 A singlet DCH (`{i: 2}` on a spin-0 parent) stays **closed-shell (RKS)**, which is what stock NWChem DFT / RT-TDDFT does for `mult 1` without `odft`. SCH and two-site holes **force UKS** so α/β channels can describe the unpaired hole.
 
@@ -73,24 +73,24 @@ Production SCH/DCH is enabled by the subsection, not by the driver name. Use `"d
 | `filter_by_amplitude` | If true, plot only MOs whose peak-to-peak hole amplitude exceeds the threshold. |
 | `amplitude_threshold` | Amplitude cutoff (default 0.2). |
 
-A molecule source is optional for field-free DCH: omitted `molecule.source` is a zero field. Hybrid runs still use the Meep field at the molecule; RT-TDDFT is called even when \(|\mathbf{E}|\) is below `tolerance_field_e` so the hole can evolve with no plasmon drive.
+A molecule source is optional for field-free DCH: omitted `molecule.source` is a zero field. Hybrid runs still use the Meep field at the molecule; RT-TDDFT is called even when $|\mathbf{E}|$ is below `tolerance_field_e` so the hole can evolve with no plasmon drive.
 
 Older inputs that put these keys on `settings.driver` (including `core_hole_mo_occ_filepath`) or under `additional_parameters` are rewritten onto `molecule.core_hole` with a warning.
 
 ## Hole occupation logging
 
-After each RT-TDDFT step the driver projects the current density onto the **neutral** MOs and records the hole occupation \(h_k(t)\).
+After each RT-TDDFT step the driver projects the current density onto the **neutral** MOs and records the hole occupation $h_k(t)$.
 
-**Closed-shell (singlet DCH).** PySCF’s RKS density is the total density (occupations 0 or 2). The logged number is the Nascimento / NWChem closed-shell \(P\) (occupations 0 or 1):
+**Closed-shell (singlet DCH).** PySCF’s RKS density is the total density (occupations 0 or 2). The logged number is the Nascimento / NWChem closed-shell $P$ (occupations 0 or 1):
 
-\[
+$$
 n_k(t)=\tfrac12\bigl[C_n^\dagger S\,D_{\mathrm{AO}}(t)\,S\,C_n\bigr]_{kk},\qquad
 h_k(t)=\tfrac12 n_k^{(0)}-n_k(t).
-\]
+$$
 
-A double hole on MO 0 starts near \(h_0\approx 1\).
+A double hole on MO 0 starts near $h_0\approx 1$.
 
-**Open-shell (SCH / two-site holes).** Each spin is already 0 or 1; the log is the α+β sum, so a single hole starts near \(h\approx 1\).
+**Open-shell (SCH / two-site holes).** Each spin is already 0 or 1; the log is the α+β sum, so a single hole starts near $h\approx 1$.
 
 The final PNG is written next to `mo_occ_filepath` (same basename).
 
