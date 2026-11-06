@@ -13,3 +13,6 @@ plasmol.egg-info
 .grok/
 **/private/
 doc/_build/
+
+# Campaign inputs and run output. Kept on disk, not in the repository.
+jobs/
