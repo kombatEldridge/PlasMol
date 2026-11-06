@@ -81,10 +81,7 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, ex
     """
     snap = _snapshot(molecule)
     try:
-        _propagate_interval(
-            molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc,
-            logging.WARNING,
-        )
+        _propagate_interval(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc, logging.WARNING)
     except MagnusNotConverged:
         _restore(molecule, snap)
         # The saved midpoint Fock belongs to a step of size dt. A half-step
@@ -96,14 +93,8 @@ def propagate(molecule_max_iterations, dt, molecule_pc_convergence, molecule, ex
             molecule_max_iterations, dt,
         )
         half = 0.5 * dt
-        _propagate_interval(
-            molecule_max_iterations, half, molecule_pc_convergence, molecule, exc,
-            logging.ERROR,
-        )
-        _propagate_interval(
-            molecule_max_iterations, half, molecule_pc_convergence, molecule, exc,
-            logging.ERROR,
-        )
+        _propagate_interval(molecule_max_iterations, half, molecule_pc_convergence, molecule, exc, logging.ERROR)
+        _propagate_interval(molecule_max_iterations, half, molecule_pc_convergence, molecule, exc, logging.ERROR)
 
 def _propagate_interval(molecule_max_iterations, dt, molecule_pc_convergence, molecule, exc, failure_level):
     C_orth = molecule.rotate_coeff_to_orth(molecule.mf.mo_coeff)
@@ -137,10 +128,6 @@ def _propagate_interval(molecule_max_iterations, dt, molecule_pc_convergence, mo
             diff = _rms_diff(C_pdt, C_ao_pdt_old)
             diffs.append(diff)
             density_rms = _rms_diff(D_ao_pdt, D_ao_old)
-            # A residual that has stopped falling is a floor, not a divergent step.
-            # 10× the request covers ordinary roundoff (~1e-12). CAP steps can
-            # stick near 1e-9 after falling from ~1e-4; 1e-8 still rejects that
-            # unconverged residual. A residual that is still falling is not accepted.
             stalled = False
             if len(diffs) >= 8:
                 best = min(diffs)

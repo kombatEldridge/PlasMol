@@ -16,7 +16,7 @@ Spectra, occupations, and fields are the files named in each JSON. The core-orbi
 
 | Step | Status | What it answers |
 | --- | --- | --- |
-| `Step_1` | Done | Which molecules have a bright valence line, including trans-thioindigo, and whether any of them sits on a metallic plasmon |
+| `Step_1` | Done | Which molecules have a bright valence line, including trans-thioindigo and Na, and whether any of them sits on a metallic plasmon |
 | `Step_2` | Tuned. Survey reprinted at 0.351340 | Na 1s index, and the production μ and ε₀ |
 | Check | Done | D1 dipole is below 2e-10 au. The reported rotation is pasted on the hybrid D3 and D4 copies. The nucleus is at the origin, so it does not move |
 | `Step_3` | D1–D6 and `D1_10k` finished | Field-free DCH, one factor at a time |
@@ -87,7 +87,7 @@ D1 and D2 have no `molecule.rotation` and stay on `Na.xyz`. The orientation chec
 
 ### Step 1 — DCH literature, and the valence screen
 
-Done. The note is `Step_1/README.md`. No production JSON. For each molecule it records the DOI, what the paper was trying to measure or calculate, and what it found. The folders under `Step_1/Molecules/` are the valence-absorption screen, and trans-thioindigo is one of them. Its bright root is 417 nm, on the 418.5 nm silver plasmon. None of the double-core-hole literature molecules are. The sudden double hole used from Step 3 on is the pentanone initial condition, on the sodium doublet rather than a closed-shell singlet, not a two-site free-electron-laser spectrum.
+Done. The note is `Step_1/README.md`. No production JSON. For each molecule it records the DOI, what the paper was trying to measure or calculate, and what it found. The folders under `Step_1/Molecules/` are the valence-absorption screen, and trans-thioindigo is one of them. Its bright root is 417 nm, on the 418.5 nm silver plasmon. None of the double-core-hole literature molecules are. Na is in the same screen at Cartesian 6-311G*. Its common-μ line is 1.999 eV (620 nm, f = 0.329 on each component). That is not the aug-cc-pVTZ production root. The sudden double hole used from Step 3 on is the pentanone initial condition, on the sodium doublet rather than a closed-shell singlet, not a two-site free-electron-laser spectrum.
 
 ### Step 2 — core MO survey, resonant molecule
 

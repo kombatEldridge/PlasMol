@@ -1,0 +1,267 @@
+INFO: Only 'molecule' parameters given. Running RT-TDDFT simulation only.
+DEBUG: The following variables are using default values because none were specified:
+DEBUG:     molecule_cartesian: True
+DEBUG:     core_hole_filter_by_amplitude: False
+DEBUG:     core_hole_amplitude_threshold: 0.2
+DEBUG:     core_hole_zero_odd_blocks: False
+WARNING: Functional 'HYB_GGA_XC_LC_WPBE' has a default lrc_parameter of 0.4, but 0.35134 was provided. Using the given value will override the default.
+DEBUG: Molecular basis uses Cartesian Gaussians (6 d functions; PlasMol default).
+DEBUG: Core-hole mode: mo_removal_index_dict={0: 2} (double hole on one MO (DCH)); forcing open-shell (UKS) calculation.
+DEBUG: Custom driver specified: quantum
+INFO:  === QUANTUM SIMULATION CHOSEN === 
+WARNING: No molecule source specified. Continuing with empty field.
+INFO: All parameters successfully parsed and validated.
+DEBUG: PARAMS successfully created: saved to 'run_parameters'.
+INFO: The timestep for this simulation is 0.05 au (roughly 0.00121 fs).
+INFO: The simulation will propagate until 5.0 au (roughly 0.12094 fs).
+DEBUG: Field files successfully initialized: field_e_D1.csv and field_p_D1.csv
+DEBUG: Electric field initialized in field_e_D1.csv.
+DEBUG: Initializing open-shell calculation.
+DEBUG: Neutral LUMO index=5, logging MO indices 0..6 (inclusive), nmo=59.
+DEBUG: Core-hole MO occupation file initialized: mo_occ.csv
+DEBUG: Before removing core electrons:
+DEBUG:   MO |      Eα (Ha) |  occα |      Eβ (Ha) |  occβ
+DEBUG: -------------------------------------------------------
+DEBUG:    1 |    -38.17520 |   1.0 |    -38.17415 |   1.0
+DEBUG:    2 |     -2.28514 |   1.0 |     -2.28288 |   1.0
+DEBUG:    3 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    4 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    5 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG: After sudden core-hole creation (no SCF re-optimization):
+DEBUG:   MO |      Eα (Ha) |  occα |      Eβ (Ha) |  occβ
+DEBUG: -------------------------------------------------------
+DEBUG:    1 |    -38.17520 |   1.0 |    -38.17415 |   1.0
+DEBUG:    2 |     -2.28514 |   1.0 |     -2.28288 |   1.0
+DEBUG:    3 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    4 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    5 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:   MO |      Eα (Ha) |  occα |      Eβ (Ha) |  occβ
+DEBUG: -------------------------------------------------------
+DEBUG:    1 |    -38.17520 |   1.0 |    -38.17415 |   1.0
+DEBUG:    2 |     -2.28514 |   1.0 |     -2.28288 |   1.0
+DEBUG:    3 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    4 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG:    5 |     -1.24966 |   1.0 |     -1.24724 |   1.0
+DEBUG: Number of Occupied MOs: α=6, β=5
+DEBUG: E_HOMO(α) = -0.192488 Ha (-5.237874 eV)
+DEBUG: E_HOMO(β) = -1.247243 Ha (-33.939224 eV)
+INFO: Simulation progress: 0% done (0/100 steps || 0.05/5.00 au)
+DEBUG: Magnus2 converged in 8 iterations.
+DEBUG: At 0.05 au, the induced dipole is [0.00409699 0.01275975 0.01348264] in au
+DEBUG: Magnus2 converged in 8 iterations.
+DEBUG: At 0.1 au, the induced dipole is [0.01283964 0.03580942 0.02152524] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.15 au, the induced dipole is [0.02445867 0.06526922 0.03064643] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 0.2 au, the induced dipole is [0.0383028  0.10025728 0.04025879] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.25 au, the induced dipole is [0.05477166 0.13978228 0.04868655] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.3 au, the induced dipole is [0.07360132 0.1828353  0.05554943] in au
+INFO: Magnus2 reached a roundoff floor of 1.000e-12 after 9 checks (requested 1.000e-12). Accepting the step.
+DEBUG: At 0.35 au, the induced dipole is [0.09392509 0.22831049 0.06058096] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.4 au, the induced dipole is [0.11595147 0.27511782 0.06288585] in au
+DEBUG: Magnus2 converged in 10 iterations.
+DEBUG: At 0.45 au, the induced dipole is [0.1397057  0.32226138 0.0625957 ] in au
+DEBUG: Magnus2 converged in 9 iterations.
+DEBUG: At 0.5 au, the induced dipole is [0.16429254 0.36873288 0.06010454] in au
+INFO: Simulation progress: 10% done (10/100 steps || 0.50/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.55 au, the induced dipole is [0.18969027 0.4135988  0.05540918] in au
+DEBUG: Magnus2 converged in 10 iterations.
+DEBUG: At 0.6 au, the induced dipole is [0.21619403 0.45605481 0.04909778] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 0.65 au, the induced dipole is [0.24301865 0.49532465 0.04198623] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.7 au, the induced dipole is [0.26986713 0.53071656 0.03456249] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.75 au, the induced dipole is [0.29719239 0.56166131 0.02752589] in au
+DEBUG: Magnus2 converged in 8 iterations.
+DEBUG: At 0.8 au, the induced dipole is [0.32440558 0.58764246 0.02170532] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.85 au, the induced dipole is [0.35091688 0.60822643 0.01761851] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.9 au, the induced dipole is [0.37717975 0.62309214 0.01573013] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 0.95 au, the induced dipole is [0.40286035 0.63200391 0.01649793] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.0 au, the induced dipole is [0.42713716 0.63481874 0.02010434] in au
+INFO: Simulation progress: 20% done (20/100 steps || 1.00/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.05 au, the induced dipole is [0.45032774 0.63149488 0.02654243] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.1 au, the induced dipole is [0.47239085 0.62209866 0.03567853] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.15 au, the induced dipole is [0.49241048 0.60678061 0.04721998] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.2 au, the induced dipole is [0.51048111 0.58575538 0.0606928 ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.25 au, the induced dipole is [0.52686687 0.55936154 0.07545377] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.3 au, the induced dipole is [0.54074321 0.52801185 0.09088633] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.35 au, the induced dipole is [0.55193431 0.49214981 0.10636174] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.4 au, the induced dipole is [0.56094433 0.45231728 0.1211159 ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.45 au, the induced dipole is [0.56722896 0.40913362 0.13451834] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.5 au, the induced dipole is [0.57036837 0.36329289 0.14610896] in au
+INFO: Simulation progress: 30% done (30/100 steps || 1.50/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.55 au, the induced dipole is [0.57095847 0.31559074 0.15527565] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 1.6 au, the induced dipole is [0.56876882 0.26686069 0.16157722] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.65 au, the induced dipole is [0.56316015 0.21796839 0.16506424] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.7 au, the induced dipole is [0.55469314 0.16984699 0.165591  ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.75 au, the induced dipole is [0.54353525 0.12342509 0.16312329] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.8 au, the induced dipole is [0.52900695 0.07964429 0.15847939] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.85 au, the induced dipole is [0.51158751 0.03947494 0.15209992] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.9 au, the induced dipole is [0.49187117 0.00381241 0.14428142] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 1.95 au, the induced dipole is [ 0.4693192  -0.0265247   0.13637955] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.0 au, the induced dipole is [ 0.44427852 -0.05080371  0.12900306] in au
+INFO: Simulation progress: 40% done (40/100 steps || 2.00/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.05 au, the induced dipole is [ 0.41769487 -0.06843946  0.12218476] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 2.1 au, the induced dipole is [ 0.38930586 -0.07903597  0.11705214] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.15 au, the induced dipole is [ 0.35929337 -0.08239163  0.11371227] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.2 au, the induced dipole is [ 0.32881701 -0.07846974  0.11143892] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 2.25 au, the induced dipole is [ 0.29792654 -0.06743166  0.11061593] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.3 au, the induced dipole is [ 0.26654787 -0.04965846  0.11070484] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.35 au, the induced dipole is [ 0.23580531 -0.02566004  0.11043781] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.4 au, the induced dipole is [0.20602528 0.0039299  0.10971053] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.45 au, the induced dipole is [0.1768488  0.03833124 0.10791506] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.5 au, the induced dipole is [0.14914673 0.07674705 0.10396625] in au
+INFO: Simulation progress: 50% done (50/100 steps || 2.50/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.55 au, the induced dipole is [0.1234957  0.11835002 0.09787111] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.6 au, the induced dipole is [0.09934217 0.16222281 0.08954296] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 2.65 au, the induced dipole is [0.07719683 0.20750163 0.07855307] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.7 au, the induced dipole is [0.05787329 0.25338847 0.06531729] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.75 au, the induced dipole is [0.04078549 0.29904909 0.05039608] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.8 au, the induced dipole is [0.02603933 0.34369788 0.03397261] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.85 au, the induced dipole is [0.01463455 0.38661713 0.01680191] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.9 au, the induced dipole is [ 6.13123653e-03  4.27089118e-01 -9.54930415e-05] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 2.95 au, the induced dipole is [ 2.18523345e-04  4.64491368e-01 -1.62172953e-02] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.0 au, the induced dipole is [-0.00210216  0.49829649 -0.03077806] in au
+INFO: Simulation progress: 60% done (60/100 steps || 3.00/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.05 au, the induced dipole is [-0.00108323  0.5279766  -0.0427359 ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.1 au, the induced dipole is [ 0.00255042  0.55309981 -0.05169559] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.15 au, the induced dipole is [ 0.0095782   0.57337313 -0.05728541] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.2 au, the induced dipole is [ 0.01990709  0.58853771 -0.05900335] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.25 au, the induced dipole is [ 0.03244777  0.59840187 -0.05696764] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.3 au, the induced dipole is [ 0.04760507  0.60290803 -0.05150209] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.35 au, the induced dipole is [ 0.06547714  0.60207217 -0.04287966] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.4 au, the induced dipole is [ 0.08479286  0.59597928 -0.03173156] in au
+DEBUG: Magnus2 converged in 10 iterations.
+DEBUG: At 3.45 au, the induced dipole is [ 0.10552853  0.58484561 -0.01887111] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.5 au, the induced dipole is [ 0.12801746  0.56896973 -0.00504634] in au
+INFO: Simulation progress: 70% done (70/100 steps || 3.50/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.55 au, the induced dipole is [0.15108728 0.54868345 0.00900064] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.6 au, the induced dipole is [0.1743426  0.52442055 0.02249836] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.65 au, the induced dipole is [0.19834627 0.49670168 0.03474625] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.7 au, the induced dipole is [0.22225326 0.46605739 0.04530318] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.75 au, the induced dipole is [0.24535811 0.43308424 0.0538637 ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.8 au, the induced dipole is [0.26833077 0.39845499 0.06010816] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.85 au, the induced dipole is [0.29076533 0.36282706 0.06410039] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.9 au, the induced dipole is [0.31171015 0.32688218 0.0661873 ] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 3.95 au, the induced dipole is [0.33175361 0.29134984 0.06648435] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.0 au, the induced dipole is [0.35094268 0.25691469 0.06552531] in au
+INFO: Simulation progress: 80% done (80/100 steps || 4.00/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.05 au, the induced dipole is [0.36819553 0.22423476 0.06419999] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.1 au, the induced dipole is [0.38387758 0.19396929 0.06276579] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.15 au, the induced dipole is [0.39846765 0.16670988 0.06182662] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.2 au, the induced dipole is [0.41092143 0.14298333 0.06229547] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.25 au, the induced dipole is [0.42128934 0.12325511 0.06399777] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.3 au, the induced dipole is [0.43040585 0.10783465 0.06705532] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.35 au, the induced dipole is [0.43746115 0.09685103 0.07191185] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.4 au, the induced dipole is [0.4421833  0.09032712 0.07773364] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.45 au, the induced dipole is [0.4456101  0.08821837 0.08402045] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.5 au, the induced dipole is [0.44728037 0.09038564 0.09074035] in au
+INFO: Simulation progress: 90% done (90/100 steps || 4.50/5.00 au)
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.55 au, the induced dipole is [0.44660725 0.0965402  0.09681311] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.6 au, the induced dipole is [0.44469496 0.10622486 0.10160246] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.65 au, the induced dipole is [0.44159901 0.1189065  0.10511407] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.7 au, the induced dipole is [0.4365335  0.1340779  0.10664726] in au
+DEBUG: Magnus2 converged in 7 iterations.
+DEBUG: At 4.75 au, the induced dipole is [0.43040839 0.1512411  0.10587728] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.8 au, the induced dipole is [0.42370218 0.16984421 0.10316738] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.85 au, the induced dipole is [0.41554939 0.18930618 0.09845443] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.9 au, the induced dipole is [0.40655275 0.20911548 0.09186456] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 4.95 au, the induced dipole is [0.39756588 0.22880204 0.08415533] in au
+DEBUG: Magnus2 converged in 6 iterations.
+DEBUG: At 5.0 au, the induced dipole is [0.38774657 0.24789168 0.07575286] in au
+INFO: Simulation progress: 100% done (100/100 steps || 5.00/5.00 au)
+DEBUG: Reading CSV file: field_e_D1.csv
+DEBUG: Reading CSV file: field_p_D1.csv
+INFO: Matplotlib image written: fields_D1.png
+INFO: Plotting core-hole occupations for all logged MO indices.
+DEBUG: Reading Core-hole MO occupation CSV: mo_occ.csv
+DEBUG: Candidate MO columns: all 7
+INFO: Matplotlib image written: mo_occ.png
+INFO: 
+Elapsed run time = 32.9112 s

@@ -3,8 +3,8 @@
 
 One folder per molecule. The geometry is the PBE0/6-311G* structure in
 ../Molecules/<name>/opt.xyz. The driver minimizes |E(cation) - E(neutral) + ε_HOMO|
-and does not propagate. O2 is the triplet (spin = 2). Nothing else is open shell.
-eps0 is not tuned.
+and does not propagate. O2 is the triplet (spin = 2). Na is the doublet (spin = 1).
+Nothing else is open shell. eps0 is not tuned.
 
     python jobs/final/Step_1/mu/run_mu.py prepare
     python jobs/final/Step_1/mu/run_mu.py run
@@ -62,6 +62,7 @@ MOLECULES = [
     ("pentan2one", 0),
     ("pentanal", 0),
     ("transthioindigo", 0),
+    ("na", 1),
 ]
 
 MU_RE = re.compile(r"Optimal μ \(lrc_parameter\) = ([0-9.eE+-]+)")

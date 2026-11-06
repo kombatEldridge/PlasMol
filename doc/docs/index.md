@@ -23,10 +23,16 @@ tutorials
 
 ```{toctree}
 :hidden:
-:maxdepth: 2
-:caption: Simulations
+:titlesonly:
+:maxdepth: 1
+:caption: Drivers
 
 simulations/index
+simulations/classical
+simulations/quantum
+simulations/plasmol
+simulations/absorption
+simulations/other
 ```
 
 ```{toctree}
@@ -58,7 +64,7 @@ custom_drivers
 | [Installation](installation.md) | Conda + Meep setup |
 | [Usage](usage.md) | JSON input schema |
 | [Checkpointing](checkpointing.md) | Snapshots, resume, and limits |
-| [Simulations](simulations/index.md) | Per-driver guides and templates |
+| [Drivers](simulations/index.md) | Per-driver guides and templates |
 | [GitHub](https://github.com/kombatEldridge/PlasMol) | Source and issues |
 
 ## Citation

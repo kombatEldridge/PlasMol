@@ -40,5 +40,5 @@ Source (repo path): `templates/template-classical.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference

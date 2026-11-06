@@ -1,0 +1,1731 @@
+ argument  1 = tddft.nw
+
+
+
+============================== echo of input deck ==============================
+echo
+start na_td
+title "Na LR-TDDFT, LC-wPBE mu=0.352377, 6-311G* Cartesian, nucleus at the origin"
+scratch_dir /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na
+permanent_dir /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na
+memory total 2500 mb
+charge 0
+
+geometry units angstroms noautosym noautoz
+  Na     0.00000000     0.00000000     0.00000000
+end
+
+basis cartesian
+  * library 6-311G*
+end
+
+dft
+  xc xwpbe 1.00 cpbe96 1.0 hfexch 1.00
+  cam 0.352377 cam_alpha 0.00 cam_beta 1.00
+  mult 2
+  grid fine
+  iterations 100
+  convergence energy 1.0e-7
+end
+
+tddft
+  nroots 24
+end
+
+task tddft energy
+================================================================================
+
+
+                                         
+                                         
+
+
+             Northwest Computational Chemistry Package (NWChem) 7.3.0
+             --------------------------------------------------------
+
+
+                    Environmental Molecular Sciences Laboratory
+                       Pacific Northwest National Laboratory
+                                Richland, WA 99352
+
+                              Copyright (c) 1994-2025
+                       Pacific Northwest National Laboratory
+                            Battelle Memorial Institute
+
+             NWChem is an open-source computational chemistry package
+                        distributed under the terms of the
+                      Educational Community License (ECL) 2.0
+             A copy of the license is included with this distribution
+                              in the LICENSE.TXT file
+
+                                  ACKNOWLEDGMENT
+                                  --------------
+
+            This software and its documentation were developed at the
+            EMSL at Pacific Northwest National Laboratory, a multiprogram
+            national laboratory, operated for the U.S. Department of Energy
+            by Battelle under Contract Number DE-AC05-76RL01830. Support
+            for this work was provided by the Department of Energy Office
+            of Biological and Environmental Research, Office of Basic
+            Energy Sciences, and the Office of Advanced Scientific Computing.
+
+
+           Job information
+           ---------------
+
+    hostname        = Brintons-Mac-mini.local
+    program         = nwchem
+    date            = Wed Oct  7 19:22:34 2026
+
+    compiled        = Thu_Feb_05_22:26:38_2026
+    source          = /private/tmp/nwchem-20260205-8591-w2nz5n/nwchem-7.3.1
+    nwchem branch   = 7.3.0
+    nwchem revision = 23c3b41b
+    ga revision     = 5.9.2
+    use scalapack   = T
+    input           = tddft.nw
+    prefix          = na_td.
+    data base       = /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na/na_td.db
+    status          = startup
+    nproc           =        1
+    time left       =     -1s
+
+
+
+           Memory information
+           ------------------
+
+    heap     =     81919996 doubles =      625.0 Mbytes
+    stack    =     81920001 doubles =      625.0 Mbytes
+    global   =    163840000 doubles =     1250.0 Mbytes (distinct from heap & stack)
+    total    =    327679997 doubles =     2500.0 Mbytes
+    verify   = yes
+    hardfail = no 
+
+
+           Directory information
+           ---------------------
+
+  0 permanent = /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na
+  0 scratch   = /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na
+
+
+
+
+                                NWChem Input Module
+                                -------------------
+
+
+    Na LR-TDDFT, LC-wPBE mu=0.352377, 6-311G* Cartesian, nucleus at the origin
+    --------------------------------------------------------------------------
+
+ Scaling coordinates for geometry "geometry" by  1.889725989
+ (inverse scale =  0.529177249)
+
+
+
+                             Geometry "geometry" -> ""
+                             -------------------------
+
+ Output coordinates in angstroms (scale by  1.889725989 to convert to a.u.)
+
+  No.       Tag          Charge          X              Y              Z
+ ---- ---------------- ---------- -------------- -------------- --------------
+    1 Na                  11.0000     0.00000000     0.00000000     0.00000000
+
+      Atomic Mass 
+      ----------- 
+
+      Na                22.989800
+
+
+ Effective nuclear repulsion energy (a.u.)       0.0000000000
+
+            Nuclear Dipole moment (a.u.) 
+            ----------------------------
+        X                 Y               Z
+ ---------------- ---------------- ----------------
+     0.0000000000     0.0000000000     0.0000000000
+
+
+            XYZ format geometry
+            -------------------
+     1
+ geometry
+ Na                    0.00000000     0.00000000     0.00000000
+
+  library name resolved from: environment
+  library file name is: </opt/homebrew/Cellar/nwchem/7.3.1_1/share/nwchem/libraries/>
+  
+
+
+ Summary of "ao basis" -> "" (cartesian)
+ ------------------------------------------------------------------------------
+       Tag                 Description            Shells   Functions and Types
+ ---------------- ------------------------------  ------  ---------------------
+ *                          6-311G*                   on all atoms 
+
+
+  pbe96 is a nonlocal functional; adding pw91lda local functional. 
+
+                                 NWChem DFT Module
+                                 -----------------
+
+
+    Na LR-TDDFT, LC-wPBE mu=0.352377, 6-311G* Cartesian, nucleus at the origin
+
+
+                      Basis "ao basis" -> "ao basis" (cartesian)
+                      -----
+  Na (Sodium)
+  -----------
+            Exponent  Coefficients 
+       -------------- ---------------------------------------------------------
+  1 S  3.61664000E+04  0.001032
+  1 S  5.37258000E+03  0.008071
+  1 S  1.21321000E+03  0.042129
+  1 S  3.39623000E+02  0.169789
+  1 S  1.09553000E+02  0.514621
+  1 S  3.87773000E+01  0.379817
+
+  2 S  3.87773000E+01  0.374762
+  2 S  1.45759000E+01  0.575769
+  2 S  5.26993000E+00  0.112933
+
+  3 S  1.82777000E+00  1.000000
+
+  4 S  6.19948000E-01  1.000000
+
+  5 S  5.72400000E-02  1.000000
+
+  6 S  2.40480000E-02  1.000000
+
+  7 P  1.44645000E+02  0.011485
+  7 P  3.39074000E+01  0.082383
+  7 P  1.06285000E+01  0.319658
+  7 P  3.82389000E+00  0.701295
+
+  8 P  1.44429000E+00  0.638506
+  8 P  5.52621000E-01  0.425365
+
+  9 P  1.88720000E-01  1.000000
+
+ 10 P  4.65010000E-02  1.000000
+
+ 11 P  1.62850000E-02  1.000000
+
+ 12 D  1.75000000E-01  1.000000
+
+
+
+ Summary of "ao basis" -> "ao basis" (cartesian)
+ ------------------------------------------------------------------------------
+       Tag                 Description            Shells   Functions and Types
+ ---------------- ------------------------------  ------  ---------------------
+ Na                         6-311G*                 12       27   6s5p1d
+
+
+
+
+ Summary of "ao basis" -> "ao basis" (cartesian)
+ ------------------------------------------------------------------------------
+       Tag                 Description            Shells   Functions and Types
+ ---------------- ------------------------------  ------  ---------------------
+ Na                         6-311G*                 12       27   6s5p1d
+
+
+  int_init: cando_txs set to always be  F
+  Caching 1-el integrals 
+
+            General Information
+            -------------------
+          SCF calculation type: DFT
+          Wavefunction type:  spin polarized.
+          No. of atoms     :     1
+          No. of electrons :    11
+           Alpha electrons :     6
+            Beta electrons :     5
+          Charge           :     0
+          Spin multiplicity:     2
+          Use of symmetry is: off; symmetry adaption is: off
+          Maximum number of iterations: 100
+          AO basis - number of functions:    27
+                     number of shells:    12
+          Convergence on energy requested:  1.00D-07
+          Convergence on density requested:  1.00D-05
+          Convergence on gradient requested:  5.00D-04
+
+              XC Information
+              --------------
+                     Hartree-Fock (Exact) Exchange  1.000          
+                     LC-wPBE(h)Exchange Functional  1.000          
+            Perdew 1991 LDA Correlation Functional  1.000 local    
+           PerdewBurkeErnz. Correlation Functional  1.000 non-local
+
+           Range-Separation Parameters        
+           ---------------------------
+           Alpha           :  0.00
+           Beta            :  1.00
+           Gamma           :  0.35
+           Short-Range HF  :     F
+
+             Grid Information
+             ----------------
+          Grid used for XC integration:  fine      
+          Radial quadrature: Mura-Knowles        
+          Angular quadrature: Lebedev. 
+          Tag              B.-S. Rad. Rad. Pts. Rad. Cut. Ang. Pts.
+          ---              ---------- --------- --------- ---------
+          Na                  1.80      123          14.0       770
+          Grid pruning is: on 
+          Number of quadrature shells:   123
+          Spatial weights used:  Erf1
+
+          Convergence Information
+          -----------------------
+          Convergence aids based upon iterative change in 
+          total energy or number of iterations. 
+          Levelshifting, if invoked, occurs when the 
+          HOMO/LUMO gap drops below (HL_TOL):  1.00D-02
+          DIIS, if invoked, will attempt to extrapolate 
+          using up to (NFOCK): 10 stored Fock matrices.
+
+                    Damping( 0%)  Levelshifting(0.5)       DIIS
+                  --------------- ------------------- ---------------
+          dE  on:    start            ASAP                start   
+          dE off:    2 iters        100 iters           100 iters 
+
+
+      Screening Tolerance Information
+      -------------------------------
+          Density screening/tol_rho:  1.00D-10
+          AO Gaussian exp screening on grid/accAOfunc:  16
+          CD Gaussian exp screening on grid/accCDfunc:  20
+          XC Gaussian exp screening on grid/accXCfunc:  20
+          Schwarz screening/accCoul:  1.00D-08
+
+  
+  CAM type calculations without CDFIT are
+  only available with the direct option.
+  Forcing Direct SCF
+  
+
+      Superposition of Atomic Density Guess
+      -------------------------------------
+
+ Sum of atomic energies:        -161.84588379
+
+      Non-variational initial energy
+      ------------------------------
+
+ Total energy =    -161.792117
+ 1-e energy   =    -227.853692
+ 2-e energy   =      66.061576
+ HOMO         =      -0.076779
+ LUMO         =       0.028370
+
+   Time after variat. SCF:      0.0
+   Time prior to 1st pass:      0.0
+ Local filesystem for scratch_dir
+
+ Grid_pts file          = /Users/brinton/Downloads/repos/PlasMol/jobs/final/Step_1/Molecules/na/na_td.gridpts.0
+ Record size in doubles =  12289        No. of grid_pts per rec  =   3070
+ Max. records in memory =     35        Max. recs in file   =  14293981
+
+
+           Memory utilization after 1st SCF pass: 
+           Heap Space remaining (MW):       81.49            81489228
+          Stack Space remaining (MW):       81.92            81919644
+
+   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time
+ ---------------- ----- ----------------- --------- --------- ---------  ------
+ d= 0,ls=0.0,diis     1   -162.1712413798 -1.62D+02  1.05D-02  5.52D-02     0.1
+                                                     2.28D-03  5.37D-02
+ d= 0,ls=0.0,diis     2   -162.1791412139 -7.90D-03  4.83D-03  4.70D-04     0.1
+                                                     1.58D-04  1.62D-04
+ d= 0,ls=0.0,diis     3   -162.1799100392 -7.69D-04  2.33D-03  9.50D-05     0.2
+                                                     5.63D-05  1.11D-05
+ d= 0,ls=0.0,diis     4   -162.1801180718 -2.08D-04  1.46D-03  2.81D-05     0.2
+                                                     2.79D-05  8.32D-06
+ d= 0,ls=0.0,diis     5   -162.1801768534 -5.88D-05  5.03D-04  2.65D-06     0.3
+                                                     8.65D-06  6.40D-07
+  Resetting Diis
+ d= 0,ls=0.0,diis     6   -162.1801821373 -5.28D-06  6.46D-05  9.56D-09     0.3
+                                                     6.04D-07  4.13D-10
+ d= 0,ls=0.0,diis     7   -162.1801821504 -1.31D-08  5.92D-06  1.45D-10     0.4
+                                                     6.91D-08  2.33D-11
+
+
+         Total DFT energy =     -162.180182150364
+      One electron energy =     -227.773092938742
+           Coulomb energy =       79.916401660047
+    Exchange-Corr. energy =      -14.323490871670
+ Nuclear repulsion energy =        0.000000000000
+
+ Numeric. integr. density =       10.999999999998
+
+     Total iterative time =      0.4s
+
+
+
+                    DFT Final Alpha Molecular Orbital Analysis
+                    ------------------------------------------
+
+ Vector    1  Occ=1.000000D+00  E=-3.812012D+01
+              MO Center= -9.6D-19, -4.3D-18, -2.3D-19, r^2= 7.7D-03
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     2      0.684963  1 Na s                  1      0.378738  1 Na s          
+
+ Vector    2  Occ=1.000000D+00  E=-2.269407D+00
+              MO Center=  1.8D-16, -4.9D-16, -1.4D-15, r^2= 2.1D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     3      0.642935  1 Na s                  4      0.472908  1 Na s          
+     2     -0.274755  1 Na s                  1     -0.096663  1 Na s          
+
+ Vector    3  Occ=1.000000D+00  E=-1.236814D+00
+              MO Center=  2.4D-15, -1.6D-16,  2.5D-15, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    10      0.464645  1 Na px                12      0.417796  1 Na pz         
+     7      0.347082  1 Na px                 9      0.312086  1 Na pz         
+    11      0.105339  1 Na py                 8      0.078687  1 Na py         
+    13      0.048770  1 Na px                15      0.043853  1 Na pz         
+
+ Vector    4  Occ=1.000000D+00  E=-1.236814D+00
+              MO Center= -6.7D-17, -8.4D-18,  2.4D-17, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    11      0.619724  1 Na py                 8      0.462923  1 Na py         
+    12     -0.130138  1 Na pz                 9     -0.097211  1 Na pz         
+    14      0.065048  1 Na py         
+
+ Vector    5  Occ=1.000000D+00  E=-1.236814D+00
+              MO Center= -7.8D-16,  1.0D-16,  8.4D-16, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    12     -0.458318  1 Na pz                10      0.430231  1 Na px         
+     9     -0.342356  1 Na pz                 7      0.321375  1 Na px         
+    11     -0.079943  1 Na py                 8     -0.059716  1 Na py         
+    15     -0.048106  1 Na pz                13      0.045158  1 Na px         
+
+ Vector    6  Occ=1.000000D+00  E=-1.924087D-01
+              MO Center=  1.1D-16, -3.1D-15,  5.4D-15, r^2= 5.5D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     5      0.600021  1 Na s                  6      0.426011  1 Na s          
+     4     -0.172753  1 Na s                  3     -0.148262  1 Na s          
+     2      0.050688  1 Na s          
+
+ Vector    7  Occ=0.000000D+00  E= 1.774009D-02
+              MO Center= -7.2D-15,  1.1D-14, -4.9D-15, r^2= 1.8D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    20      0.801704  1 Na py                21     -0.251292  1 Na pz         
+    17      0.178345  1 Na py                19     -0.060176  1 Na px         
+    18     -0.055902  1 Na pz                11     -0.052693  1 Na py         
+    14      0.048671  1 Na py                 8     -0.035218  1 Na py         
+
+ Vector    8  Occ=0.000000D+00  E= 1.774009D-02
+              MO Center=  2.8D-15, -1.0D-15, -5.1D-15, r^2= 1.8D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    21      0.775786  1 Na pz                19     -0.238564  1 Na px         
+    20      0.225261  1 Na py                18      0.172579  1 Na pz         
+    16     -0.053070  1 Na px                12     -0.050989  1 Na pz         
+    17      0.050111  1 Na py                15      0.047097  1 Na pz         
+     9     -0.034080  1 Na pz         
+
+ Vector    9  Occ=0.000000D+00  E= 1.774009D-02
+              MO Center= -2.8D-15,  5.3D-16, -4.3D-15, r^2= 1.8D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    19      0.805583  1 Na px                21      0.210968  1 Na pz         
+    16      0.179208  1 Na px                20      0.126594  1 Na py         
+    10     -0.052948  1 Na px                13      0.048906  1 Na px         
+    18      0.046932  1 Na pz                 7     -0.035389  1 Na px         
+    17      0.028162  1 Na py         
+
+ Vector   10  Occ=0.000000D+00  E= 8.645144D-02
+              MO Center=  1.1D-14,  2.8D-14,  6.6D-14, r^2= 1.7D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     5      3.146509  1 Na s                  6     -2.438280  1 Na s          
+     4     -0.451607  1 Na s                 22     -0.308159  1 Na dxx        
+    25     -0.308159  1 Na dyy               27     -0.308159  1 Na dzz        
+     3     -0.057080  1 Na s                  2      0.036697  1 Na s          
+
+ Vector   11  Occ=0.000000D+00  E= 9.162098D-02
+              MO Center= -7.3D-15, -1.2D-16,  7.3D-16, r^2= 1.9D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    16      1.453797  1 Na px                19     -1.193763  1 Na px         
+    10     -0.078998  1 Na px                 7     -0.063285  1 Na px         
+    13     -0.031427  1 Na px                18     -0.028218  1 Na pz         
+
+ Vector   12  Occ=0.000000D+00  E= 9.162098D-02
+              MO Center=  1.1D-15, -3.9D-14, -6.5D-14, r^2= 1.9D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    18      1.253294  1 Na pz                21     -1.029123  1 Na pz         
+    17      0.737119  1 Na py                20     -0.605274  1 Na py         
+    12     -0.068103  1 Na pz                 9     -0.054557  1 Na pz         
+    11     -0.040054  1 Na py                 8     -0.032087  1 Na py         
+    15     -0.027093  1 Na pz         
+
+ Vector   13  Occ=0.000000D+00  E= 9.162098D-02
+              MO Center= -1.0D-13,  1.6D-13, -7.7D-14, r^2= 1.9D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    17      1.253387  1 Na py                20     -1.029199  1 Na py         
+    18     -0.736818  1 Na pz                21      0.605027  1 Na pz         
+    11     -0.068108  1 Na py                 8     -0.054561  1 Na py         
+    12      0.040038  1 Na pz                 9      0.032074  1 Na pz         
+    14     -0.027095  1 Na py         
+
+ Vector   14  Occ=0.000000D+00  E= 4.342843D-01
+              MO Center= -5.3D-15, -2.8D-16,  3.2D-15, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    24      1.711774  1 Na dxz               23     -0.256668  1 Na dxy        
+    26     -0.062858  1 Na dyz        
+
+ Vector   15  Occ=0.000000D+00  E= 4.342843D-01
+              MO Center= -6.5D-17,  4.5D-16,  7.5D-18, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    26      1.521847  1 Na dyz               23     -0.824256  1 Na dxy        
+    24     -0.067707  1 Na dxz        
+
+ Vector   16  Occ=0.000000D+00  E= 4.342843D-01
+              MO Center=  1.2D-13, -4.4D-14,  7.1D-14, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    23      1.501574  1 Na dxy               26      0.824640  1 Na dyz        
+    24      0.255432  1 Na dxz        
+
+ Vector   17  Occ=0.000000D+00  E= 4.342843D-01
+              MO Center= -4.8D-15, -1.2D-13,  9.1D-15, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    22      0.914805  1 Na dxx               25     -0.807187  1 Na dyy        
+    27     -0.107618  1 Na dzz        
+
+ Vector   18  Occ=0.000000D+00  E= 4.342843D-01
+              MO Center=  2.2D-15,  1.2D-15, -5.0D-15, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    27      0.994192  1 Na dzz               25     -0.590296  1 Na dyy        
+    22     -0.403896  1 Na dxx        
+
+ Vector   19  Occ=0.000000D+00  E= 4.906238D-01
+              MO Center= -4.3D-14, -3.3D-14,  2.1D-14, r^2= 1.1D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     5      6.962290  1 Na s                  6     -2.333864  1 Na s          
+    22     -2.104081  1 Na dxx               25     -2.104081  1 Na dyy        
+    27     -2.104081  1 Na dzz                4     -1.539799  1 Na s          
+     3      0.453578  1 Na s                  2     -0.059526  1 Na s          
+
+ Vector   20  Occ=0.000000D+00  E= 5.068221D-01
+              MO Center=  4.0D-14, -5.9D-15, -1.7D-14, r^2= 4.9D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    13      1.314494  1 Na px                16     -1.030471  1 Na px         
+    15     -0.521415  1 Na pz                19      0.435907  1 Na px         
+    18      0.408753  1 Na pz                10     -0.337061  1 Na px         
+    14     -0.209270  1 Na py                 7     -0.174553  1 Na px         
+    21     -0.172910  1 Na pz                17      0.164053  1 Na py         
+
+ Vector   21  Occ=0.000000D+00  E= 5.068221D-01
+              MO Center=  2.2D-15,  2.4D-15,  1.2D-14, r^2= 4.9D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    15      1.244575  1 Na pz                18     -0.975659  1 Na pz         
+    13      0.561166  1 Na px                16     -0.439915  1 Na px         
+    14      0.423897  1 Na py                21      0.412721  1 Na pz         
+    17     -0.332305  1 Na py                12     -0.319132  1 Na pz         
+    19      0.186091  1 Na px                 9     -0.165269  1 Na pz         
+
+ Vector   22  Occ=0.000000D+00  E= 5.068221D-01
+              MO Center= -5.7D-15,  4.4D-14, -1.8D-14, r^2= 4.9D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    14      1.349104  1 Na py                17     -1.057602  1 Na py         
+    15     -0.471934  1 Na pz                20      0.447384  1 Na py         
+    18      0.369963  1 Na pz                11     -0.345935  1 Na py         
+     8     -0.179149  1 Na py                21     -0.156501  1 Na pz         
+    12      0.121013  1 Na pz                 9      0.062669  1 Na pz         
+
+ Vector   23  Occ=0.000000D+00  E= 2.098636D+00
+              MO Center=  8.1D-17, -1.3D-16, -2.0D-16, r^2= 8.7D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     3      1.843059  1 Na s                  4     -1.759407  1 Na s          
+    22      0.348025  1 Na dxx               25      0.348025  1 Na dyy        
+    27      0.348025  1 Na dzz                5     -0.327412  1 Na s          
+     2     -0.306532  1 Na s                  1     -0.086477  1 Na s          
+     6     -0.064240  1 Na s          
+
+ Vector   24  Occ=0.000000D+00  E= 4.478453D+00
+              MO Center=  2.3D-17, -1.2D-16, -1.4D-16, r^2= 6.5D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    11      1.205034  1 Na py                 8     -1.061032  1 Na py         
+    14     -0.635729  1 Na py                10      0.347295  1 Na px         
+    17      0.307615  1 Na py                 7     -0.305794  1 Na px         
+    12      0.201381  1 Na pz                13     -0.183219  1 Na px         
+     9     -0.177316  1 Na pz                20     -0.127150  1 Na py         
+
+ Vector   25  Occ=0.000000D+00  E= 4.478453D+00
+              MO Center= -4.4D-16,  4.6D-17,  1.5D-17, r^2= 6.5D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    10      1.206547  1 Na px                 7     -1.062364  1 Na px         
+    13     -0.636527  1 Na px                16      0.308001  1 Na px         
+    11     -0.305364  1 Na py                 8      0.268873  1 Na py         
+    12     -0.253521  1 Na pz                 9      0.223225  1 Na pz         
+    14      0.161098  1 Na py                15      0.133748  1 Na pz         
+
+ Vector   26  Occ=0.000000D+00  E= 4.478453D+00
+              MO Center=  3.4D-16,  2.1D-15, -7.9D-16, r^2= 6.5D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    12      1.228189  1 Na pz                 9     -1.081420  1 Na pz         
+    15     -0.647944  1 Na pz                18      0.313526  1 Na pz         
+    11     -0.260617  1 Na py                 8      0.229474  1 Na py         
+    10      0.192109  1 Na px                 7     -0.169152  1 Na px         
+    14      0.137492  1 Na py                21     -0.129594  1 Na pz         
+
+ Vector   27  Occ=0.000000D+00  E= 9.578124D+01
+              MO Center=  2.0D-19, -2.8D-19, -1.4D-18, r^2= 5.0D-02
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     2     -1.661310  1 Na s                  1      1.530641  1 Na s          
+     3      0.844610  1 Na s                  4     -0.448935  1 Na s          
+     5      0.113598  1 Na s                  6     -0.069046  1 Na s          
+
+
+                     DFT Final Beta Molecular Orbital Analysis
+                     -----------------------------------------
+
+ Vector    1  Occ=1.000000D+00  E=-3.811903D+01
+              MO Center= -3.7D-18,  3.8D-19, -1.9D-18, r^2= 7.7D-03
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     2      0.684980  1 Na s                  1      0.378721  1 Na s          
+
+ Vector    2  Occ=1.000000D+00  E=-2.267164D+00
+              MO Center=  1.0D-15, -7.2D-16, -7.7D-16, r^2= 2.1D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     3      0.642918  1 Na s                  4      0.472924  1 Na s          
+     2     -0.274742  1 Na s                  1     -0.096652  1 Na s          
+
+ Vector    3  Occ=1.000000D+00  E=-1.234345D+00
+              MO Center= -1.7D-16,  2.0D-16,  2.6D-17, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    11      0.613782  1 Na py                 8      0.458489  1 Na py         
+    12     -0.123056  1 Na pz                10     -0.102304  1 Na px         
+     9     -0.091921  1 Na pz                 7     -0.076420  1 Na px         
+    14      0.062776  1 Na py         
+
+ Vector    4  Occ=1.000000D+00  E=-1.234345D+00
+              MO Center= -9.3D-16,  1.2D-16,  5.0D-16, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    10      0.532927  1 Na px                 7      0.398091  1 Na px         
+    12     -0.343405  1 Na pz                 9     -0.256520  1 Na pz         
+    13      0.054506  1 Na px                15     -0.035123  1 Na pz         
+
+ Vector    5  Occ=1.000000D+00  E=-1.234345D+00
+              MO Center=  4.2D-16,  5.4D-16,  2.6D-16, r^2= 2.4D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    12      0.518910  1 Na pz                 9      0.387621  1 Na pz         
+    10      0.328420  1 Na px                 7      0.245327  1 Na px         
+    11      0.158775  1 Na py                 8      0.118604  1 Na py         
+    15      0.053073  1 Na pz                13      0.033590  1 Na px         
+
+ Vector    6  Occ=0.000000D+00  E= 1.072209D-02
+              MO Center=  8.1D-13, -8.8D-13, -9.4D-12, r^2= 8.3D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     6      1.051548  1 Na s                  5     -0.344560  1 Na s          
+    22      0.152993  1 Na dxx               25      0.152993  1 Na dyy        
+    27      0.152993  1 Na dzz                3     -0.137858  1 Na s          
+     2      0.041427  1 Na s                  4     -0.025459  1 Na s          
+
+ Vector    7  Occ=0.000000D+00  E= 3.919869D-02
+              MO Center= -2.1D-13, -1.1D-13, -2.0D-14, r^2= 2.5D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    19      1.050561  1 Na px                20      0.529056  1 Na py         
+    16     -0.255983  1 Na px                17     -0.128911  1 Na py         
+    13      0.071355  1 Na px                14      0.035934  1 Na py         
+    10     -0.029839  1 Na px         
+
+ Vector    8  Occ=0.000000D+00  E= 3.919869D-02
+              MO Center=  1.2D-15, -1.9D-14,  7.3D-12, r^2= 2.5D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    21      1.176256  1 Na pz                18     -0.286610  1 Na pz         
+    15      0.079893  1 Na pz                12     -0.033409  1 Na pz         
+
+ Vector    9  Occ=0.000000D+00  E= 3.919869D-02
+              MO Center= -4.1D-13,  8.0D-13, -1.0D-14, r^2= 2.5D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    20      1.050561  1 Na py                19     -0.529056  1 Na px         
+    17     -0.255983  1 Na py                16      0.128912  1 Na px         
+    14      0.071355  1 Na py                13     -0.035934  1 Na px         
+    11     -0.029839  1 Na py         
+
+ Vector   10  Occ=0.000000D+00  E= 1.076007D-01
+              MO Center= -3.4D-13,  3.9D-13,  4.5D-12, r^2= 1.4D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     5      3.413800  1 Na s                  6     -2.339094  1 Na s          
+     4     -0.530976  1 Na s                 22     -0.358206  1 Na dxx        
+    25     -0.358206  1 Na dyy               27     -0.358206  1 Na dzz        
+     3     -0.073218  1 Na s                  2      0.045316  1 Na s          
+
+ Vector   11  Occ=0.000000D+00  E= 1.234462D-01
+              MO Center=  2.1D-13,  6.2D-14, -1.2D-13, r^2= 1.2D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    16      1.268602  1 Na px                19     -0.775331  1 Na px         
+    17      0.635644  1 Na py                20     -0.388486  1 Na py         
+    10     -0.087732  1 Na px                 7     -0.065897  1 Na px         
+    11     -0.043959  1 Na py                 8     -0.033018  1 Na py         
+
+ Vector   12  Occ=0.000000D+00  E= 1.234462D-01
+              MO Center= -4.7D-14, -5.8D-14, -3.1D-12, r^2= 1.2D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    18      1.418926  1 Na pz                21     -0.867205  1 Na pz         
+    12     -0.098128  1 Na pz                 9     -0.073706  1 Na pz         
+
+ Vector   13  Occ=0.000000D+00  E= 1.234462D-01
+              MO Center=  8.9D-14, -2.3D-13, -6.7D-14, r^2= 1.2D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    17      1.268587  1 Na py                20     -0.775322  1 Na py         
+    16     -0.635668  1 Na px                19      0.388501  1 Na px         
+    11     -0.087731  1 Na py                 8     -0.065896  1 Na py         
+    10      0.043961  1 Na px                 7      0.033020  1 Na px         
+
+ Vector   14  Occ=0.000000D+00  E= 4.420654D-01
+              MO Center=  1.5D-13,  1.2D-13,  1.7D-13, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    26      1.322437  1 Na dyz               23      1.091344  1 Na dxy        
+    24      0.245209  1 Na dxz        
+
+ Vector   15  Occ=0.000000D+00  E= 4.420654D-01
+              MO Center=  1.1D-13,  2.4D-15,  2.6D-13, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    24      1.646957  1 Na dxz               26     -0.488277  1 Na dyz        
+    23      0.221624  1 Na dxy        
+
+ Vector   16  Occ=0.000000D+00  E= 4.420654D-01
+              MO Center= -3.7D-14, -1.0D-13,  8.7D-14, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    23      1.326594  1 Na dxy               26     -1.006352  1 Na dyz        
+    24     -0.476870  1 Na dxz        
+
+ Vector   17  Occ=0.000000D+00  E= 4.420654D-01
+              MO Center= -1.4D-13,  7.4D-14,  1.5D-16, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    22      0.864606  1 Na dxx               25     -0.867437  1 Na dyy        
+
+ Vector   18  Occ=0.000000D+00  E= 4.420654D-01
+              MO Center= -1.3D-13, -1.4D-13,  1.9D-13, r^2= 2.8D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    27      0.999996  1 Na dzz               22     -0.502450  1 Na dxx        
+    25     -0.497546  1 Na dyy        
+
+ Vector   19  Occ=0.000000D+00  E= 5.227481D-01
+              MO Center=  1.5D-12,  6.9D-13, -1.6D-13, r^2= 5.0D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    13      1.279816  1 Na px                16     -1.025323  1 Na px         
+    14      0.633067  1 Na py                17     -0.507181  1 Na py         
+    19      0.424324  1 Na px                10     -0.325042  1 Na px         
+    20      0.209894  1 Na py                 7     -0.168808  1 Na px         
+    11     -0.160784  1 Na py                 8     -0.083501  1 Na py         
+
+ Vector   20  Occ=0.000000D+00  E= 5.227481D-01
+              MO Center=  1.3D-12,  1.5D-12, -9.4D-11, r^2= 5.0D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    15      1.427791  1 Na pz                18     -1.143873  1 Na pz         
+    21      0.473385  1 Na pz                12     -0.362624  1 Na pz         
+     9     -0.188326  1 Na pz         
+
+ Vector   21  Occ=0.000000D+00  E= 5.227481D-01
+              MO Center=  5.5D-12, -1.1D-11, -2.1D-13, r^2= 5.0D+00
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    14      1.279958  1 Na py                17     -1.025437  1 Na py         
+    13     -0.633386  1 Na px                16      0.507436  1 Na px         
+    20      0.424371  1 Na py                11     -0.325078  1 Na py         
+    19     -0.209999  1 Na px                 8     -0.168826  1 Na py         
+    10      0.160864  1 Na px                 7      0.083544  1 Na px         
+
+ Vector   22  Occ=0.000000D+00  E= 5.261125D-01
+              MO Center= -8.4D-12,  9.1D-12,  9.5D-11, r^2= 1.1D+01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     5      6.852665  1 Na s                  6     -2.235314  1 Na s          
+    22     -2.090758  1 Na dxx               25     -2.090758  1 Na dyy        
+    27     -2.090758  1 Na dzz                4     -1.524482  1 Na s          
+     3      0.452200  1 Na s                  2     -0.059867  1 Na s          
+
+ Vector   23  Occ=0.000000D+00  E= 2.105463D+00
+              MO Center=  1.4D-16,  9.8D-17, -2.4D-15, r^2= 8.6D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     3      1.843631  1 Na s                  4     -1.758870  1 Na s          
+    22      0.347650  1 Na dxx               25      0.347650  1 Na dyy        
+    27      0.347650  1 Na dzz                5     -0.330828  1 Na s          
+     2     -0.306702  1 Na s                  1     -0.086555  1 Na s          
+     6     -0.063239  1 Na s          
+
+ Vector   24  Occ=0.000000D+00  E= 4.481306D+00
+              MO Center=  1.1D-15, -5.2D-16, -4.0D-17, r^2= 6.6D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    10      1.045231  1 Na px                 7     -0.920066  1 Na px         
+    11     -0.625813  1 Na py                 8      0.550873  1 Na py         
+    13     -0.552071  1 Na px                12      0.360140  1 Na pz         
+    14      0.330542  1 Na py                 9     -0.317013  1 Na pz         
+    16      0.267704  1 Na px                15     -0.190219  1 Na pz         
+
+ Vector   25  Occ=0.000000D+00  E= 4.481306D+00
+              MO Center= -1.1D-15, -2.8D-15,  1.7D-15, r^2= 6.6D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    12     -0.755964  1 Na pz                11      0.739918  1 Na py         
+    10      0.703484  1 Na px                 9      0.665438  1 Na pz         
+     8     -0.651314  1 Na py                 7     -0.619243  1 Na px         
+    15      0.399286  1 Na pz                14     -0.390810  1 Na py         
+    13     -0.371567  1 Na px                18     -0.193617  1 Na pz         
+
+ Vector   26  Occ=0.000000D+00  E= 4.481306D+00
+              MO Center=  4.7D-16,  3.3D-15,  3.1D-15, r^2= 6.6D-01
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+    12      0.955336  1 Na pz                 9     -0.840936  1 Na pz         
+    11      0.821419  1 Na py                 8     -0.723055  1 Na py         
+    15     -0.504590  1 Na pz                14     -0.433858  1 Na py         
+    18      0.244680  1 Na pz                17      0.210381  1 Na py         
+    10      0.162644  1 Na px                 7     -0.143168  1 Na px         
+
+ Vector   27  Occ=0.000000D+00  E= 9.578298D+01
+              MO Center= -2.5D-18, -4.1D-19, -4.8D-19, r^2= 5.0D-02
+   Bfn.  Coefficient  Atom+Function         Bfn.  Coefficient  Atom+Function  
+  ----- ------------  ---------------      ----- ------------  ---------------
+     2     -1.661305  1 Na s                  1      1.530645  1 Na s          
+     3      0.844631  1 Na s                  4     -0.448961  1 Na s          
+     5      0.113623  1 Na s                  6     -0.069051  1 Na s          
+
+
+   alpha - beta orbital overlaps 
+   ----------------------------- 
+
+
+   alpha      1      2      3      4      5      6      7      8      9     10
+    beta      1      2      5      3      4      6      9      8      7     10
+ overlap   1.000  1.000  0.961  0.992  0.958  0.971  0.839  0.876  0.877  0.971
+
+
+   alpha     11     12     13     14     15     16     17     18     19     20
+    beta     11     12     13     15     16     14     17     18     22     19
+ overlap   0.854  0.823  0.742  0.931  0.864  0.931  0.994  0.994  0.999  0.751
+
+
+   alpha     21     22     23     24     25     26     27
+    beta     20     21     23     26     24     26     27
+ overlap   0.859  0.835  1.000  0.768  0.843  0.614  1.000
+
+     --------------------------
+     Expectation value of S2:  
+     --------------------------
+      <S2> =      0.7500 (Exact =     0.7500)
+
+  int_init: cando_txs set to always be  F
+                                NWChem TDDFT Module
+                                -------------------
+
+
+    Na LR-TDDFT, LC-wPBE mu=0.352377, 6-311G* Cartesian, nucleus at the origin
+
+
+            General Information
+            -------------------
+           No. of orbitals :      54
+            Alpha orbitals :      27
+             Beta orbitals :      27
+        Alpha frozen cores :       0
+         Beta frozen cores :       0
+     Alpha frozen virtuals :       0
+      Beta frozen virtuals :       0
+         Spin multiplicity :       2
+    Number of AO functions :      27
+        Use of symmetry is : off
+      Symmetry adaption is : off
+         Schwarz screening :  0.10D-07
+
+              XC Information
+              --------------
+              Hartree-Fock (Exact) Exchange   1.00          
+              LC-wPBE(h)Exchange Functional   1.00          
+     Perdew 1991 LDA Correlation Functional   1.00 local    
+    PerdewBurkeErnz. Correlation Functional   1.00 non-local
+           Alpha           :  0.00
+           Beta            :  1.00
+           Gamma           :  0.35
+
+             TDDFT Information
+             -----------------
+          Calculation type : TDDFT             
+         Wavefunction type : Unrestricted
+          No. of electrons :      11
+           Alpha electrons :       6
+            Beta electrons :       5
+              No. of roots :      24
+          Max subspacesize :    8800
+            Max iterations :     100
+               Target root :       1
+           Target symmetry : none
+      Symmetry restriction : off
+                 Algorithm : Optimal
+        Davidson threshold :  0.10D-03
+
+            Memory Information
+            ------------------
+          Available GA space size is         163838542 doubles
+          Available MA space size is         163839308 doubles
+          Length of a trial vector is          126     110
+          Algorithm : Incore multiple tensor contraction
+          Estimated peak GA usage is           8884232 doubles
+          Estimated peak MA usage is            405600 doubles
+
+   24 smallest eigenvalue differences (eV) 
+--------------------------------------------------------
+  No. Spin  Occ  Vir  Irrep   E(Occ)    E(Vir)   E(Diff)
+--------------------------------------------------------
+    1    1    6    7 a        -0.192     0.018     5.718
+    2    1    6    8 a        -0.192     0.018     5.718
+    3    1    6    9 a        -0.192     0.018     5.718
+    4    1    6   10 a        -0.192     0.086     7.588
+    5    1    6   11 a        -0.192     0.092     7.729
+    6    1    6   12 a        -0.192     0.092     7.729
+    7    1    6   13 a        -0.192     0.092     7.729
+    8    1    6   14 a        -0.192     0.434    17.053
+    9    1    6   15 a        -0.192     0.434    17.053
+   10    1    6   16 a        -0.192     0.434    17.053
+   11    1    6   17 a        -0.192     0.434    17.053
+   12    1    6   18 a        -0.192     0.434    17.053
+   13    1    6   19 a        -0.192     0.491    18.586
+   14    1    6   20 a        -0.192     0.507    19.027
+   15    1    6   21 a        -0.192     0.507    19.027
+   16    1    6   22 a        -0.192     0.507    19.027
+   17    2    5    6 a        -1.234     0.011    33.880
+   18    2    4    6 a        -1.234     0.011    33.880
+   19    2    3    6 a        -1.234     0.011    33.880
+   20    1    5    7 a        -1.237     0.018    34.138
+   21    1    5    8 a        -1.237     0.018    34.138
+   22    1    5    9 a        -1.237     0.018    34.138
+   23    1    4    7 a        -1.237     0.018    34.138
+   24    1    4    8 a        -1.237     0.018    34.138
+--------------------------------------------------------
+
+  Entering Davidson iterations
+  Unrestricted
+
+  Iter   NTrls   NConv    DeltaV     DeltaE      Time   
+  ----  ------  ------  ---------  ---------  --------- 
+    1     24       0     0.15E+00   0.10+100        0.9
+    2     72       0     0.94E-01   0.41E-01        2.2
+    3    120       8     0.43E-01   0.36E-02        2.3
+    4    146      17     0.59E-01   0.14E-02        1.3
+    5    160      20     0.15E-01   0.13E-02        0.8
+    6    168      22     0.92E-03   0.28E-04        0.5
+    7    171      24     0.31E-04   0.21E-07        0.3
+  ----  ------  ------  ---------  ---------  --------- 
+  Convergence criterion met
+
+  Ground state a        -162.180182150364 a.u.
+  <S2> =   0.7500
+
+  ----------------------------------------------------------------------------
+  Root   1         a              0.073338358 a.u.                1.9956 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -2.00837   Y -1.64005   Z -0.09836
+     Transition Moments   XX -0.00000  XY -0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ  0.00000  ZZ -0.00000
+     Dipole Oscillator Strength                    0.3291907200
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.3291907200
+
+          sigma_e =   3.1863 Angstrom
+          sigma_h =   2.3344 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.9509 Angstrom
+            d_CD1 =   0.8519 Angstrom
+            d_CD2 =  -2.7604 Angstrom
+            d_CD3 =   3.9509 Angstrom
+     Pearson C.C. =  -0.0005
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a    0.49710 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a    0.78493 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.28825 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a    0.13455 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a    0.19010 X
+  ----------------------------------------------------------------------------
+  Root   2         a              0.073338358 a.u.                1.9956 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.40770   Y  0.34700   Z  2.53897
+     Transition Moments   XX -0.00000  XY -0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ -0.00000  ZZ -0.00000
+     Dipole Oscillator Strength                    0.3291907200
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.3291907200
+
+          sigma_e =   3.1863 Angstrom
+          sigma_h =   2.3344 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.9509 Angstrom
+            d_CD1 =   0.8519 Angstrom
+            d_CD2 =  -2.7604 Angstrom
+            d_CD3 =   3.9509 Angstrom
+     Pearson C.C. =  -0.0005
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a    0.14255 X
+     Occ.    6 alpha a   ---  Virt.    8 alpha a   -0.91198 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a   -0.10677 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.06488 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a   -0.33689 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a    0.14007 X
+  ----------------------------------------------------------------------------
+  Root   3         a              0.073338358 a.u.                1.9956 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X  1.59160   Y -1.98061   Z  0.52626
+     Transition Moments   XX  0.00000  XY  0.00000  XZ -0.00000
+     Transition Moments   YY  0.00000  YZ  0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.3291907200
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.3291907200
+
+          sigma_e =   3.1863 Angstrom
+          sigma_h =   2.3344 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.9509 Angstrom
+            d_CD1 =   0.8519 Angstrom
+            d_CD2 =  -2.7604 Angstrom
+            d_CD3 =   3.9509 Angstrom
+     Pearson C.C. =  -0.0005
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a    0.77201 X
+     Occ.    6 alpha a   ---  Virt.    8 alpha a    0.17753 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a   -0.48570 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a   -0.22368 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a    0.07567 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a    0.28560 X
+  ----------------------------------------------------------------------------
+  Root   4         a              0.142638362 a.u.                3.8814 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y -0.00000   Z  0.00000
+     Transition Moments   XX  5.65114  XY -0.00000  XZ -0.00000
+     Transition Moments   YY  5.65114  YZ -0.00000  ZZ  5.65114
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000000000
+
+          sigma_e =   3.8756 Angstrom
+          sigma_h =   2.3343 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   4.5234 Angstrom
+            d_CD1 =   1.5413 Angstrom
+            d_CD2 =  -3.1050 Angstrom
+            d_CD3 =   4.5234 Angstrom
+     Pearson C.C. =   0.0004
+
+     Occ.    6 alpha a   ---  Virt.   10 alpha a    0.99622 X
+     Occ.    6 alpha a   ---  Virt.   19 alpha a   -0.08880 X
+  ----------------------------------------------------------------------------
+  Root   5         a              0.154685279 a.u.                4.2092 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.06770   Y -0.04694   Z  0.07705
+     Transition Moments   XX  0.00000  XY  0.00000  XZ -0.00000
+     Transition Moments   YY  0.00000  YZ  0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0013120572
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0013120572
+
+          sigma_e =   5.0477 Angstrom
+          sigma_h =   2.3351 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   5.5621 Angstrom
+            d_CD1 =   2.7126 Angstrom
+            d_CD2 =  -3.6914 Angstrom
+            d_CD3 =   5.5621 Angstrom
+     Pearson C.C. =  -0.0002
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a   -0.20622 X
+     Occ.    6 alpha a   ---  Virt.    8 alpha a    0.25468 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a   -0.17232 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.57136 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a   -0.34304 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a    0.64426 X
+  ----------------------------------------------------------------------------
+  Root   6         a              0.154685279 a.u.                4.2092 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.03927   Y -0.07140   Z -0.07799
+     Transition Moments   XX  0.00000  XY  0.00000  XZ  0.00000
+     Transition Moments   YY  0.00000  YZ  0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0013120572
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0013120572
+
+          sigma_e =   5.0477 Angstrom
+          sigma_h =   2.3351 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   5.5621 Angstrom
+            d_CD1 =   2.7126 Angstrom
+            d_CD2 =  -3.6914 Angstrom
+            d_CD3 =   5.5621 Angstrom
+     Pearson C.C. =  -0.0002
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a   -0.13749 X
+     Occ.    6 alpha a   ---  Virt.    8 alpha a   -0.26196 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a   -0.22261 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.31457 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a    0.85402 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a    0.17575 X
+     Occ.    6 alpha a   ---  Virt.   21 alpha a    0.05722 X
+  ----------------------------------------------------------------------------
+  Root   7         a              0.154685279 a.u.                4.2092 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.08123   Y  0.07363   Z -0.02651
+     Transition Moments   XX -0.00000  XY  0.00000  XZ -0.00000
+     Transition Moments   YY -0.00000  YZ -0.00000  ZZ -0.00000
+     Dipole Oscillator Strength                    0.0013120572
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0013120572
+
+          sigma_e =   5.0477 Angstrom
+          sigma_h =   2.3351 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   5.5621 Angstrom
+            d_CD1 =   2.7126 Angstrom
+            d_CD2 =  -3.6914 Angstrom
+            d_CD3 =   5.5621 Angstrom
+     Pearson C.C. =  -0.0002
+
+     Occ.    6 alpha a   ---  Virt.    7 alpha a    0.27505 X
+     Occ.    6 alpha a   ---  Virt.    8 alpha a    0.06000 X
+     Occ.    6 alpha a   ---  Virt.    9 alpha a   -0.24048 X
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.65862 X
+     Occ.    6 alpha a   ---  Virt.   12 alpha a   -0.11031 X
+     Occ.    6 alpha a   ---  Virt.   13 alpha a   -0.64283 X
+  ----------------------------------------------------------------------------
+  Root   8         a              0.402715901 a.u.               10.9585 eV 
+  <S2> =   0.7501
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y -0.00000   Z -0.00000
+     Transition Moments   XX -0.00021  XY -2.42784  XZ  0.07753
+     Transition Moments   YY  0.00018  YZ -1.18856  ZZ  0.00004
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000025435
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000025435
+
+          sigma_e =   1.6735 Angstrom
+          sigma_h =   2.3352 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.8725 Angstrom
+            d_CD1 =   0.6617 Angstrom
+            d_CD2 =  -2.0044 Angstrom
+            d_CD3 =   2.8725 Angstrom
+     Pearson C.C. =   0.0003
+
+     Occ.    6 alpha a   ---  Virt.   14 alpha a   -0.17735 X
+     Occ.    6 alpha a   ---  Virt.   16 alpha a    0.98351 X
+  ----------------------------------------------------------------------------
+  Root   9         a              0.402715901 a.u.               10.9585 eV 
+  <S2> =   0.7501
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y  0.00000   Z -0.00000
+     Transition Moments   XX  0.00004  XY -0.43769  XZ  2.45166
+     Transition Moments   YY  0.00004  YZ  1.05398  ZZ -0.00008
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000025435
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000025435
+
+          sigma_e =   1.6735 Angstrom
+          sigma_h =   2.3352 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.8725 Angstrom
+            d_CD1 =   0.6617 Angstrom
+            d_CD2 =  -2.0044 Angstrom
+            d_CD3 =   2.8725 Angstrom
+     Pearson C.C. =   0.0003
+
+     Occ.    6 alpha a   ---  Virt.   14 alpha a   -0.90597 X
+     Occ.    6 alpha a   ---  Virt.   15 alpha a   -0.38409 X
+     Occ.    6 alpha a   ---  Virt.   16 alpha a   -0.17897 X
+  ----------------------------------------------------------------------------
+  Root  10         a              0.402715901 a.u.               10.9585 eV 
+  <S2> =   0.7501
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y -0.00000   Z  0.00000
+     Transition Moments   XX  0.00006  XY  1.10775  XZ  1.13861
+     Transition Moments   YY -0.00007  YZ -2.18850  ZZ  0.00001
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000025435
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000025435
+
+          sigma_e =   1.6735 Angstrom
+          sigma_h =   2.3352 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.8725 Angstrom
+            d_CD1 =   0.6617 Angstrom
+            d_CD2 =  -2.0044 Angstrom
+            d_CD3 =   2.8725 Angstrom
+     Pearson C.C. =   0.0003
+
+     Occ.    6 alpha a   ---  Virt.   14 alpha a   -0.38484 X
+     Occ.    6 alpha a   ---  Virt.   15 alpha a    0.92261 X
+  ----------------------------------------------------------------------------
+  Root  11         a              0.402715905 a.u.               10.9585 eV 
+  <S2> =   0.7501
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y -0.00000   Z -0.00000
+     Transition Moments   XX -2.17685  XY  0.00006  XZ  0.00006
+     Transition Moments   YY -0.85040  YZ  0.00006  ZZ  3.02726
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000025435
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000025435
+
+          sigma_e =   1.6735 Angstrom
+          sigma_h =   2.3352 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.8725 Angstrom
+            d_CD1 =   0.6617 Angstrom
+            d_CD2 =  -2.0044 Angstrom
+            d_CD3 =   2.8725 Angstrom
+     Pearson C.C. =   0.0003
+
+     Occ.    6 alpha a   ---  Virt.   17 alpha a    0.34822 X
+     Occ.    6 alpha a   ---  Virt.   18 alpha a   -0.93759 X
+  ----------------------------------------------------------------------------
+  Root  12         a              0.402715905 a.u.               10.9585 eV 
+  <S2> =   0.7501
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y  0.00000   Z -0.00000
+     Transition Moments   XX  2.23877  XY -0.00019  XZ -0.00001
+     Transition Moments   YY -3.00459  YZ -0.00002  ZZ  0.76583
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000025435
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000025435
+
+          sigma_e =   1.6735 Angstrom
+          sigma_h =   2.3352 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.8725 Angstrom
+            d_CD1 =   0.6617 Angstrom
+            d_CD2 =  -2.0044 Angstrom
+            d_CD3 =   2.8725 Angstrom
+     Pearson C.C. =   0.0003
+
+     Occ.    6 alpha a   ---  Virt.   17 alpha a   -0.93759 X
+     Occ.    6 alpha a   ---  Virt.   18 alpha a   -0.34822 X
+  ----------------------------------------------------------------------------
+  Root  13         a              0.476733247 a.u.               12.9726 eV 
+  <S2> =   0.7502
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.05761   Y  0.09275   Z  0.04237
+     Transition Moments   XX -0.00000  XY  0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ -0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0043594580
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0043594580
+
+          sigma_e =   2.3992 Angstrom
+          sigma_h =   2.3350 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.3481 Angstrom
+            d_CD1 =   0.0641 Angstrom
+            d_CD2 =  -2.3671 Angstrom
+            d_CD3 =   3.3481 Angstrom
+     Pearson C.C. =  -0.0001
+
+     Occ.    6 alpha a   ---  Virt.   20 alpha a    0.20408 X
+     Occ.    6 alpha a   ---  Virt.   21 alpha a    0.74157 X
+     Occ.    6 alpha a   ---  Virt.   22 alpha a    0.63623 X
+  ----------------------------------------------------------------------------
+  Root  14         a              0.476733247 a.u.               12.9726 eV 
+  <S2> =   0.7502
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.09572   Y  0.06597   Z -0.01424
+     Transition Moments   XX  0.00000  XY  0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ -0.00000  ZZ -0.00000
+     Dipole Oscillator Strength                    0.0043594580
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0043594580
+
+          sigma_e =   2.3992 Angstrom
+          sigma_h =   2.3350 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.3481 Angstrom
+            d_CD1 =   0.0641 Angstrom
+            d_CD2 =  -2.3671 Angstrom
+            d_CD3 =   3.3481 Angstrom
+     Pearson C.C. =  -0.0001
+
+     Occ.    6 alpha a   ---  Virt.   11 alpha a    0.05050 X
+     Occ.    6 alpha a   ---  Virt.   20 alpha a   -0.78818 X
+     Occ.    6 alpha a   ---  Virt.   21 alpha a   -0.25921 X
+     Occ.    6 alpha a   ---  Virt.   22 alpha a    0.55494 X
+  ----------------------------------------------------------------------------
+  Root  15         a              0.476733247 a.u.               12.9726 eV 
+  <S2> =   0.7502
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.03515   Y -0.02762   Z  0.10825
+     Transition Moments   XX -0.00000  XY -0.00000  XZ  0.00000
+     Transition Moments   YY  0.00000  YZ -0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0043594580
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0043594580
+
+          sigma_e =   2.3992 Angstrom
+          sigma_h =   2.3350 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   3.3481 Angstrom
+            d_CD1 =   0.0641 Angstrom
+            d_CD2 =  -2.3671 Angstrom
+            d_CD3 =   3.3481 Angstrom
+     Pearson C.C. =  -0.0001
+
+     Occ.    6 alpha a   ---  Virt.   20 alpha a   -0.57749 X
+     Occ.    6 alpha a   ---  Virt.   21 alpha a    0.61584 X
+     Occ.    6 alpha a   ---  Virt.   22 alpha a   -0.53256 X
+  ----------------------------------------------------------------------------
+  Root  16         a              0.491753434 a.u.               13.3813 eV 
+  <S2> =   0.7500
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y -0.00000   Z -0.00000
+     Transition Moments   XX -0.05047  XY  0.00000  XZ  0.00000
+     Transition Moments   YY -0.05047  YZ  0.00000  ZZ -0.05047
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000000000
+
+          sigma_e =   3.5397 Angstrom
+          sigma_h =   2.3349 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   4.2402 Angstrom
+            d_CD1 =   1.2049 Angstrom
+            d_CD2 =  -2.9373 Angstrom
+            d_CD3 =   4.2402 Angstrom
+     Pearson C.C. =   0.0001
+
+     Occ.    6 alpha a   ---  Virt.   10 alpha a    0.08827 X
+     Occ.    6 alpha a   ---  Virt.   19 alpha a    0.99661 X
+  ----------------------------------------------------------------------------
+  Root  17         a              0.999883619 a.u.               27.2082 eV 
+  <S2> =   0.7975
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.08023   Y  0.04841   Z -0.15070
+     Transition Moments   XX  0.00000  XY  0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ -0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0209916737
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0209916737
+
+          sigma_e =   2.0435 Angstrom
+          sigma_h =   0.4866 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.0996 Angstrom
+            d_CD1 =   1.5569 Angstrom
+            d_CD2 =  -1.2651 Angstrom
+            d_CD3 =   2.0996 Angstrom
+     Pearson C.C. =   0.0023
+
+     Occ.    3 beta  a   ---  Virt.    6 beta  a   -0.32490 X
+     Occ.    3 beta  a   ---  Virt.   10 beta  a   -0.14312 X
+     Occ.    4 beta  a   ---  Virt.    6 beta  a   -0.77453 X
+     Occ.    4 beta  a   ---  Virt.   10 beta  a   -0.34119 X
+     Occ.    5 beta  a   ---  Virt.    6 beta  a    0.35825 X
+     Occ.    5 beta  a   ---  Virt.   10 beta  a    0.15781 X
+  ----------------------------------------------------------------------------
+  Root  18         a              0.999883619 a.u.               27.2082 eV 
+  <S2> =   0.7975
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.13891   Y  0.05945   Z  0.09306
+     Transition Moments   XX  0.00000  XY  0.00000  XZ -0.00000
+     Transition Moments   YY -0.00000  YZ  0.00000  ZZ -0.00000
+     Dipole Oscillator Strength                    0.0209916737
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0209916737
+
+          sigma_e =   2.0435 Angstrom
+          sigma_h =   0.4866 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.0996 Angstrom
+            d_CD1 =   1.5569 Angstrom
+            d_CD2 =  -1.2651 Angstrom
+            d_CD3 =   2.0996 Angstrom
+     Pearson C.C. =   0.0023
+
+     Occ.    3 beta  a   ---  Virt.    6 beta  a   -0.08784 X
+     Occ.    4 beta  a   ---  Virt.    6 beta  a   -0.35094 X
+     Occ.    4 beta  a   ---  Virt.   10 beta  a   -0.15459 X
+     Occ.    5 beta  a   ---  Virt.    6 beta  a   -0.83840 X
+     Occ.    5 beta  a   ---  Virt.   10 beta  a   -0.36933 X
+     Occ.    5 beta  a   ---  Virt.   22 beta  a    0.05318 X
+  ----------------------------------------------------------------------------
+  Root  19         a              0.999883619 a.u.               27.2082 eV 
+  <S2> =   0.7975
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.07587   Y  0.16004   Z  0.01102
+     Transition Moments   XX  0.00000  XY  0.00000  XZ  0.00000
+     Transition Moments   YY -0.00000  YZ  0.00000  ZZ  0.00000
+     Dipole Oscillator Strength                    0.0209916737
+     Electric Quadrupole                           0.0000000000
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0209916737
+
+          sigma_e =   2.0435 Angstrom
+          sigma_h =   0.4866 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.0996 Angstrom
+            d_CD1 =   1.5569 Angstrom
+            d_CD2 =  -1.2651 Angstrom
+            d_CD3 =   2.0996 Angstrom
+     Pearson C.C. =   0.0023
+
+     Occ.    3 beta  a   ---  Virt.    6 beta  a   -0.84884 X
+     Occ.    3 beta  a   ---  Virt.   10 beta  a   -0.37392 X
+     Occ.    3 beta  a   ---  Virt.   22 beta  a    0.05385 X
+     Occ.    4 beta  a   ---  Virt.    6 beta  a    0.33277 X
+     Occ.    4 beta  a   ---  Virt.   10 beta  a    0.14659 X
+     Occ.    5 beta  a   ---  Virt.    6 beta  a   -0.05037 X
+  ----------------------------------------------------------------------------
+  Root  20         a              1.062867903 a.u.               28.9221 eV 
+  <S2> =   1.8664
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y  0.00000   Z -0.00000
+     Transition Moments   XX -0.17391  XY  0.00062  XZ  0.00243
+     Transition Moments   YY  0.00713  YZ  0.00104  ZZ  0.16678
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000001858
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000001858
+
+          sigma_e =   2.6678 Angstrom
+          sigma_h =   0.4882 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.7109 Angstrom
+            d_CD1 =   2.1797 Angstrom
+            d_CD2 =  -1.5780 Angstrom
+            d_CD3 =   2.7109 Angstrom
+     Pearson C.C. =   0.0025
+
+     Occ.    3 alpha a   ---  Virt.    7 alpha a    0.07494 X
+     Occ.    3 alpha a   ---  Virt.    8 alpha a   -0.47059 X
+     Occ.    3 alpha a   ---  Virt.    9 alpha a    0.31055 X
+     Occ.    3 alpha a   ---  Virt.   11 alpha a    0.30021 X
+     Occ.    3 alpha a   ---  Virt.   12 alpha a   -0.22528 X
+     Occ.    3 alpha a   ---  Virt.   13 alpha a    0.12355 X
+     Occ.    3 alpha a   ---  Virt.   20 alpha a    0.07475 X
+     Occ.    4 alpha a   ---  Virt.    7 alpha a   -0.05365 X
+     Occ.    4 alpha a   ---  Virt.    8 alpha a    0.10386 X
+     Occ.    4 alpha a   ---  Virt.   12 alpha a    0.05919 X
+     Occ.    4 alpha a   ---  Virt.   13 alpha a   -0.05300 X
+     Occ.    5 alpha a   ---  Virt.    7 alpha a   -0.14500 X
+     Occ.    5 alpha a   ---  Virt.    8 alpha a    0.25692 X
+     Occ.    5 alpha a   ---  Virt.    9 alpha a    0.48871 X
+     Occ.    5 alpha a   ---  Virt.   11 alpha a    0.27590 X
+     Occ.    5 alpha a   ---  Virt.   12 alpha a    0.24598 X
+     Occ.    5 alpha a   ---  Virt.   13 alpha a   -0.14372 X
+     Occ.    5 alpha a   ---  Virt.   21 alpha a    0.07202 X
+  ----------------------------------------------------------------------------
+  Root  21         a              1.062867903 a.u.               28.9221 eV 
+  <S2> =   1.8664
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y -0.00000   Z  0.00000
+     Transition Moments   XX -0.07310  XY  0.00889  XZ -0.08131
+     Transition Moments   YY  0.15445  YZ  0.06681  ZZ -0.08135
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000001858
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000001858
+
+          sigma_e =   2.6678 Angstrom
+          sigma_h =   0.4882 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.7109 Angstrom
+            d_CD1 =   2.1797 Angstrom
+            d_CD2 =  -1.5780 Angstrom
+            d_CD3 =   2.7109 Angstrom
+     Pearson C.C. =   0.0025
+
+     Occ.    3 alpha a   ---  Virt.    7 alpha a   -0.37354 X
+     Occ.    3 alpha a   ---  Virt.    8 alpha a    0.14777 X
+     Occ.    3 alpha a   ---  Virt.    9 alpha a    0.38925 X
+     Occ.    3 alpha a   ---  Virt.   11 alpha a    0.24205 X
+     Occ.    3 alpha a   ---  Virt.   12 alpha a    0.11912 X
+     Occ.    3 alpha a   ---  Virt.   13 alpha a   -0.27971 X
+     Occ.    3 alpha a   ---  Virt.   21 alpha a    0.05139 X
+     Occ.    4 alpha a   ---  Virt.    7 alpha a   -0.34793 X
+     Occ.    4 alpha a   ---  Virt.    8 alpha a   -0.36144 X
+     Occ.    4 alpha a   ---  Virt.    9 alpha a   -0.23228 X
+     Occ.    4 alpha a   ---  Virt.   11 alpha a   -0.06447 X
+     Occ.    4 alpha a   ---  Virt.   12 alpha a   -0.33583 X
+     Occ.    4 alpha a   ---  Virt.   13 alpha a   -0.17489 X
+     Occ.    4 alpha a   ---  Virt.   21 alpha a   -0.05991 X
+     Occ.    5 alpha a   ---  Virt.    7 alpha a    0.19566 X
+     Occ.    5 alpha a   ---  Virt.    8 alpha a    0.07841 X
+     Occ.    5 alpha a   ---  Virt.   12 alpha a    0.08292 X
+     Occ.    5 alpha a   ---  Virt.   13 alpha a    0.11953 X
+  ----------------------------------------------------------------------------
+  Root  22         a              1.062867903 a.u.               28.9221 eV 
+  <S2> =   1.8664
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y -0.00000   Z  0.00000
+     Transition Moments   XX -0.00465  XY  0.15844  XZ -0.01775
+     Transition Moments   YY  0.00983  YZ -0.05976  ZZ -0.00519
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000001858
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000001858
+
+          sigma_e =   2.6678 Angstrom
+          sigma_h =   0.4882 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.7109 Angstrom
+            d_CD1 =   2.1797 Angstrom
+            d_CD2 =  -1.5780 Angstrom
+            d_CD3 =   2.7109 Angstrom
+     Pearson C.C. =   0.0025
+
+     Occ.    3 alpha a   ---  Virt.    7 alpha a   -0.27592 X
+     Occ.    3 alpha a   ---  Virt.    9 alpha a   -0.05378 X
+     Occ.    3 alpha a   ---  Virt.   13 alpha a   -0.18951 X
+     Occ.    4 alpha a   ---  Virt.    7 alpha a   -0.07033 X
+     Occ.    4 alpha a   ---  Virt.    8 alpha a    0.31385 X
+     Occ.    4 alpha a   ---  Virt.    9 alpha a   -0.47301 X
+     Occ.    4 alpha a   ---  Virt.   11 alpha a   -0.37533 X
+     Occ.    4 alpha a   ---  Virt.   12 alpha a    0.09084 X
+     Occ.    4 alpha a   ---  Virt.   13 alpha a   -0.09376 X
+     Occ.    4 alpha a   ---  Virt.   20 alpha a   -0.07832 X
+     Occ.    5 alpha a   ---  Virt.    7 alpha a   -0.48402 X
+     Occ.    5 alpha a   ---  Virt.    8 alpha a   -0.14258 X
+     Occ.    5 alpha a   ---  Virt.   12 alpha a   -0.17604 X
+     Occ.    5 alpha a   ---  Virt.   13 alpha a   -0.30378 X
+     Occ.    5 alpha a   ---  Virt.   22 alpha a   -0.06729 X
+  ----------------------------------------------------------------------------
+  Root  23         a              1.062867903 a.u.               28.9221 eV 
+  <S2> =   1.8664
+  ----------------------------------------------------------------------------
+     Transition Moments    X -0.00000   Y -0.00000   Z -0.00000
+     Transition Moments   XX  0.01626  XY  0.06160  XZ  0.07640
+     Transition Moments   YY -0.03011  YZ  0.13693  ZZ  0.01385
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000001858
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000001858
+
+          sigma_e =   2.6678 Angstrom
+          sigma_h =   0.4882 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.7109 Angstrom
+            d_CD1 =   2.1797 Angstrom
+            d_CD2 =  -1.5780 Angstrom
+            d_CD3 =   2.7109 Angstrom
+     Pearson C.C. =   0.0025
+
+     Occ.    3 alpha a   ---  Virt.    7 alpha a   -0.31324 X
+     Occ.    3 alpha a   ---  Virt.    8 alpha a   -0.32192 X
+     Occ.    3 alpha a   ---  Virt.    9 alpha a   -0.37488 X
+     Occ.    3 alpha a   ---  Virt.   11 alpha a   -0.16845 X
+     Occ.    3 alpha a   ---  Virt.   12 alpha a   -0.33516 X
+     Occ.    3 alpha a   ---  Virt.   13 alpha a   -0.15652 X
+     Occ.    3 alpha a   ---  Virt.   21 alpha a   -0.06848 X
+     Occ.    4 alpha a   ---  Virt.    7 alpha a    0.33223 X
+     Occ.    4 alpha a   ---  Virt.    8 alpha a   -0.30280 X
+     Occ.    4 alpha a   ---  Virt.    9 alpha a   -0.22007 X
+     Occ.    4 alpha a   ---  Virt.   11 alpha a   -0.09621 X
+     Occ.    4 alpha a   ---  Virt.   12 alpha a   -0.18949 X
+     Occ.    4 alpha a   ---  Virt.   13 alpha a    0.27521 X
+     Occ.    4 alpha a   ---  Virt.   21 alpha a   -0.05297 X
+     Occ.    5 alpha a   ---  Virt.    7 alpha a    0.18393 X
+     Occ.    5 alpha a   ---  Virt.    8 alpha a   -0.07794 X
+     Occ.    5 alpha a   ---  Virt.    9 alpha a    0.17426 X
+     Occ.    5 alpha a   ---  Virt.   11 alpha a    0.12402 X
+     Occ.    5 alpha a   ---  Virt.   13 alpha a    0.13526 X
+  ----------------------------------------------------------------------------
+  Root  24         a              1.062867903 a.u.               28.9221 eV 
+  <S2> =   1.8664
+  ----------------------------------------------------------------------------
+     Transition Moments    X  0.00000   Y  0.00000   Z  0.00000
+     Transition Moments   XX -0.05363  XY -0.00919  XZ  0.12764
+     Transition Moments   YY  0.11765  YZ -0.04773  ZZ -0.06401
+     Dipole Oscillator Strength                    0.0000000000
+     Electric Quadrupole                           0.0000001858
+     Magnetic Dipole                               0.0000000000
+     Total Oscillator Strength                     0.0000001858
+
+          sigma_e =   2.6678 Angstrom
+          sigma_h =   0.4882 Angstrom
+         |d_h->e| =   0.0000 Angstrom
+            d_exc =   2.7109 Angstrom
+            d_CD1 =   2.1797 Angstrom
+            d_CD2 =  -1.5780 Angstrom
+            d_CD3 =   2.7109 Angstrom
+     Pearson C.C. =   0.0025
+
+     Occ.    3 alpha a   ---  Virt.    7 alpha a    0.11418 X
+     Occ.    3 alpha a   ---  Virt.    8 alpha a   -0.07692 X
+     Occ.    3 alpha a   ---  Virt.    9 alpha a   -0.16718 X
+     Occ.    3 alpha a   ---  Virt.   11 alpha a   -0.09928 X
+     Occ.    3 alpha a   ---  Virt.   12 alpha a   -0.06702 X
+     Occ.    3 alpha a   ---  Virt.   13 alpha a    0.09104 X
+     Occ.    4 alpha a   ---  Virt.    7 alpha a   -0.44903 X
+     Occ.    4 alpha a   ---  Virt.    9 alpha a    0.07610 X
+     Occ.    4 alpha a   ---  Virt.   11 alpha a    0.07397 X
+     Occ.    4 alpha a   ---  Virt.   12 alpha a   -0.07053 X
+     Occ.    4 alpha a   ---  Virt.   13 alpha a   -0.29998 X
+     Occ.    4 alpha a   ---  Virt.   22 alpha a   -0.06202 X
+     Occ.    5 alpha a   ---  Virt.    7 alpha a    0.06605 X
+     Occ.    5 alpha a   ---  Virt.    8 alpha a   -0.56651 X
+     Occ.    5 alpha a   ---  Virt.    9 alpha a    0.28770 X
+     Occ.    5 alpha a   ---  Virt.   11 alpha a    0.30538 X
+     Occ.    5 alpha a   ---  Virt.   12 alpha a   -0.29319 X
+     Occ.    5 alpha a   ---  Virt.   13 alpha a    0.13318 X
+     Occ.    5 alpha a   ---  Virt.   20 alpha a    0.08100 X
+
+              Target root =      1
+          Target symmetry = none
+      Ground state energy =   -162.180182150364
+        Excitation energy =      0.073338357840
+     Excited state energy =   -162.106843792524
+
+  stored tddft:energy   -162.10684379252393     
+
+ Task  times  cpu:        8.8s     wall:        8.8s
+ Summary of allocated global arrays
+-----------------------------------
+  No active global arrays
+
+
+MA_summarize_allocated_blocks: starting scan ...
+MA_summarize_allocated_blocks: scan completed: 0 heap blocks, 0 stack blocks
+MA usage statistics:
+
+	allocation statistics:
+					      heap	     stack
+					      ----	     -----
+	current number of blocks	         0	         0
+	maximum number of blocks	        17	        61
+	current total bytes		         0	         0
+	maximum total bytes		   3446176	  22511592
+	maximum total K-bytes		      3447	     22512
+	maximum total M-bytes		         4	        23
+
+
+                                NWChem Input Module
+                                -------------------
+
+
+
+
+                                     CITATION
+                                     --------
+                Please cite the following reference when publishing
+                           results obtained with NWChem:
+
+          E. Apra, E. J. Bylaska, W. A. de Jong, N. Govind, K. Kowalski,
+       T. P. Straatsma, M. Valiev, H. J. J. van Dam, Y. Alexeev, J. Anchell,
+       V. Anisimov, F. W. Aquino, R. Atta-Fynn, J. Autschbach, N. P. Bauman,
+     J. C. Becca, D. E. Bernholdt, K. Bhaskaran-Nair, S. Bogatko, P. Borowski,
+         J. Boschen, J. Brabec, A. Bruner, E. Cauet, Y. Chen, G. N. Chuev,
+      C. J. Cramer, J. Daily, M. J. O. Deegan, T. H. Dunning Jr., M. Dupuis,
+   K. G. Dyall, G. I. Fann, S. A. Fischer, A. Fonari, H. Fruchtl, L. Gagliardi,
+      J. Garza, N. Gawande, S. Ghosh, K. Glaesemann, A. W. Gotz, J. Hammond,
+       V. Helms, E. D. Hermes, K. Hirao, S. Hirata, M. Jacquelin, L. Jensen,
+   B. G. Johnson, H. Jonsson, R. A. Kendall, M. Klemm, R. Kobayashi, V. Konkov,
+      S. Krishnamoorthy, M. Krishnan, Z. Lin, R. D. Lins, R. J. Littlefield,
+      A. J. Logsdail, K. Lopata, W. Ma, A. V. Marenich, J. Martin del Campo,
+   D. Mejia-Rodriguez, J. E. Moore, J. M. Mullin, T. Nakajima, D. R. Nascimento,
+    J. A. Nichols, P. J. Nichols, J. Nieplocha, A. Otero-de-la-Roza, B. Palmer,
+    A. Panyala, T. Pirojsirikul, B. Peng, R. Peverati, J. Pittner, L. Pollack,
+   R. M. Richard, P. Sadayappan, G. C. Schatz, W. A. Shelton, D. W. Silverstein,
+   D. M. A. Smith, T. A. Soares, D. Song, M. Swart, H. L. Taylor, G. S. Thomas,
+            V. Tipparaju, D. G. Truhlar, K. Tsemekhman, T. Van Voorhis,
+      A. Vazquez-Mayagoitia, P. Verma, O. Villa, A. Vishnu, K. D. Vogiatzis,
+        D. Wang, J. H. Weare, M. J. Williamson, T. L. Windus, K. Wolinski,
+        A. T. Wong, Q. Wu, C. Yang, Q. Yu, M. Zacharias, Z. Zhang, Y. Zhao,
+                                and R. J. Harrison
+                        "NWChem: Past, present, and future
+                         J. Chem. Phys. 152, 184102 (2020)
+                               doi:10.1063/5.0004997
+
+                                      AUTHORS
+                                      -------
+        E. Apra, E. J. Bylaska, N. Govind, K. Kowalski, D. Mejia-Rodriguez,
+        N. P. Bauman, A. Panyala, R. J. Harrison, M. Valiev, W. A. de Jong,
+       T. P. Straatsma, H. J. J. van Dam, D. Wang, T. L. Windus, J. Hammond,
+     J. Autschbach, R. de P. Soares, A. Kunitsa, K. Bhaskaran-Nair, J. Brabec,
+      K. Lopata, S. A. Fischer, S. Krishnamoorthy, M. Jacquelin, R. Goswami,
+       A. Woods, W. Ma, M. Klemm, O. Villa, Y. Chen, V. Anisimov, F. Aquino,
+     S. Hirata, M. T. Hackler, E. Hermes, L. Jensen, J. E. Moore, J. C. Becca,
+      V. Konjkov, T. Risthaus, M. Malagoli, A. Marenich, A. Otero-de-la-Roza,
+        J. Mullin, P. Nichols, R. Peverati, J. Pittner, Y. Zhao, P.-D. Fan,
+        A. Fonari, M. J. Williamson, J. R. Rehr, M. Dupuis, D. Silverstein,
+    D. M. A. Smith, J. Nieplocha, V. Tipparaju, M. Krishnan, B. E. Van Kuiken,
+        A. Vazquez-Mayagoitia, M. Swart, Q. Wu, T. Van Voorhis, A. A. Auer,
+     M. Nooijen, L. D. Crosby, E. Brown, G. Cisneros, G. I. Fann, H. Fruchtl,
+   J. Garza, K. Hirao, R. A. Kendall, J. A. Nichols, K. Tsemekhman, K. Wolinski,
+     J. Anchell, D. E. Bernholdt, P. Borowski, T. Clark, D. Clerc, H. Dachsel,
+   M. J. O. Deegan, K. Dyall, D. Elwood, E. Glendening, M. Gutowski, A. C. Hess,
+         J. Jaffe, B. G. Johnson, J. Ju, R. Kobayashi, R. Kutteh, Z. Lin,
+   R. Littlefield, X. Long, B. Meng, T. Nakajima, S. Niu, L. Pollack, M. Rosing,
+   K. Glaesemann, G. Sandrone, M. Stave, H. Taylor, G. Thomas, J. H. van Lenthe,
+                               A. T. Wong, Z. Zhang.
+
+ Total times  cpu:        8.8s     wall:        8.8s

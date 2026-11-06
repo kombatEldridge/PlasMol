@@ -2,7 +2,7 @@
 
 Sudden single and double core-hole initial conditions are a **molecule** feature: put a `molecule.core_hole` block on a `quantum`, `absorption`, or `plasmol` run. PlasMol ionizes the listed MOs without re-SCF, propagates with the usual RT-TDDFT stack, and tracks hole occupations on the **neutral** MO basis.
 
-The dedicated **`core_hole` driver** does **not** propagate. It only surveys per-atom contributions for the listed MOs (`check_mo_contrib_by_atom`) so you can choose which orbital to ionize, then exits.
+The dedicated **`core_hole` driver** does **not** propagate. It only surveys each listed MO by PySCF atom index and shell (`1s`, `2p`, …) so you can choose which orbital to ionize, then exits.
 
 The name is **`core_hole`**, not “DCH”: the same subsection covers **SCH** (single core-hole), **DCH** (double core-hole on one MO), and two simultaneous single holes on different MOs.
 
@@ -79,7 +79,7 @@ Older inputs that put these keys on `settings.driver` (including `core_hole_mo_o
 
 ## Hole occupation logging
 
-After each RT-TDDFT step the driver projects the current density onto the **neutral** MOs and records the hole occupation $h_k(t)$.
+After each RT-TDDFT step the driver projects the current density onto the **neutral** MOs and records the hole occupation $h_k(t)$. The row at $t = 0$ is the sudden-hole state before any step, so its occupations are exact 0 or 1 in the neutral basis. Every later row is stamped with the time the propagated state reached, the same clock as the dipole file: the first propagated row is at $t = \Delta t$.
 
 **Closed-shell (singlet DCH).** PySCF’s RKS density is the total density (occupations 0 or 2). The logged number is the Nascimento / NWChem closed-shell $P$ (occupations 0 or 1):
 
@@ -119,7 +119,7 @@ The `core_hole` driver always runs the MO-contribution survey and **exits** (no 
 }
 ```
 
-PlasMol builds the **neutral** molecule, prints AO-projected contributions above a small threshold for each listed MO, and exits. Then switch `driver` to `quantum` or `absorption` and add `mo_occ_filepath` for the production run.
+PlasMol builds the **neutral** molecule and prints a Mulliken weight for each PySCF shell on each atom (angular components of that shell summed). Shells at or below 1% are omitted. The same rows are written to `mo_survey.txt` (`mo_index`, `atom_index`, `element`, `shell`, `contribution_percent`). Then switch `driver` to `quantum` or `absorption` and add `mo_occ_filepath` for the production run.
 
 ## Checkpointing
 

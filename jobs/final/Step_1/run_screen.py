@@ -7,7 +7,7 @@ then optimized with NWChem PBE0/6-311G* (Cartesian), the same geometry
 level as transthioindigo, and the singlet absorption below about 10 eV is
 taken from NWChem linear-response TDDFT with LC-ωPBE, μ = 0.34272.
 
-O2 is the triplet ground state. Every other molecule is a closed-shell singlet.
+O2 is the triplet ground state. Na is the doublet. Every other molecule is a closed-shell singlet.
 """
 
 from __future__ import annotations
@@ -58,6 +58,8 @@ MOLECULES = [
     ("pentan3one", "3-pentanone", "CCC(=O)CC", 1, 30),
     ("pentan2one", "2-pentanone", "CCCC(C)=O", 1, 30),
     ("pentanal", "pentanal", "CCCCC=O", 1, 30),
+    # One nucleus. No CACTUS model and no geometry optimization.
+    ("na", "Na", None, 2, 24),
 ]
 
 
@@ -179,25 +181,40 @@ def prepare(only: str | None = None) -> None:
     for folder_name, label, smiles, mult, nroots in MOLECULES:
         if only and folder_name != only:
             continue
-        folder = HERE / folder_name
+        folder = HERE / "Molecules" / folder_name
         folder.mkdir(parents=True, exist_ok=True)
-        url = CACTUS.format(urllib.parse.quote(smiles))
-        sdf_path = folder / "cactus.sdf"
-        if not sdf_path.exists():
-            sdf_path.write_text(cactus_sdf(smiles))
-            time.sleep(0.4)
-        atoms = sdf_atoms(sdf_path.read_text())
-        (folder / "start.xyz").write_text(xyz_text(atoms, f"CACTUS 3D  {url}"))
-        (folder / "source.txt").write_text(
-            f"label: {label}\n"
-            f"smiles: {smiles}\n"
-            f"multiplicity: {mult}\n"
-            f"nroots: {nroots}\n"
-            f"url: {url}\n"
-            "fetched: 2026-09-23\n"
-            "service: NCI Chemical Identifier Resolver (CACTUS), record 3d\n"
-            "PubChem PUG returned HTTP 500 on this date and was not used.\n"
-        )
+        if smiles is None:
+            atoms = [(label, (0.0, 0.0, 0.0))]
+            (folder / "start.xyz").write_text(xyz_text(atoms, f"{label} nucleus at the origin"))
+            (folder / "opt.xyz").write_text(xyz_text(atoms, f"{label} nucleus at the origin"))
+            (folder / "source.txt").write_text(
+                f"label: {label}\n"
+                "smiles: none\n"
+                f"multiplicity: {mult}\n"
+                f"nroots: {nroots}\n"
+                "geometry: nucleus at the origin\n"
+                "fetched: not fetched\n"
+                "service: none. A one-atom geometry is not a CACTUS model.\n"
+                "PubChem was not used.\n"
+            )
+        else:
+            url = CACTUS.format(urllib.parse.quote(smiles))
+            sdf_path = folder / "cactus.sdf"
+            if not sdf_path.exists():
+                sdf_path.write_text(cactus_sdf(smiles))
+                time.sleep(0.4)
+            atoms = sdf_atoms(sdf_path.read_text())
+            (folder / "start.xyz").write_text(xyz_text(atoms, f"CACTUS 3D  {url}"))
+            (folder / "source.txt").write_text(
+                f"label: {label}\n"
+                f"smiles: {smiles}\n"
+                f"multiplicity: {mult}\n"
+                f"nroots: {nroots}\n"
+                f"url: {url}\n"
+                "fetched: 2026-09-23\n"
+                "service: NCI Chemical Identifier Resolver (CACTUS), record 3d\n"
+                "PubChem PUG returned HTTP 500 on this date and was not used.\n"
+            )
         write_inputs(folder, label, mult, nroots, atoms)
         print(f"{folder_name:20} {len(atoms):3} atoms  mult {mult}  roots {nroots}")
 
@@ -298,7 +315,7 @@ def screen(names: list[str] | None = None, slots: int = 3) -> int:
     failed = []
 
     def start_one(folder_name: str, stage: str) -> None:
-        folder = HERE / folder_name
+        folder = HERE / "Molecules" / folder_name
         deck = "opt.nw" if stage == "opt" else "tddft.nw"
         log_name = "opt.out" if stage == "opt" else "tddft.out"
         for junk in list(folder.glob("*.db")) + list(folder.glob("*.movecs")):
@@ -325,7 +342,7 @@ def screen(names: list[str] | None = None, slots: int = 3) -> int:
     while pending or running:
         while pending and len(running) < slots:
             folder_name = pending.pop(0)
-            folder = HERE / folder_name
+            folder = HERE / "Molecules" / folder_name
             if nwchem_ok(folder / "opt.out", "Optimization converged"):
                 if not (folder / "opt.xyz").exists():
                     atoms = last_geometry(folder / "opt.out")
@@ -350,7 +367,7 @@ def screen(names: list[str] | None = None, slots: int = 3) -> int:
         for folder_name in done:
             job = running.pop(folder_name)
             job["handle"].close()
-            folder = HERE / folder_name
+            folder = HERE / "Molecules" / folder_name
             stage = job["stage"]
             code = job["proc"].returncode
             elapsed = time.time() - job["t0"]

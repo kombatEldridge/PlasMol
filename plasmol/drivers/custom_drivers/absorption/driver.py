@@ -81,6 +81,7 @@ def run(params):
         logger.info(f"Running {len(params_copies)} directional molecule simulations in parallel...")
 
     n_workers = max(1, len(params_copies) + len(ref_copies))
+    propagation_finished = False
     try:
         with ProcessPoolExecutor(max_workers=n_workers) as executor:
             future_to_label = {}
@@ -104,14 +105,20 @@ def run(params):
                         executor.submit(run_quantum_with_prefix, params_copy)
                     ] = f"{params_copy.molecule_source_component}-dir"
 
+            direction_finished = []
             for future in as_completed(future_to_label):
                 label = future_to_label[future]
                 try:
-                    future.result()
+                    result = future.result()
                 except Exception as e:
                     logger.error(f"{label} run failed: {e}")
                     raise
+                if result is True or result is False:
+                    direction_finished.append(result)
+            if direction_finished and all(direction_finished):
+                propagation_finished = True
     finally:
+        final_merged = False
         if getattr(params, 'has_checkpoint', False):
             reg_fp = getattr(params, 'checkpoint_filepath', None)
             if reg_fp:
@@ -123,9 +130,13 @@ def run(params):
             final_fp = getattr(params, 'final_checkpoint_filepath', None)
             if final_fp:
                 try:
-                    merge_final_checkpoints(params, final_fp)
+                    final_merged = bool(merge_final_checkpoints(params, final_fp))
                 except Exception as me:
                     logger.error(f"Failed to merge per-direction final checkpoints: {me}")
+            # Drop the periodic snapshot only after the merged final archive
+            # exists. A worker that stopped early leaves it for resume.
+            if propagation_finished and final_merged:
+                params.propagation_completed = True
 
     if params.absorption_reference_only:
         merge_reference_e_fields(

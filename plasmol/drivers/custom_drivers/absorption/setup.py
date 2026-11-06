@@ -18,11 +18,10 @@ def _relocate_core_hole_occ(params_copy, dest_dir):
     if not getattr(params_copy, 'has_core_hole', False):
         return
     src = getattr(params_copy, 'core_hole_mo_occ_filepath', None)
-    if not src:
-        return
-    params_copy.core_hole_mo_occ_filepath = os.path.join(
-        dest_dir, os.path.basename(src)
-    )
+    if src:
+        params_copy.core_hole_mo_occ_filepath = os.path.join(
+            dest_dir, os.path.basename(src)
+        )
 
 
 def make_plasmol_direction_copy(params, component, flat=False):

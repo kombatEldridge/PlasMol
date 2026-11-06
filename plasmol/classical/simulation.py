@@ -187,6 +187,10 @@ class SIMULATION:
         """
         logging.info("Meep simulation started.")
         cwd = os.getcwd()
+        if getattr(self, 'has_core_hole', False):
+            # The sudden-hole state before any step. Each later row is stamped
+            # with the time the propagated state reached.
+            self.molecule.get_mo_occupations(0.0)
 
         try:
             self._progress_total_steps = max(1, round(self.t_end_meep / self.dt_meep))

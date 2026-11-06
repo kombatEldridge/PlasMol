@@ -84,7 +84,7 @@ def run_quantum_with_prefix(params_copy):
         getattr(params_copy, 'log', None)
     )
     with direction_log_prefix(params_copy.molecule_source_component):
-        run_quantum(params_copy)
+        return run_quantum(params_copy)
 
 
 def run_plasmol_with_prefix(params_copy):

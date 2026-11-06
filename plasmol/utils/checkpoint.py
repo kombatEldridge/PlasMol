@@ -212,6 +212,10 @@ def log_checkpoint_preamble(params):
         f"(every {n_steps} {step_word}) to {path}."
     )
     logger.info(f"A final archive is written to {final_path} at the end of the run.")
+    logger.info(
+        "If the run finishes, that periodic snapshot is removed "
+        "and only the final archive is kept."
+    )
 
     key_names = sorted(REQUIRED_CHECKPOINT_KEYS | OPTIONAL_KEYS)
     width = min(max((len(k) for k in key_names), default=8), 28)
@@ -825,6 +829,8 @@ def resume_from_checkpoint(args):
 def merge_per_direction_checkpoints(params, checkpoint_filepath):
     """General merge of per-direction hidden checkpoints into a single combined one.
 
+    Returns True when a visible combined archive was written.
+
     Works for both regular checkpoints (e.g. "checkpoint.npz" -> per-dir ".checkpoint_x.npz" etc.)
     and final checkpoints (e.g. "final-checkpoint.npz").
 
@@ -837,7 +843,7 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
     and visible (for resume / artifacts).
     """
     if not checkpoint_filepath:
-        return
+        return False
 
     directions = getattr(params, 'xyz', ['x', 'y', 'z'])
     merged = {}
@@ -875,7 +881,7 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
 
     if not merged_any:
         logger.warning(f"merge_per_direction_checkpoints: no per-direction files for base {checkpoint_filepath}; nothing to merge.")
-        return
+        return False
 
     merged.pop('allow_pickle', None)
 
@@ -901,13 +907,14 @@ def merge_per_direction_checkpoints(params, checkpoint_filepath):
             pass
 
     logger.info(f"Merged per-dir checkpoints for {base} -> {visible_path} (hidden: {hidden_path})")
+    return True
 
 
 def merge_final_checkpoints(params, final_checkpoint_filepath=None):
     """Backward-compatible wrapper for final checkpoints."""
     if final_checkpoint_filepath is None:
         final_checkpoint_filepath = getattr(params, 'final_checkpoint_filepath', None)
-    merge_per_direction_checkpoints(params, final_checkpoint_filepath)
+    return merge_per_direction_checkpoints(params, final_checkpoint_filepath)
 
 
 def cleanup_checkpoint(params):
@@ -964,3 +971,38 @@ def cleanup_checkpoint(params):
                 os.remove(filename)
             except Exception:
                 pass
+
+    # A finished run keeps only the final archive. An early stop keeps the
+    # periodic snapshot so it can be resumed. The archive named at resume
+    # is not this path: resume retargets new snapshots to *_new.npz.
+    if not getattr(params, "propagation_completed", False):
+        return
+    periodic = getattr(params, "checkpoint_filepath", None)
+    final = getattr(params, "final_checkpoint_filepath", None)
+    if not periodic or not final:
+        return
+    if os.path.basename(periodic).startswith("."):
+        return
+    if os.path.abspath(periodic) == os.path.abspath(final):
+        logger.warning(
+            f"Periodic checkpoint {periodic} kept: "
+            "it is the same file as the final archive."
+        )
+        return
+    if not os.path.isfile(final):
+        logger.warning(
+            f"Periodic checkpoint {periodic} kept: "
+            f"final archive {final} is not present."
+        )
+        return
+    if not os.path.isfile(periodic):
+        return
+    try:
+        os.remove(periodic)
+    except Exception as e:
+        logger.warning(f"Could not remove periodic checkpoint {periodic}: {e}")
+        return
+    logger.info(
+        f"Removed periodic checkpoint {periodic}; "
+        f"final archive remains at {final}."
+    )

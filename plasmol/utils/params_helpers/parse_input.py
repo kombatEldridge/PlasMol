@@ -39,7 +39,7 @@ def migrate_core_hole_keys(params):
 
     Production SCH/DCH lives under the molecule section so quantum and
     absorption can both ionize. The ``core_hole`` driver only surveys MO
-    atom contributions. Older files that put these keys on
+    atom and shell contributions. Older files that put these keys on
     ``settings.driver`` or ``additional_parameters`` are rewritten here.
     """
     settings = params.setdefault('settings', {})
@@ -77,7 +77,7 @@ def migrate_core_hole_keys(params):
     if drop_survey_flag or drop_driver_survey_flag:
         logger.warning(
             "check_mo_contrib_by_atom is ignored; the core_hole driver always "
-            "surveys per-atom MO contributions and exits."
+            "surveys per-atom, per-shell MO contributions and exits."
         )
 
     to_move = pending + driver_pending
@@ -97,7 +97,7 @@ def migrate_core_hole_keys(params):
             if name == 'core_hole':
                 logger.warning(
                     f"{source} moved to molecule.core_hole.{dest}. "
-                    "The core_hole driver only surveys MO atom contributions; "
+                    "The core_hole driver only surveys MO atom and shell contributions; "
                     "use driver 'quantum' or 'absorption' for sudden SCH/DCH."
                 )
             else:
@@ -113,7 +113,7 @@ def migrate_core_hole_keys(params):
     if isinstance(section, dict) and 'check_mo_contrib_by_atom' in section:
         logger.warning(
             "molecule.core_hole.check_mo_contrib_by_atom is ignored; "
-            "set settings.driver to 'core_hole' to survey MO atom contributions."
+            "set settings.driver to 'core_hole' to survey MO atom and shell contributions."
         )
         section = dict(section)
         section.pop('check_mo_contrib_by_atom')

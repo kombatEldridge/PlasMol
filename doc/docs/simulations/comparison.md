@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Comparison driver
 
 `driver: "comparison"`
@@ -38,5 +42,6 @@ Source (repo path): `templates/template-comparison.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [Other Drivers](other.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference

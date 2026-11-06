@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # NP absorption cross-section driver
 
 `driver: "np_abs_cross_sec"`
@@ -37,5 +41,6 @@ Source (repo path): `templates/template-np_abs_cross_sec.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [Other Drivers](other.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference

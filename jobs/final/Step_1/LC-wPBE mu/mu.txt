@@ -32,3 +32,4 @@ formamide	0.498438
 pentan3one	0.342545
 pentan2one	0.350581
 pentanal	0.383427
+na	0.352377

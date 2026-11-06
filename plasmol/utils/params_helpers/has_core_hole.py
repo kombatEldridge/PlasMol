@@ -86,17 +86,17 @@ def check(params):
     self.mo_removal_index_dict = coerced
 
     if is_survey:
-        # Survey driver: report atom contributions and exit. Do not ionize.
+        # Survey driver: report atom and shell contributions and exit. Do not ionize.
         if getattr(self, 'core_hole_mo_occ_filepath', None):
             logger.warning(
-                "The core_hole driver only surveys MO atom contributions. "
+                "The core_hole driver only surveys MO atom and shell contributions. "
                 "molecule.core_hole.mo_occ_filepath is ignored; use driver "
                 "'quantum' or 'absorption' for sudden SCH/DCH."
             )
         self.has_core_hole = False
         self.force_open_shell = False
         logger.info(
-            f"Core-hole MO contribution survey: will report atom contributions "
+            f"Core-hole MO contribution survey: will report atom and shell contributions "
             f"for MOs {list(coerced.keys())} and exit before propagation."
         )
         return

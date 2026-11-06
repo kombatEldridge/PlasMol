@@ -58,7 +58,7 @@ Source (repo path): `templates/template-absorption.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference
 - [Hybrid absorption observables](../observables.md)
 - [Checkpointing](../checkpointing.md) — molecule-only absorption only

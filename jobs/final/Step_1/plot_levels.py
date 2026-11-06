@@ -59,6 +59,7 @@ LABELS = {
     "pentan3one": "3-pentanone",
     "pentan2one": "2-pentanone",
     "pentanal": "pentanal",
+    "na": "Na",
 }
 
 # Molecules that an experimental double-core-hole paper measured.
@@ -98,7 +99,7 @@ def main():
     names = [row[0] for row in rs.MOLECULES]
     # Brightest low-energy line first, so the plasmon region is at the top.
     def sort_key(name):
-        rows = load(HERE / name)
+        rows = load(HERE / "Molecules" / name)
         bright = [energy for energy, strength in rows if energy <= WINDOW and strength >= 0.01]
         if bright:
             return (0, min(bright))
@@ -115,7 +116,7 @@ def main():
     for index, name in enumerate(names):
         if name in EXPERIMENTAL:
             ax.axhspan(index - 0.5, index + 0.5, color="#f9f1de", zorder=0)
-        for energy, strength in load(HERE / name):
+        for energy, strength in load(HERE / "Molecules" / name):
             if energy > WINDOW or strength <= 0.0:
                 continue
             color = cmap(norm(np.log10(strength)))

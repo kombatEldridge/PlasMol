@@ -12,7 +12,7 @@ from plasmol.quantum.molecule import MOLECULE
 from plasmol.quantum.propagation import propagation
 
 
-def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv"):
+def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv", **core_extra):
     cfg = {
         "settings": {
             "dt": 0.2,
@@ -40,6 +40,7 @@ def _h2_core_hole_params(tmp_path, mo_removal, occ_name="mo_occ.csv"):
             "core_hole": {
                 "mo_removal_index_dict": mo_removal,
                 "mo_occ_filepath": str(tmp_path / occ_name),
+                **core_extra,
             },
         },
         "files": {
@@ -151,7 +152,41 @@ def test_mo_occ_csv_initialized_and_logged(tmp_path):
     mu = propagation(prop_params, mol, [0.0, 0.0, 0.0], propagate_rk4)
     assert mu.shape == (3,)
     lines = [ln for ln in path.read_text().splitlines() if ln and not ln.startswith("#")]
-    assert len(lines) >= 2  # header + at least one data row
+    assert len(lines) == 2  # header + one data row
+    # The row describes the advanced state, so it carries the time reached (dt).
+    assert float(lines[1].split(",")[0]) == pytest.approx(params.dt)
+
+
+def test_quantum_driver_stamps_hole_rows_with_reached_time(tmp_path, monkeypatch):
+    from plasmol.drivers.quantum import run as run_quantum
+
+    monkeypatch.setattr("plasmol.drivers.quantum.plot_e_p_fields", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "plasmol.drivers.quantum.maybe_plot_core_hole_occupations", lambda *a, **k: None
+    )
+    params = _h2_core_hole_params(tmp_path, {"0": 2})
+    monkeypatch.chdir(tmp_path)
+    run_quantum(params)
+
+    rows = [
+        ln for ln in Path(params.core_hole_mo_occ_filepath).read_text().splitlines()
+        if ln and not ln.startswith("#") and not ln.startswith("Timestamps")
+    ]
+    times = [float(r.split(",")[0]) for r in rows]
+    # The sudden-hole state at 0, then the time each step reached: the driver's grid.
+    assert times == pytest.approx(params.times.tolist())
+    assert times[1] == pytest.approx(params.dt)
+    # Same clock as the dipole file.
+    p_times = [
+        float(ln.split(",")[0])
+        for ln in Path(params.field_p_filepath).read_text().splitlines()
+        if ln and not ln.startswith("#") and not ln.startswith("Timestamps")
+    ]
+    assert p_times == pytest.approx(times)
+    # The t = 0 row is the sudden hole itself: a full hole on MO 0, none elsewhere.
+    first = [float(v) for v in rows[0].split(",")[1:]]
+    assert first[0] == pytest.approx(1.0, abs=1e-10)
+    assert all(abs(v) < 1e-10 for v in first[1:])
 
 
 def test_get_mo_occupations_hole_on_target(tmp_path):

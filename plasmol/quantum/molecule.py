@@ -1,5 +1,4 @@
 # quantum/molecule.py
-import os
 import sys
 import math
 import logging
@@ -11,8 +10,12 @@ from pyscf.scf import addons
 from pyscf.dft import libxc
 from scipy.linalg import inv
 
+from plasmol.quantum.resume_molecule import (
+    initialize_density_and_fock,
+    open_mo_occ_csv,
+)
 from plasmol.utils import constants
-from plasmol.utils.csv import init_csv, update_csv
+from plasmol.utils.csv import update_csv
 
 logger = logging.getLogger("main")
 
@@ -48,24 +51,29 @@ class MOLECULE():
                     cart=bool(getattr(self, 'molecule_cartesian', True)))
         self.mol.verbose = 0
         self.is_open_shell = (self.molecule_spin != 0) or getattr(self, 'force_open_shell', False)
+        
         if self.is_open_shell:
-            logger.debug("Initializing open-shell calculation.")
+            logger.debug("Spin is nonzero. Initializing open-shell calculation.")
             self.mf = dft.UKS(self.mol)
         else:
             logger.debug("Initializing closed-shell calculation.")
             self.mf = dft.RKS(self.mol)
+        
         if hasattr(self, 'molecule_lrc_parameter'):
             if isinstance(self.molecule_lrc_parameter, (int, float)):
                 self.mf.omega = self.molecule_lrc_parameter
+        
         self.mf.xc = self.molecule_xc
         grid_level = getattr(self, 'molecule_grid_level', None)
+        
         if grid_level is not None:
             self.mf.grids.level = int(grid_level)
+        
         self.mf.kernel()
-        self.nmat = 2 if self.is_open_shell else 1
 
-        # Neutral MOs / occupations (fixed projection basis for core-hole dynamics)
         self.C = self.mf.mo_coeff.copy()
+
+        # "neutral" terminology used for comparison in core-hole funcs
         if not self.is_open_shell:
             self.occ_neutral = self.mf.get_occ().copy()
             self.mo_energy = self.mf.mo_energy.copy()
@@ -98,6 +106,10 @@ class MOLECULE():
                 e_homo = self.mf.mo_energy[self.mf.mo_occ > 0][-1]
                 logger.debug(f"E_HOMO energy: {e_homo:.6f} Ha, {e_homo*27.2114:.6f} eV")
 
+        # This sets the origin of the dipole integrals to the 
+        # center of nuclear charge, so the nuclear dipole 
+        # is zero there and the electronic dipole is not measured 
+        # from whatever point the geometry used as the coordinate origin.
         charges = self.mf.mol.atom_charges()
         coords = self.mf.mol.atom_coords()
         nuc_charge_center = np.einsum('z,zx->x', charges, coords) / charges.sum()
@@ -110,35 +122,7 @@ class MOLECULE():
         if not self.is_hermitian(np.dot(self.X.conj().T, self.X), tol=self.molecule_hermiticity_tolerance):
             logger.warning("Orthogonalization matrix X may not be unitary")
                 
-        skip_checkpoint = False
-        if self.resumed_from_checkpoint:
-            dir_component = getattr(params, 'molecule_source_component') if self.has_absorption else None
-            if dir_component in params.not_checkpointed_dirs:
-                skip_checkpoint = True
-
-        if self.resumed_from_checkpoint and not skip_checkpoint:
-            suffix = f"_{dir_component}" if self.has_absorption and dir_component else ""
-            self.D_ao_0 = self.values_from_checkpoint[f"D_ao_0{suffix}"]
-            self.mf.mo_coeff = self.values_from_checkpoint[f"mo_coeff{suffix}"]
-            self.D_ao = self.mf.make_rdm1(mo_occ=self.occ)
-            self.F_orth = self.get_F_orth(self.D_ao) # Should this include exc? at what time?
-            if self.molecule_propagator_str == 'magnus2':
-                self.F_orth_n12dt = self.values_from_checkpoint[f"F_orth_n12dt{suffix}"]
-            elif self.molecule_propagator_str == 'step':
-                self.C_orth_ndt = self.values_from_checkpoint[f"C_orth_ndt{suffix}"]
-        else:
-            if self.has_core_hole and getattr(self, '_core_hole_dm0', None) is not None:
-                self.D_ao_0 = np.asarray(self._core_hole_dm0, dtype=np.complex128)
-                self.D_ao = self.D_ao_0.copy()
-            else:
-                self.D_ao_0 = self.mf.make_rdm1(mo_occ=self.occ)
-                self.D_ao = self.D_ao_0
-            
-            self.F_orth = self.get_F_orth(self.D_ao)
-            if self.molecule_propagator_str == 'magnus2':
-                self.F_orth_n12dt = self.F_orth
-            elif self.molecule_propagator_str == 'step':
-                self.C_orth_ndt = self.rotate_coeff_to_orth(self.mf.mo_coeff)
+        initialize_density_and_fock(self)
 
         if not self.is_hermitian(self.D_ao, tol=1e-12):
             raise ValueError("Initial density matrix in AO is not Hermitian")
@@ -189,7 +173,7 @@ class MOLECULE():
             return np.stack([self.X @ coeff_orth[s] for s in range(2)])
         else:
             return self.X @ coeff_orth
-    
+
     def is_hermitian(self, A, tol):
         """
         Check if a matrix is Hermitian within a tolerance.
@@ -278,7 +262,7 @@ class MOLECULE():
                 setocc[mo] = 0.0
 
         dm_sudden = mf_gs.make_rdm1(mo_gs, setocc)
-        self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
+        # self.mf = addons.mom_occ(self.mf, mo_gs, setocc)
         self.mf.mo_coeff = mo_gs
         self.mf.mo_occ = setocc
         self._core_hole_dm0 = dm_sudden
@@ -305,7 +289,6 @@ class MOLECULE():
 
         Returns:
         np.ndarray
-            Dipole moment integrals with shape (3, nao, nao) for x, y, z components.
         """
         mu = -1 * self.mf.mol.intor('int1e_r', comp=3)
         return mu
@@ -431,29 +414,30 @@ class MOLECULE():
                 "molecule.core_hole requires 'mo_occ_filepath' (CSV of time-dependent hole occupations)."
             )
 
-        if self.resumed_from_checkpoint and os.path.exists(filepath):
-            logger.debug(f"Resuming core-hole MO occupation tracking from existing {filepath}")
-            return
+        open_mo_occ_csv(self, filepath)
 
-        header = ['Timestamps (au)'] + [f'MO index {i}' for i in self.core_hole_log_indices]
-        scale = (
-            "open-shell α+β (0–2 electrons)"
-            if self.is_open_shell
-            else "closed-shell P (0–1, Nascimento)"
-        )
-        init_csv(
-            filepath,
-            f"Time-dependent hole occupations (neutral MO basis, {scale}) for MO indices: "
-            f"{self.core_hole_log_indices}",
-            header=header,
-        )
-        if self.resumed_from_checkpoint:
-            logger.warning(
-                "Resumed core-hole run but no mo_occ CSV was restored from the checkpoint; "
-                "started a fresh occupation file at current time."
-            )
-        else:
-            logger.debug(f"Core-hole MO occupation file initialized: {filepath}")
+    def neutral_mo_density(self, D_ao=None):
+        """Density in the frozen neutral MO basis.
+
+        Closed shell: one matrix, ``C† S D S C``, the total RKS density.
+        Open shell: ``(2, nmo, nmo)``, alpha then beta, each in that spin's
+        neutral orbitals. Off-diagonal entries are coherences between those
+        orbitals. In the orbitals being propagated this matrix is diagonal.
+        """
+        S = self.S
+        if D_ao is None:
+            D_ao = self.D_ao
+
+        def project(D_ao, C):
+            return (C.conj().T @ S) @ D_ao @ (S @ C)
+
+        if self.is_open_shell :
+            return np.stack((
+                project(D_ao[0], self.C[0]),
+                project(D_ao[1], self.C[1]),
+            ))
+        value = project(D_ao, self.C)
+        return value
 
     def get_mo_occupations(self, current_time):
         """
@@ -475,19 +459,14 @@ class MOLECULE():
         All MOs in ``core_hole_log_indices`` (0 through neutral LUMO+1) are written;
         ``core_hole_watch_indices`` only selects which series are plotted at the end.
         """
-        S = self.S
-
-        def _electron_occ(D_ao, C):
-            D_mo = (C.conj().T @ S) @ D_ao @ (S @ C)
-            return D_mo.diagonal().real
-
+        D_mo = self.neutral_mo_density()
         if self.is_open_shell:
-            n_e = _electron_occ(self.D_ao[0], self.C[0]) + _electron_occ(self.D_ao[1], self.C[1])
+            n_e = D_mo[0].diagonal().real + D_mo[1].diagonal().real
             n0 = np.asarray(self.occ_neutral[0]) + np.asarray(self.occ_neutral[1])
         else:
             # RKS D_AO is the total density (occ 0 or 2). Half of that is
             # the closed-shell P used by NWChem RT-TDDFT / Nascimento Eq. 2.
-            n_e = 0.5 * _electron_occ(self.D_ao, self.C)
+            n_e = 0.5 * D_mo.diagonal().real
             n0 = 0.5 * np.asarray(self.occ_neutral)
         values = (n0 - n_e)[self.core_hole_log_indices]
         update_csv(self.core_hole_mo_occ_filepath, current_time, None, None, None, *values)

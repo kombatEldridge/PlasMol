@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Scatter response function driver
 
 `driver: "scatter_response_fxn"`
@@ -36,5 +40,6 @@ Source (repo path): `templates/template-scatter_response_fxn.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [Other Drivers](other.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference

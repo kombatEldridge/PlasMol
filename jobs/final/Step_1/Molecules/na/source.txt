@@ -1,0 +1,9 @@
+label: Na
+smiles: none
+multiplicity: 2
+nroots: 24
+geometry: nucleus at the origin
+fetched: not fetched
+service: none. A one-atom geometry is not a CACTUS model.
+PubChem was not used.
+notes: Doublet, spin 1. This is the Step 1 screen level (6-311G*), not the aug-cc-pVTZ production setup in Step 2.

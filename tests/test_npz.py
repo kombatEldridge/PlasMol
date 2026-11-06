@@ -107,8 +107,105 @@ def test_log_checkpoint_preamble(caplog):
     assert "every 20 au" in text
     assert "every 400 time steps" in text
     assert "checkpoint.npz" in text
+    assert "only the final archive is kept" in text
     assert "params_dict" in text
     assert "d = np.load(" in text
+
+
+def test_cleanup_keeps_periodic_checkpoint_when_run_stops_early(tmp_path, monkeypatch):
+    from argparse import Namespace
+    from plasmol.utils.checkpoint import cleanup_checkpoint
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "checkpoint.npz").write_bytes(b"periodic")
+    (tmp_path / "final-checkpoint.npz").write_bytes(b"final")
+    (tmp_path / ".checkpoint.npz").write_bytes(b"hidden")
+    (tmp_path / ".final-checkpoint.npz").write_bytes(b"hidden-final")
+    (tmp_path / "checkpoint.npz.lock").write_bytes(b"lock")
+    params = Namespace(
+        checkpoint_filepath="checkpoint.npz",
+        final_checkpoint_filepath="final-checkpoint.npz",
+        propagation_completed=False,
+        xyz=["x", "y", "z"],
+    )
+    cleanup_checkpoint(params)
+    assert (tmp_path / "checkpoint.npz").read_bytes() == b"periodic"
+    assert (tmp_path / "final-checkpoint.npz").read_bytes() == b"final"
+    assert not (tmp_path / ".checkpoint.npz").exists()
+    assert not (tmp_path / ".final-checkpoint.npz").exists()
+    assert not (tmp_path / "checkpoint.npz.lock").exists()
+
+
+def test_cleanup_removes_periodic_checkpoint_after_success(tmp_path, monkeypatch, caplog):
+    from argparse import Namespace
+    from plasmol.utils.checkpoint import cleanup_checkpoint
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "checkpoint.npz").write_bytes(b"periodic")
+    (tmp_path / "final-checkpoint.npz").write_bytes(b"final")
+    # A file that is not the live periodic path must stay.
+    (tmp_path / "checkpoint_source.npz").write_bytes(b"source")
+    params = Namespace(
+        checkpoint_filepath="checkpoint.npz",
+        final_checkpoint_filepath="final-checkpoint.npz",
+        propagation_completed=True,
+        xyz=["x", "y", "z"],
+    )
+    caplog.set_level(logging.INFO, logger="main")
+    cleanup_checkpoint(params)
+    assert not (tmp_path / "checkpoint.npz").exists()
+    assert (tmp_path / "final-checkpoint.npz").read_bytes() == b"final"
+    assert (tmp_path / "checkpoint_source.npz").read_bytes() == b"source"
+    assert "Removed periodic checkpoint checkpoint.npz" in caplog.text
+    assert "final-checkpoint.npz" in caplog.text
+
+
+def test_cleanup_keeps_periodic_checkpoint_if_final_archive_missing(tmp_path, monkeypatch, caplog):
+    from argparse import Namespace
+    from plasmol.utils.checkpoint import cleanup_checkpoint
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "checkpoint.npz").write_bytes(b"periodic")
+    params = Namespace(
+        checkpoint_filepath="checkpoint.npz",
+        final_checkpoint_filepath="final-checkpoint.npz",
+        propagation_completed=True,
+        xyz=["x", "y", "z"],
+    )
+    caplog.set_level(logging.WARNING, logger="main")
+    cleanup_checkpoint(params)
+    assert (tmp_path / "checkpoint.npz").read_bytes() == b"periodic"
+    assert "final archive final-checkpoint.npz is not present" in caplog.text
+
+
+def test_cleanup_does_not_delete_resumed_archive_or_same_path(tmp_path, monkeypatch):
+    from argparse import Namespace
+    from plasmol.utils.checkpoint import cleanup_checkpoint
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "checkpoint.npz").write_bytes(b"source")
+    (tmp_path / "checkpoint_new.npz").write_bytes(b"periodic")
+    (tmp_path / "final-checkpoint_new.npz").write_bytes(b"final")
+    params = Namespace(
+        checkpoint_filepath="checkpoint_new.npz",
+        final_checkpoint_filepath="final-checkpoint_new.npz",
+        propagation_completed=True,
+        xyz=["x", "y", "z"],
+    )
+    cleanup_checkpoint(params)
+    assert (tmp_path / "checkpoint.npz").read_bytes() == b"source"
+    assert not (tmp_path / "checkpoint_new.npz").exists()
+    assert (tmp_path / "final-checkpoint_new.npz").read_bytes() == b"final"
+
+    (tmp_path / "final-checkpoint.npz").write_bytes(b"only")
+    same = Namespace(
+        checkpoint_filepath="final-checkpoint.npz",
+        final_checkpoint_filepath="final-checkpoint.npz",
+        propagation_completed=True,
+        xyz=["x", "y", "z"],
+    )
+    cleanup_checkpoint(same)
+    assert (tmp_path / "final-checkpoint.npz").read_bytes() == b"only"
 
 
 def test_describe_npz_reads_existing_file(tmp_path, caplog):

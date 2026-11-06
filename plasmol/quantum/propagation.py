@@ -1,7 +1,6 @@
 # quantum/propagation.py
-import os 
 import logging 
-import numpy as np 
+from induced_mu import induced_dipole
 
 logger = logging.getLogger("main")
 
@@ -10,6 +9,10 @@ def propagation(params, molecule, exc, propagator):
     Perform time propagation of the molecular state.
 
     Propagates the molecule over time using the specified method, recording polarization.
+
+    The propagator advances the state from current_time to current_time + dt.
+    Everything recorded below describes the advanced state, so it is stamped
+    with the time the state reached, on the same rounding as the dipole rows.
 
     Parameters:
     params : object
@@ -24,33 +27,24 @@ def propagation(params, molecule, exc, propagator):
     Returns:
     None
     """
-    mu_arr = np.zeros(3)
-    
     prop_params = params.copy()
     has_core_hole = prop_params.pop('has_core_hole')
     current_time = prop_params.pop('current_time')
+    decimals = getattr(molecule, 'time_rounding_decimals', 12)
+    reached_time = round(float(current_time) + float(prop_params['dt']), decimals)
 
     propagator(**prop_params, molecule=molecule, exc=exc)
-    mu = molecule.calculate_mu()
 
-    D = molecule.D_ao
-    D0 = molecule.D_ao_0
-    if D.ndim == 3:
-        D = D.sum(axis=0)
-        D0 = D0.sum(axis=0)
-    
-    for i in [0, 1, 2]:
-        mu_arr[i] = float((np.trace(mu[i] @ D) - np.trace(mu[i] @ D0)).real)
+    mu_arr = induced_dipole(molecule)
 
     # ------------------------------------ #
     #              Additional              #
     #      custom tracking functions       #
     #           can be added here          #
-    #  similar to molecule.calculate_mu()  #
     # ------------------------------------ #
     if has_core_hole:
-        molecule.get_mo_occupations(current_time)
-
+        molecule.get_mo_occupations(reached_time)
+    
     return mu_arr
 
 

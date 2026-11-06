@@ -24,10 +24,10 @@ Two files are maintained during a run:
 
 | File | Role |
 | ------ | ------ |
-| `checkpoint.npz` (name from `files.checkpoint.filepath`) | Periodic snapshot every `frequency_steps` or `frequency_time` |
-| `final-checkpoint.npz` | Written at the end of a successful run |
+| `checkpoint.npz` (name from `files.checkpoint.filepath`) | Periodic snapshot every `frequency_steps` or `frequency_time`. Removed after a successful finish. Kept if the run stops early. |
+| `final-checkpoint.npz` | Written from the last completed step. This is the only checkpoint left after a successful run. |
 
-Hidden working copies (`.checkpoint.npz`, `.checkpoint_x.npz`, …) are used while workers write. They are removed on a clean exit. Resume from the **visible** `checkpoint.npz` or `final-checkpoint.npz`.
+Hidden working copies (`.checkpoint.npz`, `.checkpoint_x.npz`, …) are used while workers write. They are removed when the process exits. After a successful finish the periodic snapshot is removed as well, so resume from the visible `final-checkpoint.npz`. If the run stops early, that periodic file stays; resume from it or from `final-checkpoint.npz`.
 
 On each snapshot PlasMol embeds:
 
@@ -35,7 +35,7 @@ On each snapshot PlasMol embeds:
 - **Clock** — `checkpoint_time` (a.u.), or `checkpoint_time_x/y/z` for three-direction absorption
 - **Input copy** — raw JSON bytes plus the geometry file, if any
 - **CSVs** — `field_e` / `field_p` (per direction when needed) as raw file bytes
-- **Core-hole** — `core_hole_mo_occ_content` when `molecule.core_hole` is active
+- **Core-hole** — `core_hole_mo_occ_content` when `molecule.core_hole` is active.
 - **Flags** — `is_absorption`, `is_open_shell`, `updated_after_init`
 
 At job start the log prints a one-time preamble (interval, archive keys, unpack snippet). Each archive write is a DEBUG line (``Checkpoint written`` / ``Checkpoint updated`` plus the snapshot time and path). To inspect a file later:
@@ -80,7 +80,7 @@ This writes a restored input (`…_restored.json`), restored geometry if needed 
 python -m plasmol.main -f my_run_restored.json -vv -l resume.log
 ```
 
-New snapshots go to `checkpoint_new.npz` so the archive you resumed from is not overwritten.
+New snapshots go to `checkpoint_new.npz` so the archive you resumed from is not overwritten. A finished resume writes `final-checkpoint_new.npz` and then removes `checkpoint_new.npz`. The archive named with `-c` is not removed.
 
 Before step 2 you may edit the restored JSON. Parameters treated as safe include `dt`, `t_end`, checkpoint frequency / filepath, absorption spectrum window / `npz_filepath`, `spectra_e_vs_p_filepath`, and verbosity.
 

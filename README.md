@@ -25,7 +25,7 @@ The driver is inferred from your JSON input (`molecule` only → quantum, `plasm
 
 ## Key Features (v1.2.0)
 
-- **Core-hole dynamics** (`molecule.core_hole` on quantum / absorption) for sudden SCH and DCH with MO occupation tracking; `driver: "core_hole"` surveys which atoms contribute to candidate MOs.
+- **Core-hole dynamics** (`molecule.core_hole` on quantum / absorption) for sudden SCH and DCH with MO occupation tracking; `driver: "core_hole"` surveys candidate MOs by atom index and PySCF shell.
 - **Absorption polarization modes** (`full` without an NP; `parallel` / `perpendicular` / `single` with an NP) for orientation-resolved hybrid spectra with vacuum \(E_{inc}\) deconvolution.
 - **JSON input format** with validation and the `--describe` CLI flag for exploring every supported parameter.
 - **Custom drivers** for Fourier absorption spectra, MO comparison, NP/plasmon cross-sections, and user-defined workflows.
@@ -146,7 +146,7 @@ For step-by-step walkthroughs (classical, quantum, absorption spectra, hybrid, M
 |-------|-------------|
 | [Installation](doc/docs/installation.md) | Environment setup and verification |
 | [Usage](doc/docs/usage.md) | JSON schema, all parameters, validation rules |
-| [Simulations](doc/docs/simulations/index.md) | Per-driver guides and templates |
+| [Drivers](doc/docs/simulations/index.md) | Per-driver guides and templates |
 | [Tutorials](doc/docs/tutorials.md) | Hands-on examples for every major workflow |
 | [Theory & Methodology](doc/docs/methodology.md) | Hybrid FDTD–RT-TDDFT coupling loop |
 | [Custom Drivers](doc/docs/custom_drivers.md) | Building and registering custom workflows |

@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Tune driver
 
 `driver: "tune"`
@@ -36,5 +40,6 @@ Source (repo path): `templates/template-tune.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [Other Drivers](other.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference

@@ -62,6 +62,8 @@ def run(params):
         if ckpt_time > 0:
             source_has_been_zero = False
     report_indices = {int(round(p / 100 * total_steps)) for p in range(0, 101, 10)}
+    params.propagation_completed = False
+    loop_finished = False
     try:
         for index, current_time in enumerate(params.times):
             params.molecule_propagator_params['current_time'] = current_time
@@ -74,6 +76,10 @@ def run(params):
                     continue
             if current_time == 0:
                 update_csv(params.field_p_filepath, current_time, *np.zeros(3))
+                if params.has_core_hole:
+                    # The sudden-hole state before any step: exact 0/1
+                    # occupations in the neutral MO basis.
+                    molecule.get_mo_occupations(0.0)
             if index in report_indices:
                 percent = int(round(index / total_steps * 100))
                 nd = params.time_rounding_decimals
@@ -100,6 +106,7 @@ def run(params):
                 if math.isclose(reconstructed, index, rel_tol=1e-9, abs_tol=1e-12):
                     update_checkpoint(params, molecule, current_time)
                     params.checkpoint_written_after_init = True
+        loop_finished = True
     except Exception as e:
         logger.error(f"An error occurred during simulation: {e}")
     finally:
@@ -113,8 +120,13 @@ def run(params):
                 )
             update_checkpoint(params, molecule, time, getattr(params, 'final_checkpoint_filepath', None))
             params.final_checkpoint_written_after_init = True
-        base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
-        plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
-        maybe_plot_core_hole_occupations(params)
+            # Only a finished loop with a written final archive may drop
+            # the periodic snapshot. An error leaves that file for resume.
+            if loop_finished:
+                params.propagation_completed = True
+    base, _ = os.path.splitext(params.spectra_e_vs_p_filepath)
+    plot_e_p_fields([(params.field_e_filepath, 'Incident Electric Field'), (params.field_p_filepath, 'Molecule\'s Response')], output_image_path=base)
+    maybe_plot_core_hole_occupations(params)
+    return bool(getattr(params, "propagation_completed", False))
 
 

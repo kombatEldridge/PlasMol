@@ -29,14 +29,17 @@ def test_uks_chosen_for_h2_cation(h2_cation_molecule):
     assert isinstance(h2_cation_molecule.mf, dft.uks.UKS)
 
 def test_nmat_is_1_for_closed_shell(h2_closed_shell_molecule):
-    assert h2_closed_shell_molecule.nmat == 1
+    nmat = np.asarray(h2_closed_shell_molecule.mf.mo_occ).ndim
+    assert nmat == 1
 
 def test_nmat_is_2_for_open_shell_h(h_atom_molecule):
-    assert h_atom_molecule.nmat == 2
+    nmat = np.asarray(h_atom_molecule.mf.mo_occ).ndim
+    assert nmat == 2
 
 def test_nmat_is_2_for_open_shell_li(li_atom_molecule):
-    assert li_atom_molecule.nmat == 2
-
+    nmat = np.asarray(li_atom_molecule.mf.mo_occ).ndim
+    assert nmat == 2
+    
 def test_D_ao_shape_rks(h2_closed_shell_molecule):
     nao = h2_closed_shell_molecule.mf.mol.nao
     assert h2_closed_shell_molecule.D_ao.shape == (nao, nao)

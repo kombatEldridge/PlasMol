@@ -2,7 +2,7 @@
 
 This page describes the **mathematics and methodology** of PlasMol’s Fourier absorption workflow: how an induced dipole is transformed into a spectrum, how quantum-only and hybrid drives differ, and why parallel / perpendicular polarizations are treated separately near a nanoparticle.
 
-For runnable inputs, CLI usage, and parameter tables, see [Simulations: Absorption](../simulations/absorption.md), [Usage](../usage.md), and [Tutorials](../tutorials.md). Hybrid $\sigma_m$, $A_{\mathrm{diss}}$, and $A_{\mathrm{raw}}$ — which field sits next to $\mu$ — are in [Hybrid absorption observables](observables.md).
+For runnable inputs, CLI usage, and parameter tables, see [Absorption driver](../simulations/absorption.md), [Usage](../usage.md), and [Tutorials](../tutorials.md). Hybrid $\sigma_m$, $A_{\mathrm{diss}}$, and $A_{\mathrm{raw}}$ — which field sits next to $\mu$ — are in [Hybrid absorption observables](observables.md).
 
 ---
 
@@ -209,5 +209,5 @@ All of these share the same underlying objects—$\boldsymbol{\mu}(t)$, optional
 - [Hybrid absorption observables](observables.md) — $\sigma_m$, $A_{\mathrm{diss}}$, and $A_{\mathrm{raw}}$
 - [Quasistatic Model](quasistatic_model.md) — Gersten–Nitzan $G,S$ and $\alpha_{\mathrm{eff}}$
 - [Core-Hole Dynamics](core_hole.md) — sudden SCH/DCH (`molecule.core_hole`; can be combined with absorption)
-- [Simulations: Absorption](../simulations/absorption.md) — driver usage and inputs
+- [Absorption driver](../simulations/absorption.md) — driver usage and inputs
 - [Usage](../usage.md) — full JSON schema

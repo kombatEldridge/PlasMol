@@ -10,7 +10,7 @@ PlasMol routes every run through `get_driver(driver_str)` in `plasmol/drivers/__
 | `quantum` | `drivers/quantum.py` | Pure RT-TDDFT |
 | `plasmol` | `drivers/plasmol.py` | Hybrid FDTD ↔ RT-TDDFT |
 | `absorption` | `custom_drivers/absorption/` | Absorption spectra (kick or hybrid deconvolution; full/∥/⊥) |
-| `core_hole` | `custom_drivers/core_hole.py` | Survey per-atom MO contributions (no propagation) |
+| `core_hole` | `custom_drivers/core_hole.py` | Survey MO contributions by atom index and PySCF shell (no propagation) |
 | `comparison` | `custom_drivers/comparison.py` | MO energy diagrams across bases/XCs |
 | `tune` | `custom_drivers/tune.py` | Auto-tune LRC ω and CAP ε₀ |
 | `np_abs_cross_sec` | `custom_drivers/np_abs_cross_sec.py` | NP absorption/scattering efficiencies |
@@ -39,6 +39,8 @@ def get_driver(driver_str):
 
 ## See also
 
+- [Drivers](simulations/index.md) — main driver guides
+- [Other Drivers](simulations/other.md) — comparison, tuning, cross-sections, and source checks
 - [Usage](usage.md) — JSON schema
 - [Contributing](contributing.md) — style and PR process
 - [Core-Hole Dynamics](core_hole.md) — `molecule.core_hole` sudden SCH/DCH; `core_hole` driver survey

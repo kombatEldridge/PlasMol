@@ -2,7 +2,7 @@
 
 The same three hybrid time series produce **three different spectra**. They are not three normalizations of one curve: they differ in which field sits next to the molecular dipole $\mu$, and whether that bilinear form is then divided by the incident intensity.
 
-This page is the theory of those observables. Polarization modes, DFT windows, and $\mu/E_{\mathrm{inc}}$ deconvolution are in [Fourier Spectra](fourier.md). JSON keys and templates are in [Simulations: Absorption](simulations/absorption.md) and [Usage](usage.md).
+This page is the theory of those observables. Polarization modes, DFT windows, and $\mu/E_{\mathrm{inc}}$ deconvolution are in [Fourier Spectra](fourier.md). JSON keys and templates are in [Absorption driver](simulations/absorption.md) and [Usage](usage.md).
 
 Request them with `settings.driver.observables`. The default is `["cross_section"]`.
 
@@ -343,5 +343,5 @@ Quantum-only $\delta$-kicks have no $E_{\mathrm{loc}}$ vs $E_{\mathrm{inc}}$ spl
 - [Fourier Spectra](fourier.md) — DFT windows, $\mu/E_{\mathrm{inc}}$ deconvolution, parallel / perpendicular / single
 - [Quasistatic Model](quasistatic_model.md) — Gersten–Nitzan $G$, $S$, and $\alpha_{\mathrm{eff}}$
 - [Theory & Methodology](methodology.md) — hybrid time loop and RT-TDDFT
-- [Simulations: Absorption](simulations/absorption.md) — driver usage
+- [Absorption driver](simulations/absorption.md) — driver usage
 - [Usage](usage.md) — `observables` in the JSON schema

@@ -85,7 +85,7 @@ The input file has five top-level keys (all optional except `settings`):
 }
 ```
 
-The top-level keys are `settings`, `plasmon`, `molecule`, `files`, and `additional_parameters`. Only `settings` is always required; which other sections appear depends on the driver (see [Simulations](simulations/index.md)).
+The top-level keys are `settings`, `plasmon`, `molecule`, `files`, and `additional_parameters`. Only `settings` is always required; which other sections appear depends on the driver (see [Drivers](simulations/index.md)).
 
 Comments are supported in JSON using `#`, `--`, `%`, or `//` (they are stripped before parsing).
 
@@ -137,7 +137,7 @@ If `driver` is omitted it is inferred from which top-level sections are present:
 - Only `"plasmon"` → `classical`
 - Both `"molecule"` and `"plasmon"` → `plasmol`
 
-Driver-specific keys (absorption, comparison, core-hole, NP cross-section, scatter probes) live **on this dict**, next to `"name"`. See [§5](#5-additional_parameters) and [Simulations](simulations/index.md).
+Driver-specific keys (absorption, comparison, core-hole, NP cross-section, scatter probes) live **on this dict**, next to `"name"`. See [§5](#5-additional_parameters) and [Drivers](simulations/index.md).
 
 ## 2. "plasmon"
 
@@ -447,7 +447,7 @@ Optional energy-dependent imaginary potential added to the Fock matrix for lifet
 
 ### 3.5 Core-hole (`molecule.core_hole`)
 
-Optional sudden SCH/DCH on a **quantum**, **absorption**, or **plasmol** run. The dedicated `"driver": "core_hole"` workflow does **not** use this for propagation — it only surveys which atoms contribute to listed MOs. See [Core-Hole Dynamics](core_hole.md).
+Optional sudden SCH/DCH on a **quantum**, **absorption**, or **plasmol** run. The dedicated `"driver": "core_hole"` workflow does **not** use this for propagation — it only surveys listed MOs by atom index and PySCF shell. See [Core-Hole Dynamics](core_hole.md).
 
 ```json
 {
@@ -591,7 +591,7 @@ Ground-state SCF across basis sets / XC functionals; MO energy plots.
 
 ### 5.5 Core-hole survey (`"name": "core_hole"`)
 
-This driver has **no extra keys**. It always surveys per-atom contributions for MOs in `molecule.core_hole.mo_removal_index_dict` and exits (no ionization, no time loop). Sudden SCH/DCH belongs under `molecule.core_hole` (section 3.5) with driver `quantum` or `absorption`.
+This driver has **no extra keys**. It surveys each MO in `molecule.core_hole.mo_removal_index_dict` by PySCF atom index and shell (angular components of one shell summed; shells at or below 1% omitted) and exits (no ionization, no time loop). Rows go to the log and to `mo_survey.txt`. Sudden SCH/DCH belongs under `molecule.core_hole` (section 3.5) with driver `quantum` or `absorption`.
 
 See [Core-Hole Dynamics](core_hole.md).
 

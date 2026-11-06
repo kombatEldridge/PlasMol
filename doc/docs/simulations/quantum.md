@@ -26,7 +26,7 @@ Molecule source requires full kick/pulse fields (unlike Fourier minimal kick def
 
 - `field_e.csv` / `field_p.csv` — drive and induced dipole
 - `output.png` (or `spectra_e_vs_p_filepath`) — E vs μ plot
-- Optional `checkpoint.npz`
+- Optional `checkpoint.npz` during the run. A successful finish keeps `final-checkpoint.npz` and removes the periodic snapshot.
 
 ## Template
 
@@ -41,6 +41,6 @@ Source (repo path): `templates/template-quantum.json`
 
 ## See also
 
-- [All simulations](index.md)
+- [All drivers](index.md)
 - [Usage](../usage.md) — parameter reference
 - [Checkpointing](../checkpointing.md) — snapshots and resume

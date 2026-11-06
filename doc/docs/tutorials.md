@@ -410,7 +410,7 @@ Single panel example (sto3g + PBE0):
 
 ## Tutorial 7: Core-Hole (SCH / DCH) MO Tracking
 
-Create a sudden double core-hole on MO 0 and track hole occupations. Production SCH/DCH is `molecule.core_hole` on the quantum (or absorption) driver; `"driver": "core_hole"` only surveys which atoms contribute to candidate MOs.
+Create a sudden double core-hole on MO 0 and track hole occupations. Production SCH/DCH is `molecule.core_hole` on the quantum (or absorption) driver; `"driver": "core_hole"` only surveys candidate MOs by atom index and PySCF shell.
 
 ```json
 {
